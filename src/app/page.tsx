@@ -1,103 +1,109 @@
-import Image from "next/image";
+"use client"
+
+import { useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import SearchBar, { SearchParams } from "@/components/SearchBar"
+import RentalShopCard from "@/components/RentalShopCard"
+
+// Temporary mock data for featured shops
+const FEATURED_SHOPS = [
+  {
+    id: "shop1",
+    name: "Island Riders",
+    images: ["/placeholder-1.jpg", "/placeholder-2.jpg"],
+    startingPrice: 400,
+    rating: 4.7,
+    reviewCount: 24
+  },
+  {
+    id: "shop2",
+    name: "Siargao Wheels",
+    images: ["/placeholder-3.jpg", "/placeholder-4.jpg"],
+    startingPrice: 350,
+    rating: 4.5,
+    reviewCount: 18
+  },
+  {
+    id: "shop3",
+    name: "Wave Cruisers",
+    images: ["/placeholder-5.jpg", "/placeholder-6.jpg"],
+    startingPrice: 450,
+    rating: 4.8,
+    reviewCount: 32
+  }
+]
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [searchResults, setSearchResults] = useState<null | typeof FEATURED_SHOPS>(null)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleSearch = (params: SearchParams) => {
+    console.log("Search params:", params)
+    // In a real app, this would filter shops or redirect to /browse with query params
+    // For now, just pretend we're filtering and return all shops
+    setSearchResults(FEATURED_SHOPS)
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Hero Section */}
+      <section className="relative h-[600px] w-full">
+        {/* Hero Background - would be replaced with an actual image */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-background/70">
+          {/* We'd have an actual image here, using a div for now */}
+          <div className="w-full h-full flex items-center justify-center bg-tropical-teal/20">
+            {/* Placeholder for a real hero image */}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Hero Content */}
+        <div className="relative container mx-auto h-full flex flex-col items-center justify-center px-4 py-12 text-center">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-foreground">
+            Explore Siargao on Two Wheels
+          </h1>
+          <p className="text-lg md:text-xl max-w-2xl mb-8 text-muted-foreground">
+            Find and book the perfect motorbike from local rental shops for your island adventure
+          </p>
+
+          {/* Search Bar Component */}
+          <div className="w-full max-w-4xl">
+            <SearchBar onSearch={handleSearch} />
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Shops Section */}
+      <section className="py-16 container mx-auto px-4">
+        <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center">
+          {searchResults ? "Search Results" : "Featured Rental Shops"}
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {(searchResults || FEATURED_SHOPS).map((shop) => (
+            <RentalShopCard
+              key={shop.id}
+              id={shop.id}
+              name={shop.name}
+              images={shop.images}
+              startingPrice={shop.startingPrice}
+              rating={shop.rating}
+              reviewCount={shop.reviewCount}
+            />
+          ))}
+        </div>
+
+        {/* View All Button */}
+        {!searchResults && (
+          <div className="text-center mt-12">
+            <Link 
+              href="/browse" 
+              className="text-primary underline hover:text-primary/80 transition-colors"
+            >
+              View all rental shops
+            </Link>
+          </div>
+        )}
+      </section>
     </div>
-  );
+  )
 }
