@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { updatePassword } from "@/lib/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -14,6 +14,7 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [validLink, setValidLink] = useState(true);
   const router = useRouter();
+  const { updatePassword } = useAuth();
 
   useEffect(() => {
     // Check if the URL has the necessary parameters from Supabase
@@ -48,7 +49,7 @@ export default function ResetPasswordPage() {
       const { error: updateError } = await updatePassword(password);
       
       if (updateError) {
-        setError(updateError);
+        setError(updateError.message || "Failed to update password. Please try again.");
       } else {
         setSuccess(true);
         // Redirect to sign-in page after 3 seconds

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Menu, X, LogOut, User, ChevronDown, Settings } from "lucide-react"
+import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
@@ -11,7 +11,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, signOut, isAdmin } = useAuth()
 
   // Change navbar style on scroll
   useEffect(() => {
@@ -32,7 +32,7 @@ const Navbar = () => {
   }
 
   const handleLogout = async () => {
-    await logout()
+    await signOut()
     setIsProfileMenuOpen(false)
   }
 
@@ -90,20 +90,41 @@ const Navbar = () => {
                     <p className="text-sm font-medium">{user?.first_name} {user?.last_name}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
-                  <div className="p-1">
-                    <Link href="/dashboard" className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors" onClick={closeMenus}>
-                      <User size={16} />
+                  <div className="py-1">
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors"
+                      onClick={closeMenus}
+                    >
+                      <User className="h-4 w-4" />
                       Dashboard
                     </Link>
-                    <Link href="/profile" className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors" onClick={closeMenus}>
-                      <Settings size={16} />
-                      Profile Settings
+                    
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors"
+                        onClick={closeMenus}
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    )}
+                    
+                    <Link
+                      href="/profile"
+                      className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors"
+                      onClick={closeMenus}
+                    >
+                      <Settings className="h-4 w-4" />
+                      Account Settings
                     </Link>
+                    
                     <button
-                      className="flex items-center gap-2 w-full p-2 text-sm hover:bg-destructive/10 text-destructive rounded-md transition-colors"
+                      className="flex items-center gap-2 w-full p-2 text-sm hover:bg-red-50 text-red-600 hover:text-red-700 rounded-md transition-colors"
                       onClick={handleLogout}
                     >
-                      <LogOut size={16} />
+                      <LogOut className="h-4 w-4" />
                       Sign Out
                     </button>
                   </div>
@@ -162,9 +183,17 @@ const Navbar = () => {
                 <MobileNavLink href="/dashboard" onClick={() => setIsMenuOpen(false)}>
                   Dashboard
                 </MobileNavLink>
+                
+                {isAdmin && (
+                  <MobileNavLink href="/admin" onClick={() => setIsMenuOpen(false)}>
+                    Admin Panel
+                  </MobileNavLink>
+                )}
+                
                 <MobileNavLink href="/profile" onClick={() => setIsMenuOpen(false)}>
                   Profile Settings
                 </MobileNavLink>
+                
                 <button
                   className="flex items-center py-3 px-2 text-white hover:text-destructive rounded-md transition-colors"
                   onClick={() => {

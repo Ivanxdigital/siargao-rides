@@ -11,46 +11,65 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState<"tourist" | "shop_owner">("tourist");
+  const [role, setRole] = useState<"tourist" | "shop_owner" | "admin">("tourist");
   const [formError, setFormError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
   
-  const { register, isLoading, error, clearError } = useAuth();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError();
     setFormError("");
+    setApiError("");
+    setIsLoading(true);
     
     // Validate passwords match
     if (password !== confirmPassword) {
       setFormError("Passwords do not match");
+      setIsLoading(false);
       return;
     }
     
     // Password strength validation
     if (password.length < 8) {
       setFormError("Password must be at least 8 characters long");
+      setIsLoading(false);
       return;
     }
     
-    await register(email, password, firstName, lastName, role);
+    try {
+      const { error } = await register(email, password, firstName, lastName, role);
+      if (error) {
+        setApiError(error.message || "An error occurred during registration");
+      }
+    } catch (err) {
+      setApiError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="container mx-auto max-w-md py-12">
-      <div className="bg-card shadow-md rounded-lg p-8 border border-border">
-        <h1 className="text-2xl font-bold mb-6 text-center">Create an Account</h1>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Create an Account</h1>
+          <p className="text-muted-foreground mt-2">
+            Join Siargao Rides to find or list motorbikes for rent
+          </p>
+        </div>
         
-        {(error || formError) && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-md mb-6">
-            {formError || error}
+        {(apiError || formError) && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md">
+            {formError || apiError}
           </div>
         )}
         
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium mb-2">
+              <label htmlFor="firstName" className="block text-sm font-medium mb-1">
                 First Name
               </label>
               <input
@@ -58,13 +77,13 @@ export default function SignUpPage() {
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="w-full p-3 rounded-md border border-input bg-background"
+                className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 placeholder="John"
               />
             </div>
             
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium mb-2">
+              <label htmlFor="lastName" className="block text-sm font-medium mb-1">
                 Last Name
               </label>
               <input
@@ -72,29 +91,29 @@ export default function SignUpPage() {
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="w-full p-3 rounded-md border border-input bg-background"
+                className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 placeholder="Doe"
               />
             </div>
           </div>
           
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
-              Email
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1">
+              Email Address
             </label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 rounded-md border border-input bg-background"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               placeholder="you@example.com"
               required
             />
           </div>
           
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium mb-1">
               Password
             </label>
             <input
@@ -102,7 +121,7 @@ export default function SignUpPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded-md border border-input bg-background"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               placeholder="••••••••"
               required
             />
@@ -111,8 +130,8 @@ export default function SignUpPage() {
             </p>
           </div>
           
-          <div className="mb-6">
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
               Confirm Password
             </label>
             <input
@@ -120,17 +139,17 @@ export default function SignUpPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-3 rounded-md border border-input bg-background"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               placeholder="••••••••"
               required
             />
           </div>
           
-          <div className="mb-6">
+          <div>
             <label className="block text-sm font-medium mb-2">
               Account Type
             </label>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <label className="flex items-center">
                 <input
                   type="radio"
@@ -153,30 +172,47 @@ export default function SignUpPage() {
                 />
                 Shop Owner (List bikes)
               </label>
+              
+              {/* Only show admin option in development environment */}
+              {process.env.NODE_ENV === 'development' && (
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="admin"
+                    checked={role === "admin"}
+                    onChange={() => setRole("admin")}
+                    className="mr-2"
+                  />
+                  Admin
+                </label>
+              )}
             </div>
           </div>
           
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Creating Account..." : "Sign Up"}
-          </Button>
+          <div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Creating Account..." : "Sign Up"}
+            </Button>
+          </div>
           
-          <p className="text-xs text-center text-muted-foreground mt-4">
+          <p className="text-xs text-center text-muted-foreground">
             By signing up, you agree to our{" "}
-            <Link href="/terms" className="text-primary hover:underline">
+            <Link href="/terms" className="font-medium text-primary hover:text-primary/80">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-primary hover:underline">
+            <Link href="/privacy" className="font-medium text-primary hover:text-primary/80">
               Privacy Policy
             </Link>
             .
           </p>
         </form>
         
-        <div className="mt-6 text-center">
+        <div className="text-center">
           <p className="text-sm">
             Already have an account?{" "}
-            <Link href="/sign-in" className="text-primary hover:underline">
+            <Link href="/sign-in" className="font-medium text-primary hover:text-primary/80">
               Sign in
             </Link>
           </p>

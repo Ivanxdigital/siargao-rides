@@ -24,6 +24,7 @@ interface AuthContextType {
   register: (email: string, password: string, firstName: string, lastName: string, role: string) => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => ({ error: null }),
   resetPassword: async () => ({ error: null }),
   updatePassword: async () => ({ error: null }),
+  isAdmin: false,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const supabase = createClientComponentClient();
   const router = useRouter();
 
@@ -56,6 +59,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user || null);
+      
+      // Check if user is admin
+      if (session?.user) {
+        const role = session.user.user_metadata?.role;
+        setIsAdmin(role === 'admin');
+      } else {
+        setIsAdmin(false);
+      }
+      
       setIsLoading(false);
     };
 
@@ -65,6 +77,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       (_event, session) => {
         setSession(session);
         setUser(session?.user || null);
+        
+        // Check if user is admin
+        if (session?.user) {
+          const role = session.user.user_metadata?.role;
+          setIsAdmin(role === 'admin');
+        } else {
+          setIsAdmin(false);
+        }
+        
         setIsLoading(false);
       }
     );
@@ -157,6 +178,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     resetPassword,
     updatePassword,
+    isAdmin,
   };
 
   return (
