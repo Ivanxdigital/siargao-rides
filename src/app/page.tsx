@@ -123,7 +123,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[700px] md:h-[800px] w-full overflow-hidden">
+      <section className="relative h-[100vh] w-full overflow-hidden -mt-0">
         {/* YouTube Video Background */}
         <div className="absolute inset-0 w-full h-full">
           <div className="absolute inset-0 bg-black/60 z-10"></div>
@@ -141,7 +141,7 @@ export default function Home() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-20 container mx-auto h-full flex flex-col items-center justify-center px-4 py-12 text-center">
+        <div className="relative z-20 container mx-auto h-full flex flex-col items-center justify-center px-4 py-12 text-center pt-28 md:pt-32">
           <div className="bg-background/30 backdrop-blur-sm p-8 rounded-lg max-w-5xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white">
               Explore Siargao on Two Wheels
