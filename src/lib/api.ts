@@ -295,10 +295,7 @@ export async function createReview(review: Omit<Review, 'id' | 'created_at' | 'u
 export async function getShopReviews(shopId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
-    .select(`
-      *,
-      users!inner(*)
-    `)
+    .select('*')
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })
 
@@ -313,10 +310,7 @@ export async function getShopReviews(shopId: string): Promise<Review[]> {
 export async function getBikeReviews(bikeId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
-    .select(`
-      *,
-      users!inner(*)
-    `)
+    .select('*')
     .eq('bike_id', bikeId)
     .order('created_at', { ascending: false })
 

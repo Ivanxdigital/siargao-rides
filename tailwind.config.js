@@ -53,6 +53,7 @@ module.exports = {
         // Custom tropical colors
         tropical: {
           teal: "#2DD4BF",
+          coral: "#FF6F61",
           green: "#4ADE80",
           yellow: "#FACC15",
           orange: "#FB923C",
