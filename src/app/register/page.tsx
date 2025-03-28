@@ -1,22 +1,39 @@
 "use client"
 
-import { useState } from "react"
-import { Upload, Info } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Upload, Info, Check, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
+import { useAuth } from "@/contexts/AuthContext"
+import { uploadFile } from "@/lib/storage"
+import { createShop } from "@/lib/service"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function RegisterShopPage() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const router = useRouter()
+  
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     fullName: "",
     shopName: "",
     email: "",
     phone: "",
+    address: "",
     governmentId: null as File | null,
     businessPermit: null as File | null
   })
+  
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/sign-in?callback=/register")
+    }
+  }, [authLoading, isAuthenticated, router])
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -35,33 +52,94 @@ export default function RegisterShopPage() {
     }
   }
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
     
-    // In a real app, we would validate and send the data to the server
-    setIsSubmitting(true)
+    if (!user) {
+      setError("You must be logged in to register a shop")
+      return
+    }
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      setIsSubmitting(true)
+      
+      // Upload government ID
+      let governmentIdUrl = null
+      if (formData.governmentId) {
+        const { url, error: uploadError } = await uploadFile(
+          formData.governmentId, 
+          'shop-documents', 
+          `${user.id}/government-id`
+        )
+        
+        if (uploadError) {
+          throw new Error(`Failed to upload government ID: ${uploadError.message}`)
+        }
+        
+        governmentIdUrl = url
+      } else {
+        throw new Error("Government ID is required")
+      }
+      
+      // Upload business permit (optional)
+      let businessPermitUrl = null
+      if (formData.businessPermit) {
+        const { url, error: uploadError } = await uploadFile(
+          formData.businessPermit, 
+          'shop-documents', 
+          `${user.id}/business-permit`
+        )
+        
+        if (uploadError) {
+          throw new Error(`Failed to upload business permit: ${uploadError.message}`)
+        }
+        
+        businessPermitUrl = url
+      }
+      
+      // Create the shop in the database
+      const newShop = await createShop({
+        owner_id: user.id,
+        name: formData.shopName,
+        description: `Motorbike rental shop in Siargao. Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+        address: formData.address || "Siargao Island",
+        city: "Siargao",
+        phone_number: formData.phone,
+        email: formData.email,
+      })
+      
+      if (!newShop) {
+        throw new Error("Failed to create shop")
+      }
+      
       setIsSubmitted(true)
-      console.log("Form submitted:", formData)
-    }, 1500)
+    } catch (err) {
+      console.error("Error registering shop:", err)
+      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
   
   if (isSubmitted) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-md text-center">
-        <div className="bg-card border border-border rounded-lg p-8">
-          <h1 className="text-2xl font-bold mb-4">Registration Submitted!</h1>
-          <Badge variant="verified" className="mx-auto mb-6">Pending Verification</Badge>
-          <p className="text-muted-foreground mb-6">
-            Thank you for registering your shop. Your application is now being reviewed.
-            We'll contact you via email once the verification process is complete.
-          </p>
-          <Button asChild>
-            <a href="/">Return to Homepage</a>
-          </Button>
+      <div className="pt-24">
+        <div className="container mx-auto px-4 py-16 max-w-md text-center">
+          <div className="bg-card border border-border rounded-lg p-8">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check size={32} className="text-green-600 dark:text-green-400" />
+            </div>
+            <h1 className="text-2xl font-bold mb-4">Registration Submitted!</h1>
+            <Badge variant="verified" className="mx-auto mb-6">Pending Verification</Badge>
+            <p className="text-muted-foreground mb-6">
+              Thank you for registering your shop. Your application is now being reviewed.
+              We&apos;ll contact you via email once the verification process is complete.
+            </p>
+            <Button asChild>
+              <Link href="/">Return to Homepage</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -78,6 +156,13 @@ export default function RegisterShopPage() {
         </div>
         
         <div className="container mx-auto px-4 py-8">
+          {error && (
+            <div className="bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 rounded-md p-4 mb-6 flex items-start gap-3">
+              <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
+          
           <div className="bg-card border border-border rounded-lg p-6 md:p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Owner Information */}
@@ -111,6 +196,22 @@ export default function RegisterShopPage() {
                       onChange={handleChange}
                       className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium mb-1">
+                      Shop Address
+                    </label>
+                    <input
+                      type="text"
+                      id="address"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      required
+                      placeholder="e.g., Tourism Road, General Luna"
                     />
                   </div>
                 </div>
@@ -158,7 +259,7 @@ export default function RegisterShopPage() {
                 
                 <div className="bg-muted/30 border border-border rounded-md p-4 mb-6">
                   <div className="flex items-start gap-3">
-                    <Info size={20} className="text-muted-foreground mt-0.5" />
+                    <Info size={20} className="mt-0.5 flex-shrink-0" />
                     <p className="text-sm text-muted-foreground">
                       For security and verification purposes, we require a government-issued ID. 
                       A business permit is recommended but optional. This helps us maintain 

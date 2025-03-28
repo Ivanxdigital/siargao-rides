@@ -72,7 +72,7 @@ const Navbar = () => {
                 onClick={toggleProfileMenu}
               >
                 <span className="text-sm font-medium text-white">
-                  {user?.first_name || user?.email}
+                  {user?.user_metadata?.first_name || user?.email}
                 </span>
                 <ChevronDown size={16} className="text-white/70" />
               </button>
@@ -87,7 +87,7 @@ const Navbar = () => {
                   transition={{ duration: 0.2 }}
                 >
                   <div className="p-2 border-b border-border bg-card/70">
-                    <p className="text-sm font-medium">{user?.first_name} {user?.last_name}</p>
+                    <p className="text-sm font-medium">{user?.user_metadata?.first_name} {user?.user_metadata?.last_name}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <div className="py-1">

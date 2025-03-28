@@ -24,6 +24,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [searchResults, setSearchResults] = useState<ShopCardData[] | null>(null)
   const [videoLoaded, setVideoLoaded] = useState(false)
+  const videoContainerRef = useRef<HTMLDivElement>(null)
 
   // YouTube video setup
   const videoId = "l6K6FgR2xB8"
@@ -84,6 +85,29 @@ export default function Home() {
     fetchData()
   }, [])
 
+  // Initialize the YouTube iframe after the component mounts (client-side only)
+  useEffect(() => {
+    if (!videoContainerRef.current) return;
+
+    // Clear out any existing content
+    videoContainerRef.current.innerHTML = '';
+    
+    // Create iframe element
+    const iframe = document.createElement('iframe');
+    
+    // Set attributes
+    iframe.className = 'absolute w-[150%] md:w-[120%] h-[150%] md:h-[120%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2';
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&rel=0&disablekb=1&modestbranding=1&showinfo=0`;
+    iframe.title = 'Siargao Island Video Background';
+    iframe.frameBorder = '0';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.onload = () => setVideoLoaded(true);
+    
+    // Append to container
+    videoContainerRef.current.appendChild(iframe);
+  }, [videoId]);
+
   const handleSearch = async (params: SearchParams) => {
     console.log("Search params:", params)
     
@@ -128,15 +152,8 @@ export default function Home() {
         <div className="absolute inset-0 w-full h-full">
           <div className="absolute inset-0 bg-black/60 z-10"></div>
           <div className="relative w-full h-full overflow-hidden">
-            <iframe
-              className="absolute w-[150%] md:w-[120%] h-[150%] md:h-[120%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&rel=0&disablekb=1&modestbranding=1&showinfo=0&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
-              title="Siargao Island Video Background"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              onLoad={() => setVideoLoaded(true)}
-            ></iframe>
+            {/* Video container - iframe will be dynamically inserted here */}
+            <div ref={videoContainerRef} className="w-full h-full"></div>
           </div>
         </div>
 

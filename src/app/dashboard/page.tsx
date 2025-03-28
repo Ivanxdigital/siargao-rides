@@ -34,7 +34,7 @@ export default function DashboardPage() {
       <>
         <div className="bg-black text-white">
           <div className="container mx-auto px-4 py-12">
-            <h1 className="text-4xl font-bold mb-2">Welcome, {user?.first_name || "Rider"}!</h1>
+            <h1 className="text-4xl font-bold mb-2">Welcome, {user?.user_metadata?.first_name || "Rider"}!</h1>
             <p className="text-lg">Manage your bookings, favorites, and account settings.</p>
           </div>
         </div>
