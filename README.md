@@ -1,36 +1,184 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Siargao Rides - Motorbike Rental Directory
 
-## Getting Started
+A modern web application that connects local motorbike rental shops in Siargao Island, Philippines, with tourists looking to rent motorbikes.
 
-First, run the development server:
+![GitHub repo](https://github.com/Ivanxdigital/siargao-rides)
 
+## 🏝️ Project Overview
+
+Siargao Rides is a platform that allows tourists to:
+- Search and filter motorbike rentals based on location, dates, budget, and bike type
+- Browse local rental shops with detailed information
+- See real photos, pricing (daily/weekly/monthly), and reviews
+- Make reservations directly through the platform
+
+Shop owners can:
+- Create their own listings
+- Manage their inventory
+- Receive direct bookings
+- Get visibility to tourists visiting the island
+
+## 🚀 Current Development Stage
+
+This project is in early development with focus on the frontend UI. The current implementation includes:
+
+- Project structure using Next.js App Router
+- Basic page routing and layouts
+- Core UI components
+- TailwindCSS setup with custom theming
+- Mobile-responsive design
+
+**Note:** The backend and data persistence are planned for future phases.
+
+## 🧰 Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **Styling:** TailwindCSS with custom theme
+- **UI Components:** Custom components with ShadCN UI principles
+- **Animation:** Framer Motion (planned)
+- **Future Backend:** Supabase (planned)
+
+## 📁 Project Structure
+
+```
+siargao-rides/
+├── public/              # Static assets
+├── src/
+│   ├── app/             # Next.js App Router pages
+│   │   ├── browse/      # Browse listings page
+│   │   ├── contact/     # Contact page
+│   │   ├── register/    # Shop registration
+│   │   ├── shop/[id]/   # Individual shop page
+│   │   ├── globals.css  # Global styles
+│   │   ├── layout.tsx   # Root layout with Navbar/Footer
+│   │   └── page.tsx     # Homepage
+│   ├── components/      # Reusable components
+│   │   ├── layout/      # Layout components (Navbar, Footer)
+│   │   ├── ui/          # UI components (Button, Badge, etc.)
+│   │   ├── BikeCard.tsx # Bike listing card
+│   │   ├── SearchBar.tsx # Search component
+│   │   └── RentalShopCard.tsx # Shop listing card
+│   └── lib/             # Utility functions
+├── tailwind.config.js   # TailwindCSS configuration
+├── project-brief.md     # Project vision and requirements
+├── features.md          # Detailed feature specifications
+├── ui-components.md     # UI component specifications
+└── roadmap.md           # Development roadmap
+```
+
+## 🎯 Core Features
+
+### Implemented:
+- Base layout with responsive Navbar and Footer
+- Homepage with hero section
+- Basic routing structure
+- UI component foundations
+
+### In Progress:
+- Search functionality
+- Browse page with filters
+- Shop profile pages
+- Registration forms
+
+### Planned:
+- Authentication for shop owners
+- Image upload for listings
+- Booking system
+- Reviews and ratings
+- Google Maps integration
+
+## 🎨 Design System
+
+The UI follows these principles:
+- **Theme:** Dark, modern, minimalistic
+- **Aesthetic:** Tropical but clean
+- **Mobile-first:** Fully responsive for all devices
+- **Accessibility:** WCAG compliant
+
+The color scheme uses:
+- Primary: Teal/aqua tones (representing ocean)
+- Background: Dark charcoal
+- Accents: Coral highlights
+
+## 🔧 Setup and Development
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Ivanxdigital/siargao-rides.git
+cd siargao-rides
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Run the development server:
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📝 Development Guidelines
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+When contributing to this project:
 
-## Learn More
+1. **Follow the existing code style** - Use TypeScript for type safety
+2. **Mobile-first approach** - Always design with mobile in mind first
+3. **Component-based architecture** - Create reusable components
+4. **Performance optimizations** - Lazy loading, code splitting when appropriate
+5. **Accessibility** - Ensure components are accessible
 
-To learn more about Next.js, take a look at the following resources:
+## 🗺️ Development Roadmap
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The project follows this development plan:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Phase 1:** Core UI components and structure ✅
+2. **Phase 2:** Complete all page templates and navigation
+3. **Phase 3:** Add search and filtering functionality
+4. **Phase 4:** Implement forms and user interactions
+5. **Phase 5:** Connect to backend (Supabase)
+6. **Phase 6:** Authentication and user roles
+7. **Phase 7:** Booking system and notifications
+8. **Phase 8:** Reviews and ratings
+9. **Phase 9:** Payment integration
+10. **Phase 10:** Testing and deployment
 
-## Deploy on Vercel
+## 📊 Data Model (Planned)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application will eventually use these data models:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Shops**
+  - id, name, description, location, contact info, ratings, etc.
+  
+- **Bikes**
+  - id, shop_id, model, type, photos, daily_rate, weekly_rate, monthly_rate, availability
+  
+- **Users**
+  - id, name, email, role (tourist/shop owner)
+  
+- **Bookings**
+  - id, bike_id, user_id, start_date, end_date, status, payment_info
+
+## 🤝 Contributing
+
+Contributions are welcome! Please check the [issues](https://github.com/Ivanxdigital/siargao-rides/issues) page for current tasks.
+
+## 📄 License
+
+This project is proprietary and not open for redistribution.
+
+## 📞 Contact
+
+For questions or support, please reach out to project maintainers.
