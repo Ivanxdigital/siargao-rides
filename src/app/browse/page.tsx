@@ -110,122 +110,131 @@ export default function BrowsePage() {
   })
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-semibold mb-8 text-center">Browse Motorbike Rentals</h1>
-      
-      {/* Mobile Filters Toggle */}
-      <div className="md:hidden mb-4">
-        <button 
-          className="w-full flex items-center justify-between bg-card border border-border rounded-md p-3"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <div className="flex items-center">
-            <Sliders size={18} className="mr-2" />
-            <span>Filters</span>
-          </div>
-          {showFilters ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </button>
+    <>
+      <div className="bg-black text-white">
+        <div className="container mx-auto px-4 py-12">
+          <h1 className="text-4xl font-bold mb-4">Browse Motorbike Rentals</h1>
+          <p className="text-lg">Find the perfect ride for your Siargao adventure</p>
+        </div>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Filters Sidebar */}
-        <div className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-64 bg-card border border-border rounded-lg p-4 h-fit`}>
-          <h2 className="text-lg font-semibold mb-4">Filters</h2>
-          
-          {/* Price Range Filter */}
-          <div className="mb-6">
-            <h3 className="text-sm font-medium mb-3">Price Range</h3>
-            {/* This is a placeholder for the slider component */}
-            <div className="mb-2">
-              <div className="h-2 bg-muted rounded-full relative">
-                <div 
-                  className="absolute h-full bg-primary rounded-full" 
-                  style={{ 
-                    left: `${((priceRange[0] - 100) / 1900) * 100}%`, 
-                    right: `${100 - ((priceRange[1] - 100) / 1900) * 100}%` 
-                  }}
-                ></div>
-              </div>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-semibold mb-8 text-center">Browse Motorbike Rentals</h1>
+        
+        {/* Mobile Filters Toggle */}
+        <div className="md:hidden mb-4">
+          <button 
+            className="w-full flex items-center justify-between bg-card border border-border rounded-md p-3"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <div className="flex items-center">
+              <Sliders size={18} className="mr-2" />
+              <span>Filters</span>
             </div>
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>₱{priceRange[0]}</span>
-              <span>₱{priceRange[1]}</span>
-            </div>
-          </div>
-          
-          {/* Bike Type Filter */}
-          <div className="mb-6">
-            <h3 className="text-sm font-medium mb-3">Bike Type</h3>
-            <div className="space-y-2">
-              <BikeTypeCheckbox 
-                type="Scooter" 
-                checked={selectedBikeTypes.includes("Scooter")}
-                onChange={() => toggleBikeType("Scooter")}
-              />
-              <BikeTypeCheckbox 
-                type="Semi-automatic" 
-                checked={selectedBikeTypes.includes("Semi-automatic")}
-                onChange={() => toggleBikeType("Semi-automatic")}
-              />
-              <BikeTypeCheckbox 
-                type="Manual" 
-                checked={selectedBikeTypes.includes("Manual")}
-                onChange={() => toggleBikeType("Manual")}
-              />
-              <BikeTypeCheckbox 
-                type="Dirt Bike" 
-                checked={selectedBikeTypes.includes("Dirt Bike")}
-                onChange={() => toggleBikeType("Dirt Bike")}
-              />
-              <BikeTypeCheckbox 
-                type="Electric" 
-                checked={selectedBikeTypes.includes("Electric")}
-                onChange={() => toggleBikeType("Electric")}
-              />
-            </div>
-          </div>
-          
-          {/* Rating Filter */}
-          <div>
-            <h3 className="text-sm font-medium mb-3">Minimum Rating</h3>
-            <select 
-              value={minRating}
-              onChange={e => setMinRating(Number(e.target.value))}
-              className="w-full p-2 bg-background border border-border rounded"
-            >
-              <option value={0}>Any Rating</option>
-              <option value={3}>3+ Stars</option>
-              <option value={4}>4+ Stars</option>
-              <option value={4.5}>4.5+ Stars</option>
-            </select>
-          </div>
+            {showFilters ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
         </div>
         
-        {/* Shop Listings */}
-        <div className="flex-1">
-          {filteredShops.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredShops.map(shop => (
-                <RentalShopCard
-                  key={shop.id}
-                  id={shop.id}
-                  name={shop.name}
-                  images={shop.images}
-                  startingPrice={shop.startingPrice}
-                  rating={shop.rating}
-                  reviewCount={shop.reviewCount}
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Filters Sidebar */}
+          <div className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-64 bg-card border border-border rounded-lg p-4 h-fit`}>
+            <h2 className="text-lg font-semibold mb-4">Filters</h2>
+            
+            {/* Price Range Filter */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-3">Price Range</h3>
+              {/* This is a placeholder for the slider component */}
+              <div className="mb-2">
+                <div className="h-2 bg-muted rounded-full relative">
+                  <div 
+                    className="absolute h-full bg-primary rounded-full" 
+                    style={{ 
+                      left: `${((priceRange[0] - 100) / 1900) * 100}%`, 
+                      right: `${100 - ((priceRange[1] - 100) / 1900) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>₱{priceRange[0]}</span>
+                <span>₱{priceRange[1]}</span>
+              </div>
+            </div>
+            
+            {/* Bike Type Filter */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-3">Bike Type</h3>
+              <div className="space-y-2">
+                <BikeTypeCheckbox 
+                  type="Scooter" 
+                  checked={selectedBikeTypes.includes("Scooter")}
+                  onChange={() => toggleBikeType("Scooter")}
                 />
-              ))}
+                <BikeTypeCheckbox 
+                  type="Semi-automatic" 
+                  checked={selectedBikeTypes.includes("Semi-automatic")}
+                  onChange={() => toggleBikeType("Semi-automatic")}
+                />
+                <BikeTypeCheckbox 
+                  type="Manual" 
+                  checked={selectedBikeTypes.includes("Manual")}
+                  onChange={() => toggleBikeType("Manual")}
+                />
+                <BikeTypeCheckbox 
+                  type="Dirt Bike" 
+                  checked={selectedBikeTypes.includes("Dirt Bike")}
+                  onChange={() => toggleBikeType("Dirt Bike")}
+                />
+                <BikeTypeCheckbox 
+                  type="Electric" 
+                  checked={selectedBikeTypes.includes("Electric")}
+                  onChange={() => toggleBikeType("Electric")}
+                />
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">
-                No rental shops match your filters. Try adjusting your criteria.
-              </p>
+            
+            {/* Rating Filter */}
+            <div>
+              <h3 className="text-sm font-medium mb-3">Minimum Rating</h3>
+              <select 
+                value={minRating}
+                onChange={e => setMinRating(Number(e.target.value))}
+                className="w-full p-2 bg-background border border-border rounded"
+              >
+                <option value={0}>Any Rating</option>
+                <option value={3}>3+ Stars</option>
+                <option value={4}>4+ Stars</option>
+                <option value={4.5}>4.5+ Stars</option>
+              </select>
             </div>
-          )}
+          </div>
+          
+          {/* Shop Listings */}
+          <div className="flex-1">
+            {filteredShops.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredShops.map(shop => (
+                  <RentalShopCard
+                    key={shop.id}
+                    id={shop.id}
+                    name={shop.name}
+                    images={shop.images}
+                    startingPrice={shop.startingPrice}
+                    rating={shop.rating}
+                    reviewCount={shop.reviewCount}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-lg text-muted-foreground">
+                  No rental shops match your filters. Try adjusting your criteria.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 } 
