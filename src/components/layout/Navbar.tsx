@@ -2,12 +2,16 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Menu, X } from "lucide-react"
+import { Menu, X, LogOut, User, ChevronDown, Settings } from "lucide-react"
 import { motion } from "framer-motion"
+import { useAuth } from "@/contexts/AuthContext"
+import { Button } from "@/components/ui/Button"
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const { user, isAuthenticated, logout } = useAuth()
 
   // Change navbar style on scroll
   useEffect(() => {
@@ -21,6 +25,20 @@ const Navbar = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
+  }
+
+  const toggleProfileMenu = () => {
+    setIsProfileMenuOpen(!isProfileMenuOpen)
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    setIsProfileMenuOpen(false)
+  }
+
+  const closeMenus = () => {
+    setIsMenuOpen(false)
+    setIsProfileMenuOpen(false)
   }
 
   return (
@@ -46,6 +64,62 @@ const Navbar = () => {
           <NavLink href="/browse" isScrolled={scrolled}>Browse</NavLink>
           <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink>
           <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
+          
+          {isAuthenticated ? (
+            <div className="relative">
+              <button
+                className="flex items-center gap-2 p-2 rounded-full hover:bg-white/10 transition-colors"
+                onClick={toggleProfileMenu}
+              >
+                <span className="text-sm font-medium text-white">
+                  {user?.first_name || user?.email}
+                </span>
+                <ChevronDown size={16} className="text-white/70" />
+              </button>
+              
+              {/* Profile Menu Dropdown */}
+              {isProfileMenuOpen && (
+                <motion.div 
+                  className="absolute right-0 mt-2 w-56 bg-card border border-border shadow-lg rounded-md overflow-hidden z-50"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="p-2 border-b border-border bg-card/70">
+                    <p className="text-sm font-medium">{user?.first_name} {user?.last_name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <div className="p-1">
+                    <Link href="/dashboard" className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors" onClick={closeMenus}>
+                      <User size={16} />
+                      Dashboard
+                    </Link>
+                    <Link href="/profile" className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors" onClick={closeMenus}>
+                      <Settings size={16} />
+                      Profile Settings
+                    </Link>
+                    <button
+                      className="flex items-center gap-2 w-full p-2 text-sm hover:bg-destructive/10 text-destructive rounded-md transition-colors"
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Button asChild variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10 hover:text-white">
+                <Link href="/sign-in">Sign In</Link>
+              </Button>
+              <Button asChild size="sm" className="bg-primary hover:bg-primary/80">
+                <Link href="/sign-up">Sign Up</Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -81,6 +155,40 @@ const Navbar = () => {
             <MobileNavLink href="/contact" onClick={() => setIsMenuOpen(false)}>
               Contact
             </MobileNavLink>
+            
+            {isAuthenticated ? (
+              <>
+                <div className="h-px w-full bg-white/10 my-2"></div>
+                <MobileNavLink href="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                  Dashboard
+                </MobileNavLink>
+                <MobileNavLink href="/profile" onClick={() => setIsMenuOpen(false)}>
+                  Profile Settings
+                </MobileNavLink>
+                <button
+                  className="flex items-center py-3 px-2 text-white hover:text-destructive rounded-md transition-colors"
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <LogOut size={18} className="mr-2" />
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="h-px w-full bg-white/10 my-2"></div>
+                <div className="flex flex-col gap-2">
+                  <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white w-full">
+                    <Link href="/sign-in" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
+                  </Button>
+                  <Button asChild className="bg-primary hover:bg-primary/80 w-full">
+                    <Link href="/sign-up" onClick={() => setIsMenuOpen(false)}>Sign Up</Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </motion.div>
       )}

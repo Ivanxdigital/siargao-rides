@@ -24,6 +24,8 @@ const RentalShopCard = ({
   rating,
   reviewCount,
 }: RentalShopCardProps) => {
+  const fallbackImage = "https://placehold.co/600x400/1e3b8a/white?text=Shop+Image"
+  
   return (
     <motion.div 
       className="bg-card rounded-lg overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow"
@@ -33,7 +35,7 @@ const RentalShopCard = ({
       {/* Shop Image */}
       <div className="relative h-48 w-full">
         <Image
-          src={images[0] || '/placeholder.jpg'}
+          src={images?.[0] || fallbackImage}
           alt={name}
           fill
           className="object-cover"
@@ -63,10 +65,10 @@ const RentalShopCard = ({
 
         {/* Bike Preview Thumbnails - Just showing 2 small previews */}
         <div className="flex gap-2 mb-4">
-          {images.slice(0, 2).map((image, index) => (
+          {(images || []).slice(0, 2).map((image, index) => (
             <div key={index} className="relative h-14 w-20 rounded-md overflow-hidden">
               <Image
-                src={image || '/placeholder.jpg'}
+                src={image || fallbackImage}
                 alt={`${name} bike ${index + 1}`}
                 fill
                 className="object-cover"

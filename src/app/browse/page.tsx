@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import RentalShopCard from "@/components/RentalShopCard"
-import { Slider } from "@/components/ui/Slider"
 import { Sliders, ChevronDown, ChevronUp } from "lucide-react"
 
 // Temporary mock data for shops
@@ -10,7 +9,7 @@ const SHOPS = [
   {
     id: "shop1",
     name: "Island Riders",
-    images: ["/placeholder.jpg", "/placeholder.jpg"],
+    images: ["https://placehold.co/600x400/1e3b8a/white?text=Island+Riders", "https://placehold.co/600x400/1e3b8a/white?text=Island+Riders"],
     startingPrice: 400,
     rating: 4.7,
     reviewCount: 24,
@@ -19,7 +18,7 @@ const SHOPS = [
   {
     id: "shop2",
     name: "Siargao Wheels",
-    images: ["/placeholder.jpg", "/placeholder.jpg"],
+    images: ["https://placehold.co/600x400/1e3b8a/white?text=Siargao+Wheels", "https://placehold.co/600x400/1e3b8a/white?text=Siargao+Wheels"],
     startingPrice: 350,
     rating: 4.5,
     reviewCount: 18,
@@ -28,7 +27,7 @@ const SHOPS = [
   {
     id: "shop3",
     name: "Wave Cruisers",
-    images: ["/placeholder.jpg", "/placeholder.jpg"],
+    images: ["https://placehold.co/600x400/1e3b8a/white?text=Wave+Cruisers", "https://placehold.co/600x400/1e3b8a/white?text=Wave+Cruisers"],
     startingPrice: 450,
     rating: 4.8,
     reviewCount: 32,
@@ -37,7 +36,7 @@ const SHOPS = [
   {
     id: "shop4",
     name: "GL Rentals",
-    images: ["/placeholder.jpg", "/placeholder.jpg"],
+    images: ["https://placehold.co/600x400/1e3b8a/white?text=GL+Rentals", "https://placehold.co/600x400/1e3b8a/white?text=GL+Rentals"],
     startingPrice: 380,
     rating: 4.2,
     reviewCount: 12,
@@ -46,7 +45,7 @@ const SHOPS = [
   {
     id: "shop5",
     name: "Surf & Ride",
-    images: ["/placeholder.jpg", "/placeholder.jpg"],
+    images: ["https://placehold.co/600x400/1e3b8a/white?text=Surf+Ride", "https://placehold.co/600x400/1e3b8a/white?text=Surf+Ride"],
     startingPrice: 420,
     rating: 4.6,
     reviewCount: 28,
