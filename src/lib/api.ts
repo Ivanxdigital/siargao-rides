@@ -1,4 +1,6 @@
 import { supabase } from './supabase'
+import { supabaseUrl } from './supabase'
+import { createClient } from '@supabase/supabase-js'
 import { 
   BikeCategory, 
   Bike, 
@@ -62,21 +64,37 @@ export async function getShopById(id: string): Promise<RentalShop | null> {
 }
 
 export async function createShop(shop: Omit<RentalShop, 'id' | 'created_at' | 'updated_at' | 'is_verified'>): Promise<RentalShop | null> {
-  const { data, error } = await supabase
-    .from('rental_shops')
-    .insert({
-      ...shop,
-      is_verified: false
-    })
-    .select()
-    .single()
+  console.log('Creating shop with data:', JSON.stringify(shop, null, 2));
+  
+  try {
+    // Use regular Supabase client for now, we'll need a backend API for proper service role usage
+    const { data, error } = await supabase
+      .from('rental_shops')
+      .insert({
+        ...shop,
+        is_verified: false
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating shop:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      
+      // If we get a permission denied error, it's likely due to RLS
+      if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+        console.log('Permission denied - likely due to missing RLS policy for INSERT on rental_shops table');
+      }
+      
+      return null;
+    }
 
-  if (error) {
-    console.error('Error creating shop:', error)
-    return null
+    console.log('Shop created successfully:', data);
+    return data;
+  } catch (e) {
+    console.error('Exception caught in createShop:', e);
+    return null;
   }
-
-  return data
 }
 
 // Bike-related functions

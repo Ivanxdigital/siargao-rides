@@ -64,6 +64,20 @@ export default function RegisterShopPage() {
     try {
       setIsSubmitting(true)
       
+      // Check if we're using mock data mode
+      const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
+      
+      if (useMockData) {
+        // In mock data mode, we can skip the actual API calls
+        console.log('Using mock data mode - skipping actual API calls');
+        
+        // Simulate a delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setIsSubmitted(true);
+        return;
+      }
+      
       // Upload government ID
       let governmentIdUrl = null
       if (formData.governmentId) {

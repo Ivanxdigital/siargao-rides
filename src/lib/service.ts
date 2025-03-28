@@ -34,8 +34,28 @@ export async function getShopById(id: string): Promise<RentalShop | null> {
 }
 
 export async function createShop(shop: Omit<RentalShop, 'id' | 'created_at' | 'updated_at' | 'is_verified'>): Promise<RentalShop | null> {
-  // Always use real API for creation operations
-  return api.createShop(shop);
+  // Use our server API route to handle shop creation with admin privileges
+  try {
+    const response = await fetch('/api/shops', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(shop)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error creating shop:', errorData);
+      return null;
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error calling createShop API:', error);
+    return null;
+  }
 }
 
 // Bike-related functions

@@ -179,6 +179,10 @@ CREATE POLICY "Public rental shops are viewable by everyone"
 ON rental_shops FOR SELECT
 USING (true);
 
+CREATE POLICY "Authenticated users can create shops"
+ON rental_shops FOR INSERT
+WITH CHECK (auth.uid() IS NOT NULL);
+
 CREATE POLICY "Bikes are viewable by everyone"
 ON bikes FOR SELECT
 USING (true);
