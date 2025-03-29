@@ -33,7 +33,8 @@ export default function ShopVerificationPage() {
     }
   }, [isAuthenticated, isAdmin]);
 
-  // Add mock data for demonstration if no shops are found
+  // Add mock data for demonstration if no shops are found - COMMENTED OUT TO USE REAL DATA
+  /*
   useEffect(() => {
     if (!isLoadingShops && pendingShops.length === 0 && verifiedShops.length === 0) {
       // Only add mock data if no shops were found in the database
@@ -111,6 +112,7 @@ export default function ShopVerificationPage() {
       setVerifiedShops(mockVerifiedShops);
     }
   }, [isLoadingShops, pendingShops.length, verifiedShops.length]);
+  */
 
   const fetchShops = async () => {
     setIsLoadingShops(true);
@@ -157,7 +159,6 @@ export default function ShopVerificationPage() {
       // Check if it's a mock ID
       if (shopId.startsWith('mock-')) {
         // Handle mock data approval
-        // Move shop from pending to verified list in the UI
         const shop = pendingShops.find(s => s.id === shopId);
         if (shop) {
           setPendingShops(pendingShops.filter(s => s.id !== shopId));
@@ -169,17 +170,21 @@ export default function ShopVerificationPage() {
           setStatusMessage({ type: 'success', text: `Shop "${shop.name}" has been approved.` });
         }
       } else {
-        // Handle real data approval
-        const { error } = await supabase
-          .from('rental_shops')
-          .update({ 
-            is_verified: true,
-            updated_at: new Date().toISOString()
+        // Call our new API endpoint
+        const response = await fetch('/api/shops/verify', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            shopId,
+            approve: true
           })
-          .eq('id', shopId);
+        });
         
-        if (error) {
-          throw error;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to approve shop');
         }
         
         // Move shop from pending to verified list in the UI
@@ -211,21 +216,27 @@ export default function ShopVerificationPage() {
       // Check if it's a mock ID
       if (shopId.startsWith('mock-')) {
         // Handle mock data rejection
-        // Remove shop from the pending list in the UI
         const shop = pendingShops.find(s => s.id === shopId);
         if (shop) {
           setPendingShops(pendingShops.filter(s => s.id !== shopId));
           setStatusMessage({ type: 'success', text: `Shop application "${shop.name}" has been rejected.` });
         }
       } else {
-        // Handle real data rejection
-        const { error } = await supabase
-          .from('rental_shops')
-          .delete()
-          .eq('id', shopId);
+        // Call our new API endpoint
+        const response = await fetch('/api/shops/verify', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            shopId,
+            approve: false
+          })
+        });
         
-        if (error) {
-          throw error;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to reject shop');
         }
         
         // Remove shop from the pending list in the UI
