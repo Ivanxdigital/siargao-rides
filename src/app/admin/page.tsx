@@ -331,7 +331,7 @@ export default function AdminDashboardPage() {
                   Review and approve rental shop applications.
                 </p>
                 <Button className="w-full" asChild>
-                  <Link href="/admin/shops">Manage Shops</Link>
+                  <Link href="/admin/verification">Manage Applications</Link>
                 </Button>
               </div>
               
