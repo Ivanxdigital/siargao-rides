@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
@@ -14,7 +14,6 @@ export default function AdminDashboardPage() {
   const [shops, setShops] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isLoadingShops, setIsLoadingShops] = useState(false);
-  const supabase = createClientComponentClient();
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -36,12 +35,13 @@ export default function AdminDashboardPage() {
             .limit(10);
 
           if (error) {
-            console.error("Error fetching users:", error);
+            console.error("Error fetching users:", error.message || error);
           } else {
             setUsers(data || []);
           }
-        } catch (error) {
-          console.error("Error fetching users:", error);
+        } catch (error: any) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error("Error fetching users:", errorMessage);
         } finally {
           setIsLoadingUsers(false);
         }
@@ -49,7 +49,7 @@ export default function AdminDashboardPage() {
 
       fetchUsers();
     }
-  }, [isAuthenticated, isAdmin, supabase]);
+  }, [isAuthenticated, isAdmin]);
 
   // Fetch shops
   useEffect(() => {
@@ -64,12 +64,13 @@ export default function AdminDashboardPage() {
             .limit(10);
 
           if (error) {
-            console.error("Error fetching shops:", error);
+            console.error("Error fetching shops:", error.message || error);
           } else {
             setShops(data || []);
           }
-        } catch (error) {
-          console.error("Error fetching shops:", error);
+        } catch (error: any) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error("Error fetching shops:", errorMessage);
         } finally {
           setIsLoadingShops(false);
         }
@@ -77,7 +78,7 @@ export default function AdminDashboardPage() {
 
       fetchShops();
     }
-  }, [isAuthenticated, isAdmin, supabase]);
+  }, [isAuthenticated, isAdmin]);
 
   // Show loading state while checking authentication
   if (isLoading) {
