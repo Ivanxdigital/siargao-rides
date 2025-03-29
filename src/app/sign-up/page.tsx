@@ -11,7 +11,8 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState<"tourist" | "shop_owner" | "admin">("tourist");
+  // Always set role to "tourist" by default, no longer changeable by user
+  const role: "tourist" = "tourist";
   const [formError, setFormError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -39,6 +40,7 @@ export default function SignUpPage() {
     }
     
     try {
+      // Always register with "tourist" role
       const { error } = await register(email, password, firstName, lastName, role);
       if (error) {
         setApiError(error.message || "An error occurred during registration");
@@ -148,48 +150,9 @@ export default function SignUpPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Account Type
-                </label>
-                <div className="flex gap-4 flex-wrap">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="tourist"
-                      checked={role === "tourist"}
-                      onChange={() => setRole("tourist")}
-                      className="mr-2"
-                    />
-                    Tourist (Rent bikes)
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="shop_owner"
-                      checked={role === "shop_owner"}
-                      onChange={() => setRole("shop_owner")}
-                      className="mr-2"
-                    />
-                    Shop Owner (List bikes)
-                  </label>
-                  
-                  {/* Only show admin option in development environment */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="role"
-                        value="admin"
-                        checked={role === "admin"}
-                        onChange={() => setRole("admin")}
-                        className="mr-2"
-                      />
-                      Admin
-                    </label>
-                  )}
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  Create an account to rent motorbikes. Want to list your bikes? You can register as a shop owner from your dashboard after signing up.
+                </p>
               </div>
               
               <div>
