@@ -191,7 +191,7 @@ export default function Home() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-20 container mx-auto h-full flex flex-col items-center justify-center px-4 py-16 text-center pt-[7rem] md:pt-[8rem]">
+        <div className="relative z-20 container mx-auto h-full flex flex-col items-center justify-center px-4 py-16 pb-24 sm:pb-16 text-center pt-[7rem] md:pt-[8rem]">
           <div className="bg-background/10 backdrop-blur-md p-6 sm:p-8 md:p-8 rounded-2xl max-w-4xl mx-auto border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.2)] transition-all duration-300">
             <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white drop-shadow-md tracking-tight">
