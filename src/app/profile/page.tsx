@@ -1,21 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Avatar } from "@/components/ui/Avatar";
+import { supabase } from "@/lib/supabase";
+import { Camera, Upload, X } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null
   );
-  const supabase = createClientComponentClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -29,8 +34,66 @@ export default function ProfilePage() {
     if (user) {
       setFirstName(user.user_metadata?.first_name || "");
       setLastName(user.user_metadata?.last_name || "");
+      setAvatarUrl(user.user_metadata?.avatar_url || null);
     }
   }, [user]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      // Create a preview URL
+      const objectUrl = URL.createObjectURL(file);
+      setAvatarUrl(objectUrl);
+    }
+  };
+
+  const removeSelectedImage = () => {
+    setAvatarFile(null);
+    if (!user?.user_metadata?.avatar_url) {
+      setAvatarUrl(null);
+    } else {
+      // Revert to the current saved avatar
+      setAvatarUrl(user.user_metadata.avatar_url);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadAvatar = async (): Promise<string | null> => {
+    if (!avatarFile) return user?.user_metadata?.avatar_url || null;
+    
+    setUploading(true);
+    try {
+      const fileExt = avatarFile.name.split('.').pop();
+      const fileName = `avatar-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${user?.id}/${fileName}`;
+      
+      // Upload the file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('user-avatars')
+        .upload(filePath, avatarFile);
+        
+      if (uploadError) throw uploadError;
+      
+      // Get the public URL
+      const { data } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(filePath);
+        
+      return data.publicUrl;
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error.message);
+      throw error;
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +101,18 @@ export default function ProfilePage() {
     setMessage(null);
 
     try {
+      // Upload avatar if a new one was selected
+      let newAvatarUrl = user?.user_metadata?.avatar_url || null;
+      if (avatarFile) {
+        newAvatarUrl = await uploadAvatar();
+      }
+
+      // Update user profile with new data
       const { error } = await supabase.auth.updateUser({
         data: {
           first_name: firstName,
           last_name: lastName,
+          avatar_url: newAvatarUrl,
         },
       });
 
@@ -52,11 +123,13 @@ export default function ProfilePage() {
           type: "success",
           text: "Profile updated successfully!",
         });
+        // Reset the file input
+        setAvatarFile(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       setMessage({
         type: "error",
-        text: "An unexpected error occurred. Please try again.",
+        text: error.message || "An unexpected error occurred. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -101,6 +174,47 @@ export default function ProfilePage() {
             <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
               <form onSubmit={handleSubmit}>
                 <div className="space-y-6">
+                  {/* Profile Picture */}
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="relative group">
+                      <div 
+                        onClick={handleAvatarClick}
+                        className="cursor-pointer group-hover:ring-2 ring-primary transition-all"
+                      >
+                        <Avatar 
+                          src={avatarUrl} 
+                          alt={`${firstName} ${lastName}`} 
+                          size="lg" 
+                        />
+                      </div>
+                      <div 
+                        className="absolute inset-0 bg-black bg-opacity-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        onClick={handleAvatarClick}
+                      >
+                        <Upload className="text-white" size={20} />
+                      </div>
+                      {avatarFile && (
+                        <button 
+                          type="button"
+                          onClick={removeSelectedImage}
+                          className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-1 shadow-md"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Click to upload profile picture
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="firstName" className="block text-sm font-medium mb-2">
@@ -146,8 +260,8 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="pt-4">
-                    <Button type="submit" disabled={loading}>
-                      {loading ? "Saving..." : "Save Changes"}
+                    <Button type="submit" disabled={loading || uploading}>
+                      {loading || uploading ? "Saving..." : "Save Changes"}
                     </Button>
                   </div>
                 </div>
