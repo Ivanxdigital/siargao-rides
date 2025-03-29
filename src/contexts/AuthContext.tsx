@@ -13,7 +13,6 @@ import {
   createClientComponentClient
 } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from "next/navigation";
-import { createClient } from '@supabase/supabase-js'
 
 interface AuthContextType {
   user: User | null;
@@ -46,12 +45,6 @@ export const useAuth = () => useContext(AuthContext);
 interface AuthProviderProps {
   children: ReactNode;
 }
-
-// Initialize service role client
-const serviceRoleClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);

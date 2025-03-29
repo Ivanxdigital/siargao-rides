@@ -1,18 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-// Initialize service role client
-const serviceRoleClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+import { supabaseAdmin } from '@/lib/admin'
 
 export async function POST(request: Request) {
   try {
     const { userId, email, firstName, lastName, role } = await request.json()
 
-    // Create a record in our users table using service role client
-    const { error: dbError } = await serviceRoleClient
+    // Create a record in our users table using admin client
+    const { error: dbError } = await supabaseAdmin
       .from('users')
       .insert({
         id: userId,
@@ -25,7 +19,7 @@ export async function POST(request: Request) {
     if (dbError) {
       console.error('Error creating user record:', dbError)
       // If we fail to create the user record, we should delete the auth user
-      await serviceRoleClient.auth.admin.deleteUser(userId)
+      await supabaseAdmin.auth.admin.deleteUser(userId)
       return NextResponse.json({ error: 'Failed to create user record' }, { status: 500 })
     }
 
