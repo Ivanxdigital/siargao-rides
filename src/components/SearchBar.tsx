@@ -31,6 +31,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [endDate, setEndDate] = useState("")
   const [budget, setBudget] = useState(500) // Default budget in PHP
   const [bikeType, setBikeType] = useState("Any Type")
+  const [activeField, setActiveField] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,12 +45,12 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-md border border-border p-4 sm:p-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="bg-card/90 backdrop-blur-md rounded-xl shadow-lg border border-white/20 p-4 transition-all duration-300">
+      <form onSubmit={handleSubmit} className="space-y-3">
         {/* Location */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <Search size={18} />
+        <div className={`space-y-1 transition-all duration-200 ${activeField === 'location' ? 'scale-[1.02]' : ''}`}>
+          <label className="text-xs font-medium flex items-center gap-1 text-primary">
+            <Search size={14} className="text-primary" />
             Location
           </label>
           <input
@@ -57,81 +58,100 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             placeholder="Enter hotel or area in Siargao"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            onFocus={() => setActiveField('location')}
+            onBlur={() => setActiveField(null)}
+            className="w-full px-3 py-2 bg-background/80 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
           />
         </div>
 
         {/* Date Range */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Calendar size={18} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className={`space-y-1 transition-all duration-200 ${activeField === 'startDate' ? 'scale-[1.02]' : ''}`}>
+            <label className="text-xs font-medium flex items-center gap-1 text-primary">
+              <Calendar size={14} className="text-primary" />
               Start Date
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              onFocus={() => setActiveField('startDate')}
+              onBlur={() => setActiveField(null)}
+              className="w-full px-3 py-2 bg-background/80 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Calendar size={18} />
+          <div className={`space-y-1 transition-all duration-200 ${activeField === 'endDate' ? 'scale-[1.02]' : ''}`}>
+            <label className="text-xs font-medium flex items-center gap-1 text-primary">
+              <Calendar size={14} className="text-primary" />
               End Date
             </label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              onFocus={() => setActiveField('endDate')}
+              onBlur={() => setActiveField(null)}
+              className="w-full px-3 py-2 bg-background/80 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
             />
           </div>
         </div>
 
-        {/* Budget Slider */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <DollarSign size={18} />
-            Daily Budget: ₱{budget}
-          </label>
-          <input
-            type="range"
-            min="100"
-            max="2000"
-            step="50"
-            value={budget}
-            onChange={(e) => setBudget(parseInt(e.target.value))}
-            className="w-full appearance-none h-2 bg-muted rounded-full outline-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>₱100</span>
-            <span>₱2000</span>
+        {/* Budget and Bike Type in a grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Budget Slider */}
+          <div className={`space-y-2 transition-all duration-200 ${activeField === 'budget' ? 'scale-[1.02]' : ''}`}>
+            <label className="text-xs font-medium flex items-center gap-1 text-primary">
+              <DollarSign size={14} className="text-primary" />
+              <span>Daily Budget:</span>
+              <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-md">₱{budget}</span>
+            </label>
+            <input
+              type="range"
+              min="100"
+              max="2000"
+              step="50"
+              value={budget}
+              onChange={(e) => setBudget(parseInt(e.target.value))}
+              onFocus={() => setActiveField('budget')}
+              onBlur={() => setActiveField(null)}
+              className="w-full h-1.5 bg-primary/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+            />
+            <div className="flex justify-between text-[10px] text-primary/70">
+              <span>₱100</span>
+              <span>₱2000</span>
+            </div>
+          </div>
+
+          {/* Bike Type */}
+          <div className={`space-y-1 transition-all duration-200 ${activeField === 'bikeType' ? 'scale-[1.02]' : ''}`}>
+            <label className="text-xs font-medium flex items-center gap-1 text-primary">
+              <Bike size={14} className="text-primary" />
+              Bike Type
+            </label>
+            <select
+              value={bikeType}
+              onChange={(e) => setBikeType(e.target.value)}
+              onFocus={() => setActiveField('bikeType')}
+              onBlur={() => setActiveField(null)}
+              className="w-full px-3 py-2 bg-background/80 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:0.8em]"
+              style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")` }}
+            >
+              {bikeTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* Bike Type */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <Bike size={18} />
-            Bike Type
-          </label>
-          <select
-            value={bikeType}
-            onChange={(e) => setBikeType(e.target.value)}
-            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {bikeTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Submit Button */}
-        <Button type="submit" className="w-full">
-          Search Motorbikes
+        <Button 
+          type="submit" 
+          className="w-full py-2 text-sm font-medium bg-primary hover:bg-primary/90 transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] rounded-lg shadow-md hover:shadow-lg"
+        >
+          <Search size={14} className="mr-1" />
+          Find Your Ride
         </Button>
       </form>
     </div>

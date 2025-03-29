@@ -155,10 +155,10 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[100vh] w-full overflow-hidden -mt-0">
+      <section className="relative min-h-screen max-h-[800px] w-full overflow-hidden">
         {/* YouTube Video Background */}
         <div className="absolute inset-0 w-full h-full">
-          <div className="absolute inset-0 bg-black/60 z-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10"></div>
           <div className="relative w-full h-full overflow-hidden">
             {/* Video container - iframe will be dynamically inserted here */}
             <div ref={videoContainerRef} className="w-full h-full"></div>
@@ -166,22 +166,49 @@ export default function Home() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-20 container mx-auto h-full flex flex-col items-center justify-center px-4 py-12 text-center pt-28 md:pt-32">
-          <div className="bg-background/30 backdrop-blur-sm p-8 rounded-lg max-w-5xl mx-auto">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white">
-              Explore Siargao on Two Wheels
-            </h1>
-            <p className="text-lg md:text-xl max-w-2xl mb-8 text-white/80 mx-auto">
-              Find and book the perfect motorbike from local rental shops for your island adventure
-            </p>
+        <div className="relative z-20 container mx-auto h-full flex flex-col items-center justify-center px-4 py-16 text-center pt-[7rem] md:pt-[8rem]">
+          <div className="bg-background/10 backdrop-blur-md p-6 sm:p-8 md:p-8 rounded-2xl max-w-4xl mx-auto border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.2)] transition-all duration-300">
+            <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white drop-shadow-md tracking-tight">
+                Explore Siargao on Two Wheels
+              </h1>
+              <p className="text-base md:text-lg max-w-2xl mb-6 text-white/90 mx-auto leading-relaxed">
+                Find and book the perfect motorbike from local rental shops for your island adventure
+              </p>
+            </div>
 
             {/* Search Bar Component */}
-            <div className="w-full max-w-4xl mx-auto mt-8">
+            <div className="w-full max-w-3xl mx-auto mt-2 transition-all duration-300 hover:transform hover:scale-[1.01] animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
               <SearchBar onSearch={handleSearch} />
             </div>
           </div>
         </div>
+
+        {/* Scroll Down Indicator */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center animate-bounce">
+          <span className="text-white/80 text-xs mb-1">Scroll Down</span>
+          <svg className="w-5 h-5 text-white/80" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </div>
       </section>
+
+      {/* Add CSS keyframes for animations */}
+      <style jsx global>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+      `}</style>
 
       {/* Featured Shops Section */}
       <section className="py-16 container mx-auto px-4">
