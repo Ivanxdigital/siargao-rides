@@ -22,6 +22,7 @@ export default function Home() {
   const [shops, setShops] = useState<ShopCardData[]>([])
   const [bikes, setBikes] = useState<Bike[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<ShopCardData[] | null>(null)
   const [videoLoaded, setVideoLoaded] = useState(false)
   const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -33,6 +34,8 @@ export default function Home() {
     async function fetchData() {
       try {
         setLoading(true)
+        setError(null)
+        
         // Fetch shops and bikes
         const shopsData = await service.getShops()
         const bikesData = await service.getBikes()
@@ -75,9 +78,14 @@ export default function Home() {
         )
         
         setShops(shopCardData)
-        setLoading(false)
-      } catch (error) {
-        console.error("Error fetching data:", error)
+      } catch (error: any) {
+        console.error("Error fetching data:", {
+          name: error?.name || 'Unknown Error',
+          message: error?.message || 'An unknown error occurred',
+          stack: error?.stack || 'No stack trace available'
+        })
+        setError(error?.message || 'Failed to load data. Please try again later.')
+      } finally {
         setLoading(false)
       }
     }
@@ -184,6 +192,16 @@ export default function Home() {
         {loading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading shops...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80 transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         ) : (
           <>

@@ -13,6 +13,7 @@ import {
   createClientComponentClient
 } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from "next/navigation";
+import { createClient } from '@supabase/supabase-js'
 
 interface AuthContextType {
   user: User | null;
@@ -45,6 +46,12 @@ export const useAuth = () => useContext(AuthContext);
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+// Initialize service role client
+const serviceRoleClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+)
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
@@ -120,27 +127,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
   ) => {
     setIsLoading(true);
     
-    // Sign up the user
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          role: role,
+    try {
+      // Sign up the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            role: role,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    
-    setIsLoading(false);
-    
-    if (!error) {
+      });
+      
+      if (authError) {
+        throw authError;
+      }
+
+      if (authData.user) {
+        // Create a record in our users table via API route
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: authData.user.id,
+            email,
+            firstName,
+            lastName,
+            role,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to create user record');
+        }
+      }
+      
+      setIsLoading(false);
       router.push("/verify-email");
+      return { error: null };
+    } catch (error) {
+      setIsLoading(false);
+      return { error };
     }
-    
-    return { error };
   };
 
   const signOut = async () => {

@@ -35,17 +35,40 @@ export async function getCurrentUser(): Promise<User | null> {
 
 // Shop-related functions
 export async function getShops(): Promise<RentalShop[]> {
-  const { data, error } = await supabase
-    .from('rental_shops')
-    .select('*')
-    .order('name')
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client is not initialized')
+    }
 
-  if (error) {
-    console.error('Error fetching shops:', error)
-    return []
+    const { data, error } = await supabase
+      .from('rental_shops')
+      .select('*')
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching shops:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
+      throw error
+    }
+
+    if (!data) {
+      console.log('No shops found')
+      return []
+    }
+
+    return data
+  } catch (e: any) {
+    console.error('Exception caught in getShops:', {
+      name: e?.name || 'Unknown Error',
+      message: e?.message || 'An unknown error occurred',
+      stack: e?.stack || 'No stack trace available'
+    })
+    throw e
   }
-
-  return data
 }
 
 export async function getShopById(id: string): Promise<RentalShop | null> {
@@ -105,44 +128,67 @@ export async function getBikes(filters?: {
   max_price?: number
   is_available?: boolean
 }): Promise<Bike[]> {
-  let query = supabase.from('bikes').select(`
-    *,
-    bike_images(*)
-  `)
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client is not initialized')
+    }
 
-  // Apply filters if provided
-  if (filters?.shop_id) {
-    query = query.eq('shop_id', filters.shop_id)
+    let query = supabase.from('bikes').select(`
+      *,
+      bike_images(*)
+    `)
+
+    // Apply filters if provided
+    if (filters?.shop_id) {
+      query = query.eq('shop_id', filters.shop_id)
+    }
+
+    if (filters?.category) {
+      query = query.eq('category', filters.category)
+    }
+
+    if (filters?.is_available !== undefined) {
+      query = query.eq('is_available', filters.is_available)
+    }
+
+    if (filters?.min_price !== undefined) {
+      query = query.gte('price_per_day', filters.min_price)
+    }
+
+    if (filters?.max_price !== undefined) {
+      query = query.lte('price_per_day', filters.max_price)
+    }
+
+    const { data, error } = await query.order('price_per_day')
+
+    if (error) {
+      console.error('Error fetching bikes:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
+      throw error
+    }
+
+    if (!data) {
+      console.log('No bikes found')
+      return []
+    }
+
+    // Transform the data to match our type
+    return data.map((bike: any) => ({
+      ...bike,
+      images: bike.bike_images
+    }))
+  } catch (e: any) {
+    console.error('Exception caught in getBikes:', {
+      name: e?.name || 'Unknown Error',
+      message: e?.message || 'An unknown error occurred',
+      stack: e?.stack || 'No stack trace available'
+    })
+    throw e
   }
-
-  if (filters?.category) {
-    query = query.eq('category', filters.category)
-  }
-
-  if (filters?.is_available !== undefined) {
-    query = query.eq('is_available', filters.is_available)
-  }
-
-  if (filters?.min_price !== undefined) {
-    query = query.gte('price_per_day', filters.min_price)
-  }
-
-  if (filters?.max_price !== undefined) {
-    query = query.lte('price_per_day', filters.max_price)
-  }
-
-  const { data, error } = await query.order('price_per_day')
-
-  if (error) {
-    console.error('Error fetching bikes:', error)
-    return []
-  }
-
-  // Transform the data to match our type
-  return data.map((bike: any) => ({
-    ...bike,
-    images: bike.bike_images
-  }))
 }
 
 export async function getBikeById(id: string): Promise<Bike | null> {

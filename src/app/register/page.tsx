@@ -78,9 +78,12 @@ export default function RegisterShopPage() {
         return;
       }
       
+      console.log('Starting shop registration process...');
+      
       // Upload government ID
       let governmentIdUrl = null
       if (formData.governmentId) {
+        console.log('Uploading government ID...');
         const { url, error: uploadError } = await uploadFile(
           formData.governmentId, 
           'shop-documents', 
@@ -88,10 +91,12 @@ export default function RegisterShopPage() {
         )
         
         if (uploadError) {
+          console.error('Government ID upload error:', uploadError);
           throw new Error(`Failed to upload government ID: ${uploadError.message}`)
         }
         
         governmentIdUrl = url
+        console.log('Government ID uploaded successfully:', governmentIdUrl);
       } else {
         throw new Error("Government ID is required")
       }
@@ -99,6 +104,7 @@ export default function RegisterShopPage() {
       // Upload business permit (optional)
       let businessPermitUrl = null
       if (formData.businessPermit) {
+        console.log('Uploading business permit...');
         const { url, error: uploadError } = await uploadFile(
           formData.businessPermit, 
           'shop-documents', 
@@ -106,13 +112,24 @@ export default function RegisterShopPage() {
         )
         
         if (uploadError) {
+          console.error('Business permit upload error:', uploadError);
           throw new Error(`Failed to upload business permit: ${uploadError.message}`)
         }
         
         businessPermitUrl = url
+        console.log('Business permit uploaded successfully:', businessPermitUrl);
       }
       
       // Create the shop in the database
+      console.log('Creating shop with data:', {
+        owner_id: user.id,
+        name: formData.shopName,
+        address: formData.address,
+        city: "Siargao",
+        phone_number: formData.phone,
+        email: formData.email,
+      });
+      
       const newShop = await createShop({
         owner_id: user.id,
         name: formData.shopName,
@@ -124,9 +141,11 @@ export default function RegisterShopPage() {
       })
       
       if (!newShop) {
+        console.error('Failed to create shop - no error thrown but returned null');
         throw new Error("Failed to create shop")
       }
       
+      console.log('Shop created successfully:', newShop);
       setIsSubmitted(true)
     } catch (err) {
       console.error("Error registering shop:", err)
