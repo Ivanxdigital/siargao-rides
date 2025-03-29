@@ -187,12 +187,20 @@ export default function ShopVerificationPage() {
           throw new Error(errorData.error || 'Failed to approve shop');
         }
         
+        // Get response data
+        const responseData = await response.json();
+        
         // Move shop from pending to verified list in the UI
         const shop = pendingShops.find(s => s.id === shopId);
         if (shop) {
           setPendingShops(pendingShops.filter(s => s.id !== shopId));
           setVerifiedShops([{ ...shop, is_verified: true }, ...verifiedShops]);
-          setStatusMessage({ type: 'success', text: `Shop "${shop.name}" has been approved.` });
+          setStatusMessage({ 
+            type: 'success', 
+            text: responseData.user_role_updated 
+              ? `Shop "${shop.name}" has been approved and owner now has shop_owner role.` 
+              : `Shop "${shop.name}" has been approved.`
+          });
         }
       }
     } catch (error: any) {
