@@ -25,7 +25,24 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<ShopCardData[] | null>(null)
   const [videoLoaded, setVideoLoaded] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const videoContainerRef = useRef<HTMLDivElement>(null)
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    // Set initial value
+    checkIfMobile()
+    
+    // Add event listener
+    window.addEventListener('resize', checkIfMobile)
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkIfMobile)
+  }, [])
 
   // YouTube video setup
   const videoId = "l6K6FgR2xB8"
@@ -95,7 +112,7 @@ export default function Home() {
 
   // Initialize the YouTube iframe after the component mounts (client-side only)
   useEffect(() => {
-    if (!videoContainerRef.current) return;
+    if (!videoContainerRef.current || isMobile) return;
 
     // Clear out any existing content
     videoContainerRef.current.innerHTML = '';
@@ -114,7 +131,7 @@ export default function Home() {
     
     // Append to container
     videoContainerRef.current.appendChild(iframe);
-  }, [videoId]);
+  }, [videoId, isMobile]);
 
   const handleSearch = async (params: SearchParams) => {
     console.log("Search params:", params)
@@ -156,8 +173,16 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative min-h-screen max-h-[800px] w-full overflow-hidden">
-        {/* YouTube Video Background */}
-        <div className="absolute inset-0 w-full h-full">
+        {/* Mobile Gradient Background */}
+        <div className="absolute inset-0 w-full h-full md:hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950">
+          {/* Mobile decoration elements */}
+          <div className="absolute top-0 right-0 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/4 left-1/4 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        </div>
+        
+        {/* YouTube Video Background - Desktop Only */}
+        <div className="absolute inset-0 w-full h-full hidden md:block">
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10"></div>
           <div className="relative w-full h-full overflow-hidden">
             {/* Video container - iframe will be dynamically inserted here */}
