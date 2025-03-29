@@ -32,6 +32,29 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // Verify that the user exists and has a verified email
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('email_confirmed_at')
+      .eq('id', shopData.owner_id)
+      .single();
+
+    if (userError || !userData) {
+      console.error('API: User not found:', userError);
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!userData.email_confirmed_at) {
+      console.error('API: User email not verified');
+      return NextResponse.json(
+        { error: 'Please verify your email address before registering a shop' },
+        { status: 403 }
+      );
+    }
     
     // Insert the shop data
     const { data, error } = await supabaseAdmin

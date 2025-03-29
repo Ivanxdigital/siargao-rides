@@ -28,12 +28,16 @@ export default function RegisterShopPage() {
     businessPermit: null as File | null
   })
   
-  // Check if user is authenticated
+  // Check if user is authenticated and email is verified
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push("/sign-in?callback=/register")
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push("/sign-in?callback=/register")
+      } else if (!user?.email_confirmed_at) {
+        setError("Please verify your email address before registering a shop. Check your inbox for the verification link.")
+      }
     }
-  }, [authLoading, isAuthenticated, router])
+  }, [authLoading, isAuthenticated, router, user])
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -58,6 +62,11 @@ export default function RegisterShopPage() {
     
     if (!user) {
       setError("You must be logged in to register a shop")
+      return
+    }
+
+    if (!user.email_confirmed_at) {
+      setError("Please verify your email address before registering a shop")
       return
     }
     
