@@ -209,8 +209,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Scroll Down Indicator */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center animate-bounce">
+        {/* Scroll Down Indicator - Hidden on mobile */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 hidden md:flex flex-col items-center animate-bounce">
           <span className="text-white/80 text-xs mb-1">Scroll Down</span>
           <svg className="w-5 h-5 text-white/80" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
             <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
