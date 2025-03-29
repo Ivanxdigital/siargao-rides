@@ -11,12 +11,22 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 export default function RegisterShopPage() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, resendVerificationEmail } = useAuth()
   const router = useRouter()
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isResending, setIsResending] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
+  const [verificationEmail, setVerificationEmail] = useState(user?.email || "")
+  const [showDebugInfo, setShowDebugInfo] = useState(false)
+  const [debugDetails, setDebugDetails] = useState<any>(null)
+  const [manualVerificationRequested, setManualVerificationRequested] = useState(false)
+  const [creatingUserRecord, setCreatingUserRecord] = useState(false)
+  const [userRecordCreated, setUserRecordCreated] = useState(false)
+  const [checkingUserRecord, setCheckingUserRecord] = useState(false)
+  const [userRecordExists, setUserRecordExists] = useState<boolean | null>(null)
   
   const [formData, setFormData] = useState({
     fullName: "",
@@ -38,6 +48,13 @@ export default function RegisterShopPage() {
       }
     }
   }, [authLoading, isAuthenticated, router, user])
+  
+  // Update verification email when user changes
+  useEffect(() => {
+    if (user?.email && !verificationEmail) {
+      setVerificationEmail(user.email)
+    }
+  }, [user, verificationEmail])
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -139,23 +156,34 @@ export default function RegisterShopPage() {
         email: formData.email,
       });
       
-      const newShop = await createShop({
-        owner_id: user.id,
-        name: formData.shopName,
-        description: `Motorbike rental shop in Siargao. Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
-        address: formData.address || "Siargao Island",
-        city: "Siargao",
-        phone_number: formData.phone,
-        email: formData.email,
-      })
-      
-      if (!newShop) {
-        console.error('Failed to create shop - no error thrown but returned null');
-        throw new Error("Failed to create shop")
+      try {
+        const newShop = await createShop({
+          owner_id: user.id,
+          name: formData.shopName,
+          description: `Motorbike rental shop in Siargao. Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+          address: formData.address || "Siargao Island",
+          city: "Siargao",
+          phone_number: formData.phone,
+          email: formData.email,
+        })
+        
+        if (!newShop) {
+          console.error('Failed to create shop - no error thrown but returned null');
+          throw new Error("Failed to create shop")
+        }
+        
+        console.log('Shop created successfully:', newShop);
+        setIsSubmitted(true)
+      } catch (shopError) {
+        // Check if this is a "User not found" error
+        if (shopError instanceof Error && 
+            (shopError.message.includes('User not found') || 
+            shopError.message.includes('Failed to create shop'))) {
+          setError("User not found in the database. Please create a user record first.")
+        } else {
+          throw shopError; // Re-throw if it's a different error
+        }
       }
-      
-      console.log('Shop created successfully:', newShop);
-      setIsSubmitted(true)
     } catch (err) {
       console.error("Error registering shop:", err)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
@@ -163,6 +191,180 @@ export default function RegisterShopPage() {
       setIsSubmitting(false)
     }
   }
+  
+  const handleResendVerification = async () => {
+    if (!verificationEmail) {
+      setError("Please provide an email address to send the verification link")
+      return
+    }
+    
+    setIsResending(true)
+    setResendSuccess(false)
+    setDebugDetails(null)
+    setError(null)
+    
+    const { success, error, details } = await resendVerificationEmail(verificationEmail)
+    
+    setIsResending(false)
+    setDebugDetails(details)
+    
+    if (success) {
+      setResendSuccess(true)
+    } else {
+      setError(`Verification email failed: ${error?.message || 'Unknown error'}`)
+    }
+  }
+  
+  const handleRequestManualVerification = async () => {
+    try {
+      // Send request to backend for manual verification
+      await fetch('/api/auth/request-manual-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: verificationEmail,
+          userId: user?.id,
+        }),
+      });
+      setManualVerificationRequested(true);
+    } catch (err) {
+      console.error("Error requesting manual verification:", err);
+      setError("Failed to request manual verification. Please try again later.");
+    }
+  }
+  
+  const handleCreateUserRecord = async () => {
+    try {
+      setCreatingUserRecord(true)
+      setError(null)
+      
+      console.log('Attempting to create user record for:', user?.id)
+      
+      const response = await fetch('/api/auth/create-missing-user-record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: user?.user_metadata?.first_name || '',
+          lastName: user?.user_metadata?.last_name || '',
+          role: 'shop_owner',
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        console.error('Error response from API:', data)
+        throw new Error(data.error || 'Failed to create user record')
+      }
+      
+      setUserRecordCreated(true)
+      console.log('User record created successfully:', data)
+      
+      // Display success message for 2 seconds, then refresh
+      setTimeout(() => {
+        window.location.reload() // Use full page reload to ensure all states are reset
+      }, 2000)
+    } catch (err) {
+      console.error('Error creating user record:', err)
+      
+      // Show specific error message
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(`Failed to create user record: ${errorMessage}. Please try the backup method.`)
+      
+      // Add a button to retry in the error message
+      setUserRecordCreated(false)
+    } finally {
+      setCreatingUserRecord(false)
+    }
+  }
+  
+  const handleCreateUserRecordBackup = async () => {
+    try {
+      setCreatingUserRecord(true)
+      setError(null)
+      
+      console.log('Attempting to create user record using backup method for:', user?.id)
+      
+      const response = await fetch('/api/auth/create-user-backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        console.error('Error response from backup API:', data)
+        throw new Error(data.error || 'Failed to create user record with backup method')
+      }
+      
+      setUserRecordCreated(true)
+      console.log('User record created successfully with backup method:', data)
+      
+      // Display success message for 2 seconds, then refresh
+      setTimeout(() => {
+        window.location.reload() // Use full page reload to ensure all states are reset
+      }, 2000)
+    } catch (err) {
+      console.error('Error creating user record with backup method:', err)
+      
+      // Show specific error message for the backup method
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(`Failed to create user record with backup method: ${errorMessage}. Please contact support.`)
+    } finally {
+      setCreatingUserRecord(false)
+    }
+  }
+  
+  // Check if user has a database record
+  const checkUserRecord = async () => {
+    if (!user?.id) return
+    
+    try {
+      setCheckingUserRecord(true)
+      
+      // Make a simple API call to check if the user record exists
+      const response = await fetch(`/api/users/check?userId=${user.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setUserRecordExists(data.exists)
+        
+        // If user record doesn't exist, show the message
+        if (!data.exists) {
+          setError("User not found in the database. Please create a user record first.")
+        }
+      } else {
+        // If the endpoint doesn't exist, we'll assume the record doesn't exist
+        // This is a fallback in case the check endpoint isn't implemented
+        setUserRecordExists(false)
+        setError("User not found in the database. Please create a user record first.")
+      }
+    } catch (err) {
+      console.error('Error checking user record:', err)
+      // If there's an error checking, we'll just continue and let the form submission handle it
+      setUserRecordExists(null)
+    } finally {
+      setCheckingUserRecord(false)
+    }
+  }
+  
+  // Call checkUserRecord when the user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user && !checkingUserRecord && userRecordExists === null) {
+      checkUserRecord()
+    }
+  }, [isAuthenticated, user, checkingUserRecord, userRecordExists])
   
   if (isSubmitted) {
     return (
@@ -198,12 +400,138 @@ export default function RegisterShopPage() {
         </div>
         
         <div className="container mx-auto px-4 py-8">
-          {error && (
+          {userRecordExists === false && (
+            <div className="bg-blue-100 border border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-300 rounded-md p-4 mb-6">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <Info size={20} className="mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Your account is missing a database record</p>
+                    <p className="text-sm mt-1">
+                      Your account was authenticated but we need to create a database record for you
+                      before you can register a shop. This is a one-time step.
+                    </p>
+                  </div>
+                </div>
+                
+                {userRecordCreated ? (
+                  <div className="ml-8 text-green-600 dark:text-green-400 text-sm font-medium">
+                    User record created successfully! Refreshing the page...
+                  </div>
+                ) : (
+                  <div className="ml-8 space-y-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleCreateUserRecord}
+                      disabled={creatingUserRecord}
+                      className="w-fit mr-2"
+                    >
+                      {creatingUserRecord ? "Creating..." : "Create User Record"}
+                    </Button>
+                    
+                    {error && error.includes("Failed to create user record") && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleCreateUserRecordBackup}
+                        disabled={creatingUserRecord}
+                        className="w-fit bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-800"
+                      >
+                        Try Backup Method
+                      </Button>
+                    )}
+                    
+                    {error && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                        {error}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {error && error.includes("verify your email") ? (
+            <div className="bg-amber-100 border border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-800/50 dark:text-amber-300 rounded-md p-4 mb-6">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                  <p>{error}</p>
+                </div>
+                
+                {manualVerificationRequested ? (
+                  <div className="ml-8 text-green-600 dark:text-green-400 text-sm font-medium">
+                    Manual verification requested. Our team will review your request and contact you soon.
+                  </div>
+                ) : resendSuccess ? (
+                  <div className="ml-8 text-green-600 dark:text-green-400 text-sm font-medium">
+                    Verification email sent to {verificationEmail}! Please check your inbox.
+                    <div className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                      If you don't see it, check your spam folder or try a different email address.
+                    </div>
+                  </div>
+                ) : (
+                  <div className="ml-8 space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+                      <input
+                        type="email"
+                        value={verificationEmail}
+                        onChange={(e) => setVerificationEmail(e.target.value)}
+                        placeholder="Enter email address"
+                        className="flex-1 px-3 py-2 text-sm bg-white/10 border border-amber-300/30 dark:border-amber-700/30 rounded-md focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleResendVerification}
+                        disabled={isResending}
+                        className="whitespace-nowrap sm:self-start"
+                      >
+                        {isResending ? "Sending..." : "Resend verification"}
+                      </Button>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                        Enter the email where you want to receive the verification link
+                      </p>
+                      
+                      {/* Debug toggle */}
+                      <button
+                        onClick={() => setShowDebugInfo(!showDebugInfo)}
+                        className="text-xs text-amber-700 dark:text-amber-500 underline self-start"
+                      >
+                        {showDebugInfo ? "Hide" : "Show"} technical details
+                      </button>
+                      
+                      {/* Alternative verification options */}
+                      <button
+                        onClick={handleRequestManualVerification}
+                        className="text-xs text-amber-700 dark:text-amber-500 underline self-start"
+                      >
+                        Request manual verification
+                      </button>
+                    </div>
+                    
+                    {/* Debug information */}
+                    {showDebugInfo && debugDetails && (
+                      <div className="mt-2 p-2 bg-black/20 rounded-md text-xs font-mono whitespace-pre-wrap">
+                        <p className="font-semibold">Debug information:</p>
+                        <pre>{JSON.stringify(debugDetails, null, 2)}</pre>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : error && !error.includes("User not found") && userRecordExists !== false ? (
             <div className="bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 rounded-md p-4 mb-6 flex items-start gap-3">
               <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
               <p>{error}</p>
             </div>
-          )}
+          ) : null}
           
           <div className="bg-card border border-border rounded-lg p-6 md:p-8">
             <form onSubmit={handleSubmit} className="space-y-6">

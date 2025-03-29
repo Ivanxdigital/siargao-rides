@@ -47,6 +47,12 @@ export async function createShop(shop: Omit<RentalShop, 'id' | 'created_at' | 'u
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Error creating shop:', errorData);
+      
+      // Throw a descriptive error based on the error response
+      if (errorData.error) {
+        throw new Error(errorData.error);
+      }
+      
       return null;
     }
     
@@ -54,7 +60,13 @@ export async function createShop(shop: Omit<RentalShop, 'id' | 'created_at' | 'u
     return data;
   } catch (error) {
     console.error('Error calling createShop API:', error);
-    return null;
+    
+    // Re-throw the error to be handled by the caller
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    throw new Error('Failed to create shop due to an unexpected error');
   }
 }
 

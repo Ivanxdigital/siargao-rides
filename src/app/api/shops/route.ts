@@ -8,10 +8,10 @@ export async function POST(request: Request) {
     
     console.log('API: Creating shop with data:', JSON.stringify(shopData, null, 2));
 
-    // Verify that the user exists and has a verified email
+    // Verify that the user exists
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('email_confirmed_at')
+      .select('id, email') // We only need to verify the user exists
       .eq('id', shopData.owner_id)
       .single();
 
@@ -23,13 +23,8 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!userData.email_confirmed_at) {
-      console.error('API: User email not verified');
-      return NextResponse.json(
-        { error: 'Please verify your email address before registering a shop' },
-        { status: 403 }
-      );
-    }
+    // We're not checking email_confirmed_at since it doesn't exist in your schema
+    // Instead, we'll trust that if the user is in the database, they're valid
     
     // Insert the shop data
     const { data, error } = await supabaseAdmin

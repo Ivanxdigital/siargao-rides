@@ -451,7 +451,7 @@ export default function ShopVerificationPage() {
                                 className="w-full justify-center text-muted-foreground"
                                 asChild
                               >
-                                <Link href={`/admin/shops/${shop.id}`}>
+                                <Link href={`/shop/${shop.id}`}>
                                   <ExternalLink className="mr-2 h-4 w-4" />
                                   View Details
                                 </Link>
@@ -519,7 +519,7 @@ export default function ShopVerificationPage() {
                                   size="sm" 
                                   asChild
                                 >
-                                  <Link href={`/admin/shops/${shop.id}`}>
+                                  <Link href={`/shop/${shop.id}`}>
                                     View
                                   </Link>
                                 </Button>

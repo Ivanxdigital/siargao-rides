@@ -14,6 +14,12 @@ import {
 } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from "next/navigation";
 
+interface VerificationResult {
+  error: any;
+  success: boolean;
+  details?: any;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -24,6 +30,7 @@ interface AuthContextType {
   register: (email: string, password: string, firstName: string, lastName: string, role: string) => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
+  resendVerificationEmail: (email: string) => Promise<VerificationResult>;
   isAdmin: boolean;
 }
 
@@ -37,6 +44,7 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => ({ error: null }),
   resetPassword: async () => ({ error: null }),
   updatePassword: async () => ({ error: null }),
+  resendVerificationEmail: async () => ({ error: null, success: false, details: null }),
   isAdmin: false,
 });
 
@@ -195,6 +203,81 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return { error };
   };
 
+  const resendVerificationEmail = async (email: string) => {
+    try {
+      console.log(`Attempting to send verification email to: ${email}`);
+      
+      // First check if the email exists in our system
+      const { data: userExists, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error('Error checking if user exists:', checkError);
+        return { 
+          error: { message: `Error verifying email address: ${checkError.message}` }, 
+          success: false,
+          details: null
+        };
+      }
+      
+      if (!userExists) {
+        console.warn(`Email address ${email} not found in our system`);
+        return { 
+          error: { message: 'Email address not found in our system' }, 
+          success: false, 
+          details: null
+        };
+      }
+      
+      // Attempt to resend the verification email
+      const { error, data } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
+      if (error) {
+        console.error('Supabase auth.resend error:', error);
+        return { 
+          error, 
+          success: false,
+          details: {
+            message: error.message,
+            status: error.status || 'unknown',
+            requestTime: new Date().toISOString()
+          } 
+        };
+      }
+      
+      console.log('Verification email resend successful:', data);
+      return { 
+        error: null, 
+        success: true,
+        details: {
+          email,
+          timestamp: new Date().toISOString(),
+          provider: 'supabase',
+        } 
+      };
+    } catch (error) {
+      console.error('Unexpected error in resendVerificationEmail:', error);
+      return { 
+        error, 
+        success: false, 
+        details: {
+          timestamp: new Date().toISOString(),
+          errorType: error instanceof Error ? error.name : 'Unknown',
+          errorDetail: error instanceof Error ? error.message : String(error)
+        }
+      };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -205,6 +288,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     resetPassword,
     updatePassword,
+    resendVerificationEmail,
     isAdmin,
   };
 
