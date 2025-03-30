@@ -18,6 +18,7 @@ interface PopularBike {
 interface MonthlyBooking {
   month: string;
   bookings: number;
+  displayMonth?: string;
 }
 
 interface Analytics {
@@ -329,8 +330,9 @@ export default function AnalyticsPage() {
       const monthYear = monthDate.getFullYear();
       const month = monthDate.getMonth();
       
-      // Create a unique key with index to guarantee uniqueness
-      const uniqueKey = `${monthKey}-${monthYear}-${i}`;
+      // Use month/year for display but index position as the unique identifier
+      const uniqueKey = `month-${i}`;
+      const displayMonth = monthKey;
       
       // Count bookings for this month
       const monthBookings = bookings.filter(booking => {
@@ -339,8 +341,9 @@ export default function AnalyticsPage() {
       }).length;
       
       monthsData.push({
-        month: uniqueKey, // Use the unique key as the month property
-        bookings: monthBookings
+        month: uniqueKey, // Use position-based key for uniqueness
+        bookings: monthBookings,
+        displayMonth: displayMonth // Add display month for rendering
       });
     }
     
@@ -523,7 +526,7 @@ export default function AnalyticsPage() {
                       minHeight: item.bookings > 0 ? '20px' : '4px'
                     }}
                   ></div>
-                  <div className="text-muted-foreground text-xs mt-2">{item.month.split('-')[0]}</div>
+                  <div className="text-muted-foreground text-xs mt-2">{item.displayMonth || item.month.split('-')[0]}</div>
                   <div className="text-sm font-medium">{item.bookings}</div>
                 </div>
               ))}
