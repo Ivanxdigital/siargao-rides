@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Calendar, Bike, DollarSign } from "lucide-react"
 import { Button } from "./ui/Button"
 
@@ -32,6 +32,24 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [budget, setBudget] = useState(500) // Default budget in PHP
   const [bikeType, setBikeType] = useState("Any Type")
   const [activeField, setActiveField] = useState<string | null>(null)
+  const [currentDate, setCurrentDate] = useState("")
+
+  // Set current date in YYYY-MM-DD format when component mounts
+  useEffect(() => {
+    const today = new Date()
+    const formattedDate = today.toISOString().split('T')[0]
+    setCurrentDate(formattedDate)
+  }, [])
+
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStartDate = e.target.value
+    setStartDate(newStartDate)
+    
+    // If end date is before the new start date, update end date to match start date
+    if (endDate && endDate < newStartDate) {
+      setEndDate(newStartDate)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,7 +92,8 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              min={currentDate}
+              onChange={handleStartDateChange}
               onFocus={() => setActiveField('startDate')}
               onBlur={() => setActiveField(null)}
               className="w-full px-3 py-2 bg-background/80 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
@@ -88,6 +107,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             <input
               type="date"
               value={endDate}
+              min={startDate || currentDate}
               onChange={(e) => setEndDate(e.target.value)}
               onFocus={() => setActiveField('endDate')}
               onBlur={() => setActiveField(null)}

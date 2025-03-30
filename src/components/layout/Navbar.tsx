@@ -22,6 +22,22 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+  
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      // Prevent body scrolling when menu is open
+      document.body.style.overflow = 'hidden'
+    } else {
+      // Restore scrolling when menu is closed
+      document.body.style.overflow = 'auto'
+    }
+    
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [isMenuOpen])
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -157,13 +173,14 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <motion.div 
-          className="md:hidden absolute top-full left-0 right-0 bg-transparent backdrop-blur-md border-b border-white/10"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
+          className="md:hidden fixed top-[var(--navbar-height)] left-0 right-0 bottom-0 bg-black/70 backdrop-blur-lg z-40 overflow-y-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
+          style={{ "--navbar-height": scrolled ? "56px" : "72px" } as React.CSSProperties}
         >
-          <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+          <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-20">
             <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>
               Home
             </MobileNavLink>
