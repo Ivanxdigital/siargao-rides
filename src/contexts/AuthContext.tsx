@@ -112,35 +112,68 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       console.log(`Attempting to sign in with email: ${email}`);
       
-      // Make sure there's a small delay to prevent rapid retry
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Track retry attempts with exponential backoff
+      let attempts = 0;
+      const maxRetries = 1; // Reduce to only 1 retry to avoid excessive attempts
+      let lastError: any = null;
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Try up to maxRetries times with exponential backoff
+      while (attempts <= maxRetries) {
+        try {
+          // Add a longer initial delay that increases with each previous failure
+          const initialDelay = attempts === 0 ? 300 : 2000;
+          await new Promise(resolve => setTimeout(resolve, initialDelay));
+          
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          
+          console.log("Auth response:", { 
+            session: data?.session ? "exists" : "null", 
+            user: data?.user ? "exists" : "null",
+            error: error ? { 
+              message: error.message, 
+              status: error.status, 
+              name: error.name 
+            } : "none" 
+          });
+          
+          // If successful or non-retriable error, break out of the retry loop
+          if (!error || error.status !== 429) {
+            lastError = error;
+            break;
+          }
+          
+          // If we hit rate limit and have retries left, wait with exponential backoff
+          lastError = error;
+          attempts++;
+          
+          if (attempts <= maxRetries) {
+            // More aggressive exponential backoff: 5s for the first retry
+            const backoffTime = 5000;
+            console.log(`Rate limit hit, retrying in ${backoffTime}ms (attempt ${attempts}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+          }
+        } catch (retryError) {
+          // For unexpected errors, stop retrying
+          lastError = retryError;
+          break;
+        }
+      }
       
-      console.log("Auth response:", { 
-        session: data?.session ? "exists" : "null", 
-        user: data?.user ? "exists" : "null",
-        error: error ? { 
-          message: error.message, 
-          status: error.status, 
-          name: error.name 
-        } : "none" 
-      });
-      
-      // If there's an error, format it properly to expose rate limit information
-      if (error) {
-        console.error("Sign in error:", error);
+      // Process the final result after all retries
+      if (lastError) {
+        console.error("Sign in error after retries:", lastError);
         
         // Handle rate limit errors specifically
         if (
-          (typeof error.message === 'string' && (
-            error.message.toLowerCase().includes("rate limit") || 
-            error.message.toLowerCase().includes("request rate limit reached")
+          (typeof lastError.message === 'string' && (
+            lastError.message.toLowerCase().includes("rate limit") || 
+            lastError.message.toLowerCase().includes("request rate limit reached") ||
+            lastError.message.toLowerCase().includes("too many requests")
           )) || 
-          error.status === 429
+          lastError.status === 429
         ) {
           console.warn("Rate limit reached during sign-in attempt");
           return { 
@@ -153,13 +186,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         
         // Handle invalid credentials
-        if (error.message?.includes("Invalid login credentials")) {
+        if (lastError.message?.includes("Invalid login credentials")) {
           console.warn("Invalid login credentials");
           return {
             error: {
               message: "The email or password you entered is incorrect.",
               code: "invalid_credentials",
-              status: error.status
+              status: lastError.status
             }
           };
         }
@@ -167,14 +200,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // General error handling
         return { 
           error: {
-            message: error.message || "Authentication failed",
-            code: error.name || "auth_error",
-            status: error.status || 400
+            message: lastError.message || "Authentication failed",
+            code: lastError.name || "auth_error",
+            status: lastError.status || 400
           } 
         };
       }
       
       // Check if we have a valid session
+      const { data } = await supabase.auth.getSession();
       if (data?.session) {
         console.log("Sign in successful, redirecting to dashboard");
         router.push("/dashboard");

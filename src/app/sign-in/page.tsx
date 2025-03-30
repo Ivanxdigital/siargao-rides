@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
@@ -10,8 +10,9 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 // Rate limit tracking
 const RATE_LIMIT_KEY = "siargao_auth_rate_limit";
-const RATE_LIMIT_DURATION = 60; // 60 seconds
-const MAX_ATTEMPTS = 3; // Max attempts before cooling down
+const RATE_LIMIT_DURATION = 300; // Increase to 5 minutes (300 seconds)
+const MAX_ATTEMPTS = 2; // Reduce to 2 attempts before cooling down
+const DEBOUNCE_TIMEOUT = 2000; // Increase to 2 seconds
 
 interface RateLimitState {
   attempts: number;
@@ -38,6 +39,8 @@ export default function SignInPage() {
   const [debugResponse, setDebugResponse] = useState<any>(null);
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>(getDefaultRateLimitState());
   const { signIn } = useAuth();
+  const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSubmittingRef = useRef(false);
 
   // Load rate limit state from localStorage on component mount
   useEffect(() => {
@@ -64,6 +67,15 @@ export default function SignInPage() {
         resetRateLimit();
       }
     }
+  }, []);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (submitTimeoutRef.current) {
+        clearTimeout(submitTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Reset error when email or password changes
@@ -115,9 +127,9 @@ export default function SignInPage() {
   const updateRateLimitState = (isError: boolean, isRateLimitError: boolean) => {
     const now = Date.now();
     
-    // If this is a rate limit error, block immediately
+    // If this is a rate limit error, block immediately with a longer cooldown
     if (isRateLimitError) {
-      const blockedUntil = now + (RATE_LIMIT_DURATION * 1000);
+      const blockedUntil = now + (RATE_LIMIT_DURATION * 1000 * 3); // Triple the cooldown time for rate limit errors (15 minutes)
       const newState: RateLimitState = {
         attempts: rateLimitState.attempts + 1,
         lastAttempt: now,
@@ -127,7 +139,14 @@ export default function SignInPage() {
       
       setRateLimitState(newState);
       setIsRateLimited(true);
-      setCooldownTimer(RATE_LIMIT_DURATION);
+      setCooldownTimer(RATE_LIMIT_DURATION * 3);
+      
+      // Automatically disable debug mode when rate limited
+      if (debugMode) {
+        setDebugMode(false);
+        setDebugResponse(null);
+      }
+      
       return;
     }
     
@@ -169,12 +188,28 @@ export default function SignInPage() {
     }
   };
 
+  const isRateLimitError = (error: any): boolean => {
+    // More comprehensive check for rate limit errors
+    if (!error) return false;
+    
+    const errorMsg = typeof error.message === 'string' ? error.message.toLowerCase() : '';
+    return (
+      errorMsg.includes("rate limit") || 
+      errorMsg.includes("request rate limit reached") ||
+      errorMsg.includes("too many requests") ||
+      errorMsg.includes("too many login attempts") ||
+      error.status === 429 ||
+      error.code === "over_request_rate_limit" ||
+      error.code === "too_many_requests"
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent submission if rate limited
-    if (isRateLimited) {
-      setError("You're temporarily blocked from signing in. Please wait for the cooldown to expire.");
+    // Prevent submission if already submitting or rate limited
+    if (isSubmittingRef.current || isRateLimited) {
+      setError("Please wait before trying again.");
       return;
     }
     
@@ -183,40 +218,55 @@ export default function SignInPage() {
       return;
     }
     
+    // Clear any previous timeout
+    if (submitTimeoutRef.current) {
+      clearTimeout(submitTimeoutRef.current);
+    }
+    
+    // Set loading state but use debounce to prevent multiple submissions
     setIsLoading(true);
     setError(null);
-
-    try {
-      console.log("Submitting sign-in form...");
-      const { error: signInError } = await signIn(email, password);
-      
-      if (signInError) {
-        console.log("Sign-in error:", signInError);
+    isSubmittingRef.current = true;
+    
+    // Use a debounce timeout for the actual submission
+    submitTimeoutRef.current = setTimeout(async () => {
+      try {
+        console.log("Submitting sign-in form after debounce...");
+        const { error: signInError } = await signIn(email, password);
         
-        // Check specifically for rate limit errors
-        const isRateLimitError = 
-          signInError.message?.includes("rate limit") || 
-          signInError.code === "over_request_rate_limit" ||
-          signInError.status === 429;
+        if (signInError) {
+          console.log("Sign-in error:", signInError);
           
-        updateRateLimitState(true, isRateLimitError);
+          // Enhanced rate limit detection
+          const isRateLimitErr = isRateLimitError(signInError);
+          updateRateLimitState(true, isRateLimitErr);
+          
+          if (isRateLimitErr) {
+            setError("Too many sign-in attempts. Please wait before trying again.");
+          } else {
+            setError(signInError.message || "Failed to sign in. Please check your credentials.");
+          }
+        } else {
+          // If login successful, reset rate limit counter
+          updateRateLimitState(false, false);
+        }
+      } catch (err) {
+        console.error("Unexpected error during sign-in:", err);
         
-        if (isRateLimitError) {
+        // Check if the error is a rate limit error
+        const isRateLimitErr = err instanceof Error && isRateLimitError(err);
+        updateRateLimitState(true, isRateLimitErr);
+        
+        if (isRateLimitErr) {
           setError("Too many sign-in attempts. Please wait before trying again.");
         } else {
-          setError(signInError.message || "Failed to sign in. Please check your credentials.");
+          setError("An unexpected error occurred. Please try again.");
         }
-      } else {
-        // If login successful, reset rate limit counter
-        updateRateLimitState(false, false);
+      } finally {
+        setIsLoading(false);
+        isSubmittingRef.current = false;
       }
-    } catch (err) {
-      console.error("Unexpected error during sign-in:", err);
-      setError("An unexpected error occurred. Please try again.");
-      updateRateLimitState(true, false);
-    } finally {
-      setIsLoading(false);
-    }
+    }, DEBOUNCE_TIMEOUT);
   };
 
   // Debug function that directly calls Supabase
@@ -226,10 +276,28 @@ export default function SignInPage() {
       return;
     }
     
+    // Prevent debug requests if already submitting
+    if (isSubmittingRef.current) {
+      setError("A request is already in progress. Please wait.");
+      return;
+    }
+    
+    // Block debug attempts completely if we've had rate limit errors recently
+    const now = Date.now();
+    const rateLimitRecentThreshold = 5 * 60 * 1000; // 5 minutes
+    if (rateLimitState.lastAttempt > 0 && now - rateLimitState.lastAttempt < rateLimitRecentThreshold && rateLimitState.attempts > 0) {
+      setError("Debug mode is temporarily disabled due to recent rate limit errors. Please try again later.");
+      return;
+    }
+    
     // Allow debug attempts even when rate limited
     setDebugResponse(null);
     setIsLoading(true);
     setError(null);
+    isSubmittingRef.current = true;
+    
+    // Add a delay for debugging to avoid multiple rapid requests
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
       const supabase = createClientComponentClient();
@@ -247,11 +315,17 @@ export default function SignInPage() {
         setError(`Debug Error: ${response.error.message}`);
         
         // Check for rate limiting in debug mode too
-        if (
-          response.error.message?.includes("rate limit") ||
-          response.error.status === 429
-        ) {
+        const isRateLimitErr = isRateLimitError(response.error);
+        if (isRateLimitErr) {
           console.warn("Debug: Rate limit detected via direct API call");
+          // Store the rate limit state without blocking the UI in debug mode
+          const now = Date.now();
+          setRateLimitState({
+            attempts: rateLimitState.attempts + 1,
+            lastAttempt: now,
+            blocked: false, // Don't block in debug mode
+            blockedUntil: 0
+          });
         }
       } else if (response.data.session) {
         setError(null);
@@ -268,6 +342,7 @@ export default function SignInPage() {
       setDebugResponse({error: err});
     } finally {
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
