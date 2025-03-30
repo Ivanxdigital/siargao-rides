@@ -6,9 +6,9 @@ import { Plus, SearchIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import ManageBikeCard from "@/components/ManageBikeCard";
-import { mockBikes } from "@/lib/mock-data";
+import { getBikes } from "@/lib/service";
 
-// This would be replaced with actual API calls in the future
+// This is now using real API calls
 import { Bike } from "@/lib/types";
 
 export default function ManageBikesPage() {
@@ -17,6 +17,7 @@ export default function ManageBikesPage() {
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is a shop owner
@@ -25,15 +26,35 @@ export default function ManageBikesPage() {
       return;
     }
 
-    // Fetch bikes - this would be replaced with an API call
+    // Fetch bikes from the actual database
     const fetchBikes = async () => {
       try {
         setIsLoading(true);
-        // In a real app, we would fetch from API with the shop owner's ID
-        // For now, use mock data
-        setBikes(mockBikes);
+        setError(null);
+        
+        if (!user?.id) {
+          setError("User not authenticated");
+          return;
+        }
+        
+        // Fetch shop ID for the current user
+        const userShops = await fetch(`/api/shops/user/${user.id}`);
+        const shopsData = await userShops.json();
+        
+        if (!shopsData.shops || shopsData.shops.length === 0) {
+          setError("No shops found for this user");
+          setBikes([]);
+          return;
+        }
+        
+        const shopId = shopsData.shops[0].id;
+        
+        // Fetch bikes for this shop
+        const bikes = await getBikes({ shop_id: shopId });
+        setBikes(bikes);
       } catch (error) {
         console.error("Error fetching bikes:", error);
+        setError("Failed to load bikes. Please try again later.");
       } finally {
         setIsLoading(false);
       }
@@ -54,20 +75,50 @@ export default function ManageBikesPage() {
 
   const handleDeleteBike = async (bikeId: string) => {
     if (window.confirm("Are you sure you want to delete this bike?")) {
-      // In a real app, we would call an API
-      // For now, just update the state
-      setBikes((prevBikes) => prevBikes.filter((bike) => bike.id !== bikeId));
+      try {
+        // Call the API to delete the bike
+        const response = await fetch(`/api/bikes/${bikeId}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to delete bike");
+        }
+        
+        // Update the state if successful
+        setBikes((prevBikes) => prevBikes.filter((bike) => bike.id !== bikeId));
+      } catch (error) {
+        console.error("Error deleting bike:", error);
+        alert("Failed to delete bike. Please try again.");
+      }
     }
   };
 
   const handleToggleAvailability = async (bikeId: string, isAvailable: boolean) => {
-    // In a real app, we would call an API
-    // For now, just update the state
-    setBikes((prevBikes) =>
-      prevBikes.map((bike) =>
-        bike.id === bikeId ? { ...bike, is_available: isAvailable } : bike
-      )
-    );
+    try {
+      // Call the API to update availability
+      const response = await fetch(`/api/bikes/${bikeId}/availability`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_available: isAvailable }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update bike availability");
+      }
+      
+      // Update the state if successful
+      setBikes((prevBikes) =>
+        prevBikes.map((bike) =>
+          bike.id === bikeId ? { ...bike, is_available: isAvailable } : bike
+        )
+      );
+    } catch (error) {
+      console.error("Error updating bike availability:", error);
+      alert("Failed to update bike availability. Please try again.");
+    }
   };
 
   // Filter bikes based on search query
@@ -103,6 +154,13 @@ export default function ManageBikesPage() {
           />
         </div>
       </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
+      )}
 
       {/* Bikes grid */}
       {isLoading ? (
