@@ -105,18 +105,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setIsLoading(false);
-    
-    if (!error) {
-      router.push("/dashboard");
-      router.refresh();
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      setIsLoading(false);
+      
+      // If there's an error, format it properly to expose rate limit information
+      if (error) {
+        // Handle rate limit errors specifically
+        if (error.message?.includes("Request rate limit reached") || 
+            error.status === 429) {
+          return { 
+            error: {
+              message: "Request rate limit reached",
+              code: "over_request_rate_limit",
+              status: 429
+            } 
+          };
+        }
+        return { error };
+      }
+      
+      if (data.session) {
+        router.push("/dashboard");
+        router.refresh();
+      }
+      
+      return { error: null };
+    } catch (err) {
+      setIsLoading(false);
+      console.error("Sign in error:", err);
+      return { 
+        error: {
+          message: "An unexpected error occurred during sign in",
+          details: err instanceof Error ? err.message : String(err)
+        } 
+      };
     }
-    
-    return { error };
   };
 
   const register = async (
