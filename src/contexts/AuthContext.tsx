@@ -64,19 +64,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user || null);
-      
-      // Check if user is admin
-      if (session?.user) {
-        const role = session.user.user_metadata?.role;
-        setIsAdmin(role === 'admin');
-      } else {
-        setIsAdmin(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user || null);
+        
+        // Check if user is admin
+        if (session?.user) {
+          const role = session.user.user_metadata?.role;
+          setIsAdmin(role === 'admin');
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error("Error getting session:", error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
     getSession();
@@ -106,44 +110,99 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log(`Attempting to sign in with email: ${email}`);
+      
+      // Make sure there's a small delay to prevent rapid retry
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      setIsLoading(false);
+      console.log("Auth response:", { 
+        session: data?.session ? "exists" : "null", 
+        user: data?.user ? "exists" : "null",
+        error: error ? { 
+          message: error.message, 
+          status: error.status, 
+          name: error.name 
+        } : "none" 
+      });
       
       // If there's an error, format it properly to expose rate limit information
       if (error) {
+        console.error("Sign in error:", error);
+        
         // Handle rate limit errors specifically
-        if (error.message?.includes("Request rate limit reached") || 
-            error.status === 429) {
+        if (
+          (typeof error.message === 'string' && (
+            error.message.toLowerCase().includes("rate limit") || 
+            error.message.toLowerCase().includes("request rate limit reached")
+          )) || 
+          error.status === 429
+        ) {
+          console.warn("Rate limit reached during sign-in attempt");
           return { 
             error: {
-              message: "Request rate limit reached",
+              message: "Too many sign-in attempts. Please wait before trying again.",
               code: "over_request_rate_limit",
               status: 429
             } 
           };
         }
-        return { error };
+        
+        // Handle invalid credentials
+        if (error.message?.includes("Invalid login credentials")) {
+          console.warn("Invalid login credentials");
+          return {
+            error: {
+              message: "The email or password you entered is incorrect.",
+              code: "invalid_credentials",
+              status: error.status
+            }
+          };
+        }
+        
+        // General error handling
+        return { 
+          error: {
+            message: error.message || "Authentication failed",
+            code: error.name || "auth_error",
+            status: error.status || 400
+          } 
+        };
       }
       
-      if (data.session) {
+      // Check if we have a valid session
+      if (data?.session) {
+        console.log("Sign in successful, redirecting to dashboard");
         router.push("/dashboard");
         router.refresh();
-      }
+        return { error: null };
+      } 
       
-      return { error: null };
-    } catch (err) {
-      setIsLoading(false);
-      console.error("Sign in error:", err);
+      // No session but also no error
+      console.warn("Sign in response had no session and no error");
       return { 
         error: {
-          message: "An unexpected error occurred during sign in",
-          details: err instanceof Error ? err.message : String(err)
+          message: "Unable to sign in. Please try again.",
+          code: "no_session",
+          status: 400
+        }
+      };
+    } catch (err) {
+      console.error("Unexpected sign in error:", err);
+      return { 
+        error: {
+          message: err instanceof Error ? err.message : "An unexpected error occurred during sign in",
+          code: "unexpected_error",
+          status: 500,
+          details: err instanceof Error ? err.stack : String(err)
         } 
       };
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -319,12 +319,12 @@ export default function DashboardPage() {
           
           {/* Stats Overview */}
           {isShopOwner ? (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-lg font-semibold mb-1">Total Bikes</h2>
-                    <div className="text-4xl font-bold mb-2 text-primary">
+                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Total Bikes</h2>
+                    <div className="text-3xl font-bold mb-2 text-primary">
                       {isDataLoading ? (
                         <div className="animate-pulse w-12 h-10 bg-primary/10 rounded"></div>
                       ) : (
@@ -332,23 +332,24 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
-                  <div className="bg-primary/10 p-2 rounded-md">
-                    <Bike size={20} className="text-primary" />
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <Bike size={18} className="text-primary" />
                   </div>
                 </div>
                 <Link 
                   href="/dashboard/bikes" 
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
                 >
-                  View all bikes →
+                  View all bikes
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                 </Link>
               </div>
 
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
+              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-lg font-semibold mb-1">Available</h2>
-                    <div className="text-4xl font-bold mb-2 text-green-500">
+                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Available</h2>
+                    <div className="text-3xl font-bold mb-2 text-green-500">
                       {isDataLoading ? (
                         <div className="animate-pulse w-12 h-10 bg-green-500/10 rounded"></div>
                       ) : (
@@ -356,20 +357,20 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
-                  <div className="bg-green-500/10 p-2 rounded-md">
-                    <Clock size={20} className="text-green-500" />
+                  <div className="bg-green-500/10 p-2 rounded-full">
+                    <Clock size={18} className="text-green-500" />
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {Math.round((shopStats.availableBikes / (shopStats.totalBikes || 1)) * 100) || 0}% of your fleet
                 </p>
               </div>
 
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
+              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-lg font-semibold mb-1">Active Bookings</h2>
-                    <div className="text-4xl font-bold mb-2 text-blue-500">
+                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Active Bookings</h2>
+                    <div className="text-3xl font-bold mb-2 text-blue-500">
                       {isDataLoading ? (
                         <div className="animate-pulse w-12 h-10 bg-blue-500/10 rounded"></div>
                       ) : (
@@ -377,23 +378,24 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
-                  <div className="bg-blue-500/10 p-2 rounded-md">
-                    <CalendarRange size={20} className="text-blue-500" />
+                  <div className="bg-blue-500/10 p-2 rounded-full">
+                    <CalendarRange size={18} className="text-blue-500" />
                   </div>
                 </div>
                 <Link 
                   href="/dashboard/bookings" 
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
                 >
-                  View all bookings →
+                  View all bookings
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                 </Link>
               </div>
 
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
+              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-lg font-semibold mb-1">Total Revenue</h2>
-                    <div className="text-4xl font-bold mb-2 text-primary">
+                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Total Revenue</h2>
+                    <div className="text-3xl font-bold mb-2 text-primary">
                       {isDataLoading ? (
                         <div className="animate-pulse w-24 h-10 bg-primary/10 rounded"></div>
                       ) : (
@@ -401,30 +403,38 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
-                  <div className="bg-primary/10 p-2 rounded-md">
-                    <TrendingUp size={20} className="text-primary" />
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <TrendingUp size={18} className="text-primary" />
                   </div>
                 </div>
                 <Link 
                   href="/dashboard/analytics" 
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
                 >
-                  View analytics →
+                  View analytics
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                 </Link>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-                <h2 className="text-lg font-semibold mb-4">Active Bookings</h2>
-                <div className="text-4xl font-bold mb-2 text-primary">
-                  {isDataLoading ? (
-                    <div className="animate-pulse w-12 h-10 bg-primary/10 rounded"></div>
-                  ) : (
-                    userStats.activeBookings
-                  )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Active Bookings</h2>
+                    <div className="text-3xl font-bold mb-2 text-blue-500">
+                      {isDataLoading ? (
+                        <div className="animate-pulse w-12 h-10 bg-blue-500/10 rounded"></div>
+                      ) : (
+                        userStats.activeBookings
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-blue-500/10 p-2 rounded-full">
+                    <CalendarRange size={18} className="text-blue-500" />
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {userStats.activeBookings === 0 
                     ? "No bikes currently rented" 
                     : userStats.activeBookings === 1
@@ -434,16 +444,23 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-                <h2 className="text-lg font-semibold mb-4">Saved Bikes</h2>
-                <div className="text-4xl font-bold mb-2 text-primary">
-                  {isDataLoading ? (
-                    <div className="animate-pulse w-12 h-10 bg-primary/10 rounded"></div>
-                  ) : (
-                    userStats.savedBikes
-                  )}
+              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Saved Bikes</h2>
+                    <div className="text-3xl font-bold mb-2 text-pink-500">
+                      {isDataLoading ? (
+                        <div className="animate-pulse w-12 h-10 bg-pink-500/10 rounded"></div>
+                      ) : (
+                        userStats.savedBikes
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-pink-500/10 p-2 rounded-full">
+                    <Heart size={18} className="text-pink-500" />
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {userStats.savedBikes === 0 
                     ? "No bikes saved to favorites" 
                     : userStats.savedBikes === 1
@@ -453,16 +470,23 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-                <h2 className="text-lg font-semibold mb-4">Profile Completion</h2>
-                <div className="text-4xl font-bold mb-2 text-primary">
-                  {isDataLoading ? (
-                    <div className="animate-pulse w-16 h-10 bg-primary/10 rounded"></div>
-                  ) : (
-                    `${userStats.profileCompletionPercentage}%`
-                  )}
+              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Profile Completion</h2>
+                    <div className="text-3xl font-bold mb-2 text-primary">
+                      {isDataLoading ? (
+                        <div className="animate-pulse w-16 h-10 bg-primary/10 rounded"></div>
+                      ) : (
+                        `${userStats.profileCompletionPercentage}%`
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <Settings size={18} className="text-primary" />
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {userStats.profileCompletionPercentage < 100
                     ? "Add more details to complete your profile"
                     : "Your profile is complete"
@@ -473,7 +497,7 @@ export default function DashboardPage() {
           )}
 
           {/* Quick Actions */}
-          <div className="mb-12">
+          <div className="mb-10">
             <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {isShopOwner ? (
@@ -481,41 +505,49 @@ export default function DashboardPage() {
                   <Button
                     asChild
                     variant="outline"
-                    className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
                   >
                     <Link href="/dashboard/bikes/add">
-                      <PlusCircle size={22} className="mb-2" />
-                      Add New Bike
+                      <div className="bg-primary/10 rounded-full p-2 mb-2">
+                        <PlusCircle size={20} className="text-primary" />
+                      </div>
+                      <span>Add New Bike</span>
                     </Link>
                   </Button>
                   <Button
                     asChild
                     variant="outline"
-                    className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
                   >
                     <Link href="/dashboard/shop">
-                      <ShoppingBag size={22} className="mb-2" />
-                      Manage Shop
+                      <div className="bg-primary/10 rounded-full p-2 mb-2">
+                        <ShoppingBag size={20} className="text-primary" />
+                      </div>
+                      <span>Manage Shop</span>
                     </Link>
                   </Button>
                   <Button
                     asChild
                     variant="outline"
-                    className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
                   >
                     <Link href="/dashboard/bikes">
-                      <Bike size={22} className="mb-2" />
-                      Manage Bikes
+                      <div className="bg-primary/10 rounded-full p-2 mb-2">
+                        <Bike size={20} className="text-primary" />
+                      </div>
+                      <span>Manage Bikes</span>
                     </Link>
                   </Button>
                   <Button
                     asChild
                     variant="outline"
-                    className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
                   >
                     <Link href="/dashboard/analytics">
-                      <BarChart size={22} className="mb-2" />
-                      View Analytics
+                      <div className="bg-primary/10 rounded-full p-2 mb-2">
+                        <BarChart size={20} className="text-primary" />
+                      </div>
+                      <span>View Analytics</span>
                     </Link>
                   </Button>
                 </>
@@ -524,41 +556,49 @@ export default function DashboardPage() {
                   <Button
                     asChild
                     variant="outline"
-                    className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
                   >
                     <Link href="/browse">
-                      <Bike size={22} className="mb-2" />
-                      Browse Bikes
+                      <div className="bg-primary/10 rounded-full p-2 mb-2">
+                        <Bike size={20} className="text-primary" />
+                      </div>
+                      <span>Browse Bikes</span>
                     </Link>
                   </Button>
                   <Button
                     asChild
                     variant="outline"
-                    className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
                   >
                     <Link href="/dashboard/bookings">
-                      <CalendarRange size={22} className="mb-2" />
-                      My Bookings
+                      <div className="bg-primary/10 rounded-full p-2 mb-2">
+                        <CalendarRange size={20} className="text-primary" />
+                      </div>
+                      <span>My Bookings</span>
                     </Link>
                   </Button>
                   <Button
                     asChild
                     variant="outline"
-                    className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
                   >
                     <Link href="/dashboard/favorites">
-                      <Heart size={22} className="mb-2" />
-                      Favorites
+                      <div className="bg-primary/10 rounded-full p-2 mb-2">
+                        <Heart size={20} className="text-primary" />
+                      </div>
+                      <span>Favorites</span>
                     </Link>
                   </Button>
                   <Button
                     asChild
                     variant="outline"
-                    className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
                   >
                     <Link href="/profile">
-                      <Settings size={22} className="mb-2" />
-                      Profile Settings
+                      <div className="bg-primary/10 rounded-full p-2 mb-2">
+                        <Settings size={20} className="text-primary" />
+                      </div>
+                      <span>Profile Settings</span>
                     </Link>
                   </Button>
                 </>
@@ -568,14 +608,14 @@ export default function DashboardPage() {
 
           {/* Recent Activity / Bookings - only for shop owners */}
           {isShopOwner && (
-            <div className="mb-12">
+            <div className="mb-10">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Recent Bookings</h2>
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="sm" className="ml-4">
                   <Link href="/dashboard/bookings">View All</Link>
                 </Button>
               </div>
-              <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
                 {isDataLoading ? (
                   <div className="p-6 space-y-4">
                     {[1, 2, 3].map((i) => (
@@ -672,10 +712,12 @@ export default function DashboardPage() {
                     </table>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <CalendarRange size={48} className="text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">No recent bookings</h3>
-                    <p className="text-muted-foreground mt-1">
+                  <div className="flex flex-col items-center justify-center py-8 px-4">
+                    <div className="bg-muted/20 rounded-full p-3 mb-3">
+                      <CalendarRange size={32} className="text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-1">No recent bookings</h3>
+                    <p className="text-muted-foreground text-sm text-center max-w-xs">
                       When you receive bookings, they will appear here
                     </p>
                   </div>
@@ -686,17 +728,21 @@ export default function DashboardPage() {
 
           {/* Register as Shop Owner - only shown to tourists */}
           {!isShopOwner && (
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 mb-12">
-              <h2 className="text-xl font-semibold mb-2">
-                Own a Motorbike Rental Shop?
-              </h2>
-              <p className="mb-4">
-                List your shop on Siargao Rides to reach more tourists and
-                manage your rentals easily.
-              </p>
-              <Button asChild>
-                <Link href="/register">Register Your Shop</Link>
-              </Button>
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-200 mb-10">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">
+                    Own a Motorbike Rental Shop?
+                  </h2>
+                  <p className="text-muted-foreground text-sm md:text-base">
+                    List your shop on Siargao Rides to reach more tourists and
+                    manage your rentals easily.
+                  </p>
+                </div>
+                <Button asChild size="lg" className="shrink-0">
+                  <Link href="/register">Register Your Shop</Link>
+                </Button>
+              </div>
             </div>
           )}
         </div>
