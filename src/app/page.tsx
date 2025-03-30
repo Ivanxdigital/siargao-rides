@@ -7,6 +7,7 @@ import SearchBar, { SearchParams } from "@/components/SearchBar"
 import RentalShopCard from "@/components/RentalShopCard"
 import * as service from "@/lib/service"
 import { RentalShop, Bike } from "@/lib/types"
+import { ArrowRight } from "lucide-react"
 
 // Transformed shop data for the RentalShopCard
 interface ShopCardData {
@@ -172,13 +173,10 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative min-h-screen max-h-[800px] w-full overflow-hidden">
-        {/* Mobile Gradient Background */}
-        <div className="absolute inset-0 w-full h-full md:hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950">
-          {/* Mobile decoration elements */}
-          <div className="absolute top-0 right-0 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/4 left-1/4 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
+      <section className="relative min-h-screen max-h-[800px] w-full overflow-hidden bg-gradient-to-b from-black to-gray-900 text-white">
+        {/* Background with overlay gradient */}
+        <div className="absolute inset-0 z-0 opacity-20">
+          <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
         </div>
         
         {/* YouTube Video Background - Desktop Only */}
@@ -236,60 +234,62 @@ export default function Home() {
       `}</style>
 
       {/* Featured Shops Section */}
-      <section className="py-16 container mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center">
-          {searchResults ? "Search Results" : "Featured Rental Shops"}
-        </h2>
+      <section className="py-16 bg-gradient-to-b from-gray-900 to-black text-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center">
+            {searchResults ? "Search Results" : "Featured Rental Shops"}
+          </h2>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading shops...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-red-500">{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : (
-          <>
-            {(searchResults || shops).length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No shops found. Please try a different search.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {(searchResults || shops).map((shop) => (
-                  <RentalShopCard
-                    key={shop.id}
-                    id={shop.id}
-                    name={shop.name}
-                    images={shop.images}
-                    startingPrice={shop.startingPrice}
-                    rating={shop.rating}
-                    reviewCount={shop.reviewCount}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        )}
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-300">Loading shops...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-500">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm rounded hover:border-primary/50 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : (
+            <>
+              {(searchResults || shops).length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-300">No shops found. Please try a different search.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {(searchResults || shops).map((shop) => (
+                    <RentalShopCard
+                      key={shop.id}
+                      id={shop.id}
+                      name={shop.name}
+                      images={shop.images}
+                      startingPrice={shop.startingPrice}
+                      rating={shop.rating}
+                      reviewCount={shop.reviewCount}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
 
-        {/* View All Button */}
-        {!searchResults && !loading && shops.length > 0 && (
-          <div className="text-center mt-12">
-            <Link 
-              href="/browse" 
-              className="text-primary underline hover:text-primary/80 transition-colors"
-            >
-              View all rental shops
-            </Link>
-          </div>
-        )}
+          {/* View All Button */}
+          {!searchResults && !loading && shops.length > 0 && (
+            <div className="text-center mt-12">
+              <Link 
+                href="/browse" 
+                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm rounded hover:border-primary/50 transition-colors inline-flex items-center"
+              >
+                View all rental shops <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   )
