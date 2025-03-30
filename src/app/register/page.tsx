@@ -474,7 +474,7 @@ export default function RegisterShopPage() {
               {isAuthenticated ? (
                 <Button 
                   size="lg" 
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
                   onClick={() => setShowRegistrationForm(true)}
                 >
                   Register Your Shop <ArrowRight className="ml-2 h-4 w-4" />
@@ -482,7 +482,7 @@ export default function RegisterShopPage() {
               ) : (
                 <Button 
                   size="lg" 
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
                   asChild
                 >
                   <Link href="/sign-up?callback=/register">
@@ -717,7 +717,7 @@ export default function RegisterShopPage() {
               {isAuthenticated ? (
                 <Button 
                   size="lg" 
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
                   onClick={() => setShowRegistrationForm(true)}
                 >
                   Register Your Shop <ArrowRight className="ml-2 h-4 w-4" />
@@ -725,7 +725,7 @@ export default function RegisterShopPage() {
               ) : (
                 <Button 
                   size="lg" 
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
                   asChild
                 >
                   <Link href="/sign-up?callback=/register">
@@ -1091,10 +1091,10 @@ export default function RegisterShopPage() {
                   {/* Submit Button */}
                   <Button 
                     type="submit" 
-                    className="w-full"
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center"
                     disabled={isSubmitting || !!existingShop}
                   >
-                    {isSubmitting ? "Processing..." : "Submit Registration"}
+                    {isSubmitting ? "Processing..." : "Submit Registration"} {!isSubmitting && !existingShop && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
                 </form>
               )}
