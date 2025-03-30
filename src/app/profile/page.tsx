@@ -38,6 +38,37 @@ export default function ProfilePage() {
     }
   }, [user]);
 
+  // Fallback to database if metadata is missing
+  useEffect(() => {
+    // Only fetch from database if metadata is missing and we have a user
+    if (user && (!firstName || !lastName)) {
+      const fetchUserData = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', user.id)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching user data:', error);
+            return;
+          }
+          
+          if (data) {
+            // Update state with database values if they exist
+            if (data.first_name && !firstName) setFirstName(data.first_name);
+            if (data.last_name && !lastName) setLastName(data.last_name);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      };
+      
+      fetchUserData();
+    }
+  }, [user, firstName, lastName]);
+
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
