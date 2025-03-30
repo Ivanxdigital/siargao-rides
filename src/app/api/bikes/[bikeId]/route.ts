@@ -4,10 +4,10 @@ import { cookies } from "next/headers";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { bikeId: string } }
+  { params }: { params: Promise<{ bikeId: string }> }
 ) {
   try {
-    const bikeId = params.bikeId;
+    const { bikeId } = await params;
     
     if (!bikeId) {
       return NextResponse.json(
