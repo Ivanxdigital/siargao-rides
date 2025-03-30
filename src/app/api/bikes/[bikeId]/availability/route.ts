@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from "next/headers";
 
+interface RequestParams {
+  params: {
+    bikeId: string;
+  };
+}
+
 export async function PATCH(
   request: Request,
-  { params }: { params: { bikeId: string } }
+  context: RequestParams
 ) {
   try {
-    const bikeId = params.bikeId;
+    const bikeId = context.params.bikeId;
     
     if (!bikeId) {
       return NextResponse.json(

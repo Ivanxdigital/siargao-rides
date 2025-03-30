@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from "next/headers";
 
+interface RequestParams {
+  params: {
+    userId: string;
+  };
+}
+
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  context: RequestParams
 ) {
   try {
-    const userId = params.userId;
+    const userId = context.params.userId;
     
     if (!userId) {
       return NextResponse.json(
