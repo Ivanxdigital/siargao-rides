@@ -21,7 +21,7 @@ export async function GET(
 
     // Get shops owned by the user
     const { data: shops, error } = await supabase
-      .from("shops")
+      .from("rental_shops")
       .select("*")
       .eq("owner_id", userId);
 

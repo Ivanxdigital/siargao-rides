@@ -51,7 +51,7 @@ export async function PATCH(
     // Get the bike to check ownership
     const { data: bike, error: bikeError } = await supabase
       .from("bikes")
-      .select("*, shops(owner_id)")
+      .select("*, rental_shops(owner_id)")
       .eq("id", bikeId)
       .single();
       
@@ -70,7 +70,7 @@ export async function PATCH(
     }
     
     // Verify that the user owns the shop that owns the bike
-    if (bike.shops.owner_id !== session.user.id) {
+    if (bike.rental_shops.owner_id !== session.user.id) {
       return NextResponse.json(
         { error: "Unauthorized: You do not own this bike" },
         { status: 403 }
