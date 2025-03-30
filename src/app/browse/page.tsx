@@ -3,6 +3,7 @@
 import { useState } from "react"
 import RentalShopCard from "@/components/RentalShopCard"
 import { Sliders, ChevronDown, ChevronUp } from "lucide-react"
+import { Badge } from "@/components/ui/Badge"
 
 // Temporary mock data for shops
 const SHOPS = [
@@ -61,9 +62,9 @@ const BikeTypeCheckbox = ({ type, checked, onChange }: { type: string, checked: 
         id={`type-${type}`} 
         checked={checked}
         onChange={onChange}
-        className="rounded border-border text-primary focus:ring-primary"
+        className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
       />
-      <label htmlFor={`type-${type}`} className="text-sm">{type}</label>
+      <label htmlFor={`type-${type}`} className="text-sm text-gray-300">{type}</label>
     </div>
   )
 }
@@ -110,22 +111,30 @@ export default function BrowsePage() {
   })
 
   return (
-    <div className="pt-24">
-      <>
-        <div className="bg-black text-white">
-          <div className="container mx-auto px-4 py-12">
-            <h1 className="text-4xl font-bold mb-4">Browse Motorbike Rentals</h1>
-            <p className="text-lg">Find the perfect ride for your Siargao adventure</p>
-          </div>
+    <div className="min-h-screen">
+      <section className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden">
+        {/* Background with overlay gradient */}
+        <div className="absolute inset-0 z-0 opacity-20">
+          <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
         </div>
         
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-semibold mb-8 text-center">Browse Motorbike Rentals</h1>
-          
+        <div className="container mx-auto px-4 py-12 relative z-10 pt-24">
+          <div className="max-w-3xl mx-auto mb-8">
+            <Badge className="mb-4 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
+              Find Your Ride
+            </Badge>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">Browse Motorbike Rentals</h1>
+            <p className="text-lg text-gray-300">Find the perfect ride for your Siargao adventure</p>
+          </div>
+        </div>
+      </section>
+      
+      <section className="py-8 bg-gradient-to-b from-gray-900 to-black text-white">
+        <div className="container mx-auto px-4">
           {/* Mobile Filters Toggle */}
           <div className="md:hidden mb-4">
             <button 
-              className="w-full flex items-center justify-between bg-card border border-border rounded-md p-3"
+              className="w-full flex items-center justify-between bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-md p-3 text-white"
               onClick={() => setShowFilters(!showFilters)}
             >
               <div className="flex items-center">
@@ -138,15 +147,15 @@ export default function BrowsePage() {
           
           <div className="flex flex-col md:flex-row gap-8">
             {/* Filters Sidebar */}
-            <div className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-64 bg-card border border-border rounded-lg p-4 h-fit`}>
-              <h2 className="text-lg font-semibold mb-4">Filters</h2>
+            <div className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-64 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-4 h-fit hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5`}>
+              <h2 className="text-lg font-semibold mb-4 text-white">Filters</h2>
               
               {/* Price Range Filter */}
               <div className="mb-6">
-                <h3 className="text-sm font-medium mb-3">Price Range</h3>
+                <h3 className="text-sm font-medium mb-3 text-gray-200">Price Range</h3>
                 {/* This is a placeholder for the slider component */}
                 <div className="mb-2">
-                  <div className="h-2 bg-muted rounded-full relative">
+                  <div className="h-2 bg-gray-700 rounded-full relative">
                     <div 
                       className="absolute h-full bg-primary rounded-full" 
                       style={{ 
@@ -156,7 +165,7 @@ export default function BrowsePage() {
                     ></div>
                   </div>
                 </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
+                <div className="flex justify-between text-sm text-gray-400">
                   <span>₱{priceRange[0]}</span>
                   <span>₱{priceRange[1]}</span>
                 </div>
@@ -164,7 +173,7 @@ export default function BrowsePage() {
               
               {/* Bike Type Filter */}
               <div className="mb-6">
-                <h3 className="text-sm font-medium mb-3">Bike Type</h3>
+                <h3 className="text-sm font-medium mb-3 text-gray-200">Bike Type</h3>
                 <div className="space-y-2">
                   <BikeTypeCheckbox 
                     type="Scooter" 
@@ -196,11 +205,11 @@ export default function BrowsePage() {
               
               {/* Rating Filter */}
               <div>
-                <h3 className="text-sm font-medium mb-3">Minimum Rating</h3>
+                <h3 className="text-sm font-medium mb-3 text-gray-200">Minimum Rating</h3>
                 <select 
                   value={minRating}
                   onChange={e => setMinRating(Number(e.target.value))}
-                  className="w-full p-2 bg-background border border-border rounded"
+                  className="w-full p-2 bg-gray-900/50 border border-gray-700 rounded text-white"
                 >
                   <option value={0}>Any Rating</option>
                   <option value={3}>3+ Stars</option>
@@ -228,7 +237,7 @@ export default function BrowsePage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-lg text-muted-foreground">
+                  <p className="text-lg text-gray-300">
                     No rental shops match your filters. Try adjusting your criteria.
                   </p>
                 </div>
@@ -236,7 +245,7 @@ export default function BrowsePage() {
             </div>
           </div>
         </div>
-      </>
+      </section>
     </div>
   )
 } 
