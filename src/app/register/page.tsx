@@ -12,6 +12,70 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import Image from "next/image"
 
+// Add animation variants for components
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.6 } }
+}
+
+const slideUp = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { duration: 0.5 } }
+}
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+}
+
+const cardVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { 
+    y: 0, 
+    opacity: 1, 
+    transition: { 
+      type: "spring", 
+      stiffness: 100, 
+      damping: 12 
+    } 
+  },
+  hover: { 
+    y: -8, 
+    scale: 1.02, 
+    boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.2)",
+    borderColor: "rgba(var(--color-primary), 0.5)",
+    transition: { 
+      type: "spring", 
+      stiffness: 400, 
+      damping: 10 
+    } 
+  }
+}
+
+const formVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.6, 
+      ease: "easeOut" 
+    } 
+  }
+}
+
+const buttonVariants = {
+  initial: { scale: 1 },
+  hover: { scale: 1.03, transition: { duration: 0.2 } },
+  tap: { scale: 0.98, transition: { duration: 0.2 } }
+}
+
 export default function RegisterShopPage() {
   const { user, isAuthenticated, isLoading: authLoading, resendVerificationEmail } = useAuth()
   const router = useRouter()
@@ -428,28 +492,102 @@ export default function RegisterShopPage() {
   if (isSubmitted) {
     return (
       <div className="pt-24">
-        <div className="container mx-auto px-4 py-16 max-w-md text-center">
-          <div className="bg-card border border-border rounded-lg p-8">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check size={32} className="text-green-600 dark:text-green-400" />
-            </div>
-            <h1 className="text-2xl font-bold mb-4">Registration Submitted!</h1>
-            <Badge variant="verified" className="mx-auto mb-6">Pending Verification</Badge>
-            <p className="text-muted-foreground mb-6">
+        <motion.div 
+          className="container mx-auto px-4 py-16 max-w-md text-center"
+          initial="hidden"
+          animate="visible"
+          variants={fadeIn}
+        >
+          <motion.div 
+            className="bg-card border border-border rounded-lg p-8"
+            variants={slideUp}
+          >
+            <motion.div 
+              className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ 
+                scale: 1, 
+                opacity: 1,
+                boxShadow: [
+                  "0 0 0 rgba(34, 197, 94, 0.2)",
+                  "0 0 20px rgba(34, 197, 94, 0.4)",
+                  "0 0 0 rgba(34, 197, 94, 0.2)"
+                ]
+              }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 300, 
+                damping: 15,
+                delay: 0.3,
+                boxShadow: {
+                  repeat: Infinity,
+                  duration: 2,
+                  ease: "easeInOut"
+                }
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ 
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 10,
+                  delay: 0.5
+                }}
+              >
+                <Check size={32} className="text-green-600 dark:text-green-400" />
+              </motion.div>
+            </motion.div>
+            <motion.h1 
+              className="text-2xl font-bold mb-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              Registration Submitted!
+            </motion.h1>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.9 }}
+            >
+              <Badge variant="verified" className="mx-auto mb-6">Pending Verification</Badge>
+            </motion.div>
+            <motion.p 
+              className="text-muted-foreground mb-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.1 }}
+            >
               Thank you for registering your shop. Your application is now being reviewed.
               We&apos;ll contact you via email once the verification process is complete.
-            </p>
-            <Button asChild>
-              <Link href="/">Return to Homepage</Link>
-            </Button>
-          </div>
-        </div>
+            </motion.p>
+            <motion.div
+              whileHover="hover"
+              whileTap="tap"
+              variants={buttonVariants}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3 }}
+            >
+              <Button asChild>
+                <Link href="/">Return to Homepage</Link>
+              </Button>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </div>
     )
   }
   
   return (
-    <div className="pt-20">
+    <motion.div 
+      className="pt-20"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden">
         {/* Background with overlay gradient */}
@@ -458,75 +596,122 @@ export default function RegisterShopPage() {
         </div>
         
         <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <Badge className="mb-6 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
-              Become a Partner
-            </Badge>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+          <motion.div 
+            className="max-w-3xl mx-auto text-center mb-12"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={fadeIn}
+          >
+            <motion.div variants={slideUp}>
+              <Badge className="mb-6 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
+                Become a Partner
+              </Badge>
+            </motion.div>
+            <motion.h1 
+              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight"
+              variants={slideUp}
+            >
               Turn Your Motorbikes Into a <span className="text-primary">Profitable Business</span>
-            </h1>
-            <p className="text-lg md:text-xl text-gray-300 mb-8">
+            </motion.h1>
+            <motion.p 
+              className="text-lg md:text-xl text-gray-300 mb-8"
+              variants={slideUp}
+            >
               No physical store needed. Just your bikes and our platform.
               Start earning today with Siargao's premier motorbike rental directory.
-            </p>
+            </motion.p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+              variants={slideUp}
+            >
               {isAuthenticated ? (
-                <Button 
-                  size="lg" 
-                  className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
-                  onClick={() => setShowRegistrationForm(true)}
+                <motion.div
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={buttonVariants}
                 >
-                  Register Your Shop <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                  <Button 
+                    size="lg" 
+                    className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
+                    onClick={() => setShowRegistrationForm(true)}
+                  >
+                    Register Your Shop <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </motion.div>
               ) : (
+                <motion.div
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={buttonVariants}
+                >
+                  <Button 
+                    size="lg" 
+                    className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
+                    asChild
+                  >
+                    <Link href="/sign-up?callback=/register">
+                      Create an Account <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </motion.div>
+              )}
+              <motion.div
+                whileHover="hover"
+                whileTap="tap"
+                variants={buttonVariants}
+              >
                 <Button 
                   size="lg" 
-                  className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
+                  variant="outline" 
+                  className="border-white/20 text-white hover:bg-white/10"
                   asChild
                 >
-                  <Link href="/sign-up?callback=/register">
-                    Create an Account <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
+                  <a href="#benefits">Learn More</a>
                 </Button>
-              )}
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-white/20 text-white hover:bg-white/10"
-                asChild
-              >
-                <a href="#benefits">Learn More</a>
-              </Button>
-            </div>
-          </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
           
           {/* Stats Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mt-12 backdrop-blur-sm bg-black/30 p-4 md:p-6 rounded-xl border border-white/10">
-            <div className="text-center p-2 md:p-3">
+          <motion.div 
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mt-12 backdrop-blur-sm bg-black/30 p-4 md:p-6 rounded-xl border border-white/10"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={staggerContainer}
+          >
+            <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">200+</p>
               <p className="text-sm md:text-base text-gray-300">Active Tourists Daily</p>
-            </div>
-            <div className="text-center p-2 md:p-3">
+            </motion.div>
+            <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">15%</p>
               <p className="text-sm md:text-base text-gray-300">Commission Fee</p>
-            </div>
-            <div className="text-center p-2 md:p-3">
+            </motion.div>
+            <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">10+</p>
               <p className="text-sm md:text-base text-gray-300">Partner Shops</p>
-            </div>
-            <div className="text-center p-2 md:p-3">
+            </motion.div>
+            <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">5 min</p>
               <p className="text-sm md:text-base text-gray-300">Setup Time</p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
       
       {/* Benefits Section */}
       <section id="benefits" className="py-16 md:py-24 bg-gradient-to-b from-gray-900 to-black">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center mb-16">
+          <motion.div 
+            className="max-w-3xl mx-auto text-center mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={fadeIn}
+          >
             <Badge className="mb-4 text-sm">Why Join Us</Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
               Benefits of Partnering With Siargao Rides
@@ -534,11 +719,21 @@ export default function RegisterShopPage() {
             <p className="text-gray-300 text-lg">
               Join dozens of successful motorbike rental shops already earning with us
             </p>
-          </div>
+          </motion.div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Benefit Card 1 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+          <motion.div 
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.1 }}
+            variants={staggerContainer}
+          >
+            {/* Benefit Cards - add motion capabilities */}
+            <motion.div 
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <MapPin className="h-6 w-6 text-primary" />
               </div>
@@ -546,10 +741,13 @@ export default function RegisterShopPage() {
               <p className="text-gray-400">
                 Save on rent and operating costs. Manage your rentals from anywhere with just a smartphone.
               </p>
-            </div>
+            </motion.div>
             
-            {/* Benefit Card 2 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <motion.div 
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <BarChart className="h-6 w-6 text-primary" />
               </div>
@@ -557,10 +755,13 @@ export default function RegisterShopPage() {
               <p className="text-gray-400">
                 Reach thousands of tourists looking for bike rentals in Siargao through our marketing efforts.
               </p>
-            </div>
+            </motion.div>
             
-            {/* Benefit Card 3 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <motion.div 
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <Users className="h-6 w-6 text-primary" />
               </div>
@@ -568,10 +769,13 @@ export default function RegisterShopPage() {
               <p className="text-gray-400">
                 Access our growing network of tourists already using our platform to find rentals.
               </p>
-            </div>
+            </motion.div>
             
-            {/* Benefit Card 4 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <motion.div 
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <Calendar className="h-6 w-6 text-primary" />
               </div>
@@ -579,10 +783,13 @@ export default function RegisterShopPage() {
               <p className="text-gray-400">
                 Our platform handles scheduling, availability, and booking confirmations automatically.
               </p>
-            </div>
+            </motion.div>
             
-            {/* Benefit Card 5 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <motion.div 
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <CreditCard className="h-6 w-6 text-primary" />
               </div>
@@ -590,10 +797,13 @@ export default function RegisterShopPage() {
               <p className="text-gray-400">
                 Just 15% commission on bookings - significantly lower than typical tourism platforms.
               </p>
-            </div>
+            </motion.div>
             
-            {/* Benefit Card 6 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <motion.div 
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <ShieldCheck className="h-6 w-6 text-primary" />
               </div>
@@ -601,15 +811,21 @@ export default function RegisterShopPage() {
               <p className="text-gray-400">
                 All renters are verified through our platform, reducing risks and ensuring safety.
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
       
       {/* How It Works Section */}
       <section className="py-16 md:py-24 bg-black">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center mb-16">
+          <motion.div 
+            className="max-w-3xl mx-auto text-center mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={fadeIn}
+          >
             <Badge className="mb-4 text-sm">Simple Process</Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
               How To Get Started
@@ -617,11 +833,17 @@ export default function RegisterShopPage() {
             <p className="text-gray-300 text-lg">
               Setting up your shop takes just a few minutes
             </p>
-          </div>
+          </motion.div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto hidden md:grid">
+          <motion.div 
+            className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto hidden md:grid"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={staggerContainer}
+          >
             {/* Step 1 */}
-            <div className="text-center relative">
+            <motion.div className="text-center relative" variants={cardVariants}>
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 relative z-10">
                 <span className="text-xl font-bold text-primary">1</span>
               </div>
@@ -630,10 +852,10 @@ export default function RegisterShopPage() {
               <p className="text-gray-400">
                 Sign up for a free account and verify your email.
               </p>
-            </div>
+            </motion.div>
             
             {/* Step 2 */}
-            <div className="text-center relative">
+            <motion.div className="text-center relative" variants={cardVariants}>
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 relative z-10">
                 <span className="text-xl font-bold text-primary">2</span>
               </div>
@@ -642,57 +864,19 @@ export default function RegisterShopPage() {
               <p className="text-gray-400">
                 Provide government ID and proof of bike ownership.
               </p>
-            </div>
+            </motion.div>
             
             {/* Step 3 */}
-            <div className="text-center">
+            <motion.div className="text-center" variants={cardVariants}>
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl font-bold text-primary">3</span>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Start Earning</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">Get Verified & Earn</h3>
               <p className="text-gray-400">
-                Get verified and start receiving booking requests.
+                After verification, start receiving bookings and revenue.
               </p>
-            </div>
-          </div>
-          
-          {/* Mobile-friendly version with vertical timeline */}
-          <div className="md:hidden mt-6 relative max-w-xs mx-auto">
-            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-800"></div>
-            
-            {/* Step 1 - Mobile */}
-            <div className="ml-12 mb-8 relative">
-              <div className="absolute left-0 top-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center -translate-x-16">
-                <span className="text-sm font-bold text-primary">1</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-white">Create Account</h3>
-              <p className="text-sm text-gray-400">
-                Sign up for a free account and verify your email.
-              </p>
-            </div>
-            
-            {/* Step 2 - Mobile */}
-            <div className="ml-12 mb-8 relative">
-              <div className="absolute left-0 top-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center -translate-x-16">
-                <span className="text-sm font-bold text-primary">2</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-white">Submit Documents</h3>
-              <p className="text-sm text-gray-400">
-                Provide government ID and proof of bike ownership.
-              </p>
-            </div>
-            
-            {/* Step 3 - Mobile */}
-            <div className="ml-12 relative">
-              <div className="absolute left-0 top-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center -translate-x-16">
-                <span className="text-sm font-bold text-primary">3</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-white">Start Earning</h3>
-              <p className="text-sm text-gray-400">
-                Get verified and start receiving booking requests.
-              </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
       
@@ -746,362 +930,309 @@ export default function RegisterShopPage() {
         </div>
       </section>
       
-      {/* Registration Form Section - Only show when requested or authenticated */}
-      {showRegistrationForm || existingShop || userRecordExists === false || error ? (
-        <>
-          <div className="bg-black text-white">
-            <div className="container mx-auto px-4 py-12">
-              <h1 className="text-4xl font-bold mb-4">Register Your Shop</h1>
-              <p className="text-lg">Join our platform and start renting your motorbikes to tourists in Siargao</p>
-            </div>
-          </div>
-          
-          <div className="container mx-auto px-4 py-8">
-            {existingShop && (
-              <div className="bg-yellow-100 border border-yellow-200 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-800/50 dark:text-yellow-300 rounded-md p-4 mb-6">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-start gap-3">
-                    <Info size={20} className="mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">You already have a registered shop</p>
-                      <p className="text-sm mt-1">
-                        Currently, we only allow one shop per account. Your existing shop is "{existingShop.name}".
-                        You can manage your existing shop from your dashboard.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="ml-8">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      asChild
-                      className="w-fit"
-                    >
-                      <Link href="/dashboard">Go to Dashboard</Link>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {userRecordExists === false && (
-              <div className="bg-blue-100 border border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-300 rounded-md p-4 mb-6">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-start gap-3">
-                    <Info size={20} className="mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">Your account is missing a database record</p>
-                      <p className="text-sm mt-1">
-                        Your account was authenticated but we need to create a database record for you
-                        before you can register a shop. This is a one-time step.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {userRecordCreated ? (
-                    <div className="ml-8 text-green-600 dark:text-green-400 text-sm font-medium">
-                      User record created successfully! Refreshing the page...
-                    </div>
-                  ) : (
-                    <div className="ml-8 space-y-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleCreateUserRecord}
-                        disabled={creatingUserRecord}
-                        className="w-fit mr-2"
-                      >
-                        {creatingUserRecord ? "Creating..." : "Create User Record"}
-                      </Button>
-                      
-                      {error && error.includes("Failed to create user record") && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={handleCreateUserRecordBackup}
-                          disabled={creatingUserRecord}
-                          className="w-fit bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-800"
-                        >
-                          Try Backup Method
-                        </Button>
-                      )}
-                      
-                      {error && (
-                        <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                          {error}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Only show email verification error if there's no existing shop */}
-            {!existingShop && error && error.includes("verify your email") ? (
-              <div className="bg-amber-100 border border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-800/50 dark:text-amber-300 rounded-md p-4 mb-6">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-start gap-3">
+      {/* Registration Form Section */}
+      {showRegistrationForm && (
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={formVariants}
+          className="py-16 bg-gradient-to-b from-black to-gray-900"
+        >
+          <div className="container mx-auto px-4">
+            <div className="max-w-2xl mx-auto">
+              <motion.div 
+                className="text-center mb-8"
+                variants={slideUp}
+              >
+                <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white">Register Your Shop</h2>
+                <p className="text-gray-300">
+                  Fill out the form below to become a Siargao Rides partner
+                </p>
+              </motion.div>
+
+              {error && error.includes("User not found") && userRecordExists === false && (
+                <motion.div 
+                  className="mb-6"
+                  variants={slideUp}
+                >
+                  <div className="bg-amber-100 border border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300 rounded-md p-4 mb-2 flex items-start gap-3">
                     <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
-                    <p>{error}</p>
+                    <div>
+                      <p className="font-medium">We need to create a user record for you first</p>
+                      <p className="text-sm mt-1">This is a one-time step required to complete registration.</p>
+                    </div>
                   </div>
                   
-                  {manualVerificationRequested ? (
-                    <div className="ml-8 text-green-600 dark:text-green-400 text-sm font-medium">
-                      Manual verification requested. Our team will review your request and contact you soon.
-                    </div>
-                  ) : resendSuccess ? (
-                    <div className="ml-8 text-green-600 dark:text-green-400 text-sm font-medium">
-                      Verification email sent to {verificationEmail}! Please check your inbox.
-                      <div className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                        If you don't see it, check your spam folder or try a different email address.
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="ml-8 space-y-3">
-                      <div className="flex flex-col sm:flex-row gap-2 max-w-md">
-                        <input
-                          type="email"
-                          value={verificationEmail}
-                          onChange={(e) => setVerificationEmail(e.target.value)}
-                          placeholder="Enter email address"
-                          className="flex-1 px-3 py-2 text-sm bg-white/10 border border-amber-300/30 dark:border-amber-700/30 rounded-md focus:outline-none focus:ring-1 focus:ring-amber-500"
-                        />
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={handleResendVerification}
-                          disabled={isResending}
-                          className="whitespace-nowrap sm:self-start"
-                        >
-                          {isResending ? "Sending..." : "Resend verification"}
-                        </Button>
-                      </div>
-                      
-                      <div className="flex flex-col gap-2">
-                        <p className="text-xs text-amber-700 dark:text-amber-400">
-                          Enter the email where you want to receive the verification link
-                        </p>
-                        
-                        {/* Debug toggle */}
-                        <button
-                          onClick={() => setShowDebugInfo(!showDebugInfo)}
-                          className="text-xs text-amber-700 dark:text-amber-500 underline self-start"
-                        >
-                          {showDebugInfo ? "Hide" : "Show"} technical details
-                        </button>
-                        
-                        {/* Alternative verification options */}
-                        <button
-                          onClick={handleRequestManualVerification}
-                          className="text-xs text-amber-700 dark:text-amber-500 underline self-start"
-                        >
-                          Request manual verification
-                        </button>
-                      </div>
-                      
-                      {/* Debug information */}
-                      {showDebugInfo && debugDetails && (
-                        <div className="mt-2 p-2 bg-black/20 rounded-md text-xs font-mono whitespace-pre-wrap">
-                          <p className="font-semibold">Debug information:</p>
-                          <pre>{JSON.stringify(debugDetails, null, 2)}</pre>
-                        </div>
+                  <div className="flex justify-center mt-4">
+                    <button
+                      onClick={handleCreateUserRecord}
+                      disabled={creatingUserRecord || userRecordCreated}
+                      className={`px-4 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${
+                        userRecordCreated 
+                          ? "bg-green-600 text-white cursor-default" 
+                          : "bg-amber-600 hover:bg-amber-700 text-white"
+                      }`}
+                    >
+                      {creatingUserRecord ? (
+                        <>Creating user record...</>
+                      ) : userRecordCreated ? (
+                        <>
+                          <Check size={16} />
+                          User record created
+                        </>
+                      ) : (
+                        <>Create user record</>
                       )}
+                    </button>
+                  </div>
+                  
+                  {/* Debug information */}
+                  {showDebugInfo && debugDetails && (
+                    <div className="mt-2 p-2 bg-black/20 rounded-md text-xs font-mono whitespace-pre-wrap">
+                      <p className="font-semibold">Debug information:</p>
+                      <pre>{JSON.stringify(debugDetails, null, 2)}</pre>
                     </div>
                   )}
-                </div>
-              </div>
-            ) : error && !error.includes("User not found") && userRecordExists !== false ? (
-              <div className="bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 rounded-md p-4 mb-6 flex items-start gap-3">
-                <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
-                <p>{error}</p>
-              </div>
-            ) : null}
-            
-            <div className="bg-card border border-border rounded-lg p-6 md:p-8">
-              {existingShop ? (
-                <div className="text-center p-8">
-                  <p className="mb-4 text-muted-foreground">
-                    Registration form is disabled as you already have a registered shop.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Owner Information */}
-                  <div>
-                    <h2 className="text-xl font-semibold mb-4">Owner Information</h2>
-                    <div className="space-y-4">
-                      <div>
-                        <label htmlFor="fullName" className="block text-sm font-medium mb-1">
-                          Full Name
-                        </label>
-                        <input
-                          type="text"
-                          id="fullName"
-                          name="fullName"
-                          value={formData.fullName}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="shopName" className="block text-sm font-medium mb-1">
-                          Shop Name
-                        </label>
-                        <input
-                          type="text"
-                          id="shopName"
-                          name="shopName"
-                          value={formData.shopName}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="address" className="block text-sm font-medium mb-1">
-                          Shop Address
-                        </label>
-                        <input
-                          type="text"
-                          id="address"
-                          name="address"
-                          value={formData.address}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          required
-                          placeholder="e.g., Tourism Road, General Luna"
-                        />
-                      </div>
-                    </div>
+                </motion.div>
+              )}
+              
+              {error && !error.includes("User not found") && userRecordExists !== false ? (
+                <motion.div 
+                  className="bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 rounded-md p-4 mb-6 flex items-start gap-3"
+                  variants={slideUp}
+                >
+                  <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                  <p>{error}</p>
+                </motion.div>
+              ) : null}
+              
+              <motion.div 
+                className="bg-card border border-border rounded-lg p-6 md:p-8"
+                variants={slideUp}
+              >
+                {existingShop ? (
+                  <div className="text-center p-8">
+                    <p className="mb-4 text-muted-foreground">
+                      Registration form is disabled as you already have a registered shop.
+                    </p>
                   </div>
-                  
-                  {/* Contact Information */}
-                  <div>
-                    <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-                    <div className="space-y-4">
-                      <div>
-                        <label htmlFor="email" className="block text-sm font-medium mb-1">
-                          Email Address
-                        </label>
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="phone" className="block text-sm font-medium mb-1">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          id="phone"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Verification Documents */}
-                  <div>
-                    <h2 className="text-xl font-semibold mb-4">Verification Documents</h2>
-                    
-                    <div className="bg-muted/30 border border-border rounded-md p-4 mb-6">
-                      <div className="flex items-start gap-3">
-                        <Info size={20} className="mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-muted-foreground">
-                          For security and verification purposes, we require a government-issued ID. 
-                          A business permit is recommended but optional. This helps us maintain 
-                          a trusted marketplace for our users.
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label htmlFor="governmentId" className="block text-sm font-medium mb-1">
-                          Government-issued ID (required)
-                        </label>
-                        <div className="flex items-center justify-center border border-dashed border-border rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50">
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Owner Information */}
+                    <motion.div variants={slideUp}>
+                      <h2 className="text-xl font-semibold mb-4">Owner Information</h2>
+                      <div className="space-y-4">
+                        <div>
+                          <label htmlFor="fullName" className="block text-sm font-medium mb-1">
+                            Full Name
+                          </label>
                           <input
-                            type="file"
-                            id="governmentId"
-                            name="governmentId"
-                            onChange={(e) => handleFileChange(e, 'governmentId')}
-                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                            accept="image/*,.pdf"
+                            type="text"
+                            id="fullName"
+                            name="fullName"
+                            value={formData.fullName}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                             required
                           />
-                          <div className="text-center">
-                            <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
-                            <p className="text-sm font-medium">Click to upload</p>
-                            <p className="text-xs text-muted-foreground">Accepted formats: JPG, PNG, PDF</p>
-                          </div>
-                          
-                          {formData.governmentId && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-card/90 z-0">
-                              <p className="text-sm font-medium">{formData.governmentId.name}</p>
-                            </div>
-                          )}
+                        </div>
+                        
+                        <div>
+                          <label htmlFor="shopName" className="block text-sm font-medium mb-1">
+                            Shop Name
+                          </label>
+                          <input
+                            type="text"
+                            id="shopName"
+                            name="shopName"
+                            value={formData.shopName}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            required
+                          />
+                        </div>
+                        
+                        <div>
+                          <label htmlFor="address" className="block text-sm font-medium mb-1">
+                            Shop Address
+                          </label>
+                          <input
+                            type="text"
+                            id="address"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            required
+                            placeholder="e.g., Tourism Road, General Luna"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                    
+                    {/* Contact Information */}
+                    <motion.div variants={slideUp}>
+                      <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
+                      <div className="space-y-4">
+                        <div>
+                          <label htmlFor="email" className="block text-sm font-medium mb-1">
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            required
+                          />
+                        </div>
+                        
+                        <div>
+                          <label htmlFor="phone" className="block text-sm font-medium mb-1">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                    
+                    {/* Verification Documents */}
+                    <motion.div variants={slideUp}>
+                      <h2 className="text-xl font-semibold mb-4">Verification Documents</h2>
+                      
+                      <div className="bg-muted/30 border border-border rounded-md p-4 mb-6">
+                        <div className="flex items-start gap-3">
+                          <Info size={20} className="mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">
+                            For security and verification purposes, we require a government-issued ID. 
+                            A business permit is recommended but optional. This helps us maintain 
+                            a trusted marketplace for our users.
+                          </p>
                         </div>
                       </div>
                       
-                      <div>
-                        <label htmlFor="businessPermit" className="block text-sm font-medium mb-1">
-                          Business/Municipal Permit (optional)
-                        </label>
-                        <div className="flex items-center justify-center border border-dashed border-border rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50">
-                          <input
-                            type="file"
-                            id="businessPermit"
-                            name="businessPermit"
-                            onChange={(e) => handleFileChange(e, 'businessPermit')}
-                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                            accept="image/*,.pdf"
-                          />
-                          <div className="text-center">
-                            <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
-                            <p className="text-sm font-medium">Click to upload</p>
-                            <p className="text-xs text-muted-foreground">Accepted formats: JPG, PNG, PDF</p>
-                          </div>
-                          
-                          {formData.businessPermit && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-card/90 z-0">
-                              <p className="text-sm font-medium">{formData.businessPermit.name}</p>
+                      <div className="space-y-4">
+                        <motion.div 
+                          whileHover={{ borderColor: "rgba(var(--color-primary), 0.5)" }}
+                        >
+                          <label htmlFor="governmentId" className="block text-sm font-medium mb-1">
+                            Government-issued ID (required)
+                          </label>
+                          <div className="flex items-center justify-center border border-dashed border-border rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50">
+                            <input
+                              type="file"
+                              id="governmentId"
+                              name="governmentId"
+                              onChange={(e) => handleFileChange(e, 'governmentId')}
+                              className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                              accept="image/*,.pdf"
+                              required
+                            />
+                            <div className="text-center">
+                              <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm font-medium">Click to upload</p>
+                              <p className="text-xs text-muted-foreground">Accepted formats: JPG, PNG, PDF</p>
                             </div>
-                          )}
-                        </div>
+                            
+                            {formData.governmentId && (
+                              <motion.div 
+                                className="absolute inset-0 flex items-center justify-center bg-card/90 z-0"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <p className="text-sm font-medium">{formData.governmentId.name}</p>
+                              </motion.div>
+                            )}
+                          </div>
+                        </motion.div>
+                        
+                        <motion.div 
+                          whileHover={{ borderColor: "rgba(var(--color-primary), 0.5)" }}
+                        >
+                          <label htmlFor="businessPermit" className="block text-sm font-medium mb-1">
+                            Business/Municipal Permit (optional)
+                          </label>
+                          <div className="flex items-center justify-center border border-dashed border-border rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50">
+                            <input
+                              type="file"
+                              id="businessPermit"
+                              name="businessPermit"
+                              onChange={(e) => handleFileChange(e, 'businessPermit')}
+                              className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                              accept="image/*,.pdf"
+                            />
+                            <div className="text-center">
+                              <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm font-medium">Click to upload</p>
+                              <p className="text-xs text-muted-foreground">Accepted formats: JPG, PNG, PDF</p>
+                            </div>
+                            
+                            {formData.businessPermit && (
+                              <motion.div 
+                                className="absolute inset-0 flex items-center justify-center bg-card/90 z-0"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <p className="text-sm font-medium">{formData.businessPermit.name}</p>
+                              </motion.div>
+                            )}
+                          </div>
+                        </motion.div>
                       </div>
-                    </div>
-                  </div>
-                  
-                  {/* Submit Button */}
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center"
-                    disabled={isSubmitting || !!existingShop}
-                  >
-                    {isSubmitting ? "Processing..." : "Submit Registration"} {!isSubmitting && !existingShop && <ArrowRight className="ml-2 h-4 w-4" />}
-                  </Button>
-                </form>
-              )}
+                    </motion.div>
+                    
+                    {/* Submit Button */}
+                    <motion.div
+                      whileHover="hover"
+                      whileTap="tap"
+                      variants={buttonVariants}
+                    >
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center"
+                        disabled={isSubmitting || !!existingShop}
+                      >
+                        {isSubmitting ? (
+                          <>Processing...</>
+                        ) : (
+                          <>
+                            Submit Registration 
+                            {!isSubmitting && !existingShop && (
+                              <motion.span
+                                animate={{ x: [0, 5, 0] }}
+                                transition={{ 
+                                  repeat: Infinity, 
+                                  repeatType: "mirror", 
+                                  duration: 1.5,
+                                  ease: "easeInOut" 
+                                }}
+                              >
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                              </motion.span>
+                            )}
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
+                  </form>
+                )}
+              </motion.div>
             </div>
           </div>
-        </>
-      ) : null}
-    </div>
+        </motion.div>
+      )}
+    </motion.div>
   )
 } 
