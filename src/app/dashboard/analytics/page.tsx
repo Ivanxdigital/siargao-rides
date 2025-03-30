@@ -327,6 +327,9 @@ export default function AnalyticsPage() {
       const monthYear = monthDate.getFullYear();
       const month = monthDate.getMonth();
       
+      // Create a unique key that combines month and year
+      const uniqueKey = `${monthKey}-${monthYear}`;
+      
       // Count bookings for this month
       const monthBookings = bookings.filter(booking => {
         const bookingDate = new Date(booking.created_at);
@@ -334,7 +337,7 @@ export default function AnalyticsPage() {
       }).length;
       
       monthsData.push({
-        month: monthKey,
+        month: uniqueKey, // Use the unique key as the month property
         bookings: monthBookings
       });
     }
@@ -518,7 +521,7 @@ export default function AnalyticsPage() {
                       minHeight: item.bookings > 0 ? '20px' : '4px'
                     }}
                   ></div>
-                  <div className="text-muted-foreground text-xs mt-2">{item.month}</div>
+                  <div className="text-muted-foreground text-xs mt-2">{item.month.split('-')[0]}</div>
                   <div className="text-sm font-medium">{item.bookings}</div>
                 </div>
               ))}
