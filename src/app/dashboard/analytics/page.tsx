@@ -321,14 +321,16 @@ export default function AnalyticsPage() {
     
     for (let i = monthsToShow - 1; i >= 0; i--) {
       const monthDate = new Date();
+      // Set date to first day of month to avoid any day-related issues
+      monthDate.setDate(1);
       monthDate.setMonth(now.getMonth() - i);
       
       const monthKey = monthDate.toLocaleString('default', { month: 'short' });
       const monthYear = monthDate.getFullYear();
       const month = monthDate.getMonth();
       
-      // Create a unique key that combines month and year
-      const uniqueKey = `${monthKey}-${monthYear}`;
+      // Create a unique key with index to guarantee uniqueness
+      const uniqueKey = `${monthKey}-${monthYear}-${i}`;
       
       // Count bookings for this month
       const monthBookings = bookings.filter(booking => {
