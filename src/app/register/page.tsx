@@ -881,7 +881,7 @@ export default function RegisterShopPage() {
           </motion.div>
           
           <motion.div 
-            className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto hidden md:grid"
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
@@ -892,6 +892,7 @@ export default function RegisterShopPage() {
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 relative z-10">
                 <span className="text-xl font-bold text-primary">1</span>
               </div>
+              {/* Only show connector line on medium screens and up */}
               <div className="hidden md:block absolute top-8 left-1/2 w-full h-1 bg-gray-800 -z-0"></div>
               <h3 className="text-xl font-semibold mb-3 text-white">Create Account</h3>
               <p className="text-gray-400">
@@ -904,6 +905,7 @@ export default function RegisterShopPage() {
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 relative z-10">
                 <span className="text-xl font-bold text-primary">2</span>
               </div>
+              {/* Only show connector line on medium screens and up */}
               <div className="hidden md:block absolute top-8 left-1/2 w-full h-1 bg-gray-800 -z-0"></div>
               <h3 className="text-xl font-semibold mb-3 text-white">Submit Documents</h3>
               <p className="text-gray-400">
