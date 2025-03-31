@@ -444,7 +444,7 @@ export default function ManageShopPage() {
             {/* Banner image with edit option when in edit mode */}
             {(bannerPreview || shop.banner_url) && !isEditing ? (
               <Image
-                src={bannerPreview || shop.banner_url}
+                src={bannerPreview || shop.banner_url || '/placeholder-banner.jpg'}
                 alt={shop.name}
                 className="object-cover"
                 fill
@@ -458,7 +458,7 @@ export default function ManageShopPage() {
                 {bannerPreview ? (
                   <>
                     <Image
-                      src={bannerPreview}
+                      src={bannerPreview || '/placeholder-banner.jpg'}
                       alt="Banner preview"
                       className="object-cover"
                       fill
@@ -500,7 +500,7 @@ export default function ManageShopPage() {
                 {/* Logo image with edit option when in edit mode */}
                 {(logoPreview || shop.logo_url) && !isEditing ? (
                   <Image
-                    src={logoPreview || shop.logo_url}
+                    src={logoPreview || shop.logo_url || '/placeholder-logo.jpg'}
                     alt={`${shop.name} logo`}
                     className="object-cover"
                     fill
@@ -516,7 +516,7 @@ export default function ManageShopPage() {
                     {logoPreview ? (
                       <>
                         <Image
-                          src={logoPreview}
+                          src={logoPreview || '/placeholder-logo.jpg'}
                           alt="Logo preview"
                           className="object-cover"
                           fill
@@ -573,7 +573,7 @@ export default function ManageShopPage() {
                       {bannerPreview ? (
                         <div className="relative h-40 mb-2">
                           <Image
-                            src={bannerPreview}
+                            src={bannerPreview || '/placeholder-banner.jpg'}
                             alt="Banner preview"
                             className="object-cover rounded-md"
                             fill
@@ -624,7 +624,7 @@ export default function ManageShopPage() {
                         <div className="relative h-40 mb-2">
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-md overflow-hidden">
                             <Image
-                              src={logoPreview}
+                              src={logoPreview || '/placeholder-logo.jpg'}
                               alt="Logo preview"
                               className="object-cover"
                               fill
