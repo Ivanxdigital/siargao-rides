@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Upload, Info, Check, AlertCircle, ArrowRight, BarChart, Calendar, ShieldCheck, CreditCard, Users, Rocket, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -79,6 +79,7 @@ const buttonVariants = {
 export default function RegisterShopPage() {
   const { user, isAuthenticated, isLoading: authLoading, resendVerificationEmail } = useAuth()
   const router = useRouter()
+  const formRef = useRef<HTMLDivElement>(null)
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -523,6 +524,16 @@ export default function RegisterShopPage() {
     }
   }, [isAuthenticated, user, checkingUserRecord, userRecordExists])
   
+  // Function to handle showing the registration form and scrolling to it
+  const showFormAndScroll = () => {
+    setShowRegistrationForm(true)
+    
+    // Wait for the form to be rendered, then scroll to it
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+  }
+  
   if (isSubmitted) {
     return (
       <div className="pt-24">
@@ -669,7 +680,7 @@ export default function RegisterShopPage() {
                   <Button 
                     size="lg" 
                     className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
-                    onClick={() => setShowRegistrationForm(true)}
+                    onClick={showFormAndScroll}
                   >
                     Register Your Shop <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -936,7 +947,7 @@ export default function RegisterShopPage() {
                 <Button 
                   size="lg" 
                   className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
-                  onClick={() => setShowRegistrationForm(true)}
+                  onClick={showFormAndScroll}
                 >
                   Register Your Shop <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -967,6 +978,7 @@ export default function RegisterShopPage() {
       {/* Registration Form Section */}
       {showRegistrationForm && (
         <motion.div 
+          ref={formRef}
           initial="hidden"
           animate="visible"
           variants={formVariants}
