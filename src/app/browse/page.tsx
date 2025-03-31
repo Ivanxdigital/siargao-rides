@@ -281,7 +281,7 @@ export default function BrowsePage() {
             </motion.button>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
             {/* Filters Panel (Desktop & Mobile) */}
             <motion.div 
               className="md:col-span-1"
@@ -290,7 +290,7 @@ export default function BrowsePage() {
               transition={{ duration: 0.5, delay: 0.6 }}
             >
               {/* Desktop filters (always visible) */}
-              <div className="hidden md:block mb-6">
+              <div className="hidden md:block sticky top-20 p-4 bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700">
                 <h2 className="text-xl font-bold mb-4">Filters</h2>
                 
                 <div className="mb-6">
@@ -320,7 +320,7 @@ export default function BrowsePage() {
                       max={2000}
                       value={priceRange[0]}
                       onChange={(e) => handlePriceChange([parseInt(e.target.value), priceRange[1]])}
-                      className="w-full mb-2"
+                      className="w-full mb-2 accent-primary"
                     />
                     <input 
                       type="range"
@@ -328,7 +328,7 @@ export default function BrowsePage() {
                       max={2000}
                       value={priceRange[1]}
                       onChange={(e) => handlePriceChange([priceRange[0], parseInt(e.target.value)])}
-                      className="w-full"
+                      className="w-full accent-primary"
                     />
                   </div>
                 </div>
@@ -347,13 +347,28 @@ export default function BrowsePage() {
                       step={0.5}
                       value={minRating}
                       onChange={(e) => setMinRating(parseFloat(e.target.value))}
-                      className="w-full"
+                      className="w-full accent-primary"
                     />
-                    <div className="mt-2 text-center font-medium">
+                    <div className="mt-2 text-center text-sm font-medium py-1 px-2 rounded bg-gray-800/50 border border-gray-700">
                       {minRating} stars & up
                     </div>
                   </div>
                 </div>
+                
+                {selectedBikeTypes.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 ? (
+                  <div className="mt-4">
+                    <button 
+                      onClick={() => {
+                        setPriceRange([100, 2000])
+                        setSelectedBikeTypes([])
+                        setMinRating(0)
+                      }}
+                      className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
+                    >
+                      <span>Reset All Filters</span>
+                    </button>
+                  </div>
+                ) : null}
               </div>
               
               {/* Mobile filters (expandable) */}
@@ -394,7 +409,7 @@ export default function BrowsePage() {
                           max={2000}
                           value={priceRange[0]}
                           onChange={(e) => handlePriceChange([parseInt(e.target.value), priceRange[1]])}
-                          className="w-full mb-2"
+                          className="w-full mb-2 accent-primary"
                         />
                         <input 
                           type="range"
@@ -402,7 +417,7 @@ export default function BrowsePage() {
                           max={2000}
                           value={priceRange[1]}
                           onChange={(e) => handlePriceChange([priceRange[0], parseInt(e.target.value)])}
-                          className="w-full"
+                          className="w-full accent-primary"
                         />
                       </div>
                     </div>
@@ -421,13 +436,28 @@ export default function BrowsePage() {
                           step={0.5}
                           value={minRating}
                           onChange={(e) => setMinRating(parseFloat(e.target.value))}
-                          className="w-full"
+                          className="w-full accent-primary"
                         />
-                        <div className="mt-2 text-center font-medium">
+                        <div className="mt-2 text-center text-sm font-medium py-1 px-2 rounded bg-gray-800/50 border border-gray-700">
                           {minRating} stars & up
                         </div>
                       </div>
                     </div>
+                    
+                    {selectedBikeTypes.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 ? (
+                      <div className="mt-4">
+                        <button 
+                          onClick={() => {
+                            setPriceRange([100, 2000])
+                            setSelectedBikeTypes([])
+                            setMinRating(0)
+                          }}
+                          className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
+                        >
+                          <span>Reset All Filters</span>
+                        </button>
+                      </div>
+                    ) : null}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -466,25 +496,35 @@ export default function BrowsePage() {
                   </button>
                 </div>
               ) : (
-                <motion.div 
-                  className="grid grid-cols-1 gap-6"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                >
-                  {filteredShops.map((shop) => (
-                    <motion.div key={shop.id} variants={itemVariants}>
-                      <RentalShopCard
-                        id={shop.id}
-                        name={shop.name}
-                        images={shop.images}
-                        startingPrice={shop.startingPrice}
-                        rating={shop.rating}
-                        reviewCount={shop.reviewCount}
-                      />
-                    </motion.div>
-                  ))}
-                </motion.div>
+                <>
+                  <div className="flex justify-between items-center mb-4">
+                    <p className="text-gray-300">
+                      <span className="font-semibold">{filteredShops.length}</span> {filteredShops.length === 1 ? 'shop' : 'shops'} found
+                    </p>
+                    <Badge className="bg-primary/10 text-xs text-primary border-primary/20 py-1">
+                      {selectedBikeTypes.length > 0 ? `${selectedBikeTypes.length} filters applied` : 'No filters applied'}
+                    </Badge>
+                  </div>
+                  <motion.div 
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                  >
+                    {filteredShops.map((shop) => (
+                      <motion.div key={shop.id} variants={itemVariants} className="h-full">
+                        <RentalShopCard
+                          id={shop.id}
+                          name={shop.name}
+                          images={shop.images}
+                          startingPrice={shop.startingPrice}
+                          rating={shop.rating}
+                          reviewCount={shop.reviewCount}
+                        />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </>
               )}
             </div>
           </div>

@@ -28,61 +28,46 @@ const RentalShopCard = ({
   
   return (
     <motion.div 
-      className="bg-card rounded-lg overflow-hidden border border-border shadow-sm hover:shadow-md transition-all duration-300"
-      whileHover={{ y: -5 }}
+      className="bg-card rounded-lg overflow-hidden border border-border shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col"
+      whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
       transition={{ duration: 0.2 }}
     >
       {/* Shop Image */}
-      <div className="relative h-48 w-full overflow-hidden">
+      <div className="relative h-40 w-full overflow-hidden">
         <Image
           src={images?.[0] || fallbackImage}
           alt={name}
           fill
-          className="object-cover"
+          className="object-cover transition-transform duration-700 hover:scale-105"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+          <Star size={14} className="text-yellow-400 fill-yellow-400" />
+          <span className="text-xs font-medium text-white">{rating.toFixed(1)}</span>
+          <span className="text-xs text-gray-300">({reviewCount})</span>
+        </div>
       </div>
 
       {/* Shop Details */}
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-medium text-foreground">{name}</h3>
-          <div className="flex items-center gap-1">
-            <Star size={16} className="text-tropical-yellow fill-tropical-yellow" />
-            <span className="text-sm font-medium">{rating.toFixed(1)}</span>
-            <span className="text-xs text-muted-foreground">({reviewCount})</span>
-          </div>
-        </div>
-
+      <div className="p-3 flex flex-col flex-grow">
+        <h3 className="text-base font-bold text-foreground mb-1 line-clamp-1">{name}</h3>
+        
         {/* Pricing */}
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground">
-            Starting from
-          </p>
-          <p className="text-lg font-semibold text-primary">
-            ₱{startingPrice} <span className="text-xs text-muted-foreground">/day</span>
-          </p>
+        <div className="mb-3">
+          <div className="flex items-baseline">
+            <p className="text-lg font-semibold text-primary">₱{startingPrice}</p>
+            <span className="text-xs text-muted-foreground ml-1">/day</span>
+          </div>
+          <p className="text-xs text-muted-foreground">Starting price</p>
         </div>
 
-        {/* Bike Preview Thumbnails - Just showing 2 small previews */}
-        <div className="flex gap-2 mb-4">
-          {(images || []).slice(0, 2).map((image, index) => (
-            <div key={index} className="relative h-14 w-20 rounded-md overflow-hidden">
-              <Image
-                src={image || fallbackImage}
-                alt={`${name} bike ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-            </div>
-          ))}
+        <div className="mt-auto">
+          <Button asChild className="w-full text-sm py-1.5" size="sm">
+            <Link href={`/shop/${id}`}>
+              View Shop
+            </Link>
+          </Button>
         </div>
-
-        {/* View Shop Button */}
-        <Button asChild className="w-full">
-          <Link href={`/shop/${id}`}>
-            View Shop
-          </Link>
-        </Button>
       </div>
     </motion.div>
   )
