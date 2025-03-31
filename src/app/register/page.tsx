@@ -302,7 +302,38 @@ export default function RegisterShopPage() {
         if (shopError instanceof Error && 
             (shopError.message.includes('User not found') || 
             shopError.message.includes('Failed to create shop'))) {
-          setError("User not found in the database. Please create a user record first.")
+          
+          console.log("User not found in the database. Attempting to create user record automatically...");
+          
+          // Attempt to create the user record automatically
+          try {
+            await handleCreateUserRecord();
+            
+            // Wait a moment for the record to be created
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Try creating the shop again
+            console.log("Retrying shop creation after creating user record...");
+            const newShop = await createShop({
+              owner_id: user.id,
+              name: formData.shopName,
+              description: `Motorbike rental shop in Siargao. Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+              address: formData.address || "Siargao Island",
+              city: "Siargao",
+              phone_number: formData.phone,
+              email: formData.email,
+            });
+            
+            if (!newShop) {
+              throw new Error("Failed to create shop on second attempt");
+            }
+            
+            console.log('Shop created successfully on second attempt:', newShop);
+            setIsSubmitted(true);
+          } catch (retryError) {
+            console.error("Error during automatic user record creation and shop retry:", retryError);
+            setError("Failed to automatically create user record. Please refresh the page and try again.");
+          }
         } else {
           throw shopError; // Re-throw if it's a different error
         }
@@ -463,20 +494,23 @@ export default function RegisterShopPage() {
         const data = await response.json()
         setUserRecordExists(data.exists)
         
-        // If user record doesn't exist, show the message
+        // If user record doesn't exist, automatically create it instead of showing error
         if (!data.exists) {
-          setError("User not found in the database. Please create a user record first.")
+          console.log("User record doesn't exist. Automatically creating it...")
+          await handleCreateUserRecord()
         }
       } else {
         // If the endpoint doesn't exist, we'll assume the record doesn't exist
-        // This is a fallback in case the check endpoint isn't implemented
+        // and automatically create it
         setUserRecordExists(false)
-        setError("User not found in the database. Please create a user record first.")
+        console.log("User check failed. Automatically creating user record...")
+        await handleCreateUserRecord()
       }
     } catch (err) {
       console.error('Error checking user record:', err)
-      // If there's an error checking, we'll just continue and let the form submission handle it
-      setUserRecordExists(null)
+      // If there's an error checking, try to create the record anyway
+      console.log("Error checking user record. Attempting to create it anyway...")
+      await handleCreateUserRecord()
     } finally {
       setCheckingUserRecord(false)
     }
@@ -950,62 +984,6 @@ export default function RegisterShopPage() {
                 </p>
               </motion.div>
 
-              {error && error.includes("User not found") && userRecordExists === false && (
-                <motion.div 
-                  className="mb-6"
-                  variants={slideUp}
-                >
-                  <div className="bg-amber-100 border border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300 rounded-md p-4 mb-2 flex items-start gap-3">
-                    <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">We need to create a user record for you first</p>
-                      <p className="text-sm mt-1">This is a one-time step required to complete registration.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-center mt-4">
-                    <button
-                      onClick={handleCreateUserRecord}
-                      disabled={creatingUserRecord || userRecordCreated}
-                      className={`px-4 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${
-                        userRecordCreated 
-                          ? "bg-green-600 text-white cursor-default" 
-                          : "bg-amber-600 hover:bg-amber-700 text-white"
-                      }`}
-                    >
-                      {creatingUserRecord ? (
-                        <>Creating user record...</>
-                      ) : userRecordCreated ? (
-                        <>
-                          <Check size={16} />
-                          User record created
-                        </>
-                      ) : (
-                        <>Create user record</>
-                      )}
-                    </button>
-                  </div>
-                  
-                  {/* Debug information */}
-                  {showDebugInfo && debugDetails && (
-                    <div className="mt-2 p-2 bg-black/20 rounded-md text-xs font-mono whitespace-pre-wrap">
-                      <p className="font-semibold">Debug information:</p>
-                      <pre>{JSON.stringify(debugDetails, null, 2)}</pre>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-              
-              {error && !error.includes("User not found") && userRecordExists !== false ? (
-                <motion.div 
-                  className="bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 rounded-md p-4 mb-6 flex items-start gap-3"
-                  variants={slideUp}
-                >
-                  <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
-                  <p>{error}</p>
-                </motion.div>
-              ) : null}
-              
               <motion.div 
                 className="bg-card border border-border rounded-lg p-6 md:p-8"
                 variants={slideUp}
@@ -1016,8 +994,25 @@ export default function RegisterShopPage() {
                       Registration form is disabled as you already have a registered shop.
                     </p>
                   </div>
+                ) : userRecordExists === false && creatingUserRecord ? (
+                  // Show a loading indicator while automatically creating the user record
+                  <div className="mb-6 p-4 flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="ml-3">Creating user record...</span>
+                  </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Display general errors */}
+                    {error && (
+                      <motion.div 
+                        className="bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 rounded-md p-4 mb-6 flex items-start gap-3"
+                        variants={slideUp}
+                      >
+                        <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                        <p>{error}</p>
+                      </motion.div>
+                    )}
+                    
                     {/* Owner Information */}
                     <motion.div variants={slideUp}>
                       <h2 className="text-xl font-semibold mb-4">Owner Information</h2>
