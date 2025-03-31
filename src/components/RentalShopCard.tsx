@@ -28,12 +28,12 @@ const RentalShopCard = ({
   
   return (
     <motion.div 
-      className="bg-card rounded-lg overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow"
+      className="bg-card rounded-lg overflow-hidden border border-border shadow-sm hover:shadow-md transition-all duration-300"
       whileHover={{ y: -5 }}
       transition={{ duration: 0.2 }}
     >
       {/* Shop Image */}
-      <div className="relative h-48 w-full">
+      <div className="relative h-48 w-full overflow-hidden">
         <Image
           src={images?.[0] || fallbackImage}
           alt={name}
