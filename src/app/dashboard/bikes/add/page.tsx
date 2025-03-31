@@ -21,6 +21,12 @@ type ImageInput = {
   isUploading: boolean;
 };
 
+// Define an interface for bike image
+interface BikeImage {
+  url: string;
+  is_primary: boolean;
+}
+
 export default function AddBikePage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
@@ -138,7 +144,7 @@ export default function AddBikePage() {
 
       // Upload images to Supabase Storage
       const supabase = createClientComponentClient();
-      const uploadedImages = [];
+      const uploadedImages: BikeImage[] = [];
 
       // Update all image states to uploading
       setImages(images.map(img => ({ ...img, isUploading: !!img.file })));
