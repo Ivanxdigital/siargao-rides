@@ -849,7 +849,7 @@ export default function DashboardPage() {
                   manage your rentals easily.
                 </p>
               </div>
-              <Button asChild size="lg" className="shrink-0 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 text-sm md:text-base">
+              <Button asChild size="lg" className="shrink-0 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-lg hover:shadow-primary/10 font-medium text-sm md:text-base transition-all duration-300">
                 <Link href="/register">Register Your Shop</Link>
               </Button>
             </div>
