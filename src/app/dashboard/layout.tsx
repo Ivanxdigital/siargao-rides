@@ -164,7 +164,7 @@ export default function DashboardLayout({
       {/* Mobile sidebar toggle button */}
       <motion.button
         onClick={toggleSidebar}
-        className="md:hidden fixed z-30 top-20 left-4 p-2 bg-black/40 hover:bg-primary/20 border border-primary/20 backdrop-blur-xl rounded-full shadow-lg shadow-primary/5 flex items-center justify-center transition-all duration-200"
+        className="md:hidden fixed z-30 bottom-8 left-4 p-2 bg-black/40 hover:bg-primary/20 border border-primary/20 backdrop-blur-xl rounded-full shadow-lg shadow-primary/5 flex items-center justify-center transition-all duration-200"
         aria-label="Toggle navigation menu"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
