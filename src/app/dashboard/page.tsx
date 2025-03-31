@@ -15,7 +15,8 @@ import {
   PlusCircle,
   TrendingUp,
   Clock,
-  Users
+  Users,
+  ChevronRight
 } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
@@ -282,9 +283,10 @@ export default function DashboardPage() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="container mx-auto py-12 px-4">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-pulse">Loading dashboard...</div>
+      <div className="flex justify-center items-center h-[80vh]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          <div className="text-primary/80 font-medium">Loading dashboard...</div>
         </div>
       </div>
     );
@@ -295,457 +297,427 @@ export default function DashboardPage() {
   // Show dashboard content if authenticated
   return (
     <div>
-      <div className="bg-black text-white">
-        <div className="container mx-auto px-4 py-12">
-          <h1 className="text-4xl font-bold mb-2">
-            Welcome, {user?.user_metadata?.first_name || "Rider"}!
-          </h1>
-          <p className="text-lg">
-            {isShopOwner
-              ? "Manage your shop, bikes, and bookings from your dashboard."
-              : "Manage your bookings, favorites, and account settings."}
-          </p>
-        </div>
+      <div className="pt-2 md:pt-4 mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 text-white inline-flex items-center gap-2">
+          Welcome, <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-blue-500">{user?.user_metadata?.first_name || "Rider"}!</span>
+        </h1>
+        <p className="text-white/70 text-sm md:text-base">
+          {isShopOwner
+            ? "Manage your shop, bikes, and bookings from your dashboard."
+            : "Manage your bookings, favorites, and account settings."}
+        </p>
       </div>
 
-      <div className="container mx-auto py-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Error message if any */}
-          {error && (
-            <div className="bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-6">
-              {error}
+      <div className="space-y-6 md:space-y-10">
+        {/* Error message if any */}
+        {error && (
+          <div className="bg-red-900/20 border border-red-700/50 text-red-400 px-4 py-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
+        
+        {/* Stats Overview */}
+        {isShopOwner ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Bikes</h2>
+                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    {isDataLoading ? (
+                      <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                      shopStats.totalBikes
+                    )}
+                  </div>
+                </div>
+                <div className="bg-primary/20 p-2 md:p-3 rounded-full group-hover:bg-primary/30 transition-all duration-300">
+                  <Bike size={18} className="text-primary" />
+                </div>
+              </div>
+              <Link 
+                href="/dashboard/bikes" 
+                className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+              >
+                View all bikes
+                <ChevronRight size={12} />
+              </Link>
             </div>
-          )}
-          
-          {/* Stats Overview */}
-          {isShopOwner ? (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
-              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Total Bikes</h2>
-                    <div className="text-3xl font-bold mb-2 text-primary">
-                      {isDataLoading ? (
-                        <div className="animate-pulse w-12 h-10 bg-primary/10 rounded"></div>
-                      ) : (
-                        shopStats.totalBikes
-                      )}
-                    </div>
-                  </div>
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <Bike size={18} className="text-primary" />
-                  </div>
-                </div>
-                <Link 
-                  href="/dashboard/bikes" 
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-                >
-                  View all bikes
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                </Link>
-              </div>
 
-              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Available</h2>
-                    <div className="text-3xl font-bold mb-2 text-green-500">
-                      {isDataLoading ? (
-                        <div className="animate-pulse w-12 h-10 bg-green-500/10 rounded"></div>
-                      ) : (
-                        shopStats.availableBikes
-                      )}
-                    </div>
-                  </div>
-                  <div className="bg-green-500/10 p-2 rounded-full">
-                    <Clock size={18} className="text-green-500" />
+            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-green-500/30 group">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Available</h2>
+                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    {isDataLoading ? (
+                      <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                      shopStats.availableBikes
+                    )}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {Math.round((shopStats.availableBikes / (shopStats.totalBikes || 1)) * 100) || 0}% of your fleet
-                </p>
-              </div>
-
-              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Active Bookings</h2>
-                    <div className="text-3xl font-bold mb-2 text-blue-500">
-                      {isDataLoading ? (
-                        <div className="animate-pulse w-12 h-10 bg-blue-500/10 rounded"></div>
-                      ) : (
-                        shopStats.activeBookings
-                      )}
-                    </div>
-                  </div>
-                  <div className="bg-blue-500/10 p-2 rounded-full">
-                    <CalendarRange size={18} className="text-blue-500" />
-                  </div>
+                <div className="bg-green-500/20 p-2 md:p-3 rounded-full group-hover:bg-green-500/30 transition-all duration-300">
+                  <Clock size={18} className="text-green-400" />
                 </div>
-                <Link 
-                  href="/dashboard/bookings" 
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-                >
-                  View all bookings
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                </Link>
               </div>
-
-              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Total Revenue</h2>
-                    <div className="text-3xl font-bold mb-2 text-primary">
-                      {isDataLoading ? (
-                        <div className="animate-pulse w-24 h-10 bg-primary/10 rounded"></div>
-                      ) : (
-                        `₱${shopStats.totalRevenue.toLocaleString()}`
-                      )}
-                    </div>
-                  </div>
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <TrendingUp size={18} className="text-primary" />
-                  </div>
-                </div>
-                <Link 
-                  href="/dashboard/analytics" 
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-                >
-                  View analytics
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                </Link>
-              </div>
+              <p className="text-xs text-white/60 mt-1">
+                {Math.round((shopStats.availableBikes / (shopStats.totalBikes || 1)) * 100) || 0}% of your fleet
+              </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Active Bookings</h2>
-                    <div className="text-3xl font-bold mb-2 text-blue-500">
-                      {isDataLoading ? (
-                        <div className="animate-pulse w-12 h-10 bg-blue-500/10 rounded"></div>
-                      ) : (
-                        userStats.activeBookings
-                      )}
-                    </div>
-                  </div>
-                  <div className="bg-blue-500/10 p-2 rounded-full">
-                    <CalendarRange size={18} className="text-blue-500" />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {userStats.activeBookings === 0 
-                    ? "No bikes currently rented" 
-                    : userStats.activeBookings === 1
-                      ? "You have 1 active booking"
-                      : `You have ${userStats.activeBookings} active bookings`
-                  }
-                </p>
-              </div>
 
-              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Saved Bikes</h2>
-                    <div className="text-3xl font-bold mb-2 text-pink-500">
-                      {isDataLoading ? (
-                        <div className="animate-pulse w-12 h-10 bg-pink-500/10 rounded"></div>
-                      ) : (
-                        userStats.savedBikes
-                      )}
-                    </div>
-                  </div>
-                  <div className="bg-pink-500/10 p-2 rounded-full">
-                    <Heart size={18} className="text-pink-500" />
+            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Active Bookings</h2>
+                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    {isDataLoading ? (
+                      <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                      shopStats.activeBookings
+                    )}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {userStats.savedBikes === 0 
-                    ? "No bikes saved to favorites" 
-                    : userStats.savedBikes === 1
-                      ? "You have 1 saved bike"
-                      : `You have ${userStats.savedBikes} saved bikes`
-                  }
-                </p>
-              </div>
-
-              <div className="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-sm font-medium text-muted-foreground mb-1">Profile Completion</h2>
-                    <div className="text-3xl font-bold mb-2 text-primary">
-                      {isDataLoading ? (
-                        <div className="animate-pulse w-16 h-10 bg-primary/10 rounded"></div>
-                      ) : (
-                        `${userStats.profileCompletionPercentage}%`
-                      )}
-                    </div>
-                  </div>
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <Settings size={18} className="text-primary" />
-                  </div>
+                <div className="bg-blue-500/20 p-2 md:p-3 rounded-full group-hover:bg-blue-500/30 transition-all duration-300">
+                  <CalendarRange size={18} className="text-blue-400" />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {userStats.profileCompletionPercentage < 100
-                    ? "Add more details to complete your profile"
-                    : "Your profile is complete"
-                  }
-                </p>
               </div>
+              <Link 
+                href="/dashboard/bookings" 
+                className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+              >
+                View all bookings
+                <ChevronRight size={12} />
+              </Link>
             </div>
-          )}
 
-          {/* Quick Actions */}
-          <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {isShopOwner ? (
-                <>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
-                  >
-                    <Link href="/dashboard/bikes/add">
-                      <div className="bg-primary/10 rounded-full p-2 mb-2">
-                        <PlusCircle size={20} className="text-primary" />
+            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Revenue</h2>
+                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    {isDataLoading ? (
+                      <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                      `₱${shopStats.totalRevenue.toLocaleString()}`
+                    )}
+                  </div>
+                </div>
+                <div className="bg-primary/20 p-2 md:p-3 rounded-full group-hover:bg-primary/30 transition-all duration-300">
+                  <TrendingUp size={18} className="text-primary" />
+                </div>
+              </div>
+              <Link 
+                href="/dashboard/analytics" 
+                className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+              >
+                View analytics
+                <ChevronRight size={12} />
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Active Bookings</h2>
+                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    {isDataLoading ? (
+                      <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                      userStats.activeBookings
+                    )}
+                  </div>
+                </div>
+                <div className="bg-blue-500/20 p-2 md:p-3 rounded-full group-hover:bg-blue-500/30 transition-all duration-300">
+                  <CalendarRange size={18} className="text-blue-400" />
+                </div>
+              </div>
+              <p className="text-xs text-white/60 mt-1">
+                {userStats.activeBookings === 0 
+                  ? "No bikes currently rented" 
+                  : userStats.activeBookings === 1
+                    ? "You have 1 active booking"
+                    : `You have ${userStats.activeBookings} active bookings`
+                }
+              </p>
+            </div>
+
+            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-pink-500/30 group">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Saved Bikes</h2>
+                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    {isDataLoading ? (
+                      <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                      userStats.savedBikes
+                    )}
+                  </div>
+                </div>
+                <div className="bg-pink-500/20 p-2 md:p-3 rounded-full group-hover:bg-pink-500/30 transition-all duration-300">
+                  <Heart size={18} className="text-pink-400" />
+                </div>
+              </div>
+              <p className="text-xs text-white/60 mt-1">
+                {userStats.savedBikes === 0 
+                  ? "No bikes saved to favorites" 
+                  : userStats.savedBikes === 1
+                    ? "You have 1 saved bike"
+                    : `You have ${userStats.savedBikes} saved bikes`
+                }
+              </p>
+            </div>
+
+            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Profile Completion</h2>
+                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    {isDataLoading ? (
+                      <div className="h-8 w-16 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                      `${userStats.profileCompletionPercentage}%`
+                    )}
+                  </div>
+                </div>
+                <div className="bg-primary/20 p-2 md:p-3 rounded-full group-hover:bg-primary/30 transition-all duration-300">
+                  <Settings size={18} className="text-primary" />
+                </div>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-1.5 mt-2 mb-1">
+                <div 
+                  className="bg-gradient-to-r from-primary to-blue-500 h-1.5 rounded-full" 
+                  style={{ width: `${userStats.profileCompletionPercentage}%` }}
+                />
+              </div>
+              <p className="text-xs text-white/60 mt-1">
+                {userStats.profileCompletionPercentage < 100
+                  ? "Add more details to complete your profile"
+                  : "Your profile is complete"
+                }
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90">Quick Actions</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {isShopOwner ? (
+              <>
+                <Link href="/dashboard/bikes/add" className="group">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                      <PlusCircle size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-white/90 text-sm md:text-base">Add New Bike</span>
+                  </div>
+                </Link>
+                <Link href="/dashboard/shop" className="group">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                      <ShoppingBag size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-white/90 text-sm md:text-base">Manage Shop</span>
+                  </div>
+                </Link>
+                <Link href="/dashboard/bikes" className="group">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                      <Bike size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-white/90 text-sm md:text-base">Manage Bikes</span>
+                  </div>
+                </Link>
+                <Link href="/dashboard/analytics" className="group">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                      <BarChart size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-white/90 text-sm md:text-base">View Analytics</span>
+                  </div>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/browse" className="group">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                      <Bike size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-white/90 text-sm md:text-base">Browse Bikes</span>
+                  </div>
+                </Link>
+                <Link href="/dashboard/bookings" className="group">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                      <CalendarRange size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-white/90 text-sm md:text-base">My Bookings</span>
+                  </div>
+                </Link>
+                <Link href="/dashboard/favorites" className="group">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                      <Heart size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-white/90 text-sm md:text-base">Favorites</span>
+                  </div>
+                </Link>
+                <Link href="/profile" className="group">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                      <Settings size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-white/90 text-sm md:text-base">Profile Settings</span>
+                  </div>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Activity / Bookings - only for shop owners */}
+        {isShopOwner && (
+          <div>
+            <div className="flex justify-between items-center mb-3 md:mb-4">
+              <h2 className="text-lg md:text-xl font-semibold text-white/90">Recent Bookings</h2>
+              <Button asChild variant="outline" size="sm" className="border-white/10 hover:border-primary/30 bg-black/40 hover:bg-black/60">
+                <Link href="/dashboard/bookings">View All</Link>
+              </Button>
+            </div>
+            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/20">
+              {isDataLoading ? (
+                <div className="p-4 md:p-6 space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse flex space-x-4">
+                      <div className="rounded-full bg-white/10 h-10 w-10"></div>
+                      <div className="flex-1 space-y-2 py-1">
+                        <div className="h-4 bg-white/10 rounded w-3/4"></div>
+                        <div className="h-4 bg-white/10 rounded w-1/2"></div>
                       </div>
-                      <span>Add New Bike</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
-                  >
-                    <Link href="/dashboard/shop">
-                      <div className="bg-primary/10 rounded-full p-2 mb-2">
-                        <ShoppingBag size={20} className="text-primary" />
-                      </div>
-                      <span>Manage Shop</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
-                  >
-                    <Link href="/dashboard/bikes">
-                      <div className="bg-primary/10 rounded-full p-2 mb-2">
-                        <Bike size={20} className="text-primary" />
-                      </div>
-                      <span>Manage Bikes</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
-                  >
-                    <Link href="/dashboard/analytics">
-                      <div className="bg-primary/10 rounded-full p-2 mb-2">
-                        <BarChart size={20} className="text-primary" />
-                      </div>
-                      <span>View Analytics</span>
-                    </Link>
-                  </Button>
-                </>
+                    </div>
+                  ))}
+                </div>
+              ) : recentBookings.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                          Bike
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider hidden sm:table-cell">
+                          Customer
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                          Dates
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10">
+                      {recentBookings.map((booking) => (
+                        <tr key={booking.id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="h-7 w-7 md:h-8 md:w-8 bg-primary/20 rounded-full flex items-center justify-center mr-2">
+                                <Bike size={14} className="text-primary" />
+                              </div>
+                              <span className="font-medium text-white/90 text-sm">{booking.bikeName}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap hidden sm:table-cell">
+                            <div className="flex items-center">
+                              <div className="h-7 w-7 md:h-8 md:w-8 bg-white/10 rounded-full flex items-center justify-center mr-2">
+                                <Users size={14} className="text-white/70" />
+                              </div>
+                              <span className="text-white/80 text-sm">{booking.customerName}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div className="text-xs md:text-sm text-white/80">
+                              {new Date(booking.startDate).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                              {" - "}
+                              {new Date(booking.endDate).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </div>
+                          </td>
+                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                booking.status === "active"
+                                  ? "bg-green-500/20 text-green-400"
+                                  : booking.status === "confirmed" || booking.status === "upcoming"
+                                  ? "bg-blue-500/20 text-blue-400"
+                                  : booking.status === "completed"
+                                  ? "bg-white/20 text-white/70"
+                                  : booking.status === "cancelled"
+                                  ? "bg-red-500/20 text-red-400"
+                                  : ""
+                              }`}
+                            >
+                              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <Button asChild variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary text-xs md:text-sm py-1">
+                              <Link href={`/dashboard/bookings/${booking.id}`}>
+                                View Details
+                              </Link>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
-                <>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
-                  >
-                    <Link href="/browse">
-                      <div className="bg-primary/10 rounded-full p-2 mb-2">
-                        <Bike size={20} className="text-primary" />
-                      </div>
-                      <span>Browse Bikes</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
-                  >
-                    <Link href="/dashboard/bookings">
-                      <div className="bg-primary/10 rounded-full p-2 mb-2">
-                        <CalendarRange size={20} className="text-primary" />
-                      </div>
-                      <span>My Bookings</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
-                  >
-                    <Link href="/dashboard/favorites">
-                      <div className="bg-primary/10 rounded-full p-2 mb-2">
-                        <Heart size={20} className="text-primary" />
-                      </div>
-                      <span>Favorites</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-5 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow transition-all duration-200 border-border/80"
-                  >
-                    <Link href="/profile">
-                      <div className="bg-primary/10 rounded-full p-2 mb-2">
-                        <Settings size={20} className="text-primary" />
-                      </div>
-                      <span>Profile Settings</span>
-                    </Link>
-                  </Button>
-                </>
+                <div className="flex flex-col items-center justify-center py-8 md:py-12 px-4">
+                  <div className="bg-white/10 rounded-full p-3 md:p-4 mb-3 md:mb-4">
+                    <CalendarRange size={24} className="text-white/60" />
+                  </div>
+                  <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2 text-white/90">No recent bookings</h3>
+                  <p className="text-white/60 text-xs md:text-sm text-center max-w-xs">
+                    When you receive bookings, they will appear here
+                  </p>
+                </div>
               )}
             </div>
           </div>
+        )}
 
-          {/* Recent Activity / Bookings - only for shop owners */}
-          {isShopOwner && (
-            <div className="mb-10">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Recent Bookings</h2>
-                <Button asChild variant="outline" size="sm" className="ml-4">
-                  <Link href="/dashboard/bookings">View All</Link>
-                </Button>
+        {/* Register as Shop Owner - only shown to tourists */}
+        {!isShopOwner && (
+          <div className="bg-gradient-to-r from-primary/10 to-blue-500/10 border border-primary/20 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
+              <div>
+                <h2 className="text-lg md:text-xl font-semibold mb-2 text-white">
+                  Own a Motorbike Rental Shop?
+                </h2>
+                <p className="text-white/70 text-xs md:text-sm max-w-xl">
+                  List your shop on Siargao Rides to reach more tourists and
+                  manage your rentals easily.
+                </p>
               </div>
-              <div className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
-                {isDataLoading ? (
-                  <div className="p-6 space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="animate-pulse flex space-x-4">
-                        <div className="rounded-full bg-muted h-10 w-10"></div>
-                        <div className="flex-1 space-y-2 py-1">
-                          <div className="h-4 bg-muted rounded w-3/4"></div>
-                          <div className="h-4 bg-muted rounded w-1/2"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : recentBookings.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Bike
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Customer
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Dates
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Action
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {recentBookings.map((booking) => (
-                          <tr key={booking.id}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center mr-2">
-                                  <Bike size={14} className="text-primary" />
-                                </div>
-                                <span className="font-medium">{booking.bikeName}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center mr-2">
-                                  <Users size={14} />
-                                </div>
-                                {booking.customerName}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm">
-                                {new Date(booking.startDate).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                                {" - "}
-                                {new Date(booking.endDate).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  booking.status === "active"
-                                    ? "bg-green-500/10 text-green-500"
-                                    : booking.status === "confirmed" || booking.status === "upcoming"
-                                    ? "bg-blue-500/10 text-blue-500"
-                                    : booking.status === "completed"
-                                    ? "bg-gray-500/10 text-gray-500"
-                                    : booking.status === "cancelled"
-                                    ? "bg-red-500/10 text-red-500"
-                                    : ""
-                                }`}
-                              >
-                                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <Button asChild variant="ghost" size="sm">
-                                <Link href={`/dashboard/bookings/${booking.id}`}>
-                                  View Details
-                                </Link>
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8 px-4">
-                    <div className="bg-muted/20 rounded-full p-3 mb-3">
-                      <CalendarRange size={32} className="text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-1">No recent bookings</h3>
-                    <p className="text-muted-foreground text-sm text-center max-w-xs">
-                      When you receive bookings, they will appear here
-                    </p>
-                  </div>
-                )}
-              </div>
+              <Button asChild size="lg" className="shrink-0 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 text-sm md:text-base">
+                <Link href="/register">Register Your Shop</Link>
+              </Button>
             </div>
-          )}
-
-          {/* Register as Shop Owner - only shown to tourists */}
-          {!isShopOwner && (
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-200 mb-10">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
-                    Own a Motorbike Rental Shop?
-                  </h2>
-                  <p className="text-muted-foreground text-sm md:text-base">
-                    List your shop on Siargao Rides to reach more tourists and
-                    manage your rentals easily.
-                  </p>
-                </div>
-                <Button asChild size="lg" className="shrink-0">
-                  <Link href="/register">Register Your Shop</Link>
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

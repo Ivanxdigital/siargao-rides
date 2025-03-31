@@ -31,8 +31,10 @@ const SidebarItem = ({ href, icon, title, active }: SidebarItemProps) => (
     <Button
       variant={active ? "default" : "ghost"}
       className={cn(
-        "w-full justify-start gap-3 mb-1",
-        active ? "bg-primary text-primary-foreground" : ""
+        "w-full justify-start gap-3 mb-1 transition-all duration-300",
+        active 
+          ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
+          : "hover:bg-primary/10 hover:text-primary"
       )}
     >
       {icon}
@@ -73,9 +75,10 @@ export default function DashboardLayout({
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="container mx-auto py-12 px-4">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-pulse">Loading dashboard...</div>
+      <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          <div className="text-primary/80 font-medium">Loading dashboard...</div>
         </div>
       </div>
     );
@@ -86,29 +89,30 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative">
-      {/* Background with overlay gradient */}
-      <div className="absolute inset-0 z-0 opacity-20">
-        <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
+      {/* Background with enhanced overlay gradient */}
+      <div className="absolute inset-0 z-0 opacity-30">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-purple-900/20 to-blue-900/20"></div>
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10"></div>
       </div>
       
       {/* Mobile sidebar toggle button */}
       <button
         onClick={toggleSidebar}
-        className="md:hidden fixed z-30 top-20 left-4 p-2 bg-primary/10 hover:bg-primary/20 border border-border backdrop-blur-sm rounded-full shadow-md flex items-center justify-center transition-all duration-200"
+        className="md:hidden fixed z-30 top-20 left-4 p-2 bg-black/40 hover:bg-primary/20 border border-primary/20 backdrop-blur-xl rounded-full shadow-lg shadow-primary/5 flex items-center justify-center transition-all duration-200"
         aria-label="Toggle navigation menu"
       >
         {sidebarOpen ? <X size={20} className="text-primary" /> : <Menu size={20} className="text-primary" />}
       </button>
 
-      <div className="container mx-auto px-4 md:px-6 py-8 flex flex-col md:flex-row gap-8 relative z-10 pt-16">
+      <div className="container mx-auto px-4 md:px-6 py-8 flex flex-col md:flex-row gap-8 relative z-10 pt-16 md:pt-24">
         {/* Sidebar Navigation - Hidden by default on mobile */}
         <aside className={cn(
-          "fixed md:relative z-20 top-0 left-0 md:left-auto h-screen w-72 md:w-64 bg-gray-900/80 md:bg-gray-900/50 pt-24 md:pt-0 px-5 md:px-0 shadow-xl md:shadow-none border-r border-gray-700 md:border-r-0 backdrop-blur-sm transition-all duration-300 ease-in-out transform md:transform-none shrink-0",
+          "fixed md:relative z-20 top-0 left-0 md:left-auto h-screen w-72 md:w-64 bg-black/60 md:bg-black/40 pt-24 md:pt-0 px-5 md:px-0 shadow-xl md:shadow-none border-r border-white/5 backdrop-blur-xl transition-all duration-300 ease-in-out transform md:transform-none shrink-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}>
-          <div className="sticky top-24 space-y-6">
-            <div className="border-b border-border pb-4 md:border-b-0 md:pb-0">
-              <h2 className="text-lg font-semibold mb-3">Dashboard</h2>
+          <div className="sticky top-24 space-y-8">
+            <div className="pb-4">
+              <h2 className="text-lg font-medium mb-4 ml-3 text-white/80">Dashboard</h2>
               <div className="space-y-1">
                 <div onClick={handleLinkClick}>
                   <SidebarItem
@@ -139,8 +143,8 @@ export default function DashboardLayout({
 
             {/* Shop Owner Section */}
             {isShopOwner && (
-              <div className="border-b border-border pb-4 md:border-b-0 md:pb-0">
-                <h2 className="text-lg font-semibold mb-3">Shop Management</h2>
+              <div className="pb-4">
+                <h2 className="text-lg font-medium mb-4 ml-3 text-white/80">Shop Management</h2>
                 <div className="space-y-1">
                   <div onClick={handleLinkClick}>
                     <SidebarItem
@@ -172,8 +176,8 @@ export default function DashboardLayout({
 
             {/* Admin Section */}
             {isAdmin && (
-              <div className="border-b border-border pb-4 md:border-b-0 md:pb-0">
-                <h2 className="text-lg font-semibold mb-3">Administration</h2>
+              <div className="pb-4">
+                <h2 className="text-lg font-medium mb-4 ml-3 text-white/80">Administration</h2>
                 <div className="space-y-1">
                   <div onClick={handleLinkClick}>
                     <SidebarItem
@@ -190,8 +194,8 @@ export default function DashboardLayout({
             {/* Sign Out */}
             <div className="pt-4">
               <Button
-                variant="outline"
-                className="w-full justify-start gap-3 text-destructive"
+                variant="ghost"
+                className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                 onClick={() => signOut()}
               >
                 <LogOut size={18} />
@@ -204,14 +208,14 @@ export default function DashboardLayout({
         {/* Overlay for mobile sidebar */}
         {sidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden" 
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-10 md:hidden" 
             onClick={toggleSidebar}
             aria-hidden="true"
           />
         )}
 
         {/* Main Content */}
-        <main className="flex-1 pt-10 md:pt-0 bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">{children}</main>
+        <main className="flex-1 pt-10 md:pt-4 bg-black/30 backdrop-blur-xl border border-white/10 rounded-xl p-4 md:p-6 shadow-lg shadow-primary/5 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10">{children}</main>
       </div>
     </div>
   );
