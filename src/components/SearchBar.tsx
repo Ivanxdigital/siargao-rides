@@ -70,21 +70,21 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   }
 
   return (
-    <div className="bg-black/40 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10 p-4 sm:p-5 transition-all duration-300 relative overflow-hidden group">
+    <div className="bg-black/40 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10 p-3 sm:p-4 transition-all duration-300 relative overflow-hidden group">
       {/* Animated gradient accent */}
       <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-purple-500/20 to-blue-500/30 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-500 animate-gradient-x"></div>
       
       {/* AI glow effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
       
-      <form onSubmit={handleSubmit} className="relative space-y-4 z-10">
-        <div className="flex items-center mb-3">
-          <Sparkles size={18} className="text-primary mr-2 animate-pulse" />
-          <h3 className="text-sm font-medium text-white/90">AI-Powered Search</h3>
+      <form onSubmit={handleSubmit} className="relative space-y-3 sm:space-y-4 z-10">
+        <div className="flex items-center mb-2 sm:mb-3">
+          <Sparkles size={16} className="text-primary mr-2 animate-pulse" />
+          <h3 className="text-xs sm:text-sm font-medium text-white/90">AI-Powered Search</h3>
         </div>
         
         {/* Location */}
-        <div className={`space-y-1.5 transition-all duration-300 ${activeField === 'location' ? 'scale-[1.01]' : ''}`}>
+        <div className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'location' ? 'scale-[1.01]' : ''}`}>
           <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
             <Search size={14} className="text-primary" />
             Location
@@ -97,15 +97,15 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
               onChange={(e) => setLocation(e.target.value)}
               onFocus={() => setActiveField('location')}
               onBlur={() => setActiveField(null)}
-              className="w-full px-3 py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 text-white placeholder:text-white/40"
+              className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 text-white placeholder:text-white/40"
             />
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
           </div>
         </div>
 
         {/* Date Range */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className={`space-y-1.5 transition-all duration-300 ${activeField === 'startDate' ? 'scale-[1.01]' : ''}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'startDate' ? 'scale-[1.01]' : ''}`}>
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
               <Calendar size={14} className="text-primary" />
               Start Date
@@ -118,13 +118,13 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 onChange={handleStartDateChange}
                 onFocus={() => setActiveField('startDate')}
                 onBlur={() => setActiveField(null)}
-                className="w-full px-3 py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 text-white touch-manipulation"
+                className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 text-white touch-manipulation"
               />
               <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
             </div>
           </div>
           
-          <div className={`space-y-1.5 transition-all duration-300 ${activeField === 'endDate' ? 'scale-[1.01]' : ''}`}>
+          <div className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'endDate' ? 'scale-[1.01]' : ''}`}>
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
               <Calendar size={14} className="text-primary" />
               End Date
@@ -137,7 +137,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 onChange={(e) => setEndDate(e.target.value)}
                 onFocus={() => setActiveField('endDate')}
                 onBlur={() => setActiveField(null)}
-                className="w-full px-3 py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 text-white touch-manipulation"
+                className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 text-white touch-manipulation"
               />
               <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
             </div>
@@ -145,15 +145,15 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
         </div>
 
         {/* Budget and Bike Type in a grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {/* Budget Slider */}
-          <div className={`space-y-2 transition-all duration-300 ${activeField === 'budget' ? 'scale-[1.01]' : ''}`}>
+          <div className={`space-y-1 sm:space-y-2 transition-all duration-300 ${activeField === 'budget' ? 'scale-[1.01]' : ''}`}>
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
               <DollarSign size={14} className="text-primary" />
               <span>Daily Budget:</span>
               <span className="ml-1 text-xs font-semibold bg-primary/20 text-primary px-2 py-0.5 rounded-md">₱{budget}</span>
             </label>
-            <div className="px-1.5 py-1">
+            <div className="px-1.5 py-0 sm:py-1">
               <input
                 type="range"
                 min="100"
@@ -165,7 +165,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 onBlur={() => setActiveField(null)}
                 className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(139,92,246,0.5)] sm:[&::-webkit-slider-thumb]:w-5 sm:[&::-webkit-slider-thumb]:h-5 touch-manipulation"
               />
-              <div className="flex justify-between text-[10px] text-white/40 mt-1.5 px-1">
+              <div className="flex justify-between text-[10px] text-white/40 mt-1 sm:mt-1.5 px-1">
                 <span>₱100</span>
                 <span>₱2000</span>
               </div>
@@ -173,7 +173,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           </div>
 
           {/* Bike Type */}
-          <div className={`space-y-1.5 transition-all duration-300 ${activeField === 'bikeType' ? 'scale-[1.01]' : ''}`}>
+          <div className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'bikeType' ? 'scale-[1.01]' : ''}`}>
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
               <Bike size={14} className="text-primary" />
               Bike Type
@@ -184,7 +184,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 onChange={(e) => setBikeType(e.target.value)}
                 onFocus={() => setActiveField('bikeType')}
                 onBlur={() => setActiveField(null)}
-                className="w-full px-3 py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 appearance-none text-white pl-10"
+                className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 appearance-none text-white pl-10"
                 style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ffffff' viewBox='0 0 24 24' stroke='%23ffffff' opacity='0.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                   backgroundPosition: 'right 0.75rem center',
                   backgroundSize: '1rem',
@@ -206,7 +206,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
         {/* Submit Button */}
         <Button 
           type="submit" 
-          className="w-full py-2.5 text-sm font-medium bg-gradient-to-r from-primary/90 to-purple-600/90 hover:from-primary hover:to-purple-600 transition-all 
+          className="w-full py-2 sm:py-2.5 text-sm font-medium bg-gradient-to-r from-primary/90 to-purple-600/90 hover:from-primary hover:to-purple-600 transition-all 
           duration-300 transform hover:scale-[1.01] active:scale-[0.99] rounded-lg shadow-md hover:shadow-lg relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
           disabled={isSearching}
         >

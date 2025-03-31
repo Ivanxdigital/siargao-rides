@@ -70,10 +70,20 @@ export default function ManageBikesPage() {
         }
         
         // Transform data to match our Bike type
-        const formattedBikes = bikesData.map(bike => ({
-          ...bike,
-          images: bike.bike_images || []
-        }));
+        const formattedBikes = bikesData.map(bike => {
+          // Fix image URLs
+          const images = bike.bike_images || [];
+          const formattedImages = images.map(img => ({
+            ...img,
+            // Ensure image_url exists
+            image_url: img.image_url || img.url
+          }));
+          
+          return {
+            ...bike,
+            images: formattedImages
+          };
+        });
         
         setBikes(formattedBikes);
       } catch (error) {

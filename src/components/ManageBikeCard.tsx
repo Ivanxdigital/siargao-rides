@@ -48,17 +48,52 @@ export default function ManageBikeCard({
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  // Debugging image URLs
+  if (images && images.length > 0) {
+    console.log("Image URL being displayed:", images[currentImageIndex]);
+  }
+
   return (
     <Card className="overflow-hidden">
       {/* Image Gallery */}
       <div className="relative h-48 w-full">
-        {images.length > 0 ? (
-          <Image
-            src={images[currentImageIndex] || "/placeholder.jpg"}
-            alt={model}
-            fill
-            className="object-cover"
-          />
+        {images && images.length > 0 ? (
+          <div className="relative h-full w-full">
+            {/* Add placeholder as a background while the main image loads */}
+            <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+              <p className="text-gray-400">Loading...</p>
+            </div>
+            <Image
+              src={images[currentImageIndex]}
+              alt={model}
+              fill
+              className="object-cover"
+              onError={(e) => {
+                console.error("Failed to load image:", images[currentImageIndex]);
+                // Try using a direct URL format as fallback
+                const imageUrl = images[currentImageIndex];
+                // If the URL contains "supabase.co", try constructing a more direct URL
+                if (imageUrl && imageUrl.includes("supabase.co")) {
+                  try {
+                    // Extract the path part after "public/"
+                    const matches = imageUrl.match(/public\/([^"]+)/);
+                    if (matches && matches[1]) {
+                      const filename = matches[1];
+                      // Reset the src with a placeholder
+                      e.currentTarget.src = "https://placehold.co/600x400/1e3b8a/white?text=Bike+Image";
+                    } else {
+                      e.currentTarget.src = "https://placehold.co/600x400/1e3b8a/white?text=Bike+Image";
+                    }
+                  } catch (err) {
+                    e.currentTarget.src = "https://placehold.co/600x400/1e3b8a/white?text=Bike+Image";
+                  }
+                } else {
+                  e.currentTarget.src = "https://placehold.co/600x400/1e3b8a/white?text=Bike+Image";
+                }
+              }}
+              unoptimized // Skip Next.js image optimization for Supabase URLs
+            />
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <p className="text-muted-foreground">No image available</p>

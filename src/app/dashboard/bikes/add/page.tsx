@@ -24,6 +24,7 @@ type ImageInput = {
 // Define an interface for bike image
 interface BikeImage {
   url: string;
+  image_url: string;
   is_primary: boolean;
 }
 
@@ -64,25 +65,39 @@ export default function AddBikePage() {
     }
   }, [user, router]);
 
-  // Set up storage when the page loads
+  // Storage has already been set up via SQL commands, so we don't need this API call anymore
+  // If you need to re-enable storage setup later, uncomment this block
+  /*
   useEffect(() => {
     const setupStorage = async () => {
       try {
         // Call the API to set up storage
         const response = await fetch("/api/storage/setup");
+        
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Error setting up storage:", errorData);
+          try {
+            const errorData = await response.json();
+            console.error("Error setting up storage:", errorData);
+            // Don't set an error state here as it's not critical to page function
+          } catch (parseError) {
+            console.error("Error parsing response:", parseError);
+          }
+        } else {
+          console.log("Storage setup successful");
         }
       } catch (error) {
-        console.error("Error setting up storage:", error);
+        // Log but don't block the page from functioning
+        console.error("Network error setting up storage:", error);
       }
     };
 
     if (isAuthenticated && user?.user_metadata?.role === "shop_owner") {
-      setupStorage();
+      setupStorage().catch(e => {
+        console.warn("Failed to set up storage, but continuing:", e);
+      });
     }
   }, [isAuthenticated, user]);
+  */
 
   const handlePriceChange = (key: keyof PriceInputs, value: string) => {
     // Only allow numbers
@@ -149,34 +164,54 @@ export default function AddBikePage() {
       // Update all image states to uploading
       setImages(images.map(img => ({ ...img, isUploading: !!img.file })));
 
+      // Try uploading each image
+      let uploadErrorOccurred = false;
+      let uploadErrorMessage = "";
+
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
         if (!img.file) continue;
 
-        // Create a unique file path
-        const fileExt = img.file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `bike-images/${fileName}`;
+        try {
+          // Create a unique file path
+          const fileExt = img.file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+          const filePath = `bike-images/${fileName}`;
 
-        // Upload the file
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('bikes')
-          .upload(filePath, img.file);
+          // Upload the file
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('bikes')
+            .upload(filePath, img.file);
 
-        if (uploadError) {
-          console.error("Error uploading image:", uploadError);
-          throw new Error(`Error uploading image: ${uploadError.message}`);
+          if (uploadError) {
+            console.error("Error uploading image:", uploadError);
+            uploadErrorOccurred = true;
+            uploadErrorMessage = uploadError.message;
+            // Continue with other images instead of throwing immediately
+            continue;
+          }
+
+          // Get the public URL for the uploaded file
+          const { data: { publicUrl } } = supabase.storage
+            .from('bikes')
+            .getPublicUrl(filePath);
+
+          uploadedImages.push({
+            url: publicUrl,
+            image_url: publicUrl,
+            is_primary: i === 0 // First image is primary
+          });
+        } catch (uploadErr: any) {
+          console.error("Exception during image upload:", uploadErr);
+          uploadErrorOccurred = true;
+          uploadErrorMessage = uploadErr.message || "Unknown upload error";
+          // Continue with other images
         }
+      }
 
-        // Get the public URL for the uploaded file
-        const { data: { publicUrl } } = supabase.storage
-          .from('bikes')
-          .getPublicUrl(filePath);
-
-        uploadedImages.push({
-          url: publicUrl,
-          is_primary: i === 0 // First image is primary
-        });
+      // If we couldn't upload any images but were required to, show error
+      if (uploadedImages.length === 0 && uploadErrorOccurred) {
+        throw new Error(`Failed to upload images: ${uploadErrorMessage}`);
       }
 
       // Prepare bike data

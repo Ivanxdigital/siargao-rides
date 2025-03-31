@@ -173,10 +173,17 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative min-h-screen max-h-[800px] w-full overflow-hidden bg-gradient-to-b from-black to-gray-900 text-white">
-        {/* Background with overlay gradient */}
-        <div className="absolute inset-0 z-0 opacity-20">
-          <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
+      <section className="relative min-h-[110vh] sm:min-h-screen max-h-[900px] bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10">
+        {/* Background Image with Overlay - Mobile Only */}
+        <div className="absolute inset-0 z-0 md:hidden">
+          <Image
+            src="/images/hero-bg.jpg"
+            alt="Siargao Rides Hero"
+            fill
+            className="object-cover object-center opacity-30"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/95 z-10"></div>
         </div>
         
         {/* YouTube Video Background - Desktop Only */}
@@ -189,25 +196,23 @@ export default function Home() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-20 container mx-auto h-full flex flex-col items-center justify-center px-4 py-16 pb-32 sm:pb-16 text-center pt-[7rem] md:pt-[8rem]">
-          <div className="bg-background/10 backdrop-blur-md p-6 sm:p-8 md:p-8 rounded-2xl max-w-4xl mx-auto border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.2)] transition-all duration-300">
-            <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white drop-shadow-md tracking-tight">
-                Explore Siargao on Two Wheels
-              </h1>
-              <p className="text-base md:text-lg max-w-2xl mb-6 text-white/90 mx-auto leading-relaxed">
-                Find and book the perfect motorbike from local rental shops for your island adventure
-              </p>
-            </div>
+        <div className="container mx-auto relative z-20 h-full flex flex-col justify-center py-12 pb-24 px-4 sm:px-6 sm:py-16 lg:px-8">
+          <div className="text-center mb-6 sm:mb-8 pt-12 md:pt-16">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-primary animate-gradient-x">Explore Siargao</span> on Two Wheels
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed">
+              Discover the island's hidden gems with our premium motorbike rentals. Convenient pickup locations, competitive rates, and the freedom to explore at your own pace.
+            </p>
+          </div>
 
-            {/* Search Bar Component */}
-            <div className="w-full max-w-3xl mx-auto mt-2 mb-4 md:mb-0 transition-all duration-300 hover:transform hover:scale-[1.01] animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-              <SearchBar onSearch={handleSearch} />
-            </div>
+          {/* Search Bar Container */}
+          <div className="w-full max-w-4xl mx-auto relative mb-12 sm:mb-16 shadow-2xl">
+            <SearchBar onSearch={handleSearch} />
           </div>
         </div>
-
-        {/* Scroll Down Indicator - Hidden on mobile */}
+        
+        {/* Scroll Down Indicator - Desktop Only */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 hidden md:flex flex-col items-center animate-bounce">
           <span className="text-white/80 text-xs mb-1">Scroll Down</span>
           <svg className="w-5 h-5 text-white/80" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
