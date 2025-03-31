@@ -59,86 +59,6 @@ export default function ShopVerificationPage() {
     }
   }, [isAuthenticated, isAdmin]);
 
-  // Add mock data for demonstration if no shops are found - COMMENTED OUT TO USE REAL DATA
-  /*
-  useEffect(() => {
-    if (!isLoadingShops && pendingShops.length === 0 && verifiedShops.length === 0) {
-      // Only add mock data if no shops were found in the database
-      const mockPendingShops = [
-        {
-          id: 'mock-pending-1',
-          name: 'Siargao Scooter Rentals',
-          owner_id: 'mock-user-1',
-          address: '123 Beach Road',
-          city: 'General Luna',
-          phone_number: '+63 912 345 6789',
-          email: 'info@siargaoscooter.com',
-          whatsapp: '+63 912 345 6789',
-          description: 'We offer the latest models of scooters and motorcycles for rent at affordable prices. All our bikes are well-maintained and regularly serviced.',
-          is_verified: false,
-          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-          updated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          users: {
-            first_name: 'Juan',
-            last_name: 'Santos',
-            email: 'juan@siargaoscooter.com',
-            phone_number: '+63 912 345 6789',
-            avatar_url: null
-          }
-        },
-        {
-          id: 'mock-pending-2',
-          name: 'Island Explorer Bikes',
-          owner_id: 'mock-user-2',
-          address: '45 Tourism Road',
-          city: 'Cloud 9',
-          phone_number: '+63 918 765 4321',
-          email: 'explore@islandbikes.com',
-          whatsapp: null,
-          description: 'Explorer Bikes offers a wide selection of motorcycles perfect for exploring the beautiful island of Siargao. Daily, weekly, and monthly rates available.',
-          is_verified: false,
-          created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-          updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          users: {
-            first_name: 'Maria',
-            last_name: 'Reyes',
-            email: 'maria@islandbikes.com',
-            phone_number: '+63 918 765 4321',
-            avatar_url: null
-          }
-        }
-      ];
-      
-      const mockVerifiedShops = [
-        {
-          id: 'mock-verified-1',
-          name: 'Surf & Ride Rentals',
-          owner_id: 'mock-user-3',
-          address: '78 Sunset Boulevard',
-          city: 'General Luna',
-          phone_number: '+63 917 123 4567',
-          email: 'hello@surfandride.com',
-          whatsapp: '+63 917 123 4567',
-          description: 'Premier motorbike rental service located in the heart of General Luna, just 5 minutes from Cloud 9.',
-          is_verified: true,
-          created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
-          updated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
-          users: {
-            first_name: 'Carlos',
-            last_name: 'Mendoza',
-            email: 'carlos@surfandride.com',
-            phone_number: '+63 917 123 4567',
-            avatar_url: null
-          }
-        }
-      ];
-      
-      // Set mock data
-      setPendingShops(mockPendingShops);
-      setVerifiedShops(mockVerifiedShops);
-    }
-  }, [isLoadingShops, pendingShops.length, verifiedShops.length]);
-
   const fetchShops = async () => {
     setIsLoadingShops(true);
     try {
@@ -147,7 +67,7 @@ export default function ShopVerificationPage() {
         .from("rental_shops")
         .select(`
           *,
-          users:owner_id (
+          owner:owner_id (
             id,
             email,
             first_name,
@@ -161,13 +81,10 @@ export default function ShopVerificationPage() {
       if (error) {
         console.error("Error fetching shops:", error.message || error);
       } else {
-        // Define a type for the shop data that includes is_verified
-        type ShopWithVerification = typeof data extends (infer T)[] 
-          ? T & { is_verified: boolean } 
-          : never;
+        // Cast the data to unknown first to avoid TypeScript errors
+        const typedData = data as unknown as Array<VerifiableRentalShop>;
         
-        // Split shops into pending and verified using type assertion
-        const typedData = data as ShopWithVerification[] | null;
+        // Split shops into pending and verified
         const pending = typedData?.filter(shop => !shop.is_verified) || [];
         const verified = typedData?.filter(shop => shop.is_verified) || [];
         
@@ -258,10 +175,10 @@ export default function ShopVerificationPage() {
         const shop = pendingShops.find(s => s.id === shopId);
         if (shop) {
           setPendingShops(pendingShops.filter(s => s.id !== shopId));
-          setStatusMessage({ type: 'success', text: `Shop application "${shop.name}" has been rejected.` });
+          setStatusMessage({ type: 'success', text: `Shop "${shop.name}" has been rejected.` });
         }
       } else {
-        // Call our new API endpoint
+        // Call our API endpoint
         const response = await fetch('/api/shops/verify', {
           method: 'PATCH',
           headers: {
@@ -278,11 +195,11 @@ export default function ShopVerificationPage() {
           throw new Error(errorData.error || 'Failed to reject shop');
         }
         
-        // Remove shop from the pending list in the UI
+        // Remove shop from pending list in the UI
         const shop = pendingShops.find(s => s.id === shopId);
         if (shop) {
           setPendingShops(pendingShops.filter(s => s.id !== shopId));
-          setStatusMessage({ type: 'success', text: `Shop application "${shop.name}" has been rejected.` });
+          setStatusMessage({ type: 'success', text: `Shop "${shop.name}" has been rejected.` });
         }
       }
     } catch (error: any) {
@@ -293,60 +210,30 @@ export default function ShopVerificationPage() {
     }
   };
 
-  // Show loading state while checking authentication
   if (isLoading) {
-    return (
-      <div className="container mx-auto py-12 px-4">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-pulse">Loading verification page...</div>
-        </div>
-      </div>
-    );
+    return <div className="h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  // Show unauthorized message if not admin
-  if (!isAdmin) {
-    return (
-      <div className="container mx-auto py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl font-bold text-red-600 mb-4">Unauthorized Access</h1>
-          <p className="mb-6">You don't have permission to access the shop verification page.</p>
-          <Button asChild>
-            <Link href="/">Return to Homepage</Link>
-          </Button>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated || !isAdmin) {
+    return null; // Redirect will happen in the useEffect
   }
 
   return (
-    <div className="pt-24">
-      <div className="bg-black text-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Shop Verification</h1>
-              <p className="text-lg">Review and manage rental shop applications</p>
-            </div>
-            <Button asChild variant="outline" className="bg-transparent border-white text-white hover:bg-white/10">
-              <Link href="/admin">
-                ← Back to Dashboard
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-      
-      <div className="container mx-auto py-12 px-4">
-        <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen pb-12">
+      <div className="max-w-screen-xl mx-auto px-4">
+        <div className="py-8">
+          <h1 className="text-3xl font-bold mb-2">Shop Verification</h1>
+          <p className="text-muted-foreground">
+            Verify new shop applications and manage existing shops
+          </p>
+          
+          {/* Status message */}
           {statusMessage && (
-            <div 
-              className={`p-4 mb-6 rounded-md flex items-center ${
-                statusMessage.type === 'success' 
-                  ? 'bg-green-100 text-green-800 border border-green-300' 
-                  : 'bg-red-100 text-red-800 border border-red-300'
-              }`}
-            >
+            <div className={`mt-6 flex items-center p-4 rounded-md ${
+              statusMessage.type === 'success' 
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' 
+                : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+            }`}>
               {statusMessage.type === 'success' ? (
                 <CheckCircle className="mr-2 h-5 w-5" />
               ) : (
@@ -421,7 +308,7 @@ export default function ShopVerificationPage() {
                             <div className="flex items-center mb-4">
                               <div className="mr-4">
                                 <Avatar 
-                                  src={shop.logo_url || shop.users?.avatar_url} 
+                                  src={shop.logo_url || shop.owner?.avatar_url} 
                                   alt={shop.name}
                                   size="md"
                                 />
@@ -429,7 +316,7 @@ export default function ShopVerificationPage() {
                               <div>
                                 <h3 className="text-xl font-bold">{shop.name}</h3>
                                 <p className="text-sm text-muted-foreground">
-                                  Submitted {new Date(shop.created_at).toLocaleDateString()} by {shop.users?.first_name} {shop.users?.last_name}
+                                  Submitted {new Date(shop.created_at).toLocaleDateString()} by {shop.owner?.first_name} {shop.owner?.last_name}
                                 </p>
                               </div>
                             </div>
@@ -448,9 +335,9 @@ export default function ShopVerificationPage() {
                               <div>
                                 <h4 className="text-sm font-medium mb-2">Owner Information</h4>
                                 <div className="space-y-2 text-sm">
-                                  <p><span className="font-medium">Name:</span> {shop.users?.first_name} {shop.users?.last_name}</p>
-                                  <p><span className="font-medium">Email:</span> {shop.users?.email}</p>
-                                  <p><span className="font-medium">Phone:</span> {shop.users?.phone_number || 'Not provided'}</p>
+                                  <p><span className="font-medium">Name:</span> {shop.owner?.first_name} {shop.owner?.last_name}</p>
+                                  <p><span className="font-medium">Email:</span> {shop.owner?.email}</p>
+                                  <p><span className="font-medium">Phone:</span> {shop.owner?.phone_number || 'Not provided'}</p>
                                 </div>
                               </div>
                             </div>
@@ -535,7 +422,7 @@ export default function ShopVerificationPage() {
                               <td className="px-4 py-3">
                                 <div className="flex items-center">
                                   <Avatar 
-                                    src={shop.logo_url || shop.users?.avatar_url} 
+                                    src={shop.logo_url || shop.owner?.avatar_url} 
                                     alt={shop.name}
                                     size="sm"
                                     className="mr-3"
@@ -544,7 +431,7 @@ export default function ShopVerificationPage() {
                                 </div>
                               </td>
                               <td className="px-4 py-3">
-                                {shop.users?.first_name} {shop.users?.last_name}
+                                {shop.owner?.first_name} {shop.owner?.last_name}
                               </td>
                               <td className="px-4 py-3">
                                 {shop.city}
@@ -554,8 +441,8 @@ export default function ShopVerificationPage() {
                               </td>
                               <td className="px-4 py-3">
                                 <Button 
-                                  variant="outline" 
-                                  size="sm" 
+                                  variant="ghost" 
+                                  size="sm"
                                   asChild
                                 >
                                   <Link href={`/shop/${shop.id}`}>
