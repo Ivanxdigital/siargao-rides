@@ -5,55 +5,17 @@ import RentalShopCard from "@/components/RentalShopCard"
 import { Sliders, ChevronDown, ChevronUp } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { motion, AnimatePresence } from "framer-motion"
+import { getShops, getBikes } from "@/lib/api"
+import { RentalShop, Bike, BikeCategory } from "@/lib/types"
 
-// Temporary mock data for shops
-const SHOPS = [
-  {
-    id: "shop1",
-    name: "Island Riders",
-    images: ["https://placehold.co/600x400/1e3b8a/white?text=Island+Riders", "https://placehold.co/600x400/1e3b8a/white?text=Island+Riders"],
-    startingPrice: 400,
-    rating: 4.7,
-    reviewCount: 24,
-    bikeTypes: ["Scooter", "Semi-automatic"]
-  },
-  {
-    id: "shop2",
-    name: "Siargao Wheels",
-    images: ["https://placehold.co/600x400/1e3b8a/white?text=Siargao+Wheels", "https://placehold.co/600x400/1e3b8a/white?text=Siargao+Wheels"],
-    startingPrice: 350,
-    rating: 4.5,
-    reviewCount: 18,
-    bikeTypes: ["Scooter", "Dirt Bike"]
-  },
-  {
-    id: "shop3",
-    name: "Wave Cruisers",
-    images: ["https://placehold.co/600x400/1e3b8a/white?text=Wave+Cruisers", "https://placehold.co/600x400/1e3b8a/white?text=Wave+Cruisers"],
-    startingPrice: 450,
-    rating: 4.8,
-    reviewCount: 32,
-    bikeTypes: ["Semi-automatic", "Manual"]
-  },
-  {
-    id: "shop4",
-    name: "GL Rentals",
-    images: ["https://placehold.co/600x400/1e3b8a/white?text=GL+Rentals", "https://placehold.co/600x400/1e3b8a/white?text=GL+Rentals"],
-    startingPrice: 380,
-    rating: 4.2,
-    reviewCount: 12,
-    bikeTypes: ["Scooter", "Electric"]
-  },
-  {
-    id: "shop5",
-    name: "Surf & Ride",
-    images: ["https://placehold.co/600x400/1e3b8a/white?text=Surf+Ride", "https://placehold.co/600x400/1e3b8a/white?text=Surf+Ride"],
-    startingPrice: 420,
-    rating: 4.6,
-    reviewCount: 28,
-    bikeTypes: ["Manual", "Dirt Bike"]
-  }
-]
+// Interface for shop data with additional calculated fields
+interface ShopWithMetadata extends RentalShop {
+  startingPrice: number;
+  rating: number;
+  reviewCount: number;
+  bikeTypes: BikeCategory[];
+  images: string[];
+}
 
 const BikeTypeCheckbox = ({ type, checked, onChange }: { type: string, checked: boolean, onChange: () => void }) => {
   return (
@@ -82,13 +44,77 @@ export default function BrowsePage() {
   const [minRating, setMinRating] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  
-  // Simulate loading
+  const [shops, setShops] = useState<ShopWithMetadata[]>([])
+  const [availableBikeTypes, setAvailableBikeTypes] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch shops and bikes data
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
+    const fetchData = async () => {
+      try {
+        setIsLoading(true)
+        
+        // Fetch shops from Supabase
+        const shopsData = await getShops()
+        
+        if (!shopsData || shopsData.length === 0) {
+          setShops([])
+          setIsLoading(false)
+          return
+        }
+        
+        // Fetch all bikes to get types and prices
+        const bikesData = await getBikes()
+        
+        // Process shop data with bikes
+        const enhancedShops: ShopWithMetadata[] = shopsData.map(shop => {
+          // Filter bikes for this shop
+          const shopBikes = bikesData.filter(bike => bike.shop_id === shop.id)
+          
+          // Calculate starting price (lowest price among bikes)
+          const startingPrice = shopBikes.length > 0 
+            ? Math.min(...shopBikes.map(bike => bike.price_per_day))
+            : 0
+          
+          // Get unique bike types
+          const bikeTypes = Array.from(new Set(shopBikes.map(bike => bike.category)))
+          
+          // Collect images from bikes for this shop (or use placeholders)
+          const images = shopBikes.length > 0 && shopBikes.some(bike => bike.images && bike.images.length > 0)
+            ? shopBikes
+                .flatMap(bike => bike.images || [])
+                .filter(img => img.is_primary)
+                .map(img => img.image_url)
+            : [`https://placehold.co/600x400/1e3b8a/white?text=${encodeURIComponent(shop.name)}`]
+          
+          // For now, use placeholder rating data since we don't have reviews yet
+          // In a real app, you would calculate this from actual reviews
+          return {
+            ...shop,
+            startingPrice,
+            rating: 4.5, // Placeholder
+            reviewCount: 0, // Placeholder
+            bikeTypes,
+            images
+          }
+        })
+        
+        // Gather all unique bike types across all shops
+        const allBikeTypes = Array.from(
+          new Set(enhancedShops.flatMap(shop => shop.bikeTypes))
+        )
+        
+        setShops(enhancedShops)
+        setAvailableBikeTypes(allBikeTypes)
+        setIsLoading(false)
+      } catch (err) {
+        console.error('Error fetching shop data:', err)
+        setError('Failed to load shops. Please try again later.')
+        setIsLoading(false)
+      }
+    }
+    
+    fetchData()
   }, [])
   
   const toggleBikeType = (type: string) => {
@@ -104,7 +130,7 @@ export default function BrowsePage() {
   }
 
   // Apply filters
-  const filteredShops = SHOPS.filter(shop => {
+  const filteredShops = shops.filter(shop => {
     // Price filter
     if (shop.startingPrice < priceRange[0] || shop.startingPrice > priceRange[1]) {
       return false
@@ -250,182 +276,216 @@ export default function BrowsePage() {
                 animate={{ rotate: showFilters ? 180 : 0 }}
                 transition={{ duration: 0.3 }}
               >
-                {showFilters ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                {showFilters ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </motion.div>
             </motion.button>
           </motion.div>
           
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* Filters Sidebar */}
-            <AnimatePresence>
-              <motion.div 
-                className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-64 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-4 h-fit hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5`}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-              >
-                <motion.h2 
-                  className="text-lg font-semibold mb-4 text-white"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
-                >
-                  Filters
-                </motion.h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Filters Panel (Desktop & Mobile) */}
+            <motion.div 
+              className="md:col-span-1"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+            >
+              {/* Desktop filters (always visible) */}
+              <div className="hidden md:block mb-6">
+                <h2 className="text-xl font-bold mb-4">Filters</h2>
                 
-                {/* Price Range Filter */}
-                <motion.div 
-                  className="mb-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.3 }}
-                >
-                  <h3 className="text-sm font-medium mb-3 text-gray-200">Price Range</h3>
-                  {/* This is a placeholder for the slider component */}
-                  <div className="mb-2">
-                    <div className="h-2 bg-gray-700 rounded-full relative">
-                      <motion.div 
-                        className="absolute h-full bg-primary rounded-full" 
-                        style={{ 
-                          left: `${((priceRange[0] - 100) / 1900) * 100}%`, 
-                          right: `${100 - ((priceRange[1] - 100) / 1900) * 100}%` 
-                        }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.4 }}
-                      ></motion.div>
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-sm text-gray-400">
-                    <span>₱{priceRange[0]}</span>
-                    <span>₱{priceRange[1]}</span>
-                  </div>
-                </motion.div>
-                
-                {/* Bike Type Filter */}
-                <motion.div 
-                  className="mb-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.4 }}
-                >
-                  <h3 className="text-sm font-medium mb-3 text-gray-200">Bike Type</h3>
+                <div className="mb-6">
+                  <h3 className="text-md font-bold mb-3">Bike Types</h3>
                   <div className="space-y-2">
-                    <BikeTypeCheckbox 
-                      type="Scooter" 
-                      checked={selectedBikeTypes.includes("Scooter")}
-                      onChange={() => toggleBikeType("Scooter")}
+                    {availableBikeTypes.map((type) => (
+                      <BikeTypeCheckbox 
+                        key={type}
+                        type={type.replace('_', ' ')}
+                        checked={selectedBikeTypes.includes(type)}
+                        onChange={() => toggleBikeType(type)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <h3 className="text-md font-bold mb-3">Price Range</h3>
+                  <div className="px-2">
+                    <div className="flex justify-between mb-2 text-sm">
+                      <span>₱{priceRange[0]}</span>
+                      <span>₱{priceRange[1]}</span>
+                    </div>
+                    <input 
+                      type="range"
+                      min={100}
+                      max={2000}
+                      value={priceRange[0]}
+                      onChange={(e) => handlePriceChange([parseInt(e.target.value), priceRange[1]])}
+                      className="w-full mb-2"
                     />
-                    <BikeTypeCheckbox 
-                      type="Semi-automatic" 
-                      checked={selectedBikeTypes.includes("Semi-automatic")}
-                      onChange={() => toggleBikeType("Semi-automatic")}
-                    />
-                    <BikeTypeCheckbox 
-                      type="Manual" 
-                      checked={selectedBikeTypes.includes("Manual")}
-                      onChange={() => toggleBikeType("Manual")}
-                    />
-                    <BikeTypeCheckbox 
-                      type="Dirt Bike" 
-                      checked={selectedBikeTypes.includes("Dirt Bike")}
-                      onChange={() => toggleBikeType("Dirt Bike")}
-                    />
-                    <BikeTypeCheckbox 
-                      type="Electric" 
-                      checked={selectedBikeTypes.includes("Electric")}
-                      onChange={() => toggleBikeType("Electric")}
+                    <input 
+                      type="range"
+                      min={100}
+                      max={2000}
+                      value={priceRange[1]}
+                      onChange={(e) => handlePriceChange([priceRange[0], parseInt(e.target.value)])}
+                      className="w-full"
                     />
                   </div>
-                </motion.div>
+                </div>
                 
-                {/* Rating Filter */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.5 }}
-                >
-                  <h3 className="text-sm font-medium mb-3 text-gray-200">Minimum Rating</h3>
-                  <motion.select 
-                    value={minRating}
-                    onChange={e => setMinRating(Number(e.target.value))}
-                    className="w-full p-2 bg-gray-900/50 border border-gray-700 rounded text-white"
-                    whileFocus={{ borderColor: "rgba(var(--color-primary), 0.5)" }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <option value={0}>Any Rating</option>
-                    <option value={3}>3+ Stars</option>
-                    <option value={4}>4+ Stars</option>
-                    <option value={4.5}>4.5+ Stars</option>
-                  </motion.select>
-                </motion.div>
-              </motion.div>
-            </AnimatePresence>
-            
-            {/* Shop Listings */}
-            <div className="flex-1">
-              <AnimatePresence mode="wait">
-                {isLoading ? (
-                  <motion.div 
-                    className="flex justify-center items-center py-20"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    key="loading"
-                  >
-                    <div className="relative w-12 h-12">
-                      <motion.div 
-                        className="absolute inset-0 border-t-2 border-primary rounded-full"
-                        animate={{ rotate: 360 }}
-                        transition={{ 
-                          duration: 1.5, 
-                          repeat: Infinity, 
-                          ease: "linear"
-                        }}
-                      />
+                <div className="mb-6">
+                  <h3 className="text-md font-bold mb-3">Minimum Rating</h3>
+                  <div className="px-2">
+                    <div className="flex justify-between mb-2 text-sm">
+                      <span>0</span>
+                      <span>5</span>
                     </div>
-                  </motion.div>
-                ) : filteredShops.length > 0 ? (
+                    <input 
+                      type="range"
+                      min={0}
+                      max={5}
+                      step={0.5}
+                      value={minRating}
+                      onChange={(e) => setMinRating(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <div className="mt-2 text-center font-medium">
+                      {minRating} stars & up
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Mobile filters (expandable) */}
+              <AnimatePresence>
+                {showFilters && (
                   <motion.div 
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="show"
-                    key="results"
+                    key="mobile-filters"
+                    variants={filterVariants}
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                    className="md:hidden overflow-hidden mb-6"
                   >
-                    {filteredShops.map((shop, index) => (
-                      <motion.div 
-                        key={shop.id}
-                        variants={itemVariants}
-                        custom={index}
-                      >
-                        <RentalShopCard
-                          id={shop.id}
-                          name={shop.name}
-                          images={shop.images}
-                          startingPrice={shop.startingPrice}
-                          rating={shop.rating}
-                          reviewCount={shop.reviewCount}
+                    <div className="mb-6">
+                      <h3 className="text-md font-bold mb-3">Bike Types</h3>
+                      <div className="space-y-2">
+                        {availableBikeTypes.map((type) => (
+                          <BikeTypeCheckbox 
+                            key={type}
+                            type={type.replace('_', ' ')}
+                            checked={selectedBikeTypes.includes(type)}
+                            onChange={() => toggleBikeType(type)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <h3 className="text-md font-bold mb-3">Price Range</h3>
+                      <div className="px-2">
+                        <div className="flex justify-between mb-2 text-sm">
+                          <span>₱{priceRange[0]}</span>
+                          <span>₱{priceRange[1]}</span>
+                        </div>
+                        <input 
+                          type="range"
+                          min={100}
+                          max={2000}
+                          value={priceRange[0]}
+                          onChange={(e) => handlePriceChange([parseInt(e.target.value), priceRange[1]])}
+                          className="w-full mb-2"
                         />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    className="text-center py-12"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    key="no-results"
-                  >
-                    <p className="text-lg text-gray-300">
-                      No rental shops match your filters. Try adjusting your criteria.
-                    </p>
+                        <input 
+                          type="range"
+                          min={100}
+                          max={2000}
+                          value={priceRange[1]}
+                          onChange={(e) => handlePriceChange([priceRange[0], parseInt(e.target.value)])}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <h3 className="text-md font-bold mb-3">Minimum Rating</h3>
+                      <div className="px-2">
+                        <div className="flex justify-between mb-2 text-sm">
+                          <span>0</span>
+                          <span>5</span>
+                        </div>
+                        <input 
+                          type="range"
+                          min={0}
+                          max={5}
+                          step={0.5}
+                          value={minRating}
+                          onChange={(e) => setMinRating(parseFloat(e.target.value))}
+                          className="w-full"
+                        />
+                        <div className="mt-2 text-center font-medium">
+                          {minRating} stars & up
+                        </div>
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
+            </motion.div>
+            
+            {/* Shop Listings */}
+            <div className="md:col-span-3">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+                  <p className="text-gray-400">Loading shops...</p>
+                </div>
+              ) : error ? (
+                <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-center">
+                  <p className="text-red-400">{error}</p>
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="mt-3 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-md text-sm"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : filteredShops.length === 0 ? (
+                <div className="bg-gray-800/40 backdrop-blur-sm border border-gray-700 rounded-lg p-8 text-center">
+                  <h3 className="text-xl font-semibold mb-2">No shops found</h3>
+                  <p className="text-gray-400 mb-4">Try adjusting your filters to see more results</p>
+                  <button 
+                    onClick={() => {
+                      setPriceRange([100, 2000])
+                      setSelectedBikeTypes([])
+                      setMinRating(0)
+                    }}
+                    className="px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded-md text-sm"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              ) : (
+                <motion.div 
+                  className="grid grid-cols-1 gap-6"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                >
+                  {filteredShops.map((shop) => (
+                    <motion.div key={shop.id} variants={itemVariants}>
+                      <RentalShopCard
+                        id={shop.id}
+                        name={shop.name}
+                        images={shop.images}
+                        startingPrice={shop.startingPrice}
+                        rating={shop.rating}
+                        reviewCount={shop.reviewCount}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
