@@ -201,7 +201,7 @@ export default function Home() {
             </div>
 
             {/* Search Bar Component */}
-            <div className="w-full max-w-3xl mx-auto mt-2 transition-all duration-300 hover:transform hover:scale-[1.01] animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+            <div className="w-full max-w-3xl mx-auto mt-2 mb-4 md:mb-0 transition-all duration-300 hover:transform hover:scale-[1.01] animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
               <SearchBar onSearch={handleSearch} />
             </div>
           </div>
