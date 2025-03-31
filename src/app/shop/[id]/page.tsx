@@ -132,23 +132,24 @@ export default function ShopPage() {
     : 0
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Banner */}
-      <div className="relative h-48 md:h-64 w-full">
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Banner with enhanced height and overlay */}
+      <div className="relative h-60 md:h-80 w-full">
         <Image
           src={shop.banner_url || 'https://placehold.co/1200x400/1e3b8a/white?text=Shop+Banner'}
           alt={`${shop.name} banner`}
           fill
+          priority
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
       </div>
       
-      {/* Shop Info */}
-      <div className="container mx-auto px-4 -mt-16 relative z-10">
-        <div className="flex flex-col md:flex-row gap-6 items-start">
-          {/* Profile Image */}
-          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-background relative">
+      {/* Shop Info with better positioning and card styling */}
+      <div className="container mx-auto px-4 -mt-24 md:-mt-28 relative z-10">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+          {/* Profile Image with improved styling */}
+          <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-background shadow-lg relative bg-background">
             <Image
               src={shop.logo_url || 'https://placehold.co/400x400/1e3b8a/white?text=Logo'}
               alt={shop.name}
@@ -157,39 +158,45 @@ export default function ShopPage() {
             />
           </div>
           
-          {/* Shop Details */}
-          <div className="flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold">{shop.name}</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <div className="flex items-center">
+          {/* Shop Details with better typography */}
+          <div className="flex-1 bg-background/80 backdrop-blur-sm rounded-lg p-4 md:p-6">
+            <h1 className="text-2xl md:text-4xl font-bold">{shop.name}</h1>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <div className="flex items-center bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-md">
                 <Star size={18} className="text-tropical-yellow fill-tropical-yellow" />
                 <span className="ml-1 font-medium">{averageRating.toFixed(1)}</span>
               </div>
               <span className="text-sm text-muted-foreground">({reviews.length} reviews)</span>
-              {shop.is_verified && <Badge variant="verified" className="ml-2">Verified Shop</Badge>}
+              {shop.is_verified && 
+                <Badge variant="verified" className="ml-2 animate-pulse">
+                  Verified Shop
+                </Badge>
+              }
             </div>
-            <p className="text-muted-foreground mt-4">{shop.description || "No description available."}</p>
+            <p className="text-muted-foreground mt-4 max-w-2xl">{shop.description || "No description available."}</p>
           </div>
           
-          {/* Contact Info */}
-          <div className="bg-card border border-border rounded-lg p-4 w-full md:w-auto md:min-w-64">
-            <h3 className="font-semibold mb-4">Contact Information</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <MapPin size={18} />
-                <span className="text-sm">{shop.address}, {shop.city}</span>
+          {/* Contact Info Card with improved styling */}
+          <div className="bg-card border border-border rounded-lg p-5 shadow-sm w-full md:w-auto md:min-w-72 mt-4 md:mt-0">
+            <h3 className="font-semibold mb-4 text-lg pb-2 border-b border-border">Contact Information</h3>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 group">
+                <MapPin size={20} className="text-primary mt-0.5 shrink-0" />
+                <span className="text-sm group-hover:text-primary transition-colors">
+                  {shop.address}, <br/>{shop.city}
+                </span>
               </div>
               {shop.phone_number && (
-                <div className="flex items-center gap-2">
-                  <Phone size={18} />
+                <div className="flex items-center gap-3 group">
+                  <Phone size={20} className="text-primary shrink-0" />
                   <a href={`tel:${shop.phone_number}`} className="text-sm hover:text-primary transition-colors">
                     {shop.phone_number}
                   </a>
                 </div>
               )}
               {shop.email && (
-                <div className="flex items-center gap-2">
-                  <Mail size={18} />
+                <div className="flex items-center gap-3 group">
+                  <Mail size={20} className="text-primary shrink-0" />
                   <a href={`mailto:${shop.email}`} className="text-sm hover:text-primary transition-colors">
                     {shop.email}
                   </a>
@@ -197,12 +204,11 @@ export default function ShopPage() {
               )}
               {shop.whatsapp && (
                 <Button 
-                  className="w-full mt-2" 
-                  variant="outline"
+                  className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white border-green-700" 
                   onClick={() => window.open(`https://wa.me/${shop.whatsapp?.replace(/\+/g, '').replace(/\s/g, '')}`, '_blank')}
                 >
                   <MessageCircle size={18} className="mr-2" />
-                  WhatsApp
+                  Contact via WhatsApp
                 </Button>
               )}
             </div>
@@ -210,10 +216,10 @@ export default function ShopPage() {
         </div>
       </div>
       
-      {/* Google Map */}
+      {/* Google Map with improved styling */}
       {(shop.latitude && shop.longitude) ? (
         <div className="container mx-auto px-4 mt-8">
-          <div className="border border-border rounded-lg overflow-hidden h-64">
+          <div className="border border-border rounded-lg overflow-hidden h-64 md:h-80 shadow-sm">
             <iframe
               title={`${shop.name} location`}
               width="100%"
@@ -221,6 +227,7 @@ export default function ShopPage() {
               frameBorder="0"
               src={`https://maps.google.com/maps?q=${shop.latitude},${shop.longitude}&z=15&output=embed`}
               allowFullScreen
+              className="hover:opacity-95 transition-opacity"
             ></iframe>
           </div>
         </div>
@@ -232,12 +239,14 @@ export default function ShopPage() {
         </div>
       )}
       
-      {/* Bike Listings */}
+      {/* Bike Listings with improved styling */}
       <div className="container mx-auto px-4 py-12">
-        <h2 className="text-2xl font-semibold mb-6">Available Bikes</h2>
+        <h2 className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-border">
+          Available Bikes
+        </h2>
         
         {bikes.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-12 bg-muted/50 rounded-lg border border-dashed border-border">
             <p className="text-muted-foreground">No bikes available from this shop at the moment.</p>
           </div>
         ) : (
@@ -261,48 +270,101 @@ export default function ShopPage() {
         )}
       </div>
       
-      {/* Reviews */}
-      <div className="container mx-auto px-4 py-8 border-t border-border">
-        <h2 className="text-2xl font-semibold mb-6">Customer Reviews</h2>
-        
-        {reviews.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No reviews yet. Be the first to review this shop!</p>
+      {/* Reviews with enhanced design */}
+      <div className="py-16 bg-gradient-to-b from-background to-muted/30 border-t border-border">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center mb-10">
+            <h2 className="text-3xl font-bold mb-2">Customer Reviews</h2>
+            <div className="w-20 h-1 bg-primary rounded-full mb-4"></div>
+            <p className="text-muted-foreground text-center max-w-md">
+              See what our customers have to say about their experience with {shop.name}
+            </p>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {reviews.map(review => (
-              <div key={review.id} className="bg-card border border-border rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium">User ID: {review.user_id}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(review.created_at).toLocaleDateString()}
+          
+          {reviews.length === 0 ? (
+            <div className="max-w-2xl mx-auto bg-card rounded-xl border border-dashed border-primary/30 overflow-hidden shadow-sm">
+              <div className="p-8 flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Star size={24} className="text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No Reviews Yet</h3>
+                <p className="text-muted-foreground text-center mb-6">
+                  Be the first to share your experience with this shop!
+                </p>
+                <Button 
+                  variant="outline"
+                  className="border-primary/30 hover:bg-primary/5 text-primary hover:text-primary"
+                >
+                  Write a Review
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {reviews.map(review => (
+                <div key={review.id} className="bg-card border border-border hover:border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                        {review.user_id.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium">Customer</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(review.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1.5 rounded-lg">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          size={16} 
+                          className={i < review.rating ? "text-tropical-yellow fill-tropical-yellow" : "text-muted"} 
+                        />
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        size={16} 
-                        className={i < review.rating ? "text-tropical-yellow fill-tropical-yellow" : "text-muted"} 
-                      />
-                    ))}
+                  
+                  <div className="bg-muted/30 p-4 rounded-lg mb-4 relative">
+                    <div className="absolute -top-2 left-4 w-4 h-4 bg-muted/30 rotate-45"></div>
+                    <p className="text-sm leading-relaxed">{review.comment || "No comment provided."}</p>
                   </div>
+                  
+                  {/* Reply from shop owner */}
+                  {review.reply && (
+                    <div className="flex gap-3 mt-5 bg-primary/5 p-4 rounded-lg border-l-3 border-primary">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <MessageCircle size={14} className="text-primary" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-primary flex items-center gap-2">
+                          Shop Response
+                          <span className="text-xs text-muted-foreground font-normal">Official reply</span>
+                        </div>
+                        <p className="mt-1 text-sm">{review.reply}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <p className="mt-3 text-sm">{review.comment || "No comment provided."}</p>
-                
-                {/* Reply from shop owner */}
-                {review.reply && (
-                  <div className="mt-4 pl-4 border-l-2 border-border">
-                    <div className="text-sm font-medium">Shop Reply:</div>
-                    <p className="mt-1 text-sm">{review.reply}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+          
+          {reviews.length > 0 && (
+            <div className="flex justify-center mt-10">
+              <Button className="bg-primary text-white" size="sm">
+                Write a Review
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
