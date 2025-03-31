@@ -176,14 +176,26 @@ export default function Home() {
       <section className="relative min-h-[110vh] sm:min-h-screen max-h-[900px] bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10">
         {/* Background Image with Overlay - Mobile Only */}
         <div className="absolute inset-0 z-0 md:hidden">
-          <Image
-            src="/images/hero-bg.jpg"
-            alt="Siargao Rides Hero"
-            fill
-            className="object-cover object-center opacity-30"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/95 z-10"></div>
+          <div 
+            className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center opacity-40 hover:opacity-50 transition-opacity duration-1000"
+            style={{ backgroundImage: "url('/images/hero-bg.jpg')" }}
+            aria-hidden="true"
+          ></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-black/50 to-purple-900/40 z-10"></div>
+          
+          {/* Smooth Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-purple-700/20 animate-[pulse_4s_ease-in-out_infinite] z-10 opacity-70"></div>
+          
+          {/* Subtle Radial Gradient */}
+          <div className="absolute -inset-[10%] bg-[radial-gradient(circle_at_50%_50%,rgba(120,50,255,0.08),transparent_70%)] opacity-60 animate-[spin_30s_linear_infinite] z-10"></div>
+          
+          {/* Reduced and Blurred Floating Elements */}
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-[float_20s_ease-in-out_infinite] z-5"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-40 h-40 rounded-full bg-purple-500/5 blur-2xl animate-[float_25s_ease-in-out_infinite_1s] z-5"></div>
+          
+          {/* Soft Glow Effects - Enhanced */}
+          <div className="absolute top-0 left-0 w-full h-2/5 bg-gradient-to-b from-primary/5 to-transparent z-10"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-purple-900/10 to-transparent z-10"></div>
         </div>
         
         {/* YouTube Video Background - Desktop Only */}
@@ -235,6 +247,25 @@ export default function Home() {
         }
         .animate-fade-in-up {
           animation: fadeInUp 0.8s ease-out forwards;
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+          }
+          25% {
+            transform: translateY(-15px) translateX(15px);
+          }
+          50% {
+            transform: translateY(10px) translateX(-10px);
+          }
+          75% {
+            transform: translateY(-5px) translateX(5px);
+          }
+        }
+        
+        .bg-noise-pattern {
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
       `}</style>
 
