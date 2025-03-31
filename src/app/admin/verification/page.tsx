@@ -8,16 +8,42 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { CheckCircle, XCircle, ExternalLink, AlertCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { VerifiableRentalShop } from "../types";
+
+// Add this type definition before the component function
+type RentalShopWithUser = {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  description: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
+  email: string | null;
+  phone_number: string | null;
+  whatsapp: string | null;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  owner: {
+    id: string;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    phone_number: string | null;
+  };
+};
 
 export default function ShopVerificationPage() {
-  const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
   const router = useRouter();
-  const [pendingShops, setPendingShops] = useState<any[]>([]);
-  const [verifiedShops, setVerifiedShops] = useState<any[]>([]);
+  const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
   const [isLoadingShops, setIsLoadingShops] = useState(false);
+  const [pendingShops, setPendingShops] = useState<VerifiableRentalShop[]>([]);
+  const [verifiedShops, setVerifiedShops] = useState<VerifiableRentalShop[]>([]);
   const [activeTab, setActiveTab] = useState<'pending' | 'verified'>('pending');
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -112,7 +138,6 @@ export default function ShopVerificationPage() {
       setVerifiedShops(mockVerifiedShops);
     }
   }, [isLoadingShops, pendingShops.length, verifiedShops.length]);
-  */
 
   const fetchShops = async () => {
     setIsLoadingShops(true);
@@ -136,9 +161,15 @@ export default function ShopVerificationPage() {
       if (error) {
         console.error("Error fetching shops:", error.message || error);
       } else {
-        // Split shops into pending and verified
-        const pending = data?.filter(shop => !shop.is_verified) || [];
-        const verified = data?.filter(shop => shop.is_verified) || [];
+        // Define a type for the shop data that includes is_verified
+        type ShopWithVerification = typeof data extends (infer T)[] 
+          ? T & { is_verified: boolean } 
+          : never;
+        
+        // Split shops into pending and verified using type assertion
+        const typedData = data as ShopWithVerification[] | null;
+        const pending = typedData?.filter(shop => !shop.is_verified) || [];
+        const verified = typedData?.filter(shop => shop.is_verified) || [];
         
         setPendingShops(pending);
         setVerifiedShops(verified);

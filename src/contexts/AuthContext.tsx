@@ -296,7 +296,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (authData.user) {
         // Create a record in our users table via API route
         try {
-          const response = await fetch('/api/auth/register', {
+          const apiUrl = '/api/auth/register';
+          console.log(`Calling API route ${apiUrl} with data:`, {
+            userId: authData.user.id,
+            email,
+            firstName,
+            lastName,
+            role
+          });
+          
+          const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -310,11 +319,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }),
           });
 
-          const responseData = await response.json();
+          let responseData;
+          try {
+            responseData = await response.json();
+          } catch (jsonError) {
+            console.error('Error parsing API response:', jsonError);
+            responseData = { error: 'Invalid JSON response' };
+          }
           
           if (!response.ok) {
             console.error('API register route error:', {
               status: response.status,
+              statusText: response.statusText,
               data: responseData
             });
             throw new Error(responseData.error || responseData.details || 'Failed to create user record');

@@ -1,5 +1,44 @@
 // Define database types based on our Supabase schema
 
+import { Database } from './database.types';
+
+// Re-export database types for convenience
+export type Tables = Database['public']['Tables'];
+
+// Supabase row types
+export type UserRow = Tables['users']['Row'];
+export type RentalShopRow = Tables['rental_shops']['Row'];
+export type BikeRow = Tables['bikes']['Row'];
+export type RentalRow = Tables['rentals']['Row'];
+export type ReviewRow = Tables['reviews']['Row'];
+
+// Enum types
+export type BikeCategory = 'scooter' | 'motorcycle' | 'bicycle' | 'dirt_bike' | 'electric_bike';
+export type RentalStatus = 'booked' | 'in_progress' | 'completed' | 'cancelled';
+export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'cancelled';
+export type UserRole = 'tourist' | 'shop_owner' | 'admin';
+
+// Extended types with relations
+export type RentalShopWithOwner = RentalShopRow & {
+  owner: UserRow;
+};
+
+export type BikeWithShop = BikeRow & {
+  shop: RentalShopRow;
+};
+
+export type RentalWithDetails = RentalRow & {
+  bike: BikeRow;
+  user: UserRow;
+  shop: RentalShopRow;
+};
+
+export type ReviewWithDetails = ReviewRow & {
+  user: UserRow;
+  shop: RentalShopRow;
+  bike?: BikeRow;
+};
+
 export type User = {
   id: string
   email: string
@@ -122,8 +161,6 @@ export type Favorite = {
   bike_id: string
   created_at: string
 }
-
-export type BikeCategory = 'scooter' | 'semi_auto' | 'dirt_bike' | 'sport_bike' | 'other'
 
 export enum RentalStatus {
   Pending = 'pending',
