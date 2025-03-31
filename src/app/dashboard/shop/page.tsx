@@ -10,13 +10,50 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
+// Define a proper type for the shop data
+interface RentalShop {
+  id: string;
+  name: string;
+  description: string | null;
+  address: string;
+  city: string;
+  phone_number: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  owner_id: string;
+}
+
+// Define form data type
+interface ShopFormData {
+  name: string;
+  description: string;
+  address: string;
+  city: string;
+  phone_number: string;
+  whatsapp: string;
+  email: string;
+}
+
 export default function ManageShopPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [shop, setShop] = useState<any>(null);
+  const [shop, setShop] = useState<RentalShop | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<ShopFormData>({
+    name: "",
+    description: "",
+    address: "",
+    city: "",
+    phone_number: "",
+    whatsapp: "",
+    email: ""
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [bikeStats, setBikeStats] = useState({
@@ -68,34 +105,35 @@ export default function ManageShopPage() {
           throw shopError;
         }
         
-        setShop(data);
+        // Cast the data to the RentalShop type
+        const shopData = data as RentalShop;
+        setShop(shopData);
         
         // Set form data for potential editing
         setFormData({
-          name: data.name,
-          description: data.description || "",
-          address: data.address,
-          city: data.city,
-          phone_number: data.phone_number || "",
-          whatsapp: data.whatsapp || "",
-          email: data.email || "",
-          // You can add more fields here as needed
+          name: shopData.name,
+          description: shopData.description || "",
+          address: shopData.address,
+          city: shopData.city,
+          phone_number: shopData.phone_number || "",
+          whatsapp: shopData.whatsapp || "",
+          email: shopData.email || "",
         });
         
         // Set banner and logo preview if they exist
-        if (data.banner_url) {
-          setBannerPreview(data.banner_url);
+        if (shopData.banner_url) {
+          setBannerPreview(shopData.banner_url);
         }
         
-        if (data.logo_url) {
-          setLogoPreview(data.logo_url);
+        if (shopData.logo_url) {
+          setLogoPreview(shopData.logo_url);
         }
         
         // Fetch bike statistics
         const { data: bikes, error: bikesError } = await supabase
           .from("bikes")
           .select("*")
-          .eq("shop_id", data.id);
+          .eq("shop_id", shopData.id);
         
         if (!bikesError && bikes) {
           setBikeStats({
