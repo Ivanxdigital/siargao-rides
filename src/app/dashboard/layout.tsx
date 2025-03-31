@@ -85,7 +85,12 @@ export default function DashboardLayout({
   const isAdmin = user?.user_metadata?.role === "admin";
 
   return (
-    <div className="min-h-screen bg-background pt-16 relative">
+    <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative">
+      {/* Background with overlay gradient */}
+      <div className="absolute inset-0 z-0 opacity-20">
+        <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
+      </div>
+      
       {/* Mobile sidebar toggle button */}
       <button
         onClick={toggleSidebar}
@@ -95,10 +100,10 @@ export default function DashboardLayout({
         {sidebarOpen ? <X size={20} className="text-primary" /> : <Menu size={20} className="text-primary" />}
       </button>
 
-      <div className="container mx-auto px-4 md:px-6 py-8 flex flex-col md:flex-row gap-8">
+      <div className="container mx-auto px-4 md:px-6 py-8 flex flex-col md:flex-row gap-8 relative z-10 pt-16">
         {/* Sidebar Navigation - Hidden by default on mobile */}
         <aside className={cn(
-          "fixed md:relative z-20 top-0 left-0 md:left-auto h-screen w-72 md:w-64 bg-background/95 md:bg-transparent pt-24 md:pt-0 px-5 md:px-0 shadow-xl md:shadow-none border-r border-border md:border-r-0 backdrop-blur-sm transition-all duration-300 ease-in-out transform md:transform-none shrink-0",
+          "fixed md:relative z-20 top-0 left-0 md:left-auto h-screen w-72 md:w-64 bg-gray-900/80 md:bg-gray-900/50 pt-24 md:pt-0 px-5 md:px-0 shadow-xl md:shadow-none border-r border-gray-700 md:border-r-0 backdrop-blur-sm transition-all duration-300 ease-in-out transform md:transform-none shrink-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}>
           <div className="sticky top-24 space-y-6">
@@ -206,7 +211,7 @@ export default function DashboardLayout({
         )}
 
         {/* Main Content */}
-        <main className="flex-1 pt-10 md:pt-0">{children}</main>
+        <main className="flex-1 pt-10 md:pt-0 bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">{children}</main>
       </div>
     </div>
   );

@@ -250,6 +250,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     
     try {
+      console.log(`Attempting to register user with email: ${email}, role: ${role}`);
+      
       // Sign up the user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -265,37 +267,84 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       
       if (authError) {
+        console.error('Supabase Auth signup error:', {
+          message: authError.message,
+          status: authError.status,
+          details: JSON.stringify(authError)
+        });
+        
+        // Handle specific error cases with better user messages
+        if (authError.message?.includes('User already registered')) {
+          return { error: { message: 'This email is already registered. Please sign in instead.' } };
+        }
+        
+        if (authError.message?.includes('rate limit')) {
+          return { error: { message: 'Too many signup attempts. Please try again later.' } };
+        }
+        
+        // Generic error handling
         throw authError;
       }
 
+      // Log more details after successful auth signup
+      console.log('Auth signup success:', {
+        userId: authData.user?.id || 'No ID returned',
+        confirmationSent: !!authData.user?.confirmation_sent_at,
+        userMetadata: JSON.stringify(authData.user?.user_metadata || {})
+      });
+
       if (authData.user) {
         // Create a record in our users table via API route
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: authData.user.id,
-            email,
-            firstName,
-            lastName,
-            role,
-          }),
-        });
+        try {
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: authData.user.id,
+              email,
+              firstName,
+              lastName,
+              role,
+            }),
+          });
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to create user record');
+          const responseData = await response.json();
+          
+          if (!response.ok) {
+            console.error('API register route error:', {
+              status: response.status,
+              data: responseData
+            });
+            throw new Error(responseData.error || responseData.details || 'Failed to create user record');
+          }
+          
+          console.log('User registration complete:', responseData);
+        } catch (apiError) {
+          console.error('Error creating user record via API:', apiError);
+          throw new Error('Your account was created but profile setup failed. Please contact support.');
         }
+      } else {
+        console.error('Auth signup succeeded but no user object returned');
+        throw new Error('Signup process incomplete. Please try again.');
       }
       
       setIsLoading(false);
       router.push("/verify-email");
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Registration error:', error);
       setIsLoading(false);
-      return { error };
+      
+      // Improve error messaging based on error type/content
+      if (error.message?.includes('500')) {
+        return { error: { message: 'Server error during registration. Please try again later.' } };
+      }
+      
+      return { error: { 
+        message: error.message || 'An error occurred during registration. Please try again.' 
+      }};
     }
   };
 
