@@ -230,7 +230,7 @@ export default function RegisterShopPage() {
       console.log('Starting shop registration process...');
       
       // Upload government ID
-      let governmentIdUrl = null
+      let governmentIdUrl: string | null = null
       if (formData.governmentId) {
         console.log('Uploading government ID...');
         const { url, error: uploadError } = await uploadFile(
@@ -251,7 +251,7 @@ export default function RegisterShopPage() {
       }
       
       // Upload business permit (optional)
-      let businessPermitUrl = null
+      let businessPermitUrl: string | null = null
       if (formData.businessPermit) {
         console.log('Uploading business permit...');
         const { url, error: uploadError } = await uploadFile(

@@ -162,14 +162,14 @@ export type Favorite = {
   created_at: string
 }
 
-export enum RentalStatus {
+export enum RentalStatusEnum {
   Pending = 'pending',
   Confirmed = 'confirmed',
   Cancelled = 'cancelled',
   Completed = 'completed'
 }
 
-export enum PaymentStatus {
+export enum PaymentStatusEnum {
   Pending = 'pending',
   Paid = 'paid',
   Refunded = 'refunded'

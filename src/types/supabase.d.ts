@@ -5,6 +5,21 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+// Define a basic Database interface for type checking
+export interface Database {
+  public: {
+    Tables: {
+      [key: string]: any;
+    };
+    Views: {
+      [key: string]: any;
+    };
+    Functions: {
+      [key: string]: any;
+    };
+  };
+}
+
 declare module "@supabase/supabase-js" {
   interface SupabaseClient {
     from(table: string): {
