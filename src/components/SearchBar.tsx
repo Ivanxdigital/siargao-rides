@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Search, Calendar, Bike, Sparkles } from "lucide-react"
 import { Button } from "./ui/Button"
+import { useMediaQuery } from "../hooks/useMediaQuery"
 
 interface SearchBarProps {
   onSearch: (searchParams: SearchParams) => void
@@ -34,26 +35,60 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [activeField, setActiveField] = useState<string | null>(null)
   const [currentDate, setCurrentDate] = useState("")
   const [isSearching, setIsSearching] = useState(false)
+  
+  // Detect if device is mobile
+  const isMobile = useMediaQuery("(max-width: 640px)")
 
-  // Set current date in YYYY-MM-DD format when component mounts
+  // Set current date in YYYY-MM-DD format on each render
   useEffect(() => {
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const formattedDate = today.toISOString().split('T')[0]
     setCurrentDate(formattedDate)
+    
+    // If startDate is in the past, update it to today
+    if (startDate && new Date(startDate) < today) {
+      setStartDate(formattedDate)
+    }
   }, [])
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartDate = e.target.value
-    setStartDate(newStartDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const selectedDate = new Date(newStartDate)
+    
+    // Prevent selection of past dates
+    if (selectedDate < today) {
+      const formattedToday = today.toISOString().split('T')[0]
+      setStartDate(formattedToday)
+    } else {
+      setStartDate(newStartDate)
+    }
     
     // If end date is before the new start date, update end date to match start date
-    if (endDate && endDate < newStartDate) {
-      setEndDate(newStartDate)
+    if (endDate && endDate < (selectedDate < today ? today.toISOString().split('T')[0] : newStartDate)) {
+      setEndDate(selectedDate < today ? today.toISOString().split('T')[0] : newStartDate)
     }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Final validation before submitting
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    // If start date is empty or invalid, set it to today
+    if (!startDate || new Date(startDate) < today) {
+      setStartDate(today.toISOString().split('T')[0])
+    }
+    
+    // If end date is empty, set it to start date
+    if (!endDate) {
+      setEndDate(startDate)
+    }
+    
     setIsSearching(true)
     
     // Simulate AI "thinking" with a brief delay
@@ -118,9 +153,10 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 onChange={handleStartDateChange}
                 onFocus={() => setActiveField('startDate')}
                 onBlur={() => setActiveField(null)}
-                className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 text-white touch-manipulation"
+                className={`w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 text-white touch-manipulation ${isMobile ? 'pl-14' : 'pl-12'}`}
+                inputMode="none"
               />
-              <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              <Calendar size={16} className={`absolute ${isMobile ? 'left-4' : 'left-3.5'} top-1/2 -translate-y-1/2 text-white/40`} />
             </div>
           </div>
           
@@ -137,9 +173,10 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 onChange={(e) => setEndDate(e.target.value)}
                 onFocus={() => setActiveField('endDate')}
                 onBlur={() => setActiveField(null)}
-                className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 text-white touch-manipulation"
+                className={`w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 text-white touch-manipulation ${isMobile ? 'pl-14' : 'pl-12'}`}
+                inputMode="none"
               />
-              <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              <Calendar size={16} className={`absolute ${isMobile ? 'left-4' : 'left-3.5'} top-1/2 -translate-y-1/2 text-white/40`} />
             </div>
           </div>
         </div>
