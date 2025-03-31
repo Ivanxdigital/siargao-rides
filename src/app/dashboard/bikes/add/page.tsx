@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PlusCircle, XCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { BikeCategory } from "@/lib/types";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 type PriceInputs = {
   daily: string;
@@ -56,6 +57,26 @@ export default function AddBikePage() {
       router.push("/dashboard");
     }
   }, [user, router]);
+
+  // Set up storage when the page loads
+  useEffect(() => {
+    const setupStorage = async () => {
+      try {
+        // Call the API to set up storage
+        const response = await fetch("/api/storage/setup");
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error setting up storage:", errorData);
+        }
+      } catch (error) {
+        console.error("Error setting up storage:", error);
+      }
+    };
+
+    if (isAuthenticated && user?.user_metadata?.role === "shop_owner") {
+      setupStorage();
+    }
+  }, [isAuthenticated, user]);
 
   const handlePriceChange = (key: keyof PriceInputs, value: string) => {
     // Only allow numbers
@@ -115,16 +136,80 @@ export default function AddBikePage() {
         throw new Error("At least one image is required");
       }
 
-      // In a real app, we would upload images and save the bike data to the database
-      // For now, just simulate an API call and redirect back
+      // Upload images to Supabase Storage
+      const supabase = createClientComponentClient();
+      const uploadedImages = [];
 
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Update all image states to uploading
+      setImages(images.map(img => ({ ...img, isUploading: !!img.file })));
+
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        if (!img.file) continue;
+
+        // Create a unique file path
+        const fileExt = img.file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `bike-images/${fileName}`;
+
+        // Upload the file
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('bikes')
+          .upload(filePath, img.file);
+
+        if (uploadError) {
+          console.error("Error uploading image:", uploadError);
+          throw new Error(`Error uploading image: ${uploadError.message}`);
+        }
+
+        // Get the public URL for the uploaded file
+        const { data: { publicUrl } } = supabase.storage
+          .from('bikes')
+          .getPublicUrl(filePath);
+
+        uploadedImages.push({
+          url: publicUrl,
+          is_primary: i === 0 // First image is primary
+        });
+      }
+
+      // Prepare bike data
+      const bikeData = {
+        name,
+        description,
+        category,
+        price_per_day: parseInt(prices.daily),
+        price_per_week: prices.weekly ? parseInt(prices.weekly) : null,
+        price_per_month: prices.monthly ? parseInt(prices.monthly) : null,
+        is_available: isAvailable,
+        specifications: {
+          engine: specifications.engine,
+          year: specifications.year,
+          color: specifications.color,
+          features: specifications.features.split(',').map(f => f.trim()).filter(f => f)
+        },
+        images: uploadedImages
+      };
+
+      // Send data to API
+      const response = await fetch("/api/bikes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(bikeData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add bike");
+      }
 
       // Redirect back to bikes management page
       router.push("/dashboard/bikes");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add bike");
+      setImages(images.map(img => ({ ...img, isUploading: false })));
     } finally {
       setIsSubmitting(false);
     }

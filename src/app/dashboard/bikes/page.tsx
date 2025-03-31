@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import ManageBikeCard from "@/components/ManageBikeCard";
 import { getBikes } from "@/lib/service";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 // This is now using real API calls
 import { Bike } from "@/lib/types";
@@ -37,21 +38,44 @@ export default function ManageBikesPage() {
           return;
         }
         
-        // Fetch shop ID for the current user
-        const userShops = await fetch(`/api/shops/user/${user.id}`);
-        const shopsData = await userShops.json();
+        const supabase = createClientComponentClient();
         
-        if (!shopsData.shops || shopsData.shops.length === 0) {
-          setError("No shops found for this user");
+        // Get shop ID for the current user
+        const { data: shopData, error: shopError } = await supabase
+          .from("rental_shops")
+          .select("id")
+          .eq("owner_id", user.id)
+          .single();
+        
+        if (shopError || !shopData) {
+          console.error("Error fetching shop:", shopError);
+          setError("No shop found for this user");
           setBikes([]);
           return;
         }
         
-        const shopId = shopsData.shops[0].id;
-        
         // Fetch bikes for this shop
-        const bikes = await getBikes({ shop_id: shopId });
-        setBikes(bikes);
+        const { data: bikesData, error: bikesError } = await supabase
+          .from("bikes")
+          .select(`
+            *,
+            bike_images(*)
+          `)
+          .eq("shop_id", shopData.id);
+        
+        if (bikesError) {
+          console.error("Error fetching bikes:", bikesError);
+          setError("Failed to load bikes. Please try again later.");
+          return;
+        }
+        
+        // Transform data to match our Bike type
+        const formattedBikes = bikesData.map(bike => ({
+          ...bike,
+          images: bike.bike_images || []
+        }));
+        
+        setBikes(formattedBikes);
       } catch (error) {
         console.error("Error fetching bikes:", error);
         setError("Failed to load bikes. Please try again later.");
@@ -76,12 +100,16 @@ export default function ManageBikesPage() {
   const handleDeleteBike = async (bikeId: string) => {
     if (window.confirm("Are you sure you want to delete this bike?")) {
       try {
-        // Call the API to delete the bike
-        const response = await fetch(`/api/bikes/${bikeId}`, {
-          method: 'DELETE',
-        });
+        const supabase = createClientComponentClient();
         
-        if (!response.ok) {
+        // Delete the bike
+        const { error } = await supabase
+          .from("bikes")
+          .delete()
+          .eq("id", bikeId);
+        
+        if (error) {
+          console.error("Error deleting bike:", error);
           throw new Error("Failed to delete bike");
         }
         
@@ -96,16 +124,16 @@ export default function ManageBikesPage() {
 
   const handleToggleAvailability = async (bikeId: string, isAvailable: boolean) => {
     try {
-      // Call the API to update availability
-      const response = await fetch(`/api/bikes/${bikeId}/availability`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ is_available: isAvailable }),
-      });
+      const supabase = createClientComponentClient();
       
-      if (!response.ok) {
+      // Update the bike availability
+      const { error } = await supabase
+        .from("bikes")
+        .update({ is_available: isAvailable })
+        .eq("id", bikeId);
+      
+      if (error) {
+        console.error("Error updating bike availability:", error);
         throw new Error("Failed to update bike availability");
       }
       

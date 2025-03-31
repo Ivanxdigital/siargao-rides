@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import * as service from "@/lib/service"
 import { Bike, RentalShop, Review } from "@/lib/types"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 export default function ShopPage() {
   const { id } = useParams()
@@ -29,10 +30,17 @@ export default function ShopPage() {
       
       try {
         setLoading(true)
+        const supabase = createClientComponentClient()
         
         // Get shop data
-        const shopData = await service.getShopById(id)
-        if (!shopData) {
+        const { data: shopData, error: shopError } = await supabase
+          .from('rental_shops')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (shopError || !shopData) {
+          console.error('Error fetching shop:', shopError);
           setError('Shop not found')
           setLoading(false)
           return
@@ -41,12 +49,41 @@ export default function ShopPage() {
         setShop(shopData)
         
         // Get bikes for this shop
-        const shopBikes = await service.getBikes({ shop_id: id })
-        setBikes(shopBikes)
+        const { data: bikesData, error: bikesError } = await supabase
+          .from('bikes')
+          .select(`
+            *,
+            bike_images(*)
+          `)
+          .eq('shop_id', id)
+          .eq('is_available', true);
+          
+        if (bikesError) {
+          console.error('Error fetching bikes:', bikesError);
+          setError('Failed to load bikes')
+          setLoading(false)
+          return
+        }
+        
+        // Transform data to match our Bike type
+        const formattedBikes = bikesData.map(bike => ({
+          ...bike,
+          images: bike.bike_images || []
+        }));
+        
+        setBikes(formattedBikes)
         
         // Get reviews for this shop
-        const shopReviews = await service.getShopReviews(id)
-        setReviews(shopReviews)
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('*')
+          .eq('shop_id', id);
+          
+        if (reviewsError) {
+          console.error('Error fetching reviews:', reviewsError);
+        } else {
+          setReviews(reviewsData || [])
+        }
         
         setLoading(false)
       } catch (err) {

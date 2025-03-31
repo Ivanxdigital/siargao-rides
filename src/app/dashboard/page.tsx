@@ -19,6 +19,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { motion } from "framer-motion";
 
 // Types for our dashboard data
 interface ShopStats {
@@ -65,6 +66,45 @@ interface RentalData {
     last_name?: string;
   };
 }
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } }
+};
+
+const slideUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.5 } 
+  }
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      type: "spring", 
+      stiffness: 300, 
+      damping: 20 
+    } 
+  }
+};
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -296,8 +336,15 @@ export default function DashboardPage() {
 
   // Show dashboard content if authenticated
   return (
-    <div>
-      <div className="pt-2 md:pt-4 mb-6 md:mb-8">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={fadeIn}
+    >
+      <motion.div 
+        className="pt-2 md:pt-4 mb-6 md:mb-8"
+        variants={slideUp}
+      >
         <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 text-white inline-flex items-center gap-2">
           Welcome, <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-blue-500">{user?.user_metadata?.first_name || "Rider"}!</span>
         </h1>
@@ -306,20 +353,29 @@ export default function DashboardPage() {
             ? "Manage your shop, bikes, and bookings from your dashboard."
             : "Manage your bookings, favorites, and account settings."}
         </p>
-      </div>
+      </motion.div>
 
       <div className="space-y-6 md:space-y-10">
         {/* Error message if any */}
         {error && (
-          <div className="bg-red-900/20 border border-red-700/50 text-red-400 px-4 py-3 rounded-lg mb-6">
+          <motion.div 
+            className="bg-red-900/20 border border-red-700/50 text-red-400 px-4 py-3 rounded-lg mb-6"
+            variants={slideUp}
+          >
             {error}
-          </div>
+          </motion.div>
         )}
         
         {/* Stats Overview */}
         {isShopOwner ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group">
+          <motion.div 
+            className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
+            variants={containerVariants}
+          >
+            <motion.div 
+              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
+              variants={cardVariants}
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Bikes</h2>
@@ -342,9 +398,12 @@ export default function DashboardPage() {
                 View all bikes
                 <ChevronRight size={12} />
               </Link>
-            </div>
+            </motion.div>
 
-            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-green-500/30 group">
+            <motion.div 
+              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-green-500/30 group"
+              variants={cardVariants}
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Available</h2>
@@ -363,9 +422,12 @@ export default function DashboardPage() {
               <p className="text-xs text-white/60 mt-1">
                 {Math.round((shopStats.availableBikes / (shopStats.totalBikes || 1)) * 100) || 0}% of your fleet
               </p>
-            </div>
+            </motion.div>
 
-            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group">
+            <motion.div 
+              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group"
+              variants={cardVariants}
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Active Bookings</h2>
@@ -388,9 +450,12 @@ export default function DashboardPage() {
                 View all bookings
                 <ChevronRight size={12} />
               </Link>
-            </div>
+            </motion.div>
 
-            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group">
+            <motion.div 
+              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
+              variants={cardVariants}
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Revenue</h2>
@@ -413,11 +478,17 @@ export default function DashboardPage() {
                 View analytics
                 <ChevronRight size={12} />
               </Link>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group">
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4"
+            variants={containerVariants}
+          >
+            <motion.div 
+              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group"
+              variants={cardVariants}
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Active Bookings</h2>
@@ -441,9 +512,12 @@ export default function DashboardPage() {
                     : `You have ${userStats.activeBookings} active bookings`
                 }
               </p>
-            </div>
+            </motion.div>
 
-            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-pink-500/30 group">
+            <motion.div 
+              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-pink-500/30 group"
+              variants={cardVariants}
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Saved Bikes</h2>
@@ -467,9 +541,12 @@ export default function DashboardPage() {
                     : `You have ${userStats.savedBikes} saved bikes`
                 }
               </p>
-            </div>
+            </motion.div>
 
-            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group">
+            <motion.div 
+              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
+              variants={cardVariants}
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Profile Completion</h2>
@@ -485,110 +562,159 @@ export default function DashboardPage() {
                   <Settings size={18} className="text-primary" />
                 </div>
               </div>
-              <div className="w-full bg-white/10 rounded-full h-1.5 mt-2 mb-1">
-                <div 
+              <motion.div 
+                className="w-full bg-white/10 rounded-full h-1.5 mt-2 mb-1 overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                <motion.div 
                   className="bg-gradient-to-r from-primary to-blue-500 h-1.5 rounded-full" 
-                  style={{ width: `${userStats.profileCompletionPercentage}%` }}
+                  style={{ width: "0%" }}
+                  animate={{ width: `${userStats.profileCompletionPercentage}%` }}
+                  transition={{ delay: 0.8, duration: 0.8, ease: "easeOut" }}
                 />
-              </div>
+              </motion.div>
               <p className="text-xs text-white/60 mt-1">
                 {userStats.profileCompletionPercentage < 100
                   ? "Add more details to complete your profile"
                   : "Your profile is complete"
                 }
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {/* Quick Actions */}
-        <div>
-          <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90">Quick Actions</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          <motion.h2 
+            className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+          >
+            Quick Actions
+          </motion.h2>
+          <motion.div 
+            className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ delayChildren: 0.5, staggerChildren: 0.1 }}
+          >
             {isShopOwner ? (
               <>
-                <Link href="/dashboard/bikes/add" className="group">
-                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                      <PlusCircle size={20} className="text-primary" />
+                <motion.div variants={cardVariants}>
+                  <Link href="/dashboard/bikes/add" className="group">
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                        <PlusCircle size={20} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Add New Bike</span>
                     </div>
-                    <span className="font-medium text-white/90 text-sm md:text-base">Add New Bike</span>
-                  </div>
-                </Link>
-                <Link href="/dashboard/shop" className="group">
-                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                      <ShoppingBag size={20} className="text-primary" />
+                  </Link>
+                </motion.div>
+                <motion.div variants={cardVariants}>
+                  <Link href="/dashboard/shop" className="group">
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                        <ShoppingBag size={20} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Manage Shop</span>
                     </div>
-                    <span className="font-medium text-white/90 text-sm md:text-base">Manage Shop</span>
-                  </div>
-                </Link>
-                <Link href="/dashboard/bikes" className="group">
-                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                      <Bike size={20} className="text-primary" />
+                  </Link>
+                </motion.div>
+                <motion.div variants={cardVariants}>
+                  <Link href="/dashboard/bikes" className="group">
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                        <Bike size={20} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Manage Bikes</span>
                     </div>
-                    <span className="font-medium text-white/90 text-sm md:text-base">Manage Bikes</span>
-                  </div>
-                </Link>
-                <Link href="/dashboard/analytics" className="group">
-                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                      <BarChart size={20} className="text-primary" />
+                  </Link>
+                </motion.div>
+                <motion.div variants={cardVariants}>
+                  <Link href="/dashboard/analytics" className="group">
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                        <BarChart size={20} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-white/90 text-sm md:text-base">View Analytics</span>
                     </div>
-                    <span className="font-medium text-white/90 text-sm md:text-base">View Analytics</span>
-                  </div>
-                </Link>
+                  </Link>
+                </motion.div>
               </>
             ) : (
               <>
-                <Link href="/browse" className="group">
-                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                      <Bike size={20} className="text-primary" />
+                <motion.div variants={cardVariants}>
+                  <Link href="/browse" className="group">
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                        <Bike size={20} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Browse Bikes</span>
                     </div>
-                    <span className="font-medium text-white/90 text-sm md:text-base">Browse Bikes</span>
-                  </div>
-                </Link>
-                <Link href="/dashboard/bookings" className="group">
-                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                      <CalendarRange size={20} className="text-primary" />
+                  </Link>
+                </motion.div>
+                <motion.div variants={cardVariants}>
+                  <Link href="/dashboard/bookings" className="group">
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                        <CalendarRange size={20} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-white/90 text-sm md:text-base">My Bookings</span>
                     </div>
-                    <span className="font-medium text-white/90 text-sm md:text-base">My Bookings</span>
-                  </div>
-                </Link>
-                <Link href="/dashboard/favorites" className="group">
-                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                      <Heart size={20} className="text-primary" />
+                  </Link>
+                </motion.div>
+                <motion.div variants={cardVariants}>
+                  <Link href="/dashboard/favorites" className="group">
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                        <Heart size={20} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Favorites</span>
                     </div>
-                    <span className="font-medium text-white/90 text-sm md:text-base">Favorites</span>
-                  </div>
-                </Link>
-                <Link href="/profile" className="group">
-                  <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                    <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                      <Settings size={20} className="text-primary" />
+                  </Link>
+                </motion.div>
+                <motion.div variants={cardVariants}>
+                  <Link href="/profile" className="group">
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
+                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
+                        <Settings size={20} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Profile Settings</span>
                     </div>
-                    <span className="font-medium text-white/90 text-sm md:text-base">Profile Settings</span>
-                  </div>
-                </Link>
+                  </Link>
+                </motion.div>
               </>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Recent Activity / Bookings - only for shop owners */}
         {isShopOwner && (
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+          >
             <div className="flex justify-between items-center mb-3 md:mb-4">
               <h2 className="text-lg md:text-xl font-semibold text-white/90">Recent Bookings</h2>
               <Button asChild variant="outline" size="sm" className="border-white/10 hover:border-primary/30 bg-black/40 hover:bg-black/60">
                 <Link href="/dashboard/bookings">View All</Link>
               </Button>
             </div>
-            <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/20">
+            <motion.div 
+              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/20"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9, duration: 0.5 }}
+            >
               {isDataLoading ? (
                 <div className="p-4 md:p-6 space-y-4">
                   {[1, 2, 3].map((i) => (
@@ -624,8 +750,14 @@ export default function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10">
-                      {recentBookings.map((booking) => (
-                        <tr key={booking.id} className="hover:bg-white/5 transition-colors">
+                      {recentBookings.map((booking, index) => (
+                        <motion.tr 
+                          key={booking.id} 
+                          className="hover:bg-white/5 transition-colors"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 1 + (index * 0.1), duration: 0.3 }}
+                        >
                           <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <div className="h-7 w-7 md:h-8 md:w-8 bg-primary/20 rounded-full flex items-center justify-center mr-2">
@@ -679,7 +811,7 @@ export default function DashboardPage() {
                               </Link>
                             </Button>
                           </td>
-                        </tr>
+                        </motion.tr>
                       ))}
                     </tbody>
                   </table>
@@ -695,13 +827,18 @@ export default function DashboardPage() {
                   </p>
                 </div>
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {/* Register as Shop Owner - only shown to tourists */}
         {!isShopOwner && (
-          <div className="bg-gradient-to-r from-primary/10 to-blue-500/10 border border-primary/20 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+          <motion.div 
+            className="bg-gradient-to-r from-primary/10 to-blue-500/10 border border-primary/20 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+          >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
               <div>
                 <h2 className="text-lg md:text-xl font-semibold mb-2 text-white">
@@ -716,9 +853,9 @@ export default function DashboardPage() {
                 <Link href="/register">Register Your Shop</Link>
               </Button>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 } 
