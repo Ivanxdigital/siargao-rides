@@ -177,8 +177,8 @@ export default function Home() {
         {/* Background Image with Overlay - Mobile Only */}
         <div className="absolute inset-0 z-0 md:hidden">
           <div 
-            className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center opacity-40 hover:opacity-50 transition-opacity duration-1000"
-            style={{ backgroundImage: "url('/images/hero-bg.jpg')" }}
+            className="absolute inset-0 bg-cover bg-center opacity-40 hover:opacity-50 transition-opacity duration-1000"
+            style={{ backgroundImage: "url('/images/alejandro-luengo-clllGLYtLRA-unsplash.jpg')" }}
             aria-hidden="true"
           ></div>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-black/50 to-purple-900/40 z-10"></div>

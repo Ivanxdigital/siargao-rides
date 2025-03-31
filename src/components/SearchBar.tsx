@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Calendar, Bike, DollarSign, Sparkles } from "lucide-react"
+import { Search, Calendar, Bike, Sparkles } from "lucide-react"
 import { Button } from "./ui/Button"
 
 interface SearchBarProps {
@@ -149,7 +149,6 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           {/* Budget Slider */}
           <div className={`space-y-1 sm:space-y-2 transition-all duration-300 ${activeField === 'budget' ? 'scale-[1.01]' : ''}`}>
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
-              <DollarSign size={14} className="text-primary" />
               <span>Daily Budget:</span>
               <span className="ml-1 text-xs font-semibold bg-primary/20 text-primary px-2 py-0.5 rounded-md">₱{budget}</span>
             </label>
