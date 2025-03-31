@@ -98,8 +98,8 @@ export default function DashboardLayout({
       <div className="container mx-auto px-4 md:px-6 py-8 flex flex-col md:flex-row gap-8">
         {/* Sidebar Navigation - Hidden by default on mobile */}
         <aside className={cn(
-          "fixed md:relative z-20 top-0 left-0 h-screen w-72 md:w-64 bg-background/95 md:bg-transparent pt-24 md:pt-0 px-5 md:px-0 shadow-xl md:shadow-none border-r border-border md:border-r-0 backdrop-blur-sm transition-all duration-300 ease-in-out transform md:transform-none shrink-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed md:relative z-20 top-0 left-0 md:left-auto h-screen w-72 md:w-64 bg-background/95 md:bg-transparent pt-24 md:pt-0 px-5 md:px-0 shadow-xl md:shadow-none border-r border-border md:border-r-0 backdrop-blur-sm transition-all duration-300 ease-in-out transform md:transform-none shrink-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}>
           <div className="sticky top-24 space-y-6">
             <div className="border-b border-border pb-4 md:border-b-0 md:pb-0">
