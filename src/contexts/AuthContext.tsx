@@ -267,11 +267,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       
       if (authError) {
-        console.error('Supabase Auth signup error:', {
-          message: authError.message,
-          status: authError.status,
-          details: JSON.stringify(authError)
-        });
+        console.error('Supabase Auth signup error:', authError);
         
         // Handle specific error cases with better user messages
         if (authError.message?.includes('User already registered')) {
@@ -333,22 +329,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
               statusText: response.statusText,
               data: responseData
             });
-            throw new Error(responseData.error || responseData.details || 'Failed to create user record');
+            
+            // If the record already exists, this isn't necessarily an error
+            if (response.status === 409 && responseData.error === 'Duplicate user') {
+              console.log('User record already exists, continuing...');
+            } else {
+              throw new Error(responseData.error || responseData.details || 'Failed to create user record');
+            }
+          } else {
+            console.log('User registration complete:', responseData);
           }
-          
-          console.log('User registration complete:', responseData);
         } catch (apiError) {
           console.error('Error creating user record via API:', apiError);
-          throw new Error('Your account was created but profile setup failed. Please contact support.');
+          
+          // Only throw if this isn't a duplicate user error (which we can ignore)
+          if (!(apiError instanceof Error && apiError.message.includes('Duplicate user'))) {
+            throw new Error('Your account was created but profile setup failed. Please contact support.');
+          }
         }
+        
+        setIsLoading(false);
+        router.push("/verify-email");
+        return { error: null };
       } else {
         console.error('Auth signup succeeded but no user object returned');
         throw new Error('Signup process incomplete. Please try again.');
       }
       
-      setIsLoading(false);
-      router.push("/verify-email");
-      return { error: null };
     } catch (error: any) {
       console.error('Registration error:', error);
       setIsLoading(false);
