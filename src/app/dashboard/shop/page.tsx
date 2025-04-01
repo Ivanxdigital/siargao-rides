@@ -10,6 +10,23 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
+// Predefined Siargao locations (same as in SearchBar.tsx)
+const siargaoLocations = [
+  "General Luna",
+  "Cloud 9",
+  "Pacifico",
+  "Dapa",
+  "Union",
+  "Pilar",
+  "Santa Monica",
+  "San Isidro",
+  "Del Carmen",
+  "Burgos",
+  "Maasin River",
+  "Sugba Lagoon",
+  "Magpupungko Rock Pools"
+];
+
 // Define a proper type for the shop data
 interface RentalShop {
   id: string;
@@ -26,6 +43,7 @@ interface RentalShop {
   created_at: string;
   updated_at: string;
   owner_id: string;
+  location_area: string | null;
 }
 
 // Define form data type
@@ -37,6 +55,7 @@ interface ShopFormData {
   phone_number: string;
   whatsapp: string;
   email: string;
+  location_area: string;
 }
 
 export default function ManageShopPage() {
@@ -52,7 +71,8 @@ export default function ManageShopPage() {
     city: "",
     phone_number: "",
     whatsapp: "",
-    email: ""
+    email: "",
+    location_area: ""
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -118,6 +138,7 @@ export default function ManageShopPage() {
           phone_number: shopData.phone_number || "",
           whatsapp: shopData.whatsapp || "",
           email: shopData.email || "",
+          location_area: shopData.location_area || "",
         });
         
         // Set banner and logo preview if they exist
@@ -166,7 +187,7 @@ export default function ManageShopPage() {
     setIsEditing(!isEditing);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({
       ...prev,
@@ -285,6 +306,7 @@ export default function ManageShopPage() {
         phone_number: formData.phone_number,
         whatsapp: formData.whatsapp,
         email: formData.email,
+        location_area: formData.location_area,
         updated_at: new Date().toISOString()
       };
       
@@ -778,6 +800,29 @@ export default function ManageShopPage() {
                     />
                   </div>
                   
+                  <div>
+                    <label htmlFor="location_area" className="block text-sm font-medium mb-2">
+                      Location Area
+                    </label>
+                    <select
+                      id="location_area"
+                      name="location_area"
+                      value={formData.location_area}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                    >
+                      <option value="">Select an area</option>
+                      {siargaoLocations.map((location) => (
+                        <option key={location} value={location}>
+                          {location}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This helps customers find your shop when searching by location.
+                    </p>
+                  </div>
+                  
                   <div className="md:col-span-2">
                     <label htmlFor="description" className="block text-sm font-medium mb-2">
                       Description
@@ -845,6 +890,11 @@ export default function ManageShopPage() {
                       <div>
                         <p className="text-foreground font-medium">{shop.address}</p>
                         <p className="text-muted-foreground">{shop.city}</p>
+                        {shop.location_area && (
+                          <span className="inline-flex items-center mt-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+                            {shop.location_area} Area
+                          </span>
+                        )}
                       </div>
                     </div>
                     
