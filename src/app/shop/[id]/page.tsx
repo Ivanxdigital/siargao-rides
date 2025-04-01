@@ -132,9 +132,16 @@ export default function ShopPage() {
     : 0
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative">
+      {/* Background with enhanced overlay gradient */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/30 via-purple-900/25 to-blue-900/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-blue-900/5 to-transparent"></div>
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10"></div>
+      </div>
+      
       {/* Banner with enhanced height and overlay */}
-      <div className="relative h-60 md:h-80 w-full">
+      <div className="relative h-60 md:h-80 w-full z-10">
         <Image
           src={shop.banner_url || 'https://placehold.co/1200x400/1e3b8a/white?text=Shop+Banner'}
           alt={`${shop.name} banner`}
@@ -142,14 +149,14 @@ export default function ShopPage() {
           priority
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
       </div>
       
       {/* Shop Info with better positioning and card styling */}
       <div className="container mx-auto px-4 -mt-24 md:-mt-28 relative z-10">
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
           {/* Profile Image with improved styling */}
-          <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-background shadow-lg relative bg-background">
+          <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-black/40 shadow-lg relative bg-black/60 backdrop-blur-sm">
             <Image
               src={shop.logo_url || 'https://placehold.co/400x400/1e3b8a/white?text=Logo'}
               alt={shop.name}
@@ -159,26 +166,26 @@ export default function ShopPage() {
           </div>
           
           {/* Shop Details with better typography */}
-          <div className="flex-1 bg-background/80 backdrop-blur-sm rounded-lg p-4 md:p-6">
+          <div className="flex-1 bg-black/60 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/10">
             <h1 className="text-2xl md:text-4xl font-bold">{shop.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <div className="flex items-center bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-md">
+              <div className="flex items-center bg-yellow-900/20 px-2 py-1 rounded-md">
                 <Star size={18} className="text-tropical-yellow fill-tropical-yellow" />
                 <span className="ml-1 font-medium">{averageRating.toFixed(1)}</span>
               </div>
-              <span className="text-sm text-muted-foreground">({reviews.length} reviews)</span>
+              <span className="text-sm text-white/70">({reviews.length} reviews)</span>
               {shop.is_verified && 
                 <Badge variant="verified" className="ml-2 animate-pulse">
                   Verified Shop
                 </Badge>
               }
             </div>
-            <p className="text-muted-foreground mt-4 max-w-2xl">{shop.description || "No description available."}</p>
+            <p className="text-white/70 mt-4 max-w-2xl">{shop.description || "No description available."}</p>
           </div>
           
           {/* Contact Info Card with improved styling */}
-          <div className="bg-card border border-border rounded-lg p-5 shadow-sm w-full md:w-auto md:min-w-72 mt-4 md:mt-0">
-            <h3 className="font-semibold mb-4 text-lg pb-2 border-b border-border">Contact Information</h3>
+          <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-5 shadow-sm w-full md:w-auto md:min-w-72 mt-4 md:mt-0">
+            <h3 className="font-semibold mb-4 text-lg pb-2 border-b border-white/10">Contact Information</h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3 group">
                 <MapPin size={20} className="text-primary mt-0.5 shrink-0" />
@@ -218,8 +225,8 @@ export default function ShopPage() {
       
       {/* Google Map with improved styling */}
       {(shop.latitude && shop.longitude) ? (
-        <div className="container mx-auto px-4 mt-8">
-          <div className="border border-border rounded-lg overflow-hidden h-64 md:h-80 shadow-sm">
+        <div className="container mx-auto px-4 mt-8 relative z-10">
+          <div className="border border-white/10 rounded-lg overflow-hidden h-64 md:h-80 shadow-sm">
             <iframe
               title={`${shop.name} location`}
               width="100%"
@@ -232,22 +239,22 @@ export default function ShopPage() {
           </div>
         </div>
       ) : (
-        <div className="container mx-auto px-4 mt-8">
-          <div className="border border-border rounded-lg overflow-hidden h-64 bg-muted flex items-center justify-center">
-            <p className="text-muted-foreground">Map location not available</p>
+        <div className="container mx-auto px-4 mt-8 relative z-10">
+          <div className="border border-white/10 rounded-lg overflow-hidden h-64 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <p className="text-white/50">Map location not available</p>
           </div>
         </div>
       )}
       
       {/* Bike Listings with improved styling */}
-      <div className="container mx-auto px-4 py-12">
-        <h2 className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-border">
+      <div className="container mx-auto px-4 py-12 relative z-10">
+        <h2 className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-white/10">
           Available Bikes
         </h2>
         
         {bikes.length === 0 ? (
-          <div className="text-center py-12 bg-muted/50 rounded-lg border border-dashed border-border">
-            <p className="text-muted-foreground">No bikes available from this shop at the moment.</p>
+          <div className="text-center py-12 bg-black/40 backdrop-blur-sm rounded-lg border border-dashed border-white/10">
+            <p className="text-white/50">No bikes available from this shop at the moment.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -271,24 +278,24 @@ export default function ShopPage() {
       </div>
       
       {/* Reviews with enhanced design */}
-      <div className="py-16 bg-gradient-to-b from-background to-muted/30 border-t border-border">
+      <div className="py-16 bg-gradient-to-b from-transparent to-black/70 border-t border-white/10 relative z-10">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center mb-10">
             <h2 className="text-3xl font-bold mb-2">Customer Reviews</h2>
             <div className="w-20 h-1 bg-primary rounded-full mb-4"></div>
-            <p className="text-muted-foreground text-center max-w-md">
+            <p className="text-white/70 text-center max-w-md">
               See what our customers have to say about their experience with {shop.name}
             </p>
           </div>
           
           {reviews.length === 0 ? (
-            <div className="max-w-2xl mx-auto bg-card rounded-xl border border-dashed border-primary/30 overflow-hidden shadow-sm">
+            <div className="max-w-2xl mx-auto bg-black/60 backdrop-blur-sm rounded-xl border border-dashed border-primary/30 overflow-hidden shadow-sm">
               <div className="p-8 flex flex-col items-center">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <Star size={24} className="text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">No Reviews Yet</h3>
-                <p className="text-muted-foreground text-center mb-6">
+                <p className="text-white/70 text-center mb-6">
                   Be the first to share your experience with this shop!
                 </p>
                 <Button 
@@ -302,7 +309,7 @@ export default function ShopPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {reviews.map(review => (
-                <div key={review.id} className="bg-card border border-border hover:border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+                <div key={review.id} className="bg-black/60 backdrop-blur-sm border border-white/10 hover:border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -310,7 +317,7 @@ export default function ShopPage() {
                       </div>
                       <div>
                         <div className="font-medium">Customer</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-white/50">
                           {new Date(review.created_at).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
@@ -319,19 +326,19 @@ export default function ShopPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1.5 rounded-lg">
+                    <div className="flex items-center bg-yellow-900/20 px-2 py-1.5 rounded-lg">
                       {[...Array(5)].map((_, i) => (
                         <Star 
                           key={i} 
                           size={16} 
-                          className={i < review.rating ? "text-tropical-yellow fill-tropical-yellow" : "text-muted"} 
+                          className={i < review.rating ? "text-tropical-yellow fill-tropical-yellow" : "text-white/30"} 
                         />
                       ))}
                     </div>
                   </div>
                   
-                  <div className="bg-muted/30 p-4 rounded-lg mb-4 relative">
-                    <div className="absolute -top-2 left-4 w-4 h-4 bg-muted/30 rotate-45"></div>
+                  <div className="bg-black/40 p-4 rounded-lg mb-4 relative">
+                    <div className="absolute -top-2 left-4 w-4 h-4 bg-black/40 rotate-45"></div>
                     <p className="text-sm leading-relaxed">{review.comment || "No comment provided."}</p>
                   </div>
                   
@@ -346,7 +353,7 @@ export default function ShopPage() {
                       <div>
                         <div className="text-sm font-medium text-primary flex items-center gap-2">
                           Shop Response
-                          <span className="text-xs text-muted-foreground font-normal">Official reply</span>
+                          <span className="text-xs text-white/50 font-normal">Official reply</span>
                         </div>
                         <p className="mt-1 text-sm">{review.reply}</p>
                       </div>
