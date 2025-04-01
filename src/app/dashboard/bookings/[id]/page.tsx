@@ -5,7 +5,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
+import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle, Eye } from "lucide-react";
 import { format } from "date-fns";
 
 export default function BookingDetailsPage({ params }: { params: { id: string } }) {
@@ -462,6 +462,23 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-6 flex flex-col md:flex-row gap-3">
+        <Button
+          asChild
+          variant="default"
+          size="default"
+        >
+          <Link
+            href={`/booking/confirmation/${booking.id}`}
+            className="flex items-center gap-2"
+            target="_blank"
+          >
+            <Eye size={16} />
+            View Booking Confirmation
+          </Link>
+        </Button>
       </div>
     </div>
   );

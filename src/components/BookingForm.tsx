@@ -96,69 +96,101 @@ export default function BookingForm({
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
     
-    // Validate form
+    // Validate required fields
     if (!startDate || !endDate) {
-      setFormError("Please select your rental dates");
+      setFormError("Please select both start and end dates.");
       return;
     }
     
     if (!deliveryOption) {
-      setFormError("Please select a delivery option");
+      setFormError("Please select a delivery option.");
       return;
     }
     
     if (!paymentMethod) {
-      setFormError("Please select a payment method");
+      setFormError("Please select a payment method.");
       return;
     }
     
     if (!agreeToTerms) {
-      setFormError("You must agree to the terms and conditions");
+      setFormError("You must agree to the terms and conditions to proceed.");
       return;
     }
     
-    // Check if delivery address is required but not provided
-    const selectedDeliveryOption = deliveryOptions.find(option => option.id === deliveryOption);
-    if (selectedDeliveryOption?.name.includes("Delivery") && !deliveryAddress.trim()) {
-      setFormError("Please provide a delivery address");
-      return;
-    }
-    
-    // Guest user validation
+    // If the user is not authenticated, validate guest details
     if (!isAuthenticated) {
       const guestName = (document.getElementById("guest-name") as HTMLInputElement)?.value;
       const guestEmail = (document.getElementById("guest-email") as HTMLInputElement)?.value;
       const guestPhone = (document.getElementById("guest-phone") as HTMLInputElement)?.value;
       
-      if (!guestName || !guestEmail || !guestPhone) {
-        setFormError("Please provide all guest details");
-        return;
-      }
-      
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(guestEmail)) {
-        setFormError("Please enter a valid email address");
+      if (!guestName || !guestEmail) {
+        setFormError("Please provide your name and email address.");
         return;
       }
     }
     
+    // Calculate pricing
+    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const rentalPrice = bike.price_per_day * days;
+    const deliveryFeeAmount = deliveryOptions.find(o => o.id === deliveryOption)?.fee || 0;
+    const totalPrice = rentalPrice + deliveryFeeAmount;
+    
     setLoading(true);
+    setFormError(null);
     
     try {
-      // TODO: In the next phase, we'll implement the actual booking API calls here.
-      // For now, let's simulate a successful booking after a short delay
+      const supabase = createClientComponentClient();
       
-      setTimeout(() => {
-        // Simulate success for now
-        alert(`Booking request for ${bike.name} submitted successfully! In the next phase, we'll implement the actual booking functionality.`);
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Get guest details if user is not authenticated
+      let guestName = "";
+      let guestEmail = "";
+      let guestPhone = "";
+      
+      if (!isAuthenticated) {
+        guestName = (document.getElementById("guest-name") as HTMLInputElement)?.value;
+        guestEmail = (document.getElementById("guest-email") as HTMLInputElement)?.value;
+        guestPhone = (document.getElementById("guest-phone") as HTMLInputElement)?.value;
+      }
+      
+      // Generate a unique confirmation code
+      const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      
+      // Create a new booking record
+      const { data: booking, error } = await supabase
+        .from("rentals")
+        .insert({
+          bike_id: bike.id,
+          shop_id: shop.id,
+          user_id: isAuthenticated ? session?.user?.id : null,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          total_price: totalPrice,
+          payment_method_id: paymentMethod,
+          delivery_option_id: deliveryOption,
+          status: "pending", // Initial status
+          payment_status: "pending", // Initial payment status
+          delivery_address: deliveryAddress,
+          confirmation_code: confirmationCode,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error creating booking:", error);
+        setFormError("An error occurred while processing your booking. Please try again.");
         setLoading(false);
-        
-        // In the future, we'll navigate to a confirmation page
-        // router.push(`/booking/confirmation/${bookingId}`);
-      }, 1500);
+        return;
+      }
+      
+      console.log("Booking created:", booking);
+      
+      // Navigate to the confirmation page
+      router.push(`/booking/confirmation/${booking.id}`);
       
     } catch (error) {
       console.error("Booking error:", error);
