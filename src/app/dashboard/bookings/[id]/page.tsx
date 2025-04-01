@@ -81,6 +81,8 @@ export default function BookingDetailsPage() {
           return;
         }
 
+        console.log("Base booking data:", bookingData);
+
         // Now fetch all the related data in separate queries
         let bikeData = null;
         let shopData = null;
@@ -90,52 +92,82 @@ export default function BookingDetailsPage() {
 
         // Get bike data
         if (bookingData.bike_id) {
-          const { data: bike } = await supabase
+          const { data: bike, error: bikeError } = await supabase
             .from("bikes")
             .select("*")
             .eq("id", bookingData.bike_id)
             .single();
-          bikeData = bike;
+            
+          if (bikeError) {
+            console.error("Error fetching bike:", bikeError);
+          } else {
+            bikeData = bike;
+            console.log("Bike data:", bikeData);
+          }
         }
 
         // Get shop data
         if (bookingData.shop_id) {
-          const { data: shop } = await supabase
+          const { data: shop, error: shopFetchError } = await supabase
             .from("rental_shops")
             .select("*")
             .eq("id", bookingData.shop_id)
             .single();
-          shopData = shop;
+            
+          if (shopFetchError) {
+            console.error("Error fetching shop:", shopFetchError);
+          } else {
+            shopData = shop;
+            console.log("Shop data:", shopData);
+          }
         }
 
         // Get user data
         if (bookingData.user_id) {
-          const { data: user } = await supabase
+          const { data: user, error: userError } = await supabase
             .from("users")
             .select("*")
             .eq("id", bookingData.user_id)
             .single();
-          userData = user;
+            
+          if (userError) {
+            console.error("Error fetching user:", userError);
+          } else {
+            userData = user;
+            console.log("User data:", userData);
+          }
         }
 
         // Get payment method data
         if (bookingData.payment_method_id) {
-          const { data: paymentMethod } = await supabase
+          const { data: paymentMethod, error: paymentError } = await supabase
             .from("payment_methods")
             .select("*")
             .eq("id", bookingData.payment_method_id)
             .single();
-          paymentMethodData = paymentMethod;
+            
+          if (paymentError) {
+            console.error("Error fetching payment method:", paymentError);
+          } else {
+            paymentMethodData = paymentMethod;
+            console.log("Payment method data:", paymentMethodData);
+          }
         }
 
         // Get delivery option data
         if (bookingData.delivery_option_id) {
-          const { data: deliveryOption } = await supabase
+          const { data: deliveryOption, error: deliveryError } = await supabase
             .from("delivery_options")
             .select("*")
             .eq("id", bookingData.delivery_option_id)
             .single();
-          deliveryOptionData = deliveryOption;
+            
+          if (deliveryError) {
+            console.error("Error fetching delivery option:", deliveryError);
+          } else {
+            deliveryOptionData = deliveryOption;
+            console.log("Delivery option data:", deliveryOptionData);
+          }
         }
 
         // Combine all data
@@ -174,29 +206,15 @@ export default function BookingDetailsPage() {
       
       if (error) throw error;
       
-      // Refresh the booking data
-      const { data: updatedBooking, error: refreshError } = await supabase
-        .from("rentals")
-        .select(`
-          id, 
-          start_date, 
-          end_date, 
-          total_price, 
-          status,
-          created_at,
-          bike_id,
-          shop_id,
-          user_id,
-          payment_method_id,
-          delivery_option_id,
-          payment_status
-        `)
-        .eq("id", bookingId)
-        .single();
+      // Instead of fetching all new data, just update the status in our existing state
+      setBooking((prevBooking) => {
+        if (!prevBooking) return null;
+        return {
+          ...prevBooking,
+          status: newStatus
+        };
+      });
       
-      if (refreshError) throw refreshError;
-      
-      setBooking(updatedBooking);
       setProcessing(false);
       
       // Show success message
@@ -276,7 +294,10 @@ export default function BookingDetailsPage() {
   const startDate = new Date(booking.start_date);
   const endDate = new Date(booking.end_date);
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  const rentalPrice = booking.bikes.price_per_day * days;
+  
+  // Add null checks for bikes and related properties
+  const pricePerDay = booking.bikes?.price_per_day || 0;
+  const rentalPrice = pricePerDay * days;
   const deliveryFee = booking.delivery_options?.fee || 0;
   
   const customerName = booking.users 
@@ -296,13 +317,13 @@ export default function BookingDetailsPage() {
           <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
             <img
               src={booking.bikes.image_url || "/placeholder-bike.jpg"}
-              alt={booking.bikes.name}
+              alt={booking.bikes.name || "Bike"}
               className="w-full h-full object-cover"
             />
           </div>
           <div>
-            <h3 className="text-xl font-semibold">{booking.bikes.name}</h3>
-            <p className="text-gray-400">Daily Rate: ₱{booking.bikes.price_per_day.toFixed(2)}</p>
+            <h3 className="text-xl font-semibold">{booking.bikes.name || "Bike"}</h3>
+            <p className="text-gray-400">Daily Rate: ₱{(booking.bikes.price_per_day || 0).toFixed(2)}</p>
             <Link
               href={`/dashboard/bikes/${booking.bike_id}`}
               className="text-primary hover:underline text-sm inline-block mt-2"
@@ -406,9 +427,9 @@ export default function BookingDetailsPage() {
                     <CreditCard className="w-5 h-5 text-primary mt-0.5" />
                     <div>
                       <h3 className="font-medium">Payment Method</h3>
-                      <p>{booking.payment_methods.name}</p>
+                      <p>{booking.payment_methods?.name || "Not specified"}</p>
                       <p className="text-sm text-gray-400">
-                        {booking.payment_methods.description}
+                        {booking.payment_methods?.description || ""}
                       </p>
                     </div>
                   </div>
@@ -426,7 +447,7 @@ export default function BookingDetailsPage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">
-                    Rental ({days} days × ₱{booking.bikes.price_per_day})
+                    Rental ({days} days × ₱{pricePerDay.toFixed(2)})
                   </span>
                   <span>₱{rentalPrice.toFixed(2)}</span>
                 </div>
@@ -440,7 +461,7 @@ export default function BookingDetailsPage() {
                 )}
                 <div className="border-t border-white/10 pt-3 flex justify-between font-bold">
                   <span>Total</span>
-                  <span>₱{booking.total_price.toFixed(2)}</span>
+                  <span>₱{(booking.total_price || 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>
