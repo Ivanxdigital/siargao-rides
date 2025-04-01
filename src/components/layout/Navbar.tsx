@@ -28,29 +28,24 @@ const Navbar = () => {
     if (isMenuOpen) {
       // Preserve scroll position
       const scrollY = window.scrollY
+      
+      // Apply fixed position to body
       document.body.style.position = 'fixed'
-      document.body.style.width = '100%'
       document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
       document.body.style.overflow = 'hidden'
-    } else {
-      // Restore scroll position
-      const scrollY = document.body.style.top
-      document.body.style.position = ''
-      document.body.style.width = ''
-      document.body.style.top = ''
-      document.body.style.overflow = ''
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0', 10) * -1)
+      
+      return () => {
+        // Restore scroll position when component unmounts or menu closes
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        document.body.style.overflow = ''
+        window.scrollTo(0, scrollY)
       }
     }
     
-    // Cleanup function
-    return () => {
-      document.body.style.position = ''
-      document.body.style.width = ''
-      document.body.style.top = ''
-      document.body.style.overflow = ''
-    }
+    return undefined
   }, [isMenuOpen])
 
   const toggleMenu = () => {
@@ -73,7 +68,7 @@ const Navbar = () => {
 
   return (
     <nav 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-[50] transition-all duration-500 ${
         scrolled 
           ? "py-3 bg-transparent backdrop-blur-md shadow-md border-b border-white/10" 
           : "py-5 bg-transparent"
@@ -175,7 +170,7 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <motion.button 
-          className="md:hidden text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+          className="md:hidden text-white p-2 rounded-full hover:bg-white/10 transition-colors relative z-[51]"
           onClick={toggleMenu}
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           whileTap={{ scale: 0.9 }}
@@ -187,11 +182,12 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <motion.div 
-          className="md:hidden fixed inset-0 top-0 bg-black/80 backdrop-blur-md z-40 overflow-hidden"
+          className="md:hidden fixed inset-0 top-0 bg-black/80 backdrop-blur-md z-[60] overflow-y-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
+          style={{ height: '100%' }}
         >
           {/* Header with logo and close button */}
           <div className="sticky top-0 z-50 py-4 px-6 flex justify-between items-center border-b border-white/10 bg-black/60 backdrop-blur-md">
