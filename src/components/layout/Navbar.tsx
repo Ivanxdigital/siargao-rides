@@ -7,6 +7,19 @@ import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
 
+const styles = {
+  shadowGlow: `
+    @keyframes glow {
+      0% { box-shadow: 0 0 0px rgba(56, 189, 248, 0); }
+      50% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+      100% { box-shadow: 0 0 0px rgba(56, 189, 248, 0); }
+    }
+    .shadow-glow {
+      animation: glow 2s infinite;
+    }
+  `
+}
+
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -58,6 +71,17 @@ const Navbar = () => {
     }
   }, [isMenuOpen])
 
+  useEffect(() => {
+    // Add the CSS keyframes to the document
+    const style = document.createElement('style')
+    style.textContent = styles.shadowGlow
+    document.head.appendChild(style)
+    
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
   }
@@ -88,10 +112,10 @@ const Navbar = () => {
         <div className="container mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="relative group">
-            <span className="text-xl font-bold text-white transition-colors duration-300">
+            <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-blue-500 to-sky-400 transition-colors duration-300 drop-shadow-sm">
               Siargao Rides
             </span>
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-tropical-teal group-hover:w-full transition-all duration-300" />
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-700 via-blue-500 to-sky-400 group-hover:w-full transition-all duration-300 shadow-lg opacity-0 group-hover:opacity-100" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -104,13 +128,13 @@ const Navbar = () => {
             {isAuthenticated ? (
               <div className="relative">
                 <button
-                  className="flex items-center gap-2 p-2 rounded-full hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-2 p-2 rounded-full hover:bg-white/10 transition-all duration-300 group"
                   onClick={toggleProfileMenu}
                 >
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-sm font-medium text-white group-hover:text-primary transition-colors duration-300">
                     {user?.user_metadata?.first_name || user?.email}
                   </span>
-                  <ChevronDown size={16} className="text-white/70" />
+                  <ChevronDown size={16} className="text-white/70 group-hover:text-primary transition-colors duration-300 transform group-hover:rotate-180 duration-300" />
                 </button>
                 
                 {/* Profile Menu Dropdown */}
@@ -129,48 +153,48 @@ const Navbar = () => {
                     <div className="py-1">
                       <Link
                         href="/dashboard"
-                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors"
+                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
                         onClick={closeMenus}
                       >
-                        <User className="h-4 w-4" />
-                        Dashboard
+                        <User className="h-4 w-4 group-hover:text-primary transition-colors duration-200" />
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">Dashboard</span>
                       </Link>
                       
                       <Link
                         href="/my-bookings"
-                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors"
+                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
                         onClick={closeMenus}
                       >
-                        <Calendar className="h-4 w-4" />
-                        My Bookings
+                        <Calendar className="h-4 w-4 group-hover:text-primary transition-colors duration-200" />
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">My Bookings</span>
                       </Link>
                       
                       {isAdmin && (
                         <Link
                           href="/admin"
-                          className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors"
+                          className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
                           onClick={closeMenus}
                         >
-                          <ShieldCheck className="h-4 w-4" />
-                          Admin Panel
+                          <ShieldCheck className="h-4 w-4 group-hover:text-primary transition-colors duration-200" />
+                          <span className="group-hover:translate-x-1 transition-transform duration-200">Admin Panel</span>
                         </Link>
                       )}
                       
                       <Link
                         href="/profile"
-                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors"
+                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
                         onClick={closeMenus}
                       >
-                        <Settings className="h-4 w-4" />
-                        Account Settings
+                        <Settings className="h-4 w-4 group-hover:text-primary transition-colors duration-200" />
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">Account Settings</span>
                       </Link>
                       
                       <button
-                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-red-50 text-red-600 hover:text-red-700 rounded-md transition-colors"
+                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-red-50 text-red-600 hover:text-red-700 rounded-md transition-all duration-200 group"
                         onClick={handleLogout}
                       >
-                        <LogOut className="h-4 w-4" />
-                        Sign Out
+                        <LogOut className="h-4 w-4 transition-colors duration-200" />
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">Sign Out</span>
                       </button>
                     </div>
                   </motion.div>
@@ -190,10 +214,11 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <motion.button 
-            className="md:hidden text-white p-2 rounded-full hover:bg-white/10 transition-colors z-[1000] relative"
+            className="md:hidden text-white p-2 rounded-full hover:bg-white/10 transition-all duration-300 z-[1000] relative"
             onClick={toggleMenu}
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </motion.button>
@@ -301,11 +326,11 @@ const Navbar = () => {
 // NavLink component for desktop
 const NavLink = ({ href, children, isScrolled }: { href: string, children: React.ReactNode, isScrolled: boolean }) => {
   return (
-    <Link href={href} className="relative group">
-      <span className="text-white hover:text-white transition-colors py-2 font-medium">
+    <Link href={href} className="relative group py-2">
+      <span className="text-white font-medium transition-all duration-300 group-hover:text-primary">
         {children}
       </span>
-      <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-tropical-teal group-hover:w-full transition-all duration-300" />
+      <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-primary rounded-full group-hover:w-full group-hover:left-0 transition-all duration-300 opacity-0 group-hover:opacity-100 shadow-glow" />
     </Link>
   )
 }
@@ -325,13 +350,18 @@ const MobileNavLink = ({
   return (
     <Link 
       href={href} 
-      className="flex items-center py-3 px-4 text-white text-sm font-medium hover:bg-white/5 rounded-md transition-colors group"
+      className="flex items-center py-3 px-4 text-white text-sm font-medium hover:bg-white/5 rounded-md transition-all duration-300 group relative overflow-hidden"
       onClick={onClick}
     >
-      <div className="flex items-center">
-        {icon && <span className="mr-4 text-white/70 group-hover:text-primary transition-colors">{icon}</span>}
-        <span>{children}</span>
+      <div className="flex items-center relative z-10">
+        {icon && (
+          <span className="mr-4 text-white/70 group-hover:text-primary transition-colors duration-300 transform group-hover:scale-110">
+            {icon}
+          </span>
+        )}
+        <span className="group-hover:translate-x-1 transition-transform duration-300">{children}</span>
       </div>
+      <span className="absolute bottom-0 left-0 w-0 h-full bg-gradient-to-r from-primary/5 to-transparent group-hover:w-full transition-all duration-500 ease-in-out" />
     </Link>
   )
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { ArrowRight, AlertCircle, Bug, Clock } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { motion } from "framer-motion";
 
@@ -36,8 +36,6 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [cooldownTimer, setCooldownTimer] = useState(0);
-  const [debugMode, setDebugMode] = useState(false);
-  const [debugResponse, setDebugResponse] = useState<any>(null);
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>(getDefaultRateLimitState());
   const { signIn } = useAuth();
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -141,12 +139,6 @@ export default function SignInPage() {
       setRateLimitState(newState);
       setIsRateLimited(true);
       setCooldownTimer(RATE_LIMIT_DURATION * 3);
-      
-      // Automatically disable debug mode when rate limited
-      if (debugMode) {
-        setDebugMode(false);
-        setDebugResponse(null);
-      }
       
       return;
     }
@@ -268,95 +260,6 @@ export default function SignInPage() {
         isSubmittingRef.current = false;
       }
     }, DEBOUNCE_TIMEOUT);
-  };
-
-  // Debug function that directly calls Supabase
-  const handleDebugSignIn = async () => {
-    if (!email || !password) {
-      setError("Please enter both email and password for debugging.");
-      return;
-    }
-    
-    // Prevent debug requests if already submitting
-    if (isSubmittingRef.current) {
-      setError("A request is already in progress. Please wait.");
-      return;
-    }
-    
-    // Block debug attempts completely if we've had rate limit errors recently
-    const now = Date.now();
-    const rateLimitRecentThreshold = 5 * 60 * 1000; // 5 minutes
-    if (rateLimitState.lastAttempt > 0 && now - rateLimitState.lastAttempt < rateLimitRecentThreshold && rateLimitState.attempts > 0) {
-      setError("Debug mode is temporarily disabled due to recent rate limit errors. Please try again later.");
-      return;
-    }
-    
-    // Allow debug attempts even when rate limited
-    setDebugResponse(null);
-    setIsLoading(true);
-    setError(null);
-    isSubmittingRef.current = true;
-    
-    // Add a delay for debugging to avoid multiple rapid requests
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    try {
-      const supabase = createClientComponentClient();
-      console.log("Debug: Attempting direct Supabase sign-in");
-      
-      const response = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      console.log("Debug: Direct Supabase response", response);
-      setDebugResponse(response);
-      
-      if (response.error) {
-        setError(`Debug Error: ${response.error.message}`);
-        
-        // Check for rate limiting in debug mode too
-        const isRateLimitErr = isRateLimitError(response.error);
-        if (isRateLimitErr) {
-          console.warn("Debug: Rate limit detected via direct API call");
-          // Store the rate limit state without blocking the UI in debug mode
-          const now = Date.now();
-          setRateLimitState({
-            attempts: rateLimitState.attempts + 1,
-            lastAttempt: now,
-            blocked: false, // Don't block in debug mode
-            blockedUntil: 0
-          });
-        }
-      } else if (response.data.session) {
-        setError(null);
-        setDebugResponse({
-          ...response,
-          debug_message: "Authentication successful! Session found."
-        });
-      } else {
-        setError("Debug: No error but also no session returned.");
-      }
-    } catch (err) {
-      console.error("Debug: Unexpected error", err);
-      setError(`Debug Exception: ${err instanceof Error ? err.message : String(err)}`);
-      setDebugResponse({error: err});
-    } finally {
-      setIsLoading(false);
-      isSubmittingRef.current = false;
-    }
-  };
-
-  const toggleDebugMode = () => {
-    setDebugMode(prev => !prev);
-    if (debugMode) {
-      setDebugResponse(null);
-    }
-  };
-
-  const clearRateLimit = () => {
-    resetRateLimit();
-    setError("Rate limit data cleared. You can try signing in again.");
   };
 
   const getErrorMessage = () => {
@@ -481,7 +384,7 @@ export default function SignInPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       className="appearance-none block w-full px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-white"
                       placeholder="john@example.com"
-                      disabled={isRateLimited && !debugMode}
+                      disabled={isRateLimited}
                     />
                   </motion.div>
 
@@ -502,7 +405,7 @@ export default function SignInPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       className="appearance-none block w-full px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-white"
                       placeholder="••••••••"
-                      disabled={isRateLimited && !debugMode}
+                      disabled={isRateLimited}
                     />
                   </motion.div>
                 </div>
@@ -519,7 +422,7 @@ export default function SignInPage() {
                       name="remember-me"
                       type="checkbox"
                       className="h-4 w-4 bg-gray-900 border-gray-700 rounded focus:ring-primary text-primary"
-                      disabled={isRateLimited && !debugMode}
+                      disabled={isRateLimited}
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
                       Remember me
@@ -527,7 +430,7 @@ export default function SignInPage() {
                   </div>
 
                   <div className="text-sm">
-                    <Link href="/forgot-password" className={`font-medium text-primary hover:text-primary/80 ${isRateLimited && !debugMode ? 'pointer-events-none opacity-70' : ''}`}>
+                    <Link href="/forgot-password" className={`font-medium text-primary hover:text-primary/80 ${isRateLimited ? 'pointer-events-none opacity-70' : ''}`}>
                       Forgot your password?
                     </Link>
                   </div>
@@ -542,7 +445,7 @@ export default function SignInPage() {
                   <Button 
                     type="submit" 
                     className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center" 
-                    disabled={(isLoading || isRateLimited) && !debugMode}
+                    disabled={isLoading || isRateLimited}
                   >
                     {isLoading ? "Signing in..." : isRateLimited ? `Wait ${cooldownTimer}s` : "Sign in"} 
                     {!isLoading && !isRateLimited && <ArrowRight className="ml-2 h-4 w-4" />}
@@ -562,75 +465,6 @@ export default function SignInPage() {
                     Sign up
                   </Link>
                 </p>
-              </motion.div>
-              
-              {/* Debug section */}
-              <motion.div 
-                className="mt-8 pt-6 border-t border-gray-700"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 1.4 }}
-              >
-                <button 
-                  onClick={toggleDebugMode}
-                  className="flex items-center space-x-1 text-xs text-gray-400 hover:text-primary"
-                >
-                  <Bug size={14} />
-                  <span>{debugMode ? "Hide Debug Mode" : "Debug Mode"}</span>
-                </button>
-                
-                {debugMode && (
-                  <motion.div 
-                    className="mt-4 space-y-4"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <h3 className="text-sm font-medium text-gray-300">Troubleshooting Tools</h3>
-                    
-                    <div className="flex space-x-2">
-                      <Button
-                        type="button"
-                        onClick={handleDebugSignIn}
-                        variant="outline"
-                        className="flex-1 text-xs border-gray-700 bg-gray-900/50 hover:bg-gray-800"
-                        disabled={isLoading}
-                      >
-                        Direct Supabase Sign-in
-                      </Button>
-                      
-                      <Button
-                        type="button"
-                        onClick={clearRateLimit}
-                        variant="outline"
-                        className="text-xs border-gray-700 bg-gray-900/50 hover:bg-gray-800"
-                      >
-                        Clear Rate Limit
-                      </Button>
-                    </div>
-                    
-                    {rateLimitState && debugMode && (
-                      <div className="mt-2 text-xs text-gray-400">
-                        <div>Attempts: {rateLimitState.attempts}</div>
-                        <div>Blocked: {rateLimitState.blocked ? "Yes" : "No"}</div>
-                        {rateLimitState.blocked && (
-                          <div>Blocked until: {new Date(rateLimitState.blockedUntil).toLocaleTimeString()}</div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {debugResponse && (
-                      <motion.div 
-                        className="mt-4 p-3 bg-gray-900/50 border border-gray-700 rounded-md text-xs overflow-auto max-h-48"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <pre className="text-gray-300 whitespace-pre-wrap break-words">{JSON.stringify(debugResponse, null, 2)}</pre>
-                      </motion.div>
-                    )}
-                  </motion.div>
-                )}
               </motion.div>
             </motion.div>
           </motion.div>
