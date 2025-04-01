@@ -313,10 +313,31 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   setShowLocations(false)
                 }}
                 onBlur={() => setActiveField(null)}
-                className={`w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 text-white touch-manipulation ${isMobile ? 'pl-14' : 'pl-12'}`}
+                className={`w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 text-white touch-manipulation ${isMobile ? 'pl-10' : 'pl-12'} appearance-none`}
                 inputMode="none"
+                style={{
+                  colorScheme: 'dark'
+                }}
+                required
               />
-              <Calendar size={16} className={`absolute ${isMobile ? 'left-4' : 'left-3.5'} top-1/2 -translate-y-1/2 text-white/40`} />
+              <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              
+              {/* Custom date display for mobile */}
+              {isMobile && (
+                <div className="absolute right-3 left-10 top-1/2 -translate-y-1/2 text-white text-sm pointer-events-none flex items-center">
+                  {startDate ? (
+                    <span className="font-medium truncate">
+                      {new Date(startDate).toLocaleDateString('en-US', { 
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })}
+                    </span>
+                  ) : (
+                    <span className="text-white/40">Select start date</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
@@ -336,10 +357,31 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   setShowLocations(false)
                 }}
                 onBlur={() => setActiveField(null)}
-                className={`w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 text-white touch-manipulation ${isMobile ? 'pl-14' : 'pl-12'}`}
+                className={`w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 text-white touch-manipulation ${isMobile ? 'pl-10' : 'pl-12'} appearance-none`}
                 inputMode="none"
+                style={{
+                  colorScheme: 'dark'
+                }}
+                required
               />
-              <Calendar size={16} className={`absolute ${isMobile ? 'left-4' : 'left-3.5'} top-1/2 -translate-y-1/2 text-white/40`} />
+              <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              
+              {/* Custom date display for mobile */}
+              {isMobile && (
+                <div className="absolute right-3 left-10 top-1/2 -translate-y-1/2 text-white text-sm pointer-events-none flex items-center">
+                  {endDate ? (
+                    <span className="font-medium truncate">
+                      {new Date(endDate).toLocaleDateString('en-US', { 
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })}
+                    </span>
+                  ) : (
+                    <span className="text-white/40">Select end date</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -451,6 +493,27 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
+          }
+          @media (max-width: 640px) {
+            input[type="date"]::-webkit-calendar-picker-indicator {
+              opacity: 0;
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              height: 100%;
+              cursor: pointer;
+            }
+            
+            input[type="date"] {
+              color: transparent;
+              position: relative;
+            }
+            
+            /* Create a fake disabled appearance when empty */
+            input[type="date"]:not(:valid):not(:focus) {
+              color: transparent;
+            }
           }
         `}</style>
       </form>
