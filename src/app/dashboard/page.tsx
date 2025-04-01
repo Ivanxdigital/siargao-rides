@@ -172,6 +172,9 @@ export default function DashboardPage() {
         .eq("owner_id", user!.id)
         .single();
       
+      console.log("User ID:", user!.id); // Debug log
+      console.log("Shop data:", shops); // Debug log
+      
       if (shopError) {
         console.error("Error fetching shop:", shopError);
         setError("Could not find your shop. Please ensure you have completed registration.");
@@ -191,20 +194,27 @@ export default function DashboardPage() {
         return;
       }
       
+      console.log("Bikes data:", bikes); // Debug log
+      
       const totalBikes = bikes?.length || 0;
       const availableBikes = bikes?.filter((bike: any) => bike.is_available).length || 0;
+      
+      console.log("Total bikes:", totalBikes); // Debug log
+      console.log("Available bikes:", availableBikes); // Debug log
       
       // 3. Get active bookings
       const { data: activeBookings, error: bookingsError } = await supabase
         .from("rentals")
         .select("id, status")
         .eq("shop_id", shopId)
-        .in("status", ["active", "confirmed"]);
+        .in("status", ["pending", "confirmed", "active"]);
       
       if (bookingsError) {
         console.error("Error fetching bookings:", bookingsError);
         return;
       }
+      
+      console.log("Active bookings data:", activeBookings); // Debug log
       
       // 4. Calculate revenue (from completed bookings)
       const { data: completedBookings, error: revenueError } = await supabase
@@ -221,51 +231,71 @@ export default function DashboardPage() {
       const totalRevenue = completedBookings?.reduce((sum: number, booking: { total_price?: number }) => 
         sum + (booking.total_price || 0), 0) || 0;
       
-      // 5. Get recent bookings for the shop
-      const { data: recentBookingsData, error: recentBookingsError } = await supabase
-        .from("rentals")
-        .select(`
-          id, 
-          start_date, 
-          end_date, 
-          status,
-          bike_id,
-          user_id,
-          bikes (id, name),
-          users (id, first_name, last_name)
-        `)
-        .eq("shop_id", shopId)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      
-      if (recentBookingsError) {
-        console.error("Error fetching recent bookings:", recentBookingsError);
-        return;
+      // 5. Get recent bookings for the shop - using a simpler approach without joins
+      try {
+        // First get basic rental info
+        const { data: rentalsData, error: rentalsError } = await supabase
+          .from("rentals")
+          .select("id, start_date, end_date, status, bike_id, user_id")
+          .eq("shop_id", shopId)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        
+        if (rentalsError) {
+          console.error("Error fetching rentals:", rentalsError);
+          throw rentalsError;
+        }
+
+        // If we have rentals, let's fetch the additional data separately
+        if (rentalsData && rentalsData.length > 0) {
+          // Format the bookings with placeholder data first
+          const formattedBookings = await Promise.all(rentalsData.map(async (rental) => {
+            let bikeName = "Unknown Bike";
+            let customerName = "Guest";
+            
+            // Get bike name
+            if (rental.bike_id) {
+              const { data: bikeData } = await supabase
+                .from("bikes")
+                .select("name")
+                .eq("id", rental.bike_id)
+                .single();
+                
+              if (bikeData) {
+                bikeName = bikeData.name || "Unknown Bike";
+              }
+            }
+            
+            // Get customer name
+            if (rental.user_id) {
+              const { data: userData } = await supabase
+                .from("users")
+                .select("first_name, last_name")
+                .eq("id", rental.user_id)
+                .single();
+                
+              if (userData) {
+                customerName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || "Guest";
+              }
+            }
+            
+            return {
+              id: rental.id,
+              bikeName,
+              customerName,
+              startDate: rental.start_date,
+              endDate: rental.end_date,
+              status: rental.status
+            };
+          }));
+          
+          setRecentBookings(formattedBookings);
+        } else {
+          setRecentBookings([]);
+        }
+      } catch (error) {
+        console.error("Error fetching recent bookings:", error);
       }
-      
-      // Format the bookings data
-      const formattedBookings = recentBookingsData?.map((booking: any) => {
-        // Get customer name from either registered user or guest info
-        let customerName = "Guest";
-        if (booking.user_id && booking.users) {
-          customerName = `${booking.users.first_name || ''} ${booking.users.last_name || ''}`.trim();
-        }
-
-        // Get bike name
-        let bikeName = "Unknown Bike";
-        if (booking.bikes) {
-          bikeName = booking.bikes.name || "Unknown Bike";
-        }
-
-        return {
-          id: booking.id,
-          bikeName,
-          customerName,
-          startDate: booking.start_date,
-          endDate: booking.end_date,
-          status: booking.status
-        };
-      }) || [];
       
       // Update state with all the shop owner data
       setShopStats({
@@ -275,8 +305,6 @@ export default function DashboardPage() {
         activeBookings: activeBookings?.length || 0,
         totalRevenue
       });
-      
-      setRecentBookings(formattedBookings);
     } catch (err) {
       console.error("Error in fetchShopOwnerData:", err);
       throw err;

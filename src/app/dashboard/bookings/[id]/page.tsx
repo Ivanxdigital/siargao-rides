@@ -4,20 +4,9 @@ import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import DashboardShell from "@/components/dashboard/DashboardShell";
+import { Button } from "@/components/ui/Button";
+import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
-
-// Icons
-import { 
-  ChevronLeft, 
-  Calendar, 
-  MapPin, 
-  CreditCard, 
-  Clock,
-  CheckCircle, 
-  XCircle,
-  User
-} from "lucide-react";
 
 export default function BookingDetailsPage({ params }: { params: { id: string } }) {
   const [booking, setBooking] = useState<any>(null);
@@ -184,41 +173,35 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
 
   if (loading) {
     return (
-      <DashboardShell>
-        <div className="animate-pulse text-center py-20">Loading booking details...</div>
-      </DashboardShell>
+      <div className="animate-pulse text-center py-20">Loading booking details...</div>
     );
   }
 
   if (error) {
     return (
-      <DashboardShell>
-        <div className="bg-red-500/10 border border-red-500/20 rounded-md p-4 text-center">
-          <p className="text-red-400">{error}</p>
-          <Link
-            href="/dashboard/bookings"
-            className="inline-block mt-4 px-4 py-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors"
-          >
-            Back to Bookings
-          </Link>
-        </div>
-      </DashboardShell>
+      <div className="bg-red-500/10 border border-red-500/20 rounded-md p-4 text-center">
+        <p className="text-red-400">{error}</p>
+        <Link
+          href="/dashboard/bookings"
+          className="inline-block mt-4 px-4 py-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors"
+        >
+          Back to Bookings
+        </Link>
+      </div>
     );
   }
 
   if (!booking) {
     return (
-      <DashboardShell>
-        <div className="text-center py-20">
-          <p>Booking not found</p>
-          <Link
-            href="/dashboard/bookings"
-            className="inline-block mt-4 px-4 py-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors"
-          >
-            Back to Bookings
-          </Link>
-        </div>
-      </DashboardShell>
+      <div className="text-center py-20">
+        <p>Booking not found</p>
+        <Link
+          href="/dashboard/bookings"
+          className="inline-block mt-4 px-4 py-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors"
+        >
+          Back to Bookings
+        </Link>
+      </div>
     );
   }
 
@@ -241,195 +224,195 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
     : booking.guest_phone;
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/dashboard/bookings"
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-          >
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <Button asChild variant="ghost" size="sm" className="gap-1">
+          <Link href="/dashboard/bookings">
             <ChevronLeft size={16} />
             Back to Bookings
           </Link>
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                booking.status
-              )}/20 text-${getStatusColor(booking.status).replace("bg-", "")}`}
-            >
-              {getStatusIcon(booking.status)}
-              <span className="capitalize">{booking.status}</span>
-            </span>
-          </div>
+        </Button>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+              booking.status
+            )}/20 text-${getStatusColor(booking.status).replace("bg-", "")}`}
+          >
+            {getStatusIcon(booking.status)}
+            <span className="capitalize">{booking.status}</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <h1 className="text-2xl font-bold">Booking #{booking.id.substring(0, 8)}</h1>
+          <p className="text-sm text-gray-400">
+            Created on {format(new Date(booking.created_at), "MMMM d, yyyy 'at' h:mm a")}
+          </p>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <h1 className="text-2xl font-bold">Booking #{booking.id.substring(0, 8)}</h1>
-            <p className="text-sm text-gray-400">
-              Created on {format(new Date(booking.created_at), "MMMM d, yyyy 'at' h:mm a")}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              {/* Bike Details */}
-              <div className="bg-white/5 rounded-lg p-4">
-                <h2 className="text-lg font-medium mb-4">Motorcycle Details</h2>
-                <div className="flex gap-4">
-                  <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
-                    <img
-                      src={booking.motorcycles.image_url || "/placeholder-bike.jpg"}
-                      alt={booking.motorcycles.model}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">
-                      {booking.motorcycles.brand} {booking.motorcycles.model}
-                    </h3>
-                    <p className="text-gray-400">Daily Rate: ₱{booking.motorcycles.daily_rate.toFixed(2)}</p>
-                    <Link
-                      href={`/dashboard/bikes/${booking.motorcycle_id}`}
-                      className="text-primary hover:underline text-sm inline-block mt-2"
-                    >
-                      View Bike Details
-                    </Link>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Bike Details */}
+            <div className="bg-white/5 rounded-lg p-4">
+              <h2 className="text-lg font-medium mb-4">Motorcycle Details</h2>
+              <div className="flex gap-4">
+                <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
+                  <img
+                    src={booking.motorcycles.image_url || "/placeholder-bike.jpg"}
+                    alt={booking.motorcycles.model}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">
+                    {booking.motorcycles.brand} {booking.motorcycles.model}
+                  </h3>
+                  <p className="text-gray-400">Daily Rate: ₱{booking.motorcycles.daily_rate.toFixed(2)}</p>
+                  <Link
+                    href={`/dashboard/bikes/${booking.motorcycle_id}`}
+                    className="text-primary hover:underline text-sm inline-block mt-2"
+                  >
+                    View Bike Details
+                  </Link>
                 </div>
               </div>
+            </div>
 
-              {/* Booking Details */}
-              <div className="bg-white/5 rounded-lg p-4">
-                <h2 className="text-lg font-medium mb-4">Booking Details</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-5">
-                    <div className="flex items-start gap-3">
-                      <Calendar className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <h3 className="font-medium">Rental Period</h3>
-                        <p>
-                          {format(startDate, "MMMM d, yyyy")} to{" "}
-                          {format(endDate, "MMMM d, yyyy")}
-                        </p>
-                        <p className="text-sm text-gray-400">{days} days</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <h3 className="font-medium">
-                          {booking.delivery_options?.name || "Pickup at Shop"}
-                        </h3>
-                        <p className="text-sm text-gray-400">{booking.shops.address}</p>
-                      </div>
+            {/* Booking Details */}
+            <div className="bg-white/5 rounded-lg p-4">
+              <h2 className="text-lg font-medium mb-4">Booking Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-5">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-primary mt-0.5" />
+                    <div>
+                      <h3 className="font-medium">Rental Period</h3>
+                      <p>
+                        {format(startDate, "MMMM d, yyyy")} to{" "}
+                        {format(endDate, "MMMM d, yyyy")}
+                      </p>
+                      <p className="text-sm text-gray-400">{days} days</p>
                     </div>
                   </div>
 
-                  <div className="space-y-5">
-                    <div className="flex items-start gap-3">
-                      <CreditCard className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <h3 className="font-medium">Payment Method</h3>
-                        <p>{booking.payment_methods.name}</p>
-                        <p className="text-sm text-gray-400">
-                          {booking.payment_methods.description}
-                        </p>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-primary mt-0.5" />
+                    <div>
+                      <h3 className="font-medium">
+                        {booking.delivery_options?.name || "Pickup at Shop"}
+                      </h3>
+                      <p className="text-sm text-gray-400">{booking.shops.address}</p>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="flex items-start gap-3">
-                      <User className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <h3 className="font-medium">Customer</h3>
-                        <p>{customerName || "N/A"}</p>
-                        <p className="text-sm text-gray-400">{customerEmail || "N/A"}</p>
-                        <p className="text-sm text-gray-400">{customerPhone || "N/A"}</p>
-                      </div>
+                <div className="space-y-5">
+                  <div className="flex items-start gap-3">
+                    <CreditCard className="w-5 h-5 text-primary mt-0.5" />
+                    <div>
+                      <h3 className="font-medium">Payment Method</h3>
+                      <p>{booking.payment_methods.name}</p>
+                      <p className="text-sm text-gray-400">
+                        {booking.payment_methods.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <User className="w-5 h-5 text-primary mt-0.5" />
+                    <div>
+                      <h3 className="font-medium">Customer</h3>
+                      <p>{customerName || "N/A"}</p>
+                      <p className="text-sm text-gray-400">{customerEmail || "N/A"}</p>
+                      <p className="text-sm text-gray-400">{customerPhone || "N/A"}</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-6">
-              {/* Price Summary */}
-              <div className="bg-white/5 rounded-lg p-4">
-                <h2 className="text-lg font-medium mb-4">Price Summary</h2>
-                <div className="space-y-3">
+          <div className="space-y-6">
+            {/* Price Summary */}
+            <div className="bg-white/5 rounded-lg p-4">
+              <h2 className="text-lg font-medium mb-4">Price Summary</h2>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">
+                    Rental ({days} days × ₱{booking.motorcycles.daily_rate})
+                  </span>
+                  <span>₱{rentalPrice.toFixed(2)}</span>
+                </div>
+                {booking.delivery_options && (
                   <div className="flex justify-between">
                     <span className="text-gray-400">
-                      Rental ({days} days × ₱{booking.motorcycles.daily_rate})
+                      {booking.delivery_options.name}
                     </span>
-                    <span>₱{rentalPrice.toFixed(2)}</span>
+                    <span>₱{deliveryFee.toFixed(2)}</span>
                   </div>
-                  {booking.delivery_options && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">
-                        {booking.delivery_options.name}
-                      </span>
-                      <span>₱{deliveryFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="border-t border-white/10 pt-3 flex justify-between font-bold">
-                    <span>Total</span>
-                    <span>₱{booking.total_price.toFixed(2)}</span>
-                  </div>
+                )}
+                <div className="border-t border-white/10 pt-3 flex justify-between font-bold">
+                  <span>Total</span>
+                  <span>₱{booking.total_price.toFixed(2)}</span>
                 </div>
               </div>
+            </div>
 
-              {/* Status Management */}
-              <div className="bg-white/5 rounded-lg p-4">
-                <h2 className="text-lg font-medium mb-4">Manage Booking</h2>
-                <div className="space-y-4">
-                  {booking.status === "pending" && (
-                    <button
-                      onClick={() => handleStatusChange("confirmed")}
-                      disabled={processing}
-                      className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <CheckCircle size={16} />
-                      Confirm Booking
-                    </button>
-                  )}
-                  
-                  {(booking.status === "pending" || booking.status === "confirmed") && (
-                    <button
-                      onClick={() => handleStatusChange("completed")}
-                      disabled={processing}
-                      className="flex items-center justify-center gap-2 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <CheckCircle size={16} />
-                      Mark as Completed
-                    </button>
-                  )}
-                  
-                  {booking.status !== "cancelled" && booking.status !== "completed" && (
-                    <button
-                      onClick={() => handleStatusChange("cancelled")}
-                      disabled={processing}
-                      className="flex items-center justify-center gap-2 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <XCircle size={16} />
-                      Cancel Booking
-                    </button>
-                  )}
-                  
-                  {/* Link to print booking details */}
-                  <Link
-                    href={`/booking/confirmation/${booking.id}`}
-                    target="_blank"
-                    className="flex items-center justify-center gap-2 w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-md transition-colors"
+            {/* Status Management */}
+            <div className="bg-white/5 rounded-lg p-4">
+              <h2 className="text-lg font-medium mb-4">Manage Booking</h2>
+              <div className="space-y-4">
+                {booking.status === "pending" && (
+                  <button
+                    onClick={() => handleStatusChange("confirmed")}
+                    disabled={processing}
+                    className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    View Confirmation Page
-                  </Link>
-                </div>
+                    <CheckCircle size={16} />
+                    Confirm Booking
+                  </button>
+                )}
+                
+                {(booking.status === "pending" || booking.status === "confirmed") && (
+                  <button
+                    onClick={() => handleStatusChange("completed")}
+                    disabled={processing}
+                    className="flex items-center justify-center gap-2 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CheckCircle size={16} />
+                    Mark as Completed
+                  </button>
+                )}
+                
+                {booking.status !== "cancelled" && booking.status !== "completed" && (
+                  <button
+                    onClick={() => handleStatusChange("cancelled")}
+                    disabled={processing}
+                    className="flex items-center justify-center gap-2 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <XCircle size={16} />
+                    Cancel Booking
+                  </button>
+                )}
+                
+                {/* Link to print booking details */}
+                <Link
+                  href={`/booking/confirmation/${booking.id}`}
+                  target="_blank"
+                  className="flex items-center justify-center gap-2 w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-md transition-colors"
+                >
+                  View Confirmation Page
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </DashboardShell>
+    </div>
   );
 } 

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import DashboardShell from "@/components/dashboard/DashboardShell";
 import { format } from "date-fns";
 
 // Icons
@@ -45,7 +44,7 @@ export default function DashboardBookingsPage() {
 
         // Get user's shop
         const { data: shop, error: shopError } = await supabase
-          .from("shops")
+          .from("rental_shops")
           .select("id")
           .eq("owner_id", session.user.id)
           .single();
@@ -68,71 +67,71 @@ export default function DashboardBookingsPage() {
     checkUserAndShop();
   }, [supabase, router]);
 
-  const fetchBookings = async (shopId: string, page = 1, status = "all") => {
+  const fetchBookings = async (shopId: string) => {
     try {
       setLoading(true);
-      
-      // Build query
-      let query = supabase
-        .from("rentals")
-        .select(`
-          id,
-          start_date,
-          end_date,
-          total_price,
-          status,
-          guest_name,
-          guest_email,
-          guest_phone,
-          created_at,
-          motorcycles (
-            id,
-            brand,
-            model,
-            image_url
-          ),
-          payment_methods (
-            id,
-            name
-          ),
-          delivery_options (
-            id,
-            name
-          )
-        `, { count: 'exact' })
-        .eq("shop_id", shopId)
-        .order("created_at", { ascending: false });
-
-      // Apply status filter if not "all"
-      if (status !== "all") {
-        query = query.eq("status", status);
-      }
-      
-      // Apply search filter if present
-      if (searchTerm) {
-        query = query.or(
-          `guest_name.ilike.%${searchTerm}%,guest_email.ilike.%${searchTerm}%,guest_phone.ilike.%${searchTerm}%`
-        );
-      }
-      
-      // Apply pagination
-      const from = (page - 1) * bookingsPerPage;
+      // Calculate pagination
+      const from = (currentPage - 1) * bookingsPerPage;
       const to = from + bookingsPerPage - 1;
       
-      const { data, error, count } = await query
+      // Base query
+      let query = supabase
+        .from("rentals")
+        .select("*, bikes(name), users(first_name, last_name)", { count: "exact" })
+        .eq("shop_id", shopId)
+        .order("created_at", { ascending: false })
         .range(from, to);
-
-      if (error) throw error;
       
-      setBookings(data || []);
-      setTotalBookings(count || 0);
-      setCurrentPage(page);
-      setLoading(false);
+      // Apply status filter if not "all"
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+      
+      // Search term filtering - can expand this as needed
+      if (searchTerm) {
+        // This is a simplified approach - in a real app, you'd have a more sophisticated search
+        const { data: bookings, count, error } = await query;
+        
+        if (error) throw error;
+        
+        // Format the bookings data
+        const formattedBookings = formatBookings(bookings || []);
+        setBookings(formattedBookings);
+        setTotalBookings(count || 0);
+      } else {
+        const { data: bookings, count, error } = await query;
+        
+        if (error) throw error;
+        
+        // Format the bookings data
+        const formattedBookings = formatBookings(bookings || []);
+        setBookings(formattedBookings);
+        setTotalBookings(count || 0);
+      }
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      setError("Failed to load bookings. Please try again.");
+      setError("Failed to load bookings data.");
+    } finally {
       setLoading(false);
     }
+  };
+  
+  const formatBookings = (bookings: any[]) => {
+    return bookings.map(booking => {
+      const customerName = booking.users 
+        ? `${booking.users.first_name || ''} ${booking.users.last_name || ''}`.trim() || "Guest"
+        : "Guest";
+        
+      return {
+        id: booking.id,
+        bikeName: booking.bikes?.name || "Unknown Bike",
+        customerName,
+        startDate: booking.start_date,
+        endDate: booking.end_date,
+        status: booking.status,
+        totalPrice: booking.total_price
+      };
+    });
   };
 
   const handleStatusChange = async (bookingId: string, newStatus: string) => {
@@ -146,7 +145,7 @@ export default function DashboardBookingsPage() {
 
       // Refresh bookings
       if (shopId) {
-        fetchBookings(shopId, currentPage, statusFilter);
+        fetchBookings(shopId);
       }
     } catch (error) {
       console.error("Error updating booking status:", error);
@@ -156,21 +155,23 @@ export default function DashboardBookingsPage() {
 
   const handleFilterChange = (status: string) => {
     setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page when filter changes
     if (shopId) {
-      fetchBookings(shopId, 1, status);
+      fetchBookings(shopId);
     }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (shopId) {
-      fetchBookings(shopId, 1, statusFilter);
+      fetchBookings(shopId);
     }
   };
 
   const handlePageChange = (page: number) => {
+    setCurrentPage(page);
     if (shopId) {
-      fetchBookings(shopId, page, statusFilter);
+      fetchBookings(shopId);
     }
   };
 
@@ -216,212 +217,217 @@ export default function DashboardBookingsPage() {
 
   const totalPages = Math.ceil(totalBookings / bookingsPerPage);
 
+  // Effect to refetch when page, filter, or search changes
+  useEffect(() => {
+    if (shopId) {
+      fetchBookings(shopId);
+    }
+  }, [currentPage, statusFilter, shopId]);
+
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h1 className="text-2xl font-bold">Manage Bookings</h1>
-          <div className="flex items-center gap-2">
-            <form onSubmit={handleSearch} className="relative">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search bookings..."
-                className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 h-4 w-4" />
-              <button type="submit" className="sr-only">Search</button>
-            </form>
-            <div className="relative">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-2xl font-bold">Manage Bookings</h1>
+        <div className="flex items-center gap-2">
+          <form onSubmit={handleSearch} className="relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search bookings..."
+              className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 h-4 w-4" />
+            <button type="submit" className="sr-only">Search</button>
+          </form>
+          <div className="relative group">
+            <button
+              className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-md"
+            >
+              <Filter size={16} /> 
+              <span>Filter</span>
+            </button>
+            <div className="absolute right-0 mt-2 py-2 w-48 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-10 hidden group-hover:block">
               <button
-                className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-md"
+                onClick={() => handleFilterChange("all")}
+                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
+                  statusFilter === "all" ? "bg-white/10" : ""
+                }`}
               >
-                <Filter size={16} /> 
-                <span>Filter</span>
+                All Bookings
               </button>
-              <div className="absolute right-0 mt-2 py-2 w-48 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-10 hidden group-hover:block">
-                <button
-                  onClick={() => handleFilterChange("all")}
-                  className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                    statusFilter === "all" ? "bg-white/10" : ""
-                  }`}
-                >
-                  All Bookings
-                </button>
-                <button
-                  onClick={() => handleFilterChange("pending")}
-                  className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                    statusFilter === "pending" ? "bg-white/10" : ""
-                  }`}
-                >
-                  Pending
-                </button>
-                <button
-                  onClick={() => handleFilterChange("confirmed")}
-                  className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                    statusFilter === "confirmed" ? "bg-white/10" : ""
-                  }`}
-                >
-                  Confirmed
-                </button>
-                <button
-                  onClick={() => handleFilterChange("completed")}
-                  className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                    statusFilter === "completed" ? "bg-white/10" : ""
-                  }`}
-                >
-                  Completed
-                </button>
-                <button
-                  onClick={() => handleFilterChange("cancelled")}
-                  className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                    statusFilter === "cancelled" ? "bg-white/10" : ""
-                  }`}
-                >
-                  Cancelled
-                </button>
-              </div>
+              <button
+                onClick={() => handleFilterChange("pending")}
+                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
+                  statusFilter === "pending" ? "bg-white/10" : ""
+                }`}
+              >
+                Pending
+              </button>
+              <button
+                onClick={() => handleFilterChange("confirmed")}
+                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
+                  statusFilter === "confirmed" ? "bg-white/10" : ""
+                }`}
+              >
+                Confirmed
+              </button>
+              <button
+                onClick={() => handleFilterChange("completed")}
+                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
+                  statusFilter === "completed" ? "bg-white/10" : ""
+                }`}
+              >
+                Completed
+              </button>
+              <button
+                onClick={() => handleFilterChange("cancelled")}
+                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
+                  statusFilter === "cancelled" ? "bg-white/10" : ""
+                }`}
+              >
+                Cancelled
+              </button>
             </div>
           </div>
         </div>
-
-        {error ? (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-md p-4 text-center">
-            <p className="text-red-400">{error}</p>
-          </div>
-        ) : loading ? (
-          <div className="animate-pulse text-center py-20">Loading bookings...</div>
-        ) : bookings.length === 0 ? (
-          <div className="text-center py-20 bg-white/5 rounded-md">
-            <p className="text-gray-400">No bookings found.</p>
-            <p className="text-sm mt-2">
-              {statusFilter !== "all" 
-                ? `No ${statusFilter} bookings at the moment.` 
-                : "When customers book your bikes, they'll appear here."}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left">Booking Details</th>
-                  <th className="px-4 py-3 text-left">Customer</th>
-                  <th className="px-4 py-3 text-left">Dates</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-white/5">
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 flex-shrink-0 rounded overflow-hidden">
-                          <img
-                            src={booking.motorcycles.image_url || "/placeholder-bike.jpg"}
-                            alt={booking.motorcycles.model}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div>
-                          <p className="font-medium truncate w-40">
-                            {booking.motorcycles.brand} {booking.motorcycles.model}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            ₱{booking.total_price.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <p className="font-medium">{booking.guest_name || "N/A"}</p>
-                      <p className="text-sm text-gray-400">{booking.guest_email || "N/A"}</p>
-                      <p className="text-sm text-gray-400">{booking.guest_phone || "N/A"}</p>
-                    </td>
-                    <td className="px-4 py-4">
-                      <p className="text-gray-200">
-                        {format(new Date(booking.start_date), "MMM d")} - {format(new Date(booking.end_date), "MMM d, yyyy")}
-                      </p>
-                      <p className="text-sm text-gray-400">Booked: {format(new Date(booking.created_at), "MMM d, yyyy")}</p>
-                    </td>
-                    <td className="px-4 py-4">
-                      {getStatusBadge(booking.status)}
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link 
-                          href={`/dashboard/bookings/${booking.id}`}
-                          className="px-3 py-1 text-xs bg-primary rounded-md hover:bg-primary/80 transition-colors"
-                        >
-                          View Details
-                        </Link>
-                        <div className="relative group">
-                          <button className="px-3 py-1 text-xs bg-white/10 rounded-md hover:bg-white/20 transition-colors">
-                            Update Status
-                          </button>
-                          <div className="hidden group-hover:block absolute right-0 mt-1 py-2 w-40 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-10">
-                            {booking.status !== "confirmed" && (
-                              <button
-                                onClick={() => handleStatusChange(booking.id, "confirmed")}
-                                className="block w-full text-left px-4 py-2 text-green-400 hover:bg-white/5"
-                              >
-                                Confirm
-                              </button>
-                            )}
-                            {booking.status !== "completed" && booking.status !== "cancelled" && (
-                              <button
-                                onClick={() => handleStatusChange(booking.id, "completed")}
-                                className="block w-full text-left px-4 py-2 text-blue-400 hover:bg-white/5"
-                              >
-                                Mark as Completed
-                              </button>
-                            )}
-                            {booking.status !== "cancelled" && (
-                              <button
-                                onClick={() => handleStatusChange(booking.id, "cancelled")}
-                                className="block w-full text-left px-4 py-2 text-red-400 hover:bg-white/5"
-                              >
-                                Cancel Booking
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-6">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-md bg-white/5 disabled:opacity-50"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="px-4 py-2">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-md bg-white/5 disabled:opacity-50"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-    </DashboardShell>
+
+      {error ? (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-md p-4 text-center">
+          <p className="text-red-400">{error}</p>
+        </div>
+      ) : loading ? (
+        <div className="animate-pulse text-center py-20">Loading bookings...</div>
+      ) : bookings.length === 0 ? (
+        <div className="text-center py-20 bg-white/5 rounded-md">
+          <p className="text-gray-400">No bookings found.</p>
+          <p className="text-sm mt-2">
+            {statusFilter !== "all" 
+              ? `No ${statusFilter} bookings at the moment.` 
+              : "When customers book your bikes, they'll appear here."}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="px-4 py-3 text-left">Booking Details</th>
+                <th className="px-4 py-3 text-left">Customer</th>
+                <th className="px-4 py-3 text-left">Dates</th>
+                <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {bookings.map((booking) => (
+                <tr key={booking.id} className="hover:bg-white/5">
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 flex-shrink-0 rounded overflow-hidden">
+                        <img
+                          src={booking.motorcycles.image_url || "/placeholder-bike.jpg"}
+                          alt={booking.motorcycles.model}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium truncate w-40">
+                          {booking.motorcycles.brand} {booking.motorcycles.model}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          ₱{booking.total_price.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <p className="font-medium">{booking.guest_name || "N/A"}</p>
+                    <p className="text-sm text-gray-400">{booking.guest_email || "N/A"}</p>
+                    <p className="text-sm text-gray-400">{booking.guest_phone || "N/A"}</p>
+                  </td>
+                  <td className="px-4 py-4">
+                    <p className="text-gray-200">
+                      {format(new Date(booking.start_date), "MMM d")} - {format(new Date(booking.end_date), "MMM d, yyyy")}
+                    </p>
+                    <p className="text-sm text-gray-400">Booked: {format(new Date(booking.created_at), "MMM d, yyyy")}</p>
+                  </td>
+                  <td className="px-4 py-4">
+                    {getStatusBadge(booking.status)}
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <Link 
+                        href={`/dashboard/bookings/${booking.id}`}
+                        className="px-3 py-1 text-xs bg-primary rounded-md hover:bg-primary/80 transition-colors"
+                      >
+                        View Details
+                      </Link>
+                      <div className="relative group">
+                        <button className="px-3 py-1 text-xs bg-white/10 rounded-md hover:bg-white/20 transition-colors">
+                          Update Status
+                        </button>
+                        <div className="hidden group-hover:block absolute right-0 mt-1 py-2 w-40 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-10">
+                          {booking.status !== "confirmed" && (
+                            <button
+                              onClick={() => handleStatusChange(booking.id, "confirmed")}
+                              className="block w-full text-left px-4 py-2 text-green-400 hover:bg-white/5"
+                            >
+                              Confirm
+                            </button>
+                          )}
+                          {booking.status !== "completed" && booking.status !== "cancelled" && (
+                            <button
+                              onClick={() => handleStatusChange(booking.id, "completed")}
+                              className="block w-full text-left px-4 py-2 text-blue-400 hover:bg-white/5"
+                            >
+                              Mark as Completed
+                            </button>
+                          )}
+                          {booking.status !== "cancelled" && (
+                            <button
+                              onClick={() => handleStatusChange(booking.id, "cancelled")}
+                              className="block w-full text-left px-4 py-2 text-red-400 hover:bg-white/5"
+                            >
+                              Cancel Booking
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-md bg-white/5 disabled:opacity-50"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="px-4 py-2">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-md bg-white/5 disabled:opacity-50"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 } 
