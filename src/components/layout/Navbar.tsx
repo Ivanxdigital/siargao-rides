@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
-import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight } from "lucide-react"
+import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
@@ -136,6 +136,15 @@ const Navbar = () => {
                         Dashboard
                       </Link>
                       
+                      <Link
+                        href="/my-bookings"
+                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-colors"
+                        onClick={closeMenus}
+                      >
+                        <Calendar className="h-4 w-4" />
+                        My Bookings
+                      </Link>
+                      
                       {isAdmin && (
                         <Link
                           href="/admin"
@@ -216,6 +225,10 @@ const Navbar = () => {
                 <div className="space-y-3">
                   <MobileNavLink href="/dashboard" onClick={() => setIsMenuOpen(false)} icon={<User size={16} />}>
                     Dashboard
+                  </MobileNavLink>
+                  
+                  <MobileNavLink href="/my-bookings" onClick={() => setIsMenuOpen(false)} icon={<Calendar size={16} />}>
+                    My Bookings
                   </MobileNavLink>
                   
                   {isAdmin && (

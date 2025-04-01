@@ -39,6 +39,14 @@ This document tracks our progress implementing the booking system for Siargao Ri
 - [x] Add print and share functionality for booking confirmations
 - [x] Implement detailed price breakdown and status indicators
 
+### User Booking Management ✅
+- [x] Create "My Bookings" page for users to view their booking history
+- [x] Implement booking filtering by status
+- [x] Add booking cancellation with 24-hour restriction
+- [x] Add navigation links in profile and navbar
+- [x] Display booking details with status indicators
+- [x] Link to detailed booking confirmation view
+
 ## Phase 5: Testing & Refinement ⏳
 - [ ] Perform end-to-end testing
 - [ ] Refine user experience
