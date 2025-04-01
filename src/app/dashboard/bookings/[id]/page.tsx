@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle, Eye } from "lucide-react";
 import { format } from "date-fns";
 
-export default function BookingDetailsPage({ params }: { params: { id: string } }) {
-  const [booking, setBooking] = useState<any>(null);
+export default function BookingDetailsPage() {
+  // Use the useParams hook to get the id parameter
+  const params = useParams();
+  const bookingId = params?.id as string;
+
   const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [shopId, setShopId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -20,6 +24,12 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
 
   useEffect(() => {
     const checkUserAndFetchBooking = async () => {
+      if (!bookingId) {
+        setError("Booking ID is missing");
+        setLoading(false);
+        return;
+      }
+
       try {
         // Check if user is authenticated
         const { data: { session } } = await supabase.auth.getSession();
@@ -60,7 +70,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
             delivery_option_id,
             payment_status
           `)
-          .eq("id", params.id)
+          .eq("id", bookingId)
           .eq("shop_id", shop.id)
           .single();
 
@@ -149,30 +159,52 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
     };
 
     checkUserAndFetchBooking();
-  }, [params.id, supabase, router]);
+  }, [bookingId, supabase, router]);
 
   const handleStatusChange = async (newStatus: string) => {
+    if (!bookingId) return;
+    
     try {
       setProcessing(true);
       
       const { error } = await supabase
         .from("rentals")
         .update({ status: newStatus })
-        .eq("id", booking.id)
-        .eq("shop_id", shopId); // Extra safety check
+        .eq("id", bookingId);
       
       if (error) throw error;
       
-      // Update local state
-      setBooking({
-        ...booking,
-        status: newStatus
-      });
+      // Refresh the booking data
+      const { data: updatedBooking, error: refreshError } = await supabase
+        .from("rentals")
+        .select(`
+          id, 
+          start_date, 
+          end_date, 
+          total_price, 
+          status,
+          created_at,
+          bike_id,
+          shop_id,
+          user_id,
+          payment_method_id,
+          delivery_option_id,
+          payment_status
+        `)
+        .eq("id", bookingId)
+        .single();
       
+      if (refreshError) throw refreshError;
+      
+      setBooking(updatedBooking);
       setProcessing(false);
+      
+      // Show success message
+      alert(`Booking status updated to ${newStatus}`);
+      
     } catch (error) {
-      console.error("Error updating booking status:", error);
-      alert("Failed to update booking status. Please try again.");
+      console.error("Error updating status:", error);
+      alert("Failed to update booking status");
       setProcessing(false);
     }
   };

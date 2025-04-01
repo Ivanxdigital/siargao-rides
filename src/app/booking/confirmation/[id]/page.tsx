@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -28,7 +28,11 @@ import {
   XCircle
 } from "lucide-react";
 
-export default function BookingConfirmationPage({ params }: { params: { id: string } }) {
+export default function BookingConfirmationPage() {
+  // Use the useParams hook to get the id parameter
+  const params = useParams();
+  const bookingId = params?.id as string;
+
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +41,12 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
+      if (!bookingId) {
+        setError("Booking ID is missing");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         
@@ -59,7 +69,7 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
             confirmation_code,
             delivery_address
           `)
-          .eq("id", params.id)
+          .eq("id", bookingId)
           .single();
 
         if (bookingError) {
@@ -134,7 +144,7 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
     };
 
     fetchBookingDetails();
-  }, [params.id, supabase]);
+  }, [bookingId, supabase]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
