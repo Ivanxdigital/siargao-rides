@@ -223,29 +223,6 @@ export default function ShopPage() {
         </div>
       </div>
       
-      {/* Google Map with improved styling */}
-      {(shop.latitude && shop.longitude) ? (
-        <div className="container mx-auto px-4 mt-8 relative z-10">
-          <div className="border border-white/10 rounded-lg overflow-hidden h-64 md:h-80 shadow-sm">
-            <iframe
-              title={`${shop.name} location`}
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              src={`https://maps.google.com/maps?q=${shop.latitude},${shop.longitude}&z=15&output=embed`}
-              allowFullScreen
-              className="hover:opacity-95 transition-opacity"
-            ></iframe>
-          </div>
-        </div>
-      ) : (
-        <div className="container mx-auto px-4 mt-8 relative z-10">
-          <div className="border border-white/10 rounded-lg overflow-hidden h-64 bg-black/50 backdrop-blur-sm flex items-center justify-center">
-            <p className="text-white/50">Map location not available</p>
-          </div>
-        </div>
-      )}
-      
       {/* Bike Listings with improved styling */}
       <div className="container mx-auto px-4 py-12 relative z-10">
         <h2 className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-white/10">
