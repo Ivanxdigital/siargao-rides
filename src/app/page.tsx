@@ -121,13 +121,15 @@ export default function Home() {
     // Create iframe element
     const iframe = document.createElement('iframe');
     
-    // Set attributes
+    // Set attributes - improved for mobile compatibility
     iframe.className = 'absolute w-[150%] md:w-[120%] h-[150%] md:h-[120%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2';
     iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&rel=0&disablekb=1&modestbranding=1&showinfo=0`;
     iframe.title = 'Siargao Island Video Background';
     iframe.frameBorder = '0';
-    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
     iframe.allowFullscreen = true;
+    iframe.setAttribute('playsinline', '1'); // Explicit for iOS
+    iframe.setAttribute('webkit-playsinline', '1'); // For older iOS versions
     iframe.onload = () => setVideoLoaded(true);
     
     // Append to container
@@ -244,29 +246,31 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative min-h-[110vh] sm:min-h-screen max-h-[900px] bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10">
-        {/* Background Image with Overlay - Mobile Only */}
+    <div className="flex flex-col min-h-screen w-full overflow-hidden">
+      {/* Hero Section - improved responsive heights */}
+      <section className="relative min-h-[100vh] sm:min-h-screen max-h-[900px] bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10">
+        {/* Background Image with Overlay - Mobile Only - improved for performance */}
         <div className="absolute inset-0 z-0 md:hidden">
           <div 
-            className="absolute inset-0 bg-cover bg-center opacity-40 hover:opacity-50 transition-opacity duration-1000"
-            style={{ backgroundImage: "url('/images/alejandro-luengo-clllGLYtLRA-unsplash.jpg')" }}
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 hover:opacity-50 transition-opacity duration-1000"
+            style={{ 
+              backgroundImage: "url('/images/alejandro-luengo-clllGLYtLRA-unsplash.jpg')",
+              backgroundSize: "cover"
+            }}
             aria-hidden="true"
           ></div>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-black/50 to-purple-900/40 z-10"></div>
           
-          {/* Smooth Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-purple-700/20 animate-[pulse_4s_ease-in-out_infinite] z-10 opacity-70"></div>
+          {/* Smooth Gradient Overlay - reduced animation complexity for mobile */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-purple-700/20 animate-[pulse_6s_ease-in-out_infinite] z-10 opacity-70"></div>
           
-          {/* Subtle Radial Gradient */}
-          <div className="absolute -inset-[10%] bg-[radial-gradient(circle_at_50%_50%,rgba(120,50,255,0.08),transparent_70%)] opacity-60 animate-[spin_30s_linear_infinite] z-10"></div>
+          {/* Reduced animations for better mobile performance */}
+          <div className="absolute -inset-[10%] bg-[radial-gradient(circle_at_50%_50%,rgba(120,50,255,0.08),transparent_70%)] opacity-60 animate-[spin_40s_linear_infinite] z-10"></div>
           
-          {/* Reduced and Blurred Floating Elements */}
-          <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-[float_20s_ease-in-out_infinite] z-5"></div>
-          <div className="absolute bottom-1/3 right-1/4 w-40 h-40 rounded-full bg-purple-500/5 blur-2xl animate-[float_25s_ease-in-out_infinite_1s] z-5"></div>
+          {/* Simplified floating elements for mobile */}
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-[float_30s_ease-in-out_infinite] z-5"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-40 h-40 rounded-full bg-purple-500/5 blur-2xl animate-[float_35s_ease-in-out_infinite_1s] z-5"></div>
           
-          {/* Soft Glow Effects - Enhanced */}
           <div className="absolute top-0 left-0 w-full h-2/5 bg-gradient-to-b from-primary/5 to-transparent z-10"></div>
           <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-purple-900/10 to-transparent z-10"></div>
         </div>
@@ -275,24 +279,23 @@ export default function Home() {
         <div className="absolute inset-0 w-full h-full hidden md:block">
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10"></div>
           <div className="relative w-full h-full overflow-hidden">
-            {/* Video container - iframe will be dynamically inserted here */}
             <div ref={videoContainerRef} className="w-full h-full"></div>
           </div>
         </div>
 
-        {/* Hero Content */}
-        <div className="container mx-auto relative z-20 h-full flex flex-col justify-center py-12 pb-24 px-4 sm:px-6 sm:py-16 lg:px-8">
-          <div className="text-center mb-6 sm:mb-8 pt-12 md:pt-16">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
+        {/* Hero Content - improved padding and spacing for mobile */}
+        <div className="container mx-auto relative z-20 h-full flex flex-col justify-center py-8 pb-16 sm:py-12 sm:pb-24 px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 tracking-tight leading-tight">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-primary animate-gradient-x">Explore Siargao</span> on Two Wheels
             </h1>
-            <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
               Discover the island's hidden gems with our premium motorbike rentals. Convenient pickup locations, competitive rates, and the freedom to explore at your own pace.
             </p>
           </div>
 
-          {/* Search Bar Container */}
-          <div className="w-full max-w-4xl mx-auto relative mb-12 sm:mb-16 shadow-2xl">
+          {/* Search Bar Container - better mobile spacing */}
+          <div className="w-full max-w-4xl mx-auto relative mb-8 sm:mb-12 lg:mb-16 shadow-2xl px-2 sm:px-0">
             <SearchBar onSearch={handleSearch} />
           </div>
         </div>
@@ -306,7 +309,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Add CSS keyframes for animations */}
+      {/* Add CSS keyframes for animations - optimized for mobile */}
       <style jsx global>{`
         @keyframes fadeInUp {
           from {
@@ -327,38 +330,58 @@ export default function Home() {
             transform: translateY(0) translateX(0);
           }
           25% {
-            transform: translateY(-15px) translateX(15px);
+            transform: translateY(-10px) translateX(10px);
           }
           50% {
-            transform: translateY(10px) translateX(-10px);
+            transform: translateY(8px) translateX(-8px);
           }
           75% {
-            transform: translateY(-5px) translateX(5px);
+            transform: translateY(-4px) translateX(4px);
+          }
+        }
+        
+        /* Add mobile-specific keyframes */
+        @media (max-width: 768px) {
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0) translateX(0);
+            }
+            50% {
+              transform: translateY(5px) translateX(-5px);
+            }
           }
         }
         
         .bg-noise-pattern {
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
+        
+        /* Add styles to prevent content overflow on small screens */
+        @media (max-width: 480px) {
+          html, body {
+            overflow-x: hidden;
+            width: 100%;
+          }
+        }
       `}</style>
 
-      {/* Featured Shops Section */}
-      <section className="py-16 bg-gradient-to-b from-gray-900 to-black text-white">
+      {/* Featured Shops Section - improved for mobile */}
+      <section className="py-10 sm:py-16 bg-gradient-to-b from-gray-900 to-black text-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 sm:mb-8 text-center">
             {searchResults ? "Search Results" : "Featured Rental Shops"}
           </h2>
 
           {loading ? (
-            <div className="text-center py-12">
+            <div className="text-center py-8 sm:py-12">
               <p className="text-gray-300">Loading shops...</p>
             </div>
           ) : error ? (
-            <div className="text-center py-12">
+            <div className="text-center py-8 sm:py-12">
               <p className="text-red-500">{error}</p>
               <button 
                 onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm rounded hover:border-primary/50 transition-colors"
+                className="mt-4 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm rounded-lg hover:border-primary/50 transition-colors"
               >
                 Try Again
               </button>
@@ -366,11 +389,11 @@ export default function Home() {
           ) : (
             <>
               {(searchResults || shops).length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-8 sm:py-12">
                   <p className="text-gray-300">No shops found. Please try a different search.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                   {(searchResults || shops).map((shop) => (
                     <RentalShopCard
                       key={shop.id}
@@ -387,12 +410,12 @@ export default function Home() {
             </>
           )}
 
-          {/* View All Button */}
+          {/* View All Button - improved touch target */}
           {!searchResults && !loading && shops.length > 0 && (
-            <div className="text-center mt-12">
+            <div className="text-center mt-8 sm:mt-12">
               <Link 
                 href="/browse" 
-                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm rounded hover:border-primary/50 transition-colors inline-flex items-center"
+                className="px-4 py-3 sm:py-2 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm rounded-lg hover:border-primary/50 transition-colors inline-flex items-center justify-center"
               >
                 View all rental shops <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
