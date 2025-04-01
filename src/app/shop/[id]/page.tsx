@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Star, MapPin, Phone, Mail, MessageCircle } from "lucide-react"
 import BikeCard from "@/components/BikeCard"
 import { Button } from "@/components/ui/Button"
@@ -13,6 +13,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 export default function ShopPage() {
   const { id } = useParams()
+  const router = useRouter()
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null)
   const [shop, setShop] = useState<RentalShop | null>(null)
   const [bikes, setBikes] = useState<Bike[]>([])
@@ -98,8 +99,8 @@ export default function ShopPage() {
   
   const handleBookClick = (bikeId: string) => {
     setSelectedBikeId(bikeId)
-    // In a real app, we would show a modal or navigate to a booking page
-    console.log(`Book bike ${bikeId} from shop ${id}`)
+    // Navigate to the booking page with bike ID and shop ID
+    router.push(`/booking/${bikeId}?shop=${id}`)
   }
 
   // Loading state

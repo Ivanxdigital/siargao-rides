@@ -192,7 +192,7 @@ export default function DashboardPage() {
       }
       
       const totalBikes = bikes?.length || 0;
-      const availableBikes = bikes?.filter((bike: BikeData) => bike.is_available).length || 0;
+      const availableBikes = bikes?.filter((bike: any) => bike.is_available).length || 0;
       
       // 3. Get active bookings
       const { data: activeBookings, error: bookingsError } = await supabase
@@ -229,12 +229,14 @@ export default function DashboardPage() {
           start_date, 
           end_date, 
           status,
-          bikes(name),
-          users(first_name, last_name)
+          bike_id,
+          user_id,
+          bikes (id, name),
+          users (id, first_name, last_name)
         `)
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false })
-        .limit(3);
+        .limit(5);
       
       if (recentBookingsError) {
         console.error("Error fetching recent bookings:", recentBookingsError);
@@ -242,14 +244,28 @@ export default function DashboardPage() {
       }
       
       // Format the bookings data
-      const formattedBookings = recentBookingsData?.map((booking: RentalData) => ({
-        id: booking.id,
-        bikeName: booking.bikes?.name || "Unknown Bike",
-        customerName: `${booking.users?.first_name || ''} ${booking.users?.last_name || ''}`.trim() || "Unknown Customer",
-        startDate: booking.start_date,
-        endDate: booking.end_date,
-        status: booking.status
-      })) || [];
+      const formattedBookings = recentBookingsData?.map((booking: any) => {
+        // Get customer name from either registered user or guest info
+        let customerName = "Guest";
+        if (booking.user_id && booking.users) {
+          customerName = `${booking.users.first_name || ''} ${booking.users.last_name || ''}`.trim();
+        }
+
+        // Get bike name
+        let bikeName = "Unknown Bike";
+        if (booking.bikes) {
+          bikeName = booking.bikes.name || "Unknown Bike";
+        }
+
+        return {
+          id: booking.id,
+          bikeName,
+          customerName,
+          startDate: booking.start_date,
+          endDate: booking.end_date,
+          status: booking.status
+        };
+      }) || [];
       
       // Update state with all the shop owner data
       setShopStats({
