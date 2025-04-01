@@ -30,7 +30,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
 
         // Get user's shop
         const { data: shop, error: shopError } = await supabase
-          .from("shops")
+          .from("rental_shops")
           .select("id")
           .eq("owner_id", session.user.id)
           .single();
@@ -52,58 +52,94 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
             end_date, 
             total_price, 
             status,
-            guest_name,
-            guest_email,
-            guest_phone,
             created_at,
-            motorcycle_id,
+            bike_id,
             shop_id,
             user_id,
             payment_method_id,
             delivery_option_id,
-            payment_status,
-            motorcycles (
-              id,
-              model,
-              brand,
-              image_url,
-              daily_rate
-            ),
-            shops (
-              id,
-              name,
-              address,
-              phone
-            ),
-            payment_methods (
-              id,
-              name,
-              description
-            ),
-            delivery_options (
-              id,
-              name,
-              fee
-            ),
-            users (
-              id,
-              first_name,
-              last_name,
-              email,
-              phone
-            )
+            payment_status
           `)
           .eq("id", params.id)
           .eq("shop_id", shop.id)
           .single();
 
         if (bookingError) {
+          console.error("Error fetching booking:", bookingError);
           setError("Booking not found or you don't have permission to view it.");
           setLoading(false);
           return;
         }
 
-        setBooking(bookingData);
+        // Now fetch all the related data in separate queries
+        let bikeData = null;
+        let shopData = null;
+        let userData = null;
+        let paymentMethodData = null;
+        let deliveryOptionData = null;
+
+        // Get bike data
+        if (bookingData.bike_id) {
+          const { data: bike } = await supabase
+            .from("bikes")
+            .select("*")
+            .eq("id", bookingData.bike_id)
+            .single();
+          bikeData = bike;
+        }
+
+        // Get shop data
+        if (bookingData.shop_id) {
+          const { data: shop } = await supabase
+            .from("rental_shops")
+            .select("*")
+            .eq("id", bookingData.shop_id)
+            .single();
+          shopData = shop;
+        }
+
+        // Get user data
+        if (bookingData.user_id) {
+          const { data: user } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", bookingData.user_id)
+            .single();
+          userData = user;
+        }
+
+        // Get payment method data
+        if (bookingData.payment_method_id) {
+          const { data: paymentMethod } = await supabase
+            .from("payment_methods")
+            .select("*")
+            .eq("id", bookingData.payment_method_id)
+            .single();
+          paymentMethodData = paymentMethod;
+        }
+
+        // Get delivery option data
+        if (bookingData.delivery_option_id) {
+          const { data: deliveryOption } = await supabase
+            .from("delivery_options")
+            .select("*")
+            .eq("id", bookingData.delivery_option_id)
+            .single();
+          deliveryOptionData = deliveryOption;
+        }
+
+        // Combine all data
+        const fullBookingData = {
+          ...bookingData,
+          bikes: bikeData,
+          rental_shops: shopData,
+          users: userData,
+          payment_methods: paymentMethodData,
+          delivery_options: deliveryOptionData
+        };
+
+        console.log("Full booking data:", fullBookingData);
+        setBooking(fullBookingData);
         setLoading(false);
       } catch (error) {
         console.error("Error checking user/shop:", error);
@@ -208,20 +244,74 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
   const startDate = new Date(booking.start_date);
   const endDate = new Date(booking.end_date);
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  const rentalPrice = booking.motorcycles.daily_rate * days;
+  const rentalPrice = booking.bikes.price_per_day * days;
   const deliveryFee = booking.delivery_options?.fee || 0;
   
-  const customerName = booking.user_id
-    ? `${booking.users.first_name} ${booking.users.last_name}`
-    : booking.guest_name;
+  const customerName = booking.users 
+    ? `${booking.users.first_name || ''} ${booking.users.last_name || ''}`.trim() 
+    : "Guest";
     
-  const customerEmail = booking.user_id
-    ? booking.users.email
-    : booking.guest_email;
+  const customerEmail = booking.users?.email || "N/A";
+  const customerPhone = booking.users?.phone || "N/A";
+
+  const renderBikeDetails = () => {
+    if (!booking || !booking.bikes) return null;
     
-  const customerPhone = booking.user_id
-    ? booking.users.phone
-    : booking.guest_phone;
+    return (
+      <div className="bg-white/5 rounded-lg p-4">
+        <h2 className="text-lg font-medium mb-4">Bike Details</h2>
+        <div className="flex gap-4">
+          <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
+            <img
+              src={booking.bikes.image_url || "/placeholder-bike.jpg"}
+              alt={booking.bikes.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold">{booking.bikes.name}</h3>
+            <p className="text-gray-400">Daily Rate: ₱{booking.bikes.price_per_day.toFixed(2)}</p>
+            <Link
+              href={`/dashboard/bikes/${booking.bike_id}`}
+              className="text-primary hover:underline text-sm inline-block mt-2"
+            >
+              View Bike Details
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const renderShopDetails = () => {
+    if (!booking || !booking.rental_shops) return null;
+    
+    return (
+      <div className="flex items-start gap-3">
+        <MapPin className="w-5 h-5 text-primary mt-0.5" />
+        <div>
+          <h3 className="font-medium">
+            {booking.delivery_options?.name || "Pickup at Shop"}
+          </h3>
+          <p className="text-sm text-gray-400">{booking.rental_shops.address}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const renderCustomerInfo = () => {
+    return (
+      <div className="flex items-start gap-3">
+        <User className="w-5 h-5 text-primary mt-0.5" />
+        <div>
+          <h3 className="font-medium">Customer</h3>
+          <p>{customerName}</p>
+          <p className="text-sm text-gray-400">{customerEmail}</p>
+          <p className="text-sm text-gray-400">{customerPhone}</p>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -257,31 +347,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            {/* Bike Details */}
-            <div className="bg-white/5 rounded-lg p-4">
-              <h2 className="text-lg font-medium mb-4">Motorcycle Details</h2>
-              <div className="flex gap-4">
-                <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
-                  <img
-                    src={booking.motorcycles.image_url || "/placeholder-bike.jpg"}
-                    alt={booking.motorcycles.model}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold">
-                    {booking.motorcycles.brand} {booking.motorcycles.model}
-                  </h3>
-                  <p className="text-gray-400">Daily Rate: ₱{booking.motorcycles.daily_rate.toFixed(2)}</p>
-                  <Link
-                    href={`/dashboard/bikes/${booking.motorcycle_id}`}
-                    className="text-primary hover:underline text-sm inline-block mt-2"
-                  >
-                    View Bike Details
-                  </Link>
-                </div>
-              </div>
-            </div>
+            {renderBikeDetails()}
 
             {/* Booking Details */}
             <div className="bg-white/5 rounded-lg p-4">
@@ -300,15 +366,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">
-                        {booking.delivery_options?.name || "Pickup at Shop"}
-                      </h3>
-                      <p className="text-sm text-gray-400">{booking.shops.address}</p>
-                    </div>
-                  </div>
+                  {renderShopDetails()}
                 </div>
 
                 <div className="space-y-5">
@@ -323,15 +381,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <User className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">Customer</h3>
-                      <p>{customerName || "N/A"}</p>
-                      <p className="text-sm text-gray-400">{customerEmail || "N/A"}</p>
-                      <p className="text-sm text-gray-400">{customerPhone || "N/A"}</p>
-                    </div>
-                  </div>
+                  {renderCustomerInfo()}
                 </div>
               </div>
             </div>
@@ -344,7 +394,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">
-                    Rental ({days} days × ₱{booking.motorcycles.daily_rate})
+                    Rental ({days} days × ₱{booking.bikes.price_per_day})
                   </span>
                   <span>₱{rentalPrice.toFixed(2)}</span>
                 </div>
