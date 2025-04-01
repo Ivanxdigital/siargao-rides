@@ -6,7 +6,7 @@ import Link from "next/link"
 import SearchBar, { SearchParams } from "@/components/SearchBar"
 import RentalShopCard from "@/components/RentalShopCard"
 import * as service from "@/lib/service"
-import { RentalShop, Bike } from "@/lib/types"
+import { RentalShop, Bike, BikeCategory } from "@/lib/types"
 import { ArrowRight } from "lucide-react"
 
 // Transformed shop data for the RentalShopCard
@@ -136,38 +136,111 @@ export default function Home() {
 
   const handleSearch = async (params: SearchParams) => {
     console.log("Search params:", params)
+    setLoading(true)
+    setError(null)
     
-    // Filter bikes based on search params
-    let filteredBikes = [...bikes]
-    
-    // Map the UI bike type to our database category
-    if (params.bikeType && params.bikeType !== "Any Type") {
-      const categoryMap: Record<string, string> = {
-        "Scooter": "scooter",
-        "Semi-automatic": "semi_auto",
-        "Dirt Bike": "dirt_bike",
-        "Manual": "sport_bike",
-        "Electric": "other"
+    try {
+      // Map the UI bike type to our database category
+      let category: BikeCategory | undefined = undefined
+      if (params.bikeType && params.bikeType !== "Any Type") {
+        const categoryMap: Record<string, BikeCategory> = {
+          "Scooter": "scooter" as BikeCategory,
+          "Semi-automatic": "semi_auto" as BikeCategory,
+          "Dirt Bike": "dirt_bike" as BikeCategory,
+          "Manual": "sport_bike" as BikeCategory,
+          "Electric": "other" as BikeCategory
+        }
+        category = categoryMap[params.bikeType]
       }
       
-      const category = categoryMap[params.bikeType]
-      if (category) {
-        filteredBikes = filteredBikes.filter(bike => bike.category === category)
-      }
+      console.log("Searching bikes with filters:", { category, maxPrice: params.budget })
+      
+      // Filter bikes based on search parameters using Supabase API
+      const filteredBikes = await service.getBikes({
+        category: category,
+        max_price: params.budget
+        // We would add location filtering here if the bikes table had a location field
+        // For now, we'll filter by shop location after getting the bikes
+      })
+      
+      console.log(`Found ${filteredBikes.length} bikes matching price and category criteria`)
+      
+      // Get unique shop IDs from filtered bikes
+      const shopIds = [...new Set(filteredBikes.map(bike => bike.shop_id))]
+      console.log(`These bikes belong to ${shopIds.length} different shops`)
+      
+      // Get shops with these IDs
+      const shopsData = await Promise.all(
+        shopIds.map(async (shopId) => {
+          const shop = await service.getShopById(shopId)
+          
+          // Skip if shop not found
+          if (!shop) return null
+          
+          // Check location match if a location is specified
+          if (params.location) {
+            const shopAddress = shop.address?.toLowerCase() || ""
+            const shopCity = shop.city?.toLowerCase() || ""
+            const searchLocation = params.location.toLowerCase()
+            
+            console.log(`Checking location for shop ${shop.name}:`, {
+              searchLocation,
+              shopAddress,
+              shopCity,
+              addressMatch: shopAddress.includes(searchLocation),
+              cityMatch: shopCity.includes(searchLocation)
+            })
+            
+            // Skip if neither address nor city contains the search location
+            if (!shopAddress.includes(searchLocation) && !shopCity.includes(searchLocation)) {
+              console.log(`Shop ${shop.name} excluded due to location mismatch`)
+              return null
+            }
+          }
+          
+          // Get shop bikes that passed our filters
+          const shopBikes = filteredBikes.filter(bike => bike.shop_id === shopId)
+          
+          // Skip if no bikes left after location filtering
+          if (shopBikes.length === 0) return null
+          
+          // Calculate starting price
+          const startingPrice = Math.min(...shopBikes.map(bike => bike.price_per_day))
+          
+          // Get shop reviews
+          const reviews = await service.getShopReviews(shopId)
+          const reviewCount = reviews.length
+          const averageRating = reviewCount > 0
+            ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
+            : 0
+          
+          // Get bike images for thumbnails
+          const bikeImages = shopBikes.flatMap(bike => bike.images?.map(img => img.image_url) || [])
+          
+          return {
+            id: shop.id,
+            name: shop.name,
+            images: bikeImages.length > 0 
+              ? bikeImages.slice(0, 3) 
+              : [shop.logo_url || 'https://placehold.co/600x400/1e3b8a/white?text=Shop+Image'],
+            startingPrice,
+            rating: averageRating || 4.5,
+            reviewCount: reviewCount || 0
+          }
+        })
+      )
+      
+      // Filter out any null results
+      const filteredShops = shopsData.filter(shop => shop !== null) as ShopCardData[]
+      console.log(`Final search results: ${filteredShops.length} shops with matching bikes`)
+      
+      setSearchResults(filteredShops)
+    } catch (error: any) {
+      console.error("Error searching bikes:", error)
+      setError("Failed to search bikes. Please try again.")
+    } finally {
+      setLoading(false)
     }
-    
-    // Use the budget parameter for price filtering
-    if (params.budget) {
-      filteredBikes = filteredBikes.filter(bike => bike.price_per_day <= params.budget)
-    }
-    
-    // Get unique shop IDs from filtered bikes
-    const shopIds = [...new Set(filteredBikes.map(bike => bike.shop_id))]
-    
-    // Filter shops that have matching bikes
-    const filteredShops = shops.filter(shop => shopIds.includes(shop.id))
-    
-    setSearchResults(filteredShops)
   }
 
   return (
