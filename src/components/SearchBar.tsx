@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Search, Calendar, Bike, Sparkles } from "lucide-react"
 import { Button } from "./ui/Button"
-import { useMediaQuery } from "../hooks/useMediaQuery"
+import { useMediaQuery } from "@/hooks/useMediaQuery"
 
 interface SearchBarProps {
   onSearch: (searchParams: SearchParams) => void

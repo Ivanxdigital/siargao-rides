@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Star } from "lucide-react"
+import { Star, MapPin, Bike } from "lucide-react"
 import { Badge } from "./ui/Badge"
 import { Button } from "./ui/Button"
 import { motion } from "framer-motion"
@@ -14,6 +14,9 @@ interface RentalShopCardProps {
   startingPrice: number
   rating: number
   reviewCount: number
+  availableBikes?: number
+  totalBikes?: number
+  location?: string
 }
 
 const RentalShopCard = ({
@@ -23,6 +26,9 @@ const RentalShopCard = ({
   startingPrice,
   rating,
   reviewCount,
+  availableBikes,
+  totalBikes,
+  location
 }: RentalShopCardProps) => {
   const fallbackImage = "https://placehold.co/600x400/1e3b8a/white?text=Shop+Image"
   
@@ -52,14 +58,32 @@ const RentalShopCard = ({
       <div className="p-3 flex flex-col flex-grow">
         <h3 className="text-base font-bold text-foreground mb-1 line-clamp-1">{name}</h3>
         
+        {/* Location */}
+        {location && (
+          <div className="flex items-center mb-2">
+            <MapPin size={12} className="text-muted-foreground mr-1" />
+            <span className="text-xs text-muted-foreground">{location}</span>
+          </div>
+        )}
+        
         {/* Pricing */}
-        <div className="mb-3">
+        <div className="mb-2">
           <div className="flex items-baseline">
             <p className="text-lg font-semibold text-primary">₱{startingPrice}</p>
             <span className="text-xs text-muted-foreground ml-1">/day</span>
           </div>
           <p className="text-xs text-muted-foreground">Starting price</p>
         </div>
+        
+        {/* Available Bikes */}
+        {(availableBikes !== undefined && totalBikes !== undefined) && (
+          <div className="flex items-center mb-3">
+            <Bike size={12} className="text-muted-foreground mr-1" />
+            <span className="text-xs text-muted-foreground">
+              {availableBikes} of {totalBikes} bikes available
+            </span>
+          </div>
+        )}
 
         <div className="mt-auto">
           <Button asChild className="w-full text-sm py-1.5" size="sm">

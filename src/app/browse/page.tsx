@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import RentalShopCard from "@/components/RentalShopCard"
-import { Sliders, ChevronDown, ChevronUp } from "lucide-react"
+import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { getShops, getBikes } from "@/lib/api"
@@ -15,6 +15,8 @@ interface ShopWithMetadata extends RentalShop {
   reviewCount: number;
   bikeTypes: BikeCategory[];
   images: string[];
+  bikeCount: number;
+  availableBikes: number;
 }
 
 const BikeTypeCheckbox = ({ type, checked, onChange }: { type: string, checked: boolean, onChange: () => void }) => {
@@ -47,6 +49,13 @@ export default function BrowsePage() {
   const [shops, setShops] = useState<ShopWithMetadata[]>([])
   const [availableBikeTypes, setAvailableBikeTypes] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  
+  // New filter states
+  const [selectedLocation, setSelectedLocation] = useState<string>("")
+  const [locations, setLocations] = useState<string[]>([])
+  const [onlyShowAvailable, setOnlyShowAvailable] = useState<boolean>(false)
+  const [engineSizeRange, setEngineSizeRange] = useState<[number, number]>([0, 1000])
+  const [sortBy, setSortBy] = useState<string>("price_asc")
 
   // Fetch shops and bikes data
   useEffect(() => {
@@ -79,6 +88,9 @@ export default function BrowsePage() {
           // Get unique bike types
           const bikeTypes = Array.from(new Set(shopBikes.map(bike => bike.category)))
           
+          // Calculate available bikes count
+          const availableBikes = shopBikes.filter(bike => bike.is_available).length
+          
           // Collect images from bikes for this shop (or use placeholders)
           const images = shopBikes.length > 0 && shopBikes.some(bike => bike.images && bike.images.length > 0)
             ? shopBikes
@@ -95,7 +107,9 @@ export default function BrowsePage() {
             rating: 4.5, // Placeholder
             reviewCount: 0, // Placeholder
             bikeTypes,
-            images
+            images,
+            bikeCount: shopBikes.length,
+            availableBikes
           }
         })
         
@@ -104,8 +118,14 @@ export default function BrowsePage() {
           new Set(enhancedShops.flatMap(shop => shop.bikeTypes))
         )
         
+        // Gather all unique locations
+        const allLocations = Array.from(
+          new Set(enhancedShops.map(shop => shop.city))
+        )
+        
         setShops(enhancedShops)
         setAvailableBikeTypes(allBikeTypes)
+        setLocations(allLocations)
         setIsLoading(false)
       } catch (err) {
         console.error('Error fetching shop data:', err)
@@ -128,6 +148,10 @@ export default function BrowsePage() {
   const handlePriceChange = (value: [number, number]) => {
     setPriceRange(value)
   }
+  
+  const handleEngineSizeChange = (value: [number, number]) => {
+    setEngineSizeRange(value)
+  }
 
   // Apply filters
   const filteredShops = shops.filter(shop => {
@@ -149,7 +173,30 @@ export default function BrowsePage() {
       return false
     }
     
+    // Location filter
+    if (selectedLocation && shop.city !== selectedLocation) {
+      return false
+    }
+    
+    // Availability filter
+    if (onlyShowAvailable && shop.availableBikes === 0) {
+      return false
+    }
+    
     return true
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case "price_asc":
+        return a.startingPrice - b.startingPrice
+      case "price_desc":
+        return b.startingPrice - a.startingPrice
+      case "rating_desc":
+        return b.rating - a.rating
+      case "availability":
+        return b.availableBikes - a.availableBikes
+      default:
+        return 0
+    }
   })
 
   // Animation variants for staggered children
@@ -271,6 +318,11 @@ export default function BrowsePage() {
               <div className="flex items-center">
                 <Sliders size={18} className="mr-2" />
                 <span>Filters</span>
+                {(selectedBikeTypes.length > 0 || minRating > 0 || selectedLocation || onlyShowAvailable) && (
+                  <Badge className="ml-2 bg-primary/20 text-primary text-xs">
+                    Active
+                  </Badge>
+                )}
               </div>
               <motion.div
                 animate={{ rotate: showFilters ? 180 : 0 }}
@@ -291,10 +343,57 @@ export default function BrowsePage() {
             >
               {/* Desktop filters (always visible) */}
               <div className="hidden md:block sticky top-20 p-4 bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700">
-                <h2 className="text-xl font-bold mb-4">Filters</h2>
+                <h2 className="text-xl font-bold mb-4 flex items-center">
+                  <Filter size={18} className="mr-2 text-primary" />
+                  Filters
+                </h2>
                 
+                {/* Location Filter */}
                 <div className="mb-6">
-                  <h3 className="text-md font-bold mb-3">Bike Types</h3>
+                  <h3 className="text-md font-bold mb-3 flex items-center">
+                    <MapPin size={16} className="mr-1.5 text-primary/70" />
+                    Location
+                  </h3>
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-md p-2 text-sm"
+                  >
+                    <option value="">All Locations</option>
+                    {locations.map((location) => (
+                      <option key={location} value={location}>
+                        {location}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Availability Filter */}
+                <div className="mb-6">
+                  <h3 className="text-md font-bold mb-3 flex items-center">
+                    <Calendar size={16} className="mr-1.5 text-primary/70" />
+                    Availability
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="checkbox" 
+                      id="available-bikes" 
+                      checked={onlyShowAvailable}
+                      onChange={() => setOnlyShowAvailable(!onlyShowAvailable)}
+                      className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
+                    />
+                    <label htmlFor="available-bikes" className="text-sm text-gray-300">
+                      Only show rentals with available bikes
+                    </label>
+                  </div>
+                </div>
+                
+                {/* Bike Types Filter */}
+                <div className="mb-6">
+                  <h3 className="text-md font-bold mb-3 flex items-center">
+                    <BikeIcon size={16} className="mr-1.5 text-primary/70" />
+                    Bike Types
+                  </h3>
                   <div className="space-y-2">
                     {availableBikeTypes.map((type) => (
                       <BikeTypeCheckbox 
@@ -307,6 +406,7 @@ export default function BrowsePage() {
                   </div>
                 </div>
                 
+                {/* Price Range Filter */}
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3">Price Range</h3>
                   <div className="px-2">
@@ -333,6 +433,7 @@ export default function BrowsePage() {
                   </div>
                 </div>
                 
+                {/* Minimum Rating Filter */}
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3">Minimum Rating</h3>
                   <div className="px-2">
@@ -355,13 +456,32 @@ export default function BrowsePage() {
                   </div>
                 </div>
                 
-                {selectedBikeTypes.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 ? (
+                {/* Sort By Filter */}
+                <div className="mb-6">
+                  <h3 className="text-md font-bold mb-3">Sort By</h3>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-md p-2 text-sm"
+                  >
+                    <option value="price_asc">Price: Low to High</option>
+                    <option value="price_desc">Price: High to Low</option>
+                    <option value="rating_desc">Highest Rated</option>
+                    <option value="availability">Most Available Bikes</option>
+                  </select>
+                </div>
+                
+                {/* Reset Filters Button */}
+                {(selectedBikeTypes.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 || selectedLocation || onlyShowAvailable) ? (
                   <div className="mt-4">
                     <button 
                       onClick={() => {
                         setPriceRange([100, 2000])
                         setSelectedBikeTypes([])
                         setMinRating(0)
+                        setSelectedLocation("")
+                        setOnlyShowAvailable(false)
+                        setSortBy("price_asc")
                       }}
                       className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
                     >
@@ -382,8 +502,52 @@ export default function BrowsePage() {
                     exit="closed"
                     className="md:hidden overflow-hidden mb-6"
                   >
+                    {/* Location Filter (Mobile) */}
                     <div className="mb-6">
-                      <h3 className="text-md font-bold mb-3">Bike Types</h3>
+                      <h3 className="text-md font-bold mb-3 flex items-center">
+                        <MapPin size={16} className="mr-1.5 text-primary/70" />
+                        Location
+                      </h3>
+                      <select
+                        value={selectedLocation}
+                        onChange={(e) => setSelectedLocation(e.target.value)}
+                        className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-md p-2 text-sm"
+                      >
+                        <option value="">All Locations</option>
+                        {locations.map((location) => (
+                          <option key={location} value={location}>
+                            {location}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Availability Filter (Mobile) */}
+                    <div className="mb-6">
+                      <h3 className="text-md font-bold mb-3 flex items-center">
+                        <Calendar size={16} className="mr-1.5 text-primary/70" />
+                        Availability
+                      </h3>
+                      <div className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          id="mobile-available-bikes" 
+                          checked={onlyShowAvailable}
+                          onChange={() => setOnlyShowAvailable(!onlyShowAvailable)}
+                          className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
+                        />
+                        <label htmlFor="mobile-available-bikes" className="text-sm text-gray-300">
+                          Only show rentals with available bikes
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {/* Bike Types (Mobile) */}
+                    <div className="mb-6">
+                      <h3 className="text-md font-bold mb-3 flex items-center">
+                        <BikeIcon size={16} className="mr-1.5 text-primary/70" />
+                        Bike Types
+                      </h3>
                       <div className="space-y-2">
                         {availableBikeTypes.map((type) => (
                           <BikeTypeCheckbox 
@@ -396,6 +560,7 @@ export default function BrowsePage() {
                       </div>
                     </div>
                     
+                    {/* Price Range (Mobile) */}
                     <div className="mb-6">
                       <h3 className="text-md font-bold mb-3">Price Range</h3>
                       <div className="px-2">
@@ -422,6 +587,7 @@ export default function BrowsePage() {
                       </div>
                     </div>
                     
+                    {/* Minimum Rating (Mobile) */}
                     <div className="mb-6">
                       <h3 className="text-md font-bold mb-3">Minimum Rating</h3>
                       <div className="px-2">
@@ -444,13 +610,32 @@ export default function BrowsePage() {
                       </div>
                     </div>
                     
-                    {selectedBikeTypes.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 ? (
+                    {/* Sort By (Mobile) */}
+                    <div className="mb-6">
+                      <h3 className="text-md font-bold mb-3">Sort By</h3>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-md p-2 text-sm"
+                      >
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="price_desc">Price: High to Low</option>
+                        <option value="rating_desc">Highest Rated</option>
+                        <option value="availability">Most Available Bikes</option>
+                      </select>
+                    </div>
+                    
+                    {/* Reset Filters Button (Mobile) */}
+                    {(selectedBikeTypes.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 || selectedLocation || onlyShowAvailable) ? (
                       <div className="mt-4">
                         <button 
                           onClick={() => {
                             setPriceRange([100, 2000])
                             setSelectedBikeTypes([])
                             setMinRating(0)
+                            setSelectedLocation("")
+                            setOnlyShowAvailable(false)
+                            setSortBy("price_asc")
                           }}
                           className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
                         >
@@ -489,6 +674,9 @@ export default function BrowsePage() {
                       setPriceRange([100, 2000])
                       setSelectedBikeTypes([])
                       setMinRating(0)
+                      setSelectedLocation("")
+                      setOnlyShowAvailable(false)
+                      setSortBy("price_asc")
                     }}
                     className="px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded-md text-sm"
                   >
@@ -502,7 +690,9 @@ export default function BrowsePage() {
                       <span className="font-semibold">{filteredShops.length}</span> {filteredShops.length === 1 ? 'shop' : 'shops'} found
                     </p>
                     <Badge className="bg-primary/10 text-xs text-primary border-primary/20 py-1">
-                      {selectedBikeTypes.length > 0 ? `${selectedBikeTypes.length} filters applied` : 'No filters applied'}
+                      {(selectedBikeTypes.length > 0 || minRating > 0 || selectedLocation || onlyShowAvailable) 
+                        ? `Filters applied` 
+                        : 'No filters applied'}
                     </Badge>
                   </div>
                   <motion.div 
@@ -520,6 +710,9 @@ export default function BrowsePage() {
                           startingPrice={shop.startingPrice}
                           rating={shop.rating}
                           reviewCount={shop.reviewCount}
+                          availableBikes={shop.availableBikes}
+                          totalBikes={shop.bikeCount}
+                          location={shop.city}
                         />
                       </motion.div>
                     ))}
