@@ -223,6 +223,27 @@ export default function ShopPage() {
         </div>
       </div>
       
+      {/* Notice about ID requirements - moved here for better visibility */}
+      <div className="container mx-auto px-4 mt-8 mb-2 relative z-10">
+        <div className="bg-yellow-900/40 backdrop-blur-md border border-yellow-500/30 rounded-lg p-4 shadow-md">
+          <div className="flex items-start gap-3">
+            <div className="text-yellow-400 mt-0.5 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-yellow-400 font-medium text-sm md:text-base">Important Rental Information</h3>
+              <p className="text-white/90 text-xs md:text-sm mt-1">
+                Most motorbike rental shops in Siargao will request a valid ID as a deposit. These IDs are safely returned to you when you bring back the bike. Please be prepared to provide identification when renting.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* Bike Listings with improved styling */}
       <div className="container mx-auto px-4 py-12 relative z-10">
         <h2 className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-white/10">
