@@ -32,6 +32,7 @@ interface AuthContextType {
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
   resendVerificationEmail: (email: string) => Promise<VerificationResult>;
   isAdmin: boolean;
+  signInWithGoogle: () => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -46,6 +47,7 @@ const AuthContext = createContext<AuthContextType>({
   updatePassword: async () => ({ error: null }),
   resendVerificationEmail: async () => ({ error: null, success: false, details: null }),
   isAdmin: false,
+  signInWithGoogle: async () => ({ error: null }),
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -86,13 +88,84 @@ export function AuthProvider({ children }: AuthProviderProps) {
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user || null);
         
-        // Check if user is admin
+        // Check if this is a new user from Google sign-in (or other OAuth)
         if (session?.user) {
-          const role = session.user.user_metadata?.role;
+          const user = session.user;
+          
+          // If we have a Google user who doesn't have a role set
+          if (
+            user.app_metadata.provider === 'google' && 
+            (!user.user_metadata?.role || user.user_metadata.role === '')
+          ) {
+            console.log("New Google user detected, setting up profile with 'tourist' role");
+            
+            try {
+              // First, update user metadata with tourist role and name info
+              const { error: updateError } = await supabase.auth.updateUser({
+                data: {
+                  role: 'tourist',
+                  first_name: user.user_metadata.full_name?.split(' ')[0] || '',
+                  last_name: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
+                }
+              });
+              
+              if (updateError) {
+                console.error("Error updating Google user metadata:", updateError);
+              }
+              
+              // Create a record in our users table via API route
+              const apiUrl = '/api/auth/register';
+              console.log(`Calling API route ${apiUrl} for new Google user:`, {
+                userId: user.id,
+                email: user.email,
+                firstName: user.user_metadata.full_name?.split(' ')[0] || '',
+                lastName: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
+                role: 'tourist',
+              });
+              
+              const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  userId: user.id,
+                  email: user.email,
+                  firstName: user.user_metadata.full_name?.split(' ')[0] || '',
+                  lastName: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
+                  role: 'tourist',
+                }),
+              });
+              
+              if (!response.ok) {
+                let responseData;
+                try {
+                  responseData = await response.json();
+                } catch (jsonError) {
+                  responseData = { error: 'Invalid JSON response' };
+                }
+                
+                // If the record already exists, this isn't necessarily an error
+                if (response.status === 409 && responseData.error === 'Duplicate user') {
+                  console.log('User record already exists, continuing...');
+                } else {
+                  console.error('API register route error for Google user:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: responseData
+                  });
+                }
+              }
+            } catch (err) {
+              console.error("Error setting up Google user profile:", err);
+            }
+          }
+          
+          const role = user.user_metadata?.role;
           setIsAdmin(role === 'admin');
         } else {
           setIsAdmin(false);
@@ -105,7 +178,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, [supabase.auth, router]);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
@@ -471,6 +544,44 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const signInWithGoogle = async () => {
+    setIsLoading(true);
+    try {
+      console.log("Initiating Google sign-in");
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+      
+      if (error) {
+        console.error("Google sign-in error:", error);
+        return { error };
+      }
+      
+      // No error handling needed here since the user will be redirected to Google
+      return { error: null };
+    } catch (err) {
+      console.error("Unexpected Google sign-in error:", err);
+      return { 
+        error: {
+          message: err instanceof Error ? err.message : "An unexpected error occurred during Google sign-in",
+          code: "unexpected_error",
+          status: 500,
+          details: err instanceof Error ? err.stack : String(err)
+        } 
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     user,
     session,
@@ -483,6 +594,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     updatePassword,
     resendVerificationEmail,
     isAdmin,
+    signInWithGoogle,
   };
 
   return (
