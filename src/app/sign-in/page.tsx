@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ArrowRight, AlertCircle, Bug, Clock } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { motion } from "framer-motion";
 
 // Rate limit tracking
 const RATE_LIMIT_KEY = "siargao_auth_rate_limit";
@@ -376,35 +377,98 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen pt-20">
+    <motion.div 
+      className="min-h-screen pt-20"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <section className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden min-h-screen">
         {/* Background with overlay gradient */}
-        <div className="absolute inset-0 z-0 opacity-20">
+        <motion.div 
+          className="absolute inset-0 z-0 opacity-20"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
           <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
-        </div>
+        </motion.div>
         
         <div className="container mx-auto px-4 py-12 relative z-10">
-          <div className="max-w-md mx-auto">
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
-              <div className="text-center mb-6">
+          <motion.div 
+            className="max-w-md mx-auto"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ 
+              duration: 0.7, 
+              ease: [0.22, 1, 0.36, 1] 
+            }}
+          >
+            <motion.div 
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ 
+                duration: 0.5, 
+                delay: 0.3,
+                ease: [0.22, 1, 0.36, 1] 
+              }}
+              whileHover={{ 
+                boxShadow: "0 10px 25px -5px rgba(79, 70, 229, 0.1)",
+                borderColor: "rgba(79, 70, 229, 0.5)"
+              }}
+            >
+              <motion.div 
+                className="text-center mb-6"
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
                 <Badge className="mb-4 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
                   Welcome Back
                 </Badge>
-                <h1 className="text-3xl font-bold">Sign In</h1>
-                <p className="text-gray-300 mt-2">
+                <motion.h1 
+                  className="text-3xl font-bold"
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                >
+                  Sign In
+                </motion.h1>
+                <motion.p 
+                  className="text-gray-300 mt-2"
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
+                >
                   Sign in to your Siargao Rides account
-                </p>
-              </div>
+                </motion.p>
+              </motion.div>
 
               {(error || isRateLimited) && (
-                <div className={`${isRateLimited ? "bg-amber-900/20 border-amber-800 text-amber-300" : "bg-red-900/20 border-red-800 text-red-300"} border px-4 py-3 rounded-md mb-6`}>
+                <motion.div 
+                  className={`${isRateLimited ? "bg-amber-900/20 border-amber-800 text-amber-300" : "bg-red-900/20 border-red-800 text-red-300"} border px-4 py-3 rounded-md mb-6`}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   {getErrorMessage()}
-                </div>
+                </motion.div>
               )}
 
-              <form className="space-y-6" onSubmit={handleSubmit}>
+              <motion.form 
+                className="space-y-6" 
+                onSubmit={handleSubmit}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+              >
                 <div className="space-y-4">
-                  <div>
+                  <motion.div
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.9 }}
+                  >
                     <label htmlFor="email" className="block text-sm font-medium mb-1 text-gray-200">
                       Email Address
                     </label>
@@ -419,9 +483,13 @@ export default function SignInPage() {
                       placeholder="john@example.com"
                       disabled={isRateLimited && !debugMode}
                     />
-                  </div>
+                  </motion.div>
 
-                  <div>
+                  <motion.div
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 1 }}
+                  >
                     <label htmlFor="password" className="block text-sm font-medium mb-1 text-gray-200">
                       Password
                     </label>
@@ -436,10 +504,15 @@ export default function SignInPage() {
                       placeholder="••••••••"
                       disabled={isRateLimited && !debugMode}
                     />
-                  </div>
+                  </motion.div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <motion.div 
+                  className="flex items-center justify-between"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 1.1 }}
+                >
                   <div className="flex items-center">
                     <input
                       id="remember-me"
@@ -458,9 +531,14 @@ export default function SignInPage() {
                       Forgot your password?
                     </Link>
                   </div>
-                </div>
+                </motion.div>
 
-                <div>
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 1.2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <Button 
                     type="submit" 
                     className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center" 
@@ -469,20 +547,30 @@ export default function SignInPage() {
                     {isLoading ? "Signing in..." : isRateLimited ? `Wait ${cooldownTimer}s` : "Sign in"} 
                     {!isLoading && !isRateLimited && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
-                </div>
-              </form>
+                </motion.div>
+              </motion.form>
 
-              <div className="mt-6 text-center">
+              <motion.div 
+                className="mt-6 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.3 }}
+              >
                 <p className="text-sm text-gray-300">
                   Don't have an account?{" "}
                   <Link href="/sign-up" className="font-medium text-primary hover:text-primary/80">
                     Sign up
                   </Link>
                 </p>
-              </div>
+              </motion.div>
               
               {/* Debug section */}
-              <div className="mt-8 pt-6 border-t border-gray-700">
+              <motion.div 
+                className="mt-8 pt-6 border-t border-gray-700"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.4 }}
+              >
                 <button 
                   onClick={toggleDebugMode}
                   className="flex items-center space-x-1 text-xs text-gray-400 hover:text-primary"
@@ -492,7 +580,12 @@ export default function SignInPage() {
                 </button>
                 
                 {debugMode && (
-                  <div className="mt-4 space-y-4">
+                  <motion.div 
+                    className="mt-4 space-y-4"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
                     <h3 className="text-sm font-medium text-gray-300">Troubleshooting Tools</h3>
                     
                     <div className="flex space-x-2">
@@ -527,17 +620,22 @@ export default function SignInPage() {
                     )}
                     
                     {debugResponse && (
-                      <div className="mt-4 p-3 bg-gray-900/50 border border-gray-700 rounded-md text-xs overflow-auto max-h-48">
+                      <motion.div 
+                        className="mt-4 p-3 bg-gray-900/50 border border-gray-700 rounded-md text-xs overflow-auto max-h-48"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        transition={{ duration: 0.3 }}
+                      >
                         <pre className="text-gray-300 whitespace-pre-wrap break-words">{JSON.stringify(debugResponse, null, 2)}</pre>
-                      </div>
+                      </motion.div>
                     )}
-                  </div>
+                  </motion.div>
                 )}
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
-    </div>
+    </motion.div>
   );
 } 
