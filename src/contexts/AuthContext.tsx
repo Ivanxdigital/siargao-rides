@@ -25,6 +25,7 @@ interface AuthContextType {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isSettingUp: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string, role: string) => Promise<{ error: any }>;
@@ -40,6 +41,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isAuthenticated: false,
   isLoading: true,
+  isSettingUp: false,
   signIn: async () => ({ error: null }),
   signOut: async () => {},
   register: async () => ({ error: null }),
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isSettingUp, setIsSettingUp] = useState<boolean>(false);
   const supabase = createClientComponentClient();
   const router = useRouter();
 
@@ -102,6 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             (!user.user_metadata?.role || user.user_metadata.role === '')
           ) {
             console.log("New Google user detected, setting up profile with 'tourist' role");
+            setIsSettingUp(true);
             
             try {
               // First, update user metadata with tourist role and name info
@@ -115,6 +119,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               
               if (updateError) {
                 console.error("Error updating Google user metadata:", updateError);
+                throw updateError;
               }
               
               // Create a record in our users table via API route
@@ -158,20 +163,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     statusText: response.statusText,
                     data: responseData
                   });
+                  throw new Error(responseData.error || 'Failed to create user record');
                 }
               }
+
+              // Refresh the session to get updated metadata
+              const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+              if (refreshError) throw refreshError;
+              if (newSession) {
+                setSession(newSession);
+                setUser(newSession.user);
+              }
+
+              // Now redirect to dashboard
+              router.push("/dashboard");
             } catch (err) {
               console.error("Error setting up Google user profile:", err);
+              router.push("/error?message=Failed to complete user setup");
+            } finally {
+              setIsSettingUp(false);
             }
+          } else {
+            // Existing user, just update role and redirect
+            const role = user.user_metadata?.role;
+            setIsAdmin(role === 'admin');
+            setIsLoading(false);
+            router.push("/dashboard");
           }
-          
-          const role = user.user_metadata?.role;
-          setIsAdmin(role === 'admin');
         } else {
           setIsAdmin(false);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
@@ -587,6 +609,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session,
     isAuthenticated: !!user,
     isLoading,
+    isSettingUp,
     signIn,
     signOut,
     register,

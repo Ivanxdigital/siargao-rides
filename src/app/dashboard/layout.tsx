@@ -87,7 +87,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isAuthenticated, isLoading, signOut } = useAuth();
+  const { user, isAuthenticated, isLoading, isSettingUp, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -111,8 +111,8 @@ export default function DashboardLayout({
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Show loading state while checking authentication or setting up user
+  if (isLoading || isSettingUp) {
     return (
       <motion.div 
         className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center"
@@ -133,7 +133,7 @@ export default function DashboardLayout({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            Loading dashboard...
+            {isSettingUp ? "Setting up your account..." : "Loading dashboard..."}
           </motion.div>
         </div>
       </motion.div>
