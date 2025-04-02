@@ -142,9 +142,9 @@ export default function Home() {
     setError(null)
     
     try {
-      // Map the UI bike type to our database category
+      // Map the UI vehicle type to our database category
       let category: BikeCategory | undefined = undefined
-      if (params.bikeType && params.bikeType !== "Any Type") {
+      if (params.vehicleType === "motorcycle" && params.category && params.category !== "Any Type") {
         const categoryMap: Record<string, BikeCategory> = {
           "Scooter": "scooter" as BikeCategory,
           "Semi-automatic": "semi_auto" as BikeCategory,
@@ -152,7 +152,7 @@ export default function Home() {
           "Manual": "sport_bike" as BikeCategory,
           "Electric": "other" as BikeCategory
         }
-        category = categoryMap[params.bikeType]
+        category = categoryMap[params.category]
       }
       
       console.log("Searching bikes with filters:", { category, maxPrice: params.budget })

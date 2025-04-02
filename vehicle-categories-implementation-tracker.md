@@ -15,6 +15,7 @@ This document tracks our progress in implementing the multi-vehicle type system 
 | 1.4 Update rentals table | Completed | <!-- current date --> | Renamed bike_id to vehicle_id and added vehicle_type_id |
 | 1.5 Update reviews table | Completed | <!-- current date --> | Renamed bike_id to vehicle_id and added vehicle_type_id |
 | 1.6 Update favorites table | Completed | <!-- current date --> | Renamed bike_id to vehicle_id, added vehicle_type_id, and updated constraints |
+| Fix build error with dynamic routes using both `bikeId` and `vehicleId` | Complete | | Removed duplicate routes and standardized all dynamic path parameters to use `vehicleId` consistently |
 
 ### 2. TypeScript Type Definitions
 
@@ -86,6 +87,7 @@ This document tracks our progress in implementing the multi-vehicle type system 
 | Dashboard page errors with "Error fetching rentals/recent bookings" | Resolved | High | Fixed by updating all references from bikes table to vehicles table and bike_id to vehicle_id |
 | Duplicate "Manage Bikes" and "Manage Vehicles" sections in dashboard | Resolved | Medium | Removed "Manage Bikes" link from navigation and created redirects from /dashboard/bikes/* to /dashboard/vehicles/* paths |
 | Add Vehicle page error: "Error fetching categories" | Resolved | High | Fixed by correctly querying vehicle_type_id UUID from vehicle_types table instead of using numeric ID |
+| Build error with duplicate routes using both `[bikeId]` and `[vehicleId]` slugs | Resolved | High | Fixed by standardizing on `[vehicleId]` slugs, removing old `[bikeId]` routes, and updating API endpoints |
 
 ## Next Steps
 1. Implement and test migrations

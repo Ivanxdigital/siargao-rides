@@ -29,13 +29,36 @@ export async function DELETE(
       );
     }
     
-    // Get the vehicle to check ownership
-    const { data: vehicle, error: vehicleError } = await supabase
-      .from("bikes")
-      .select("*, rental_shops(owner_id)")
-      .eq("id", vehicleId)
-      .single();
-      
+    // Try to fetch from vehicles table first
+    let vehicle;
+    let vehicleError;
+    
+    try {
+      const { data, error } = await supabase
+        .from("vehicles")
+        .select("*, rental_shops(owner_id)")
+        .eq("id", vehicleId)
+        .single();
+        
+      vehicle = data;
+      vehicleError = error;
+    } catch (error) {
+      // If we reach this catch block, continue to try the bikes table
+      console.log("Error fetching from vehicles table, trying bikes table:", error);
+    }
+    
+    // If vehicle not found in vehicles table, try bikes table (for backward compatibility)
+    if (!vehicle) {
+      const { data, error } = await supabase
+        .from("bikes")
+        .select("*, rental_shops(owner_id)")
+        .eq("id", vehicleId)
+        .single();
+        
+      vehicle = data;
+      vehicleError = error;
+    }
+    
     if (vehicleError) {
       return NextResponse.json(
         { error: "Failed to fetch vehicle" },
@@ -58,30 +81,35 @@ export async function DELETE(
       );
     }
     
+    // Determine which table to delete from
+    const tableName = vehicle.vehicle_type_id ? "vehicles" : "bikes";
+    const imagesTableName = vehicle.vehicle_type_id ? "vehicle_images" : "bike_images";
+    const imagesForeignKey = vehicle.vehicle_type_id ? "vehicle_id" : "bike_id";
+    
     // Delete vehicle images first (related records)
     const { error: imagesError } = await supabase
-      .from("bike_images")
+      .from(imagesTableName)
       .delete()
-      .eq("bike_id", vehicleId);
+      .eq(imagesForeignKey, vehicleId);
     
     if (imagesError) {
-      console.error("Error deleting vehicle images:", imagesError);
+      console.error(`Error deleting ${imagesTableName}:`, imagesError);
       return NextResponse.json(
-        { error: "Failed to delete vehicle images" },
+        { error: `Failed to delete vehicle images from ${imagesTableName}` },
         { status: 500 }
       );
     }
     
     // Delete the vehicle
     const { error: deleteError } = await supabase
-      .from("bikes")
+      .from(tableName)
       .delete()
       .eq("id", vehicleId);
     
     if (deleteError) {
-      console.error("Error deleting vehicle:", deleteError);
+      console.error(`Error deleting from ${tableName}:`, deleteError);
       return NextResponse.json(
-        { error: "Failed to delete vehicle" },
+        { error: `Failed to delete vehicle from ${tableName}` },
         { status: 500 }
       );
     }
