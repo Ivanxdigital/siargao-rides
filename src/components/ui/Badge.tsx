@@ -14,6 +14,7 @@ const badgeVariants = cva(
         unavailable: "bg-destructive text-destructive-foreground",
         verified: "bg-tropical-teal text-background",
         rating: "bg-tropical-yellow text-background",
+        pending: "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 backdrop-blur-sm shadow-[0_0_15px_rgba(234,179,8,0.2)] animate-pulse-subtle",
       },
     },
     defaultVariants: {

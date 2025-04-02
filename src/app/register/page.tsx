@@ -544,19 +544,19 @@ export default function RegisterShopPage() {
           variants={fadeIn}
         >
           <motion.div 
-            className="bg-card border border-border rounded-lg p-8"
+            className="bg-card border border-border rounded-lg p-8 shadow-lg shadow-primary/5"
             variants={slideUp}
           >
             <motion.div 
-              className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4"
+              className="w-16 h-16 bg-yellow-500/20 dark:bg-yellow-900/20 rounded-full flex items-center justify-center mx-auto mb-6"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ 
                 scale: 1, 
                 opacity: 1,
                 boxShadow: [
-                  "0 0 0 rgba(34, 197, 94, 0.2)",
-                  "0 0 20px rgba(34, 197, 94, 0.4)",
-                  "0 0 0 rgba(34, 197, 94, 0.2)"
+                  "0 0 0 rgba(234, 179, 8, 0.2)",
+                  "0 0 30px rgba(234, 179, 8, 0.4)",
+                  "0 0 0 rgba(234, 179, 8, 0.2)"
                 ]
               }}
               transition={{ 
@@ -581,11 +581,11 @@ export default function RegisterShopPage() {
                   delay: 0.5
                 }}
               >
-                <Check size={32} className="text-green-600 dark:text-green-400" />
+                <Check size={32} className="text-yellow-500 dark:text-yellow-400" />
               </motion.div>
             </motion.div>
             <motion.h1 
-              className="text-2xl font-bold mb-4"
+              className="text-2xl font-bold mb-4 bg-gradient-to-r from-yellow-200 to-yellow-500 bg-clip-text text-transparent"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
@@ -596,11 +596,15 @@ export default function RegisterShopPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.9 }}
+              className="inline-block"
             >
-              <Badge variant="verified" className="mx-auto mb-6">Pending Verification</Badge>
+              <Badge variant="pending" className="text-sm px-3 py-1">
+                <span className="mr-1.5">●</span>
+                Pending Verification
+              </Badge>
             </motion.div>
             <motion.p 
-              className="text-muted-foreground mb-6"
+              className="text-muted-foreground mt-6 mb-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.1 }}
@@ -616,7 +620,7 @@ export default function RegisterShopPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.3 }}
             >
-              <Button asChild>
+              <Button asChild className="bg-card hover:bg-card/80 border border-yellow-500/30 text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
                 <Link href="/">Return to Homepage</Link>
               </Button>
             </motion.div>
