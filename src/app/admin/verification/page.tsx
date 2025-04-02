@@ -35,6 +35,71 @@ type RentalShopWithUser = {
   };
 };
 
+// Add this helper function at the top level
+const extractDocuments = (description: string) => {
+  const documents: { type: 'id' | 'permit', url: string }[] = [];
+  
+  // Extract ID URL
+  const idMatch = description.match(/ID:(https:\/\/[^\s]+)/);
+  if (idMatch) {
+    documents.push({ type: 'id', url: idMatch[1] });
+  }
+  
+  // Extract Permit URL
+  const permitMatch = description.match(/Permit:(https:\/\/[^\s]+)/);
+  if (permitMatch) {
+    documents.push({ type: 'permit', url: permitMatch[1] });
+  }
+  
+  return documents;
+};
+
+// Add this new component for displaying documents
+const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) => {
+  return (
+    <div className="relative group">
+      <div className="bg-muted/30 border border-border rounded-lg p-4 hover:border-primary/50 transition-all duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            {type === 'id' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="9" cy="10" r="2" />
+                <path d="M15 8h2" />
+                <path d="M15 12h2" />
+                <path d="M7 16h10" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6" />
+                <path d="M16 13H8" />
+                <path d="M16 17H8" />
+                <path d="M10 9H8" />
+              </svg>
+            )}
+          </div>
+          <div>
+            <h4 className="text-sm font-medium">
+              {type === 'id' ? 'Government ID' : 'Business Permit'}
+            </h4>
+            <a 
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer" 
+              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+            >
+              View Document
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        </div>
+      </div>
+      <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300" />
+    </div>
+  );
+};
+
 export default function ShopVerificationPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -219,7 +284,7 @@ export default function ShopVerificationPage() {
   }
 
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen pb-12 pt-24">
       <div className="max-w-screen-xl mx-auto px-4">
         <div className="py-8">
           <h1 className="text-3xl font-bold mb-2">Shop Verification</h1>
@@ -344,8 +409,22 @@ export default function ShopVerificationPage() {
                             
                             <div className="mb-4">
                               <h4 className="text-sm font-medium mb-2">Description</h4>
-                              <p className="text-sm">{shop.description || 'No description provided.'}</p>
+                              <p className="text-sm">
+                                {shop.description?.replace(/Documents: ID:.*$/, '').trim() || 'No description provided.'}
+                              </p>
                             </div>
+                            
+                            {/* Add document preview section */}
+                            {shop.description && (
+                              <div>
+                                <h4 className="text-sm font-medium mb-3">Uploaded Documents</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  {extractDocuments(shop.description).map((doc, index) => (
+                                    <DocumentPreview key={index} type={doc.type} url={doc.url} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                           
                           {/* Actions */}
