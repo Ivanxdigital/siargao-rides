@@ -207,17 +207,6 @@ export default function DashboardLayout({
                   variants={itemVariants}
                 >
                   <SidebarItem
-                    href="/dashboard/bookings"
-                    icon={<Calendar size={18} />}
-                    title="My Bookings"
-                    active={pathname === "/dashboard/bookings"}
-                  />
-                </motion.div>
-                <motion.div 
-                  onClick={handleLinkClick}
-                  variants={itemVariants}
-                >
-                  <SidebarItem
                     href="/profile"
                     icon={<Settings size={18} />}
                     title="Profile Settings"
@@ -244,6 +233,17 @@ export default function DashboardLayout({
                       icon={<ShoppingBag size={18} />}
                       title="My Shop"
                       active={pathname === "/dashboard/shop"}
+                    />
+                  </motion.div>
+                  <motion.div 
+                    onClick={handleLinkClick}
+                    variants={itemVariants}
+                  >
+                    <SidebarItem
+                      href="/dashboard/bookings"
+                      icon={<Calendar size={18} />}
+                      title="Manage Bookings"
+                      active={pathname === "/dashboard/bookings"}
                     />
                   </motion.div>
                   <motion.div 

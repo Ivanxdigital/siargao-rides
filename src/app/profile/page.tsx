@@ -6,7 +6,47 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { supabase } from "@/lib/supabase";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, Upload, X, Lock, Calendar, Trash2 } from "lucide-react";
+import { motion } from "framer-motion";
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } }
+};
+
+const slideUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.5 } 
+  }
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      type: "spring", 
+      stiffness: 300, 
+      damping: 20 
+    } 
+  }
+};
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -170,180 +210,234 @@ export default function ProfilePage() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="container mx-auto py-12 px-4">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-pulse">Loading profile...</div>
+      <motion.div 
+        className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <motion.div 
+            className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
+          ></motion.div>
+          <motion.div 
+            className="text-primary/80 font-medium"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            Loading profile...
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="pt-24">
-      <>
-        <div className="bg-black text-white">
-          <div className="container mx-auto px-4 py-12">
-            <h1 className="text-4xl font-bold mb-2">Profile Settings</h1>
-            <p className="text-lg">Manage your account information and preferences</p>
-          </div>
-        </div>
-        
-        <div className="container mx-auto py-12 px-4">
-          <div className="max-w-xl mx-auto">
+    <motion.div 
+      className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      {/* Background with enhanced overlay gradient */}
+      <div className="absolute inset-0 z-0 opacity-30">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-purple-900/20 to-blue-900/20"></div>
+        <motion.div 
+          className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.1 }}
+          transition={{ duration: 1 }}
+        ></motion.div>
+      </div>
+      
+      <div className="relative z-10 pt-24 pb-24 md:pb-32">
+        <div className="container mx-auto px-4 md:px-6">
+          <motion.div variants={slideUp} className="mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-white">Profile Settings</h1>
+            <p className="text-white/70 mt-2">Manage your account information and preferences</p>
+          </motion.div>
+          
+          <div className="max-w-3xl mx-auto space-y-6">
             {message && (
-              <div
-                className={`p-4 mb-6 rounded-md ${
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-4 rounded-md shadow-lg backdrop-blur-sm ${
                   message.type === "success"
-                    ? "bg-green-100 text-green-800 border border-green-300"
-                    : "bg-red-100 text-red-800 border border-red-300"
+                    ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                    : "bg-red-500/20 text-red-300 border border-red-500/30"
                 }`}
               >
                 {message.text}
-              </div>
+              </motion.div>
             )}
 
-            <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-6">
-                  {/* Profile Picture */}
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="relative group">
-                      <div 
-                        onClick={handleAvatarClick}
-                        className="cursor-pointer group-hover:ring-2 ring-primary transition-all"
-                      >
-                        <Avatar 
-                          src={avatarUrl} 
-                          alt={`${firstName} ${lastName}`} 
-                          size="lg" 
+            <motion.div 
+              className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+              variants={cardVariants}
+            >
+              <div className="p-6 md:p-8">
+                <h2 className="text-xl font-semibold mb-6 text-white/90">Personal Information</h2>
+                
+                <form onSubmit={handleSubmit}>
+                  <div className="space-y-6">
+                    {/* Profile Picture */}
+                    <div className="flex flex-col items-center space-y-4 mb-8">
+                      <div className="relative group">
+                        <div 
+                          onClick={handleAvatarClick}
+                          className="cursor-pointer group-hover:ring-2 ring-primary transition-all duration-300"
+                        >
+                          <Avatar 
+                            src={avatarUrl} 
+                            alt={`${firstName} ${lastName}`} 
+                            size="lg" 
+                          />
+                        </div>
+                        <div 
+                          className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                          onClick={handleAvatarClick}
+                        >
+                          <Camera className="text-primary" size={24} />
+                        </div>
+                        {avatarFile && (
+                          <button 
+                            type="button"
+                            onClick={removeSelectedImage}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1.5 shadow-md"
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <p className="text-sm text-white/60">
+                        Click to upload profile picture
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label htmlFor="firstName" className="block text-sm font-medium mb-2 text-white/80">
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          id="firstName"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="w-full p-3 rounded-lg border border-white/10 bg-black/30 text-white focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all duration-200"
                         />
                       </div>
-                      <div 
-                        className="absolute inset-0 bg-black bg-opacity-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                        onClick={handleAvatarClick}
-                      >
-                        <Upload className="text-white" size={20} />
+
+                      <div>
+                        <label htmlFor="lastName" className="block text-sm font-medium mb-2 text-white/80">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          id="lastName"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="w-full p-3 rounded-lg border border-white/10 bg-black/30 text-white focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all duration-200"
+                        />
                       </div>
-                      {avatarFile && (
-                        <button 
-                          type="button"
-                          onClick={removeSelectedImage}
-                          className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-1 shadow-md"
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Click to upload profile picture
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium mb-2">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        id="firstName"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className="w-full p-3 rounded-md border border-input bg-background"
-                      />
                     </div>
 
                     <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium mb-2">
-                        Last Name
+                      <label htmlFor="email" className="block text-sm font-medium mb-2 text-white/80">
+                        Email Address
                       </label>
                       <input
-                        type="text"
-                        id="lastName"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className="w-full p-3 rounded-md border border-input bg-background"
+                        type="email"
+                        id="email"
+                        value={user?.email || ""}
+                        disabled
+                        className="w-full p-3 rounded-lg border border-white/10 bg-black/50 text-white/60"
                       />
+                      <p className="mt-2 text-sm text-white/60">
+                        Contact support to change your email address
+                      </p>
+                    </div>
+
+                    <div className="pt-4">
+                      <Button 
+                        type="submit" 
+                        disabled={loading || uploading}
+                        className="bg-gradient-to-r from-black/90 to-gray-900 hover:from-primary/70 hover:to-primary/90 text-white font-medium px-6 py-2.5 border border-primary/30 rounded-lg transition-all duration-300 shadow-md"
+                      >
+                        {loading || uploading ? (
+                          <div className="flex items-center">
+                            <div className="h-4 w-4 rounded-full border-2 border-white/60 border-t-transparent animate-spin mr-2"></div>
+                            Saving...
+                          </div>
+                        ) : "Save Changes"}
+                      </Button>
                     </div>
                   </div>
-
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={user?.email || ""}
-                      disabled
-                      className="w-full p-3 rounded-md border border-input bg-muted text-muted-foreground"
-                    />
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Contact support to change your email address
-                    </p>
-                  </div>
-
-                  <div className="pt-4">
-                    <Button type="submit" disabled={loading || uploading}>
-                      {loading || uploading ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            </div>
+                </form>
+              </div>
+            </motion.div>
             
-            <div className="mt-8 bg-card border border-border rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Security</h2>
-              
-              <div className="space-y-4">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => router.push("/reset-password")}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Change Password
-                </Button>
+            <motion.div 
+              className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+              variants={cardVariants}
+            >
+              <div className="p-6 md:p-8">
+                <h2 className="text-xl font-semibold mb-6 text-white/90">Security</h2>
+                
+                <div className="space-y-4">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start bg-gradient-to-r from-black/90 to-gray-900 border-white/20 hover:border-primary/40 text-white group py-3 px-4 rounded-lg transition-all duration-300"
+                    onClick={() => router.push("/reset-password")}
+                  >
+                    <Lock className="h-4 w-4 mr-3 text-primary group-hover:scale-110 transition-transform duration-300" />
+                    <span className="group-hover:translate-x-1 transition-transform duration-300">Change Password</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start bg-gradient-to-r from-black/90 to-gray-900 border-white/20 hover:border-red-500/40 text-white group py-3 px-4 rounded-lg transition-all duration-300"
+                  >
+                    <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:scale-110 transition-transform duration-300" />
+                    <span className="group-hover:translate-x-1 transition-transform duration-300">Delete Account</span>
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+              variants={cardVariants}
+            >
+              <div className="p-6 md:p-8">
+                <h2 className="text-xl font-semibold mb-2 text-white/90">My Bookings</h2>
+                <p className="text-white/60 mb-6 text-sm">View and manage your bike rentals and booking history.</p>
                 
                 <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-destructive hover:text-destructive"
+                  variant="default" 
+                  className="w-full md:w-auto bg-gradient-to-r from-black/90 to-gray-900 hover:from-primary/70 hover:to-primary/90 text-white font-medium px-6 py-2.5 border border-primary/30 rounded-lg transition-all duration-300 shadow-md group"
+                  onClick={() => router.push("/dashboard/bookings")}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Delete Account
+                  <Calendar className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="group-hover:translate-x-0.5 transition-transform duration-300">View My Bookings</span>
                 </Button>
               </div>
-            </div>
-            
-            <div className="mt-8 bg-card border border-border rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">My Bookings</h2>
-              <p className="text-muted-foreground mb-4">View and manage your bike rentals and booking history.</p>
-              
-              <Button 
-                variant="default" 
-                className="w-full"
-                onClick={() => router.push("/my-bookings")}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                View My Bookings
-              </Button>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </>
-    </div>
+      </div>
+    </motion.div>
   );
 } 
