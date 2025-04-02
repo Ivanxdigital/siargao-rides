@@ -5,12 +5,12 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerComponentClient({ cookies });
-    const { bikeId, startDate, endDate } = await request.json();
+    const { vehicleId, vehicleTypeId, startDate, endDate } = await request.json();
 
     // Validate input
-    if (!bikeId || !startDate || !endDate) {
+    if (!vehicleId || !vehicleTypeId || !startDate || !endDate) {
       return NextResponse.json(
-        { error: 'Missing required fields: bikeId, startDate, endDate' },
+        { error: 'Missing required fields: vehicleId, vehicleTypeId, startDate, endDate' },
         { status: 400 }
       );
     }
@@ -35,24 +35,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if the bike exists
-    const { data: bike, error: bikeError } = await supabase
-      .from('motorcycles')
-      .select('id, available_for_rent')
-      .eq('id', bikeId)
+    // Check if the vehicle exists
+    const { data: vehicle, error: vehicleError } = await supabase
+      .from('vehicles')
+      .select('id, is_available, vehicle_type_id')
+      .eq('id', vehicleId)
+      .eq('vehicle_type_id', vehicleTypeId)
       .single();
 
-    if (bikeError || !bike) {
+    if (vehicleError || !vehicle) {
       return NextResponse.json(
-        { error: 'Bike not found' },
+        { error: 'Vehicle not found' },
         { status: 404 }
       );
     }
 
-    // Check if the bike is available for rent
-    if (!bike.available_for_rent) {
+    // Check if the vehicle is available for rent
+    if (!vehicle.is_available) {
       return NextResponse.json(
-        { error: 'Bike is not available for rent' },
+        { error: 'Vehicle is not available for rent' },
         { status: 409 }
       );
     }
@@ -62,7 +63,8 @@ export async function POST(request: NextRequest) {
     const { data: overlappingBookings, error: bookingError } = await supabase
       .from('rentals')
       .select('id, start_date, end_date, status')
-      .eq('motorcycle_id', bikeId)
+      .eq('vehicle_id', vehicleId)
+      .eq('vehicle_type_id', vehicleTypeId)
       .or(`status.eq.pending,status.eq.confirmed`)
       .or(
         `and(start_date.lte.${parsedEndDate.toISOString()},end_date.gte.${parsedStartDate.toISOString()})`
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If there are overlapping bookings, the bike is not available
+    // If there are overlapping bookings, the vehicle is not available
     const isAvailable = !overlappingBookings || overlappingBookings.length === 0;
 
     return NextResponse.json({

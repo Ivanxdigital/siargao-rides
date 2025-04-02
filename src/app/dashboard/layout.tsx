@@ -14,7 +14,8 @@ import {
   LogOut,
   UsersRound,
   Menu,
-  X
+  X,
+  Car
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -244,6 +245,17 @@ export default function DashboardLayout({
                       icon={<Calendar size={18} />}
                       title="Manage Bookings"
                       active={pathname === "/dashboard/bookings"}
+                    />
+                  </motion.div>
+                  <motion.div 
+                    onClick={handleLinkClick}
+                    variants={itemVariants}
+                  >
+                    <SidebarItem
+                      href="/dashboard/vehicles"
+                      icon={<Car size={18} />}
+                      title="Manage Vehicles"
+                      active={pathname === "/dashboard/vehicles"}
                     />
                   </motion.div>
                   <motion.div 

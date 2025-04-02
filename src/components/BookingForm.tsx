@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/Button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Bike, RentalShop } from "@/lib/types";
+import { Bike, RentalShop, Vehicle } from "@/lib/types";
 import { User } from "@supabase/auth-helpers-nextjs";
 import { Info, AlertCircle } from "lucide-react";
 
 interface BookingFormProps {
-  bike: Bike;
+  bike?: Bike;
+  vehicle?: Vehicle;
   shop: RentalShop;
   user: User | null;
   isAuthenticated: boolean;
@@ -23,6 +24,7 @@ interface BookingFormProps {
 
 export default function BookingForm({ 
   bike, 
+  vehicle,
   shop, 
   user, 
   isAuthenticated,
@@ -42,6 +44,9 @@ export default function BookingForm({
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const router = useRouter();
+  
+  // Use either vehicle or bike depending on which is provided
+  const rentalVehicle = vehicle || bike;
   
   // Fetch delivery options and payment methods
   useEffect(() => {
@@ -93,9 +98,23 @@ export default function BookingForm({
     }
   }, [deliveryOption, deliveryOptions, onDeliveryFeeChange]);
   
+  // Get vehicle type for UI customization
+  const getVehicleType = (): string => {
+    if (vehicle) {
+      return vehicle.vehicle_type;
+    } else {
+      return 'motorcycle'; // Default to motorcycle for bikes
+    }
+  };
+  
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!rentalVehicle) {
+      setFormError("No vehicle information found.");
+      return;
+    }
     
     // Validate required fields
     if (!startDate || !endDate) {
@@ -132,7 +151,7 @@ export default function BookingForm({
     
     // Calculate pricing
     const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const rentalPrice = bike.price_per_day * days;
+    const rentalPrice = rentalVehicle.price_per_day * days;
     const deliveryFeeAmount = deliveryOptions.find(o => o.id === deliveryOption)?.fee || 0;
     const totalPrice = rentalPrice + deliveryFeeAmount;
     
@@ -159,24 +178,33 @@ export default function BookingForm({
       // Generate a unique confirmation code
       const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
       
-      // Create a new booking record
+      // Create a new booking record - handle both vehicle and bike paths
+      let bookingData: any = {
+        shop_id: shop.id,
+        user_id: isAuthenticated ? session?.user?.id : null,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        total_price: totalPrice,
+        payment_method_id: paymentMethod,
+        delivery_option_id: deliveryOption,
+        status: "pending", // Initial status
+        payment_status: "pending", // Initial payment status
+        delivery_address: deliveryAddress,
+        confirmation_code: confirmationCode,
+        created_at: new Date().toISOString()
+      };
+      
+      // Add the right ID field based on whether we're using vehicle or bike
+      if (vehicle) {
+        bookingData.vehicle_id = vehicle.id;
+        bookingData.vehicle_type_id = vehicle.vehicle_type_id;
+      } else if (bike) {
+        bookingData.bike_id = bike.id;
+      }
+      
       const { data: booking, error } = await supabase
         .from("rentals")
-        .insert({
-          bike_id: bike.id,
-          shop_id: shop.id,
-          user_id: isAuthenticated ? session?.user?.id : null,
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          total_price: totalPrice,
-          payment_method_id: paymentMethod,
-          delivery_option_id: deliveryOption,
-          status: "pending", // Initial status
-          payment_status: "pending", // Initial payment status
-          delivery_address: deliveryAddress,
-          confirmation_code: confirmationCode,
-          created_at: new Date().toISOString()
-        })
+        .insert(bookingData)
         .select()
         .single();
       
@@ -196,6 +224,123 @@ export default function BookingForm({
       console.error("Booking error:", error);
       setFormError("An error occurred while processing your booking. Please try again.");
       setLoading(false);
+    }
+  };
+  
+  // Conditional rendering for vehicle-specific options
+  const renderVehicleSpecificOptions = () => {
+    const vehicleType = getVehicleType();
+    
+    switch(vehicleType) {
+      case 'car':
+        return (
+          <div className="space-y-4 mt-6 p-4 bg-white/5 rounded-md border border-white/10">
+            <h3 className="text-lg font-medium">Car Options</h3>
+            
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="additional-driver" 
+                className="h-4 w-4"
+              />
+              <label htmlFor="additional-driver" className="text-sm">
+                Additional Driver
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="child-seat" 
+                className="h-4 w-4"
+              />
+              <label htmlFor="child-seat" className="text-sm">
+                Child Seat (+₱200)
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="gps" 
+                className="h-4 w-4"
+              />
+              <label htmlFor="gps" className="text-sm">
+                GPS Navigation (+₱150)
+              </label>
+            </div>
+          </div>
+        );
+        
+      case 'tuktuk':
+        return (
+          <div className="space-y-4 mt-6 p-4 bg-white/5 rounded-md border border-white/10">
+            <h3 className="text-lg font-medium">Tuktuk Options</h3>
+            
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="decorated" 
+                className="h-4 w-4"
+              />
+              <label htmlFor="decorated" className="text-sm">
+                Decorated Tuktuk (+₱300)
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="tour-guide" 
+                className="h-4 w-4"
+              />
+              <label htmlFor="tour-guide" className="text-sm">
+                Tour Guide (+₱1500/day)
+              </label>
+            </div>
+          </div>
+        );
+        
+      case 'motorcycle': 
+      default:
+        return (
+          <div className="space-y-4 mt-6 p-4 bg-white/5 rounded-md border border-white/10">
+            <h3 className="text-lg font-medium">Bike Options</h3>
+            
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="helmet" 
+                className="h-4 w-4"
+              />
+              <label htmlFor="helmet" className="text-sm">
+                Extra Helmet (+₱50)
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="lock" 
+                className="h-4 w-4"
+              />
+              <label htmlFor="lock" className="text-sm">
+                Security Lock (+₱30)
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="basket" 
+                className="h-4 w-4"
+              />
+              <label htmlFor="basket" className="text-sm">
+                Storage Basket (+₱80)
+              </label>
+            </div>
+          </div>
+        );
     }
   };
   
@@ -219,6 +364,9 @@ export default function BookingForm({
           onEndDateChange={onEndDateChange}
         />
       </div>
+      
+      {/* Vehicle-specific options */}
+      {renderVehicleSpecificOptions()}
       
       {/* Delivery options */}
       <div>
@@ -253,21 +401,21 @@ export default function BookingForm({
         </div>
       </div>
       
-      {/* Show delivery address field if delivery option is selected */}
-      {deliveryOption && deliveryOptions.find(o => o.id === deliveryOption)?.name.includes('Delivery') && (
+      {/* Show delivery address field if delivery is selected */}
+      {deliveryOption && deliveryOptions.find(option => option.id === deliveryOption)?.requires_address && (
         <div>
           <h3 className="text-lg font-medium mb-2">Delivery Address</h3>
           <textarea
+            className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/50"
+            placeholder="Enter your delivery address here..."
+            rows={3}
             value={deliveryAddress}
             onChange={(e) => setDeliveryAddress(e.target.value)}
-            className="w-full p-3 bg-black/50 border-white/20 border rounded-md focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
-            rows={3}
-            placeholder="Enter your delivery address..."
           />
         </div>
       )}
       
-      {/* Payment methods */}
+      {/* Payment options */}
       <div>
         <h3 className="text-lg font-medium mb-2">Payment Method</h3>
         <div className="space-y-2">
@@ -297,54 +445,36 @@ export default function BookingForm({
         </div>
       </div>
       
-      {/* User details (if not logged in) */}
+      {/* Guest information (for non-authenticated users) */}
       {!isAuthenticated && (
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-medium">Your Details</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/sign-in?redirect=' + encodeURIComponent(window.location.pathname))}
-              type="button"
-              className="text-xs h-8"
-            >
-              Sign in instead
-            </Button>
-          </div>
-          
-          <div className="space-y-4 bg-white/5 p-4 rounded-md">
+          <h3 className="text-lg font-medium mb-2">Guest Information</h3>
+          <div className="space-y-3">
             <div>
-              <label htmlFor="guest-name" className="block text-sm font-medium mb-1 text-white/80">
-                Full Name
-              </label>
+              <label htmlFor="guest-name" className="block text-sm mb-1">Name</label>
               <input
                 id="guest-name"
                 type="text"
-                className="w-full p-2 bg-black/50 border-white/20 border rounded-md focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                placeholder="John Doe"
+                className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/50"
+                placeholder="Enter your full name"
               />
             </div>
             <div>
-              <label htmlFor="guest-email" className="block text-sm font-medium mb-1 text-white/80">
-                Email Address
-              </label>
+              <label htmlFor="guest-email" className="block text-sm mb-1">Email</label>
               <input
                 id="guest-email"
                 type="email"
-                className="w-full p-2 bg-black/50 border-white/20 border rounded-md focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                placeholder="john@example.com"
+                className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/50"
+                placeholder="Enter your email address"
               />
             </div>
             <div>
-              <label htmlFor="guest-phone" className="block text-sm font-medium mb-1 text-white/80">
-                Phone Number
-              </label>
+              <label htmlFor="guest-phone" className="block text-sm mb-1">Phone (optional)</label>
               <input
                 id="guest-phone"
                 type="tel"
-                className="w-full p-2 bg-black/50 border-white/20 border rounded-md focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                placeholder="+63 912 345 6789"
+                className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/50"
+                placeholder="Enter your phone number"
               />
             </div>
           </div>
@@ -352,32 +482,30 @@ export default function BookingForm({
       )}
       
       {/* Terms and conditions */}
-      <div className="flex items-start bg-white/5 p-4 rounded-md">
-        <input
-          type="checkbox"
-          id="terms"
-          checked={agreeToTerms}
-          onChange={(e) => setAgreeToTerms(e.target.checked)}
-          className="mt-1 mr-3"
-        />
-        <div>
-          <label htmlFor="terms" className="text-sm block mb-1 cursor-pointer">
-            I agree to the <a href="/terms" className="text-primary">terms and conditions</a>
-          </label>
-          <p className="text-xs text-white/60 flex items-start gap-1">
-            <Info size={14} className="flex-shrink-0 mt-0.5" />
-            A valid ID will be required as a deposit when picking up the bike.
-          </p>
-        </div>
+      <div className="pt-4">
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreeToTerms}
+            onChange={(e) => setAgreeToTerms(e.target.checked)}
+            className="mt-1"
+          />
+          <span className="text-sm text-white/70">
+            I agree to the <a href="#" className="text-primary hover:underline">terms and conditions</a> and understand that I will need to provide a valid ID as deposit when collecting the vehicle.
+          </span>
+        </label>
       </div>
       
-      <Button 
-        type="submit" 
-        className="w-full"
-        disabled={loading}
-      >
-        {loading ? "Processing..." : "Complete Booking"}
-      </Button>
+      {/* Submit button */}
+      <div className="pt-4">
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={loading}
+        >
+          {loading ? "Processing..." : "Confirm Booking"}
+        </Button>
+      </div>
     </form>
   );
 } 

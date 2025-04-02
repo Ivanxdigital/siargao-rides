@@ -10,7 +10,10 @@ import {
   Review, 
   Favorite,
   RentalStatus,
-  BikeImage
+  BikeImage,
+  VehicleType,
+  Vehicle,
+  VehicleCategory
 } from './types'
 
 // User-related functions
@@ -117,6 +120,138 @@ export async function createShop(shop: Omit<RentalShop, 'id' | 'created_at' | 'u
   } catch (e) {
     console.error('Exception caught in createShop:', e);
     return null;
+  }
+}
+
+// Vehicle-related functions
+export async function getVehicleTypes(): Promise<{id: string, name: VehicleType, description: string | null}[]> {
+  try {
+    const { data, error } = await supabase
+      .from('vehicle_types')
+      .select('*')
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching vehicle types:', error)
+      return []
+    }
+
+    return data || []
+  } catch (e) {
+    console.error('Exception caught in getVehicleTypes:', e)
+    return []
+  }
+}
+
+export async function getVehicles(filters?: {
+  vehicle_type?: VehicleType
+  shop_id?: string
+  category?: string
+  min_price?: number
+  max_price?: number
+  is_available?: boolean
+  seats?: number
+  transmission?: string
+}): Promise<Vehicle[]> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client is not initialized')
+    }
+
+    let query = supabase.from('vehicles').select(`
+      *,
+      vehicle_images(*),
+      vehicle_types(*)
+    `)
+
+    // Apply filters if provided
+    if (filters?.shop_id) {
+      query = query.eq('shop_id', filters.shop_id)
+    }
+
+    if (filters?.vehicle_type) {
+      query = query.eq('vehicle_type_id', filters.vehicle_type)
+    }
+
+    if (filters?.category) {
+      query = query.eq('category', filters.category)
+    }
+
+    if (filters?.is_available !== undefined) {
+      query = query.eq('is_available', filters.is_available)
+    }
+
+    if (filters?.min_price !== undefined) {
+      query = query.gte('price_per_day', filters.min_price)
+    }
+
+    if (filters?.max_price !== undefined) {
+      query = query.lte('price_per_day', filters.max_price)
+    }
+
+    // Car-specific filters
+    if (filters?.seats !== undefined) {
+      query = query.gte('seats', filters.seats)
+    }
+
+    if (filters?.transmission && filters.transmission !== 'any') {
+      query = query.eq('transmission', filters.transmission)
+    }
+
+    const { data, error } = await query.order('price_per_day')
+
+    if (error) {
+      console.error('Error fetching vehicles:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
+      throw error
+    }
+
+    if (!data) {
+      console.log('No vehicles found')
+      return []
+    }
+
+    // Transform the data to match our type
+    return data.map((vehicle: any) => ({
+      ...vehicle,
+      vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
+      images: vehicle.vehicle_images
+    }))
+  } catch (e: any) {
+    console.error('Exception caught in getVehicles:', {
+      name: e?.name || 'Unknown Error',
+      message: e?.message || 'An unknown error occurred',
+      stack: e?.stack || 'No stack trace available'
+    })
+    return []
+  }
+}
+
+export async function getVehicleById(id: string): Promise<Vehicle | null> {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select(`
+      *,
+      vehicle_images(*),
+      vehicle_types(*)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error(`Error fetching vehicle with id ${id}:`, error)
+    return null
+  }
+
+  // Transform the data to match our type
+  return {
+    ...data,
+    vehicle_type: data.vehicle_types?.name || 'motorcycle',
+    images: data.vehicle_images
   }
 }
 
@@ -380,6 +515,22 @@ export async function getBikeReviews(bikeId: string): Promise<Review[]> {
 
   if (error) {
     console.error(`Error fetching reviews for bike ${bikeId}:`, error)
+    return []
+  }
+
+  return data
+}
+
+// New function to get reviews for any vehicle type
+export async function getVehicleReviews(vehicleId: string): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('vehicle_id', vehicleId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error(`Error fetching reviews for vehicle ${vehicleId}:`, error)
     return []
   }
 

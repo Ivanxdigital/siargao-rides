@@ -6,12 +6,12 @@ import { differenceInCalendarDays } from 'date-fns';
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerComponentClient({ cookies });
-    const { bikeId, startDate, endDate, deliveryOptionId } = await request.json();
+    const { vehicleId, vehicleTypeId, startDate, endDate, deliveryOptionId } = await request.json();
 
     // Validate input
-    if (!bikeId || !startDate || !endDate) {
+    if (!vehicleId || !vehicleTypeId || !startDate || !endDate) {
       return NextResponse.json(
-        { error: 'Missing required fields: bikeId, startDate, endDate' },
+        { error: 'Missing required fields: vehicleId, vehicleTypeId, startDate, endDate' },
         { status: 400 }
       );
     }
@@ -36,16 +36,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get bike details with daily rate
-    const { data: bike, error: bikeError } = await supabase
-      .from('motorcycles')
-      .select('id, model, daily_rate, shop_id')
-      .eq('id', bikeId)
+    // Get vehicle details with price per day
+    const { data: vehicle, error: vehicleError } = await supabase
+      .from('vehicles')
+      .select('id, name, price_per_day, shop_id')
+      .eq('id', vehicleId)
+      .eq('vehicle_type_id', vehicleTypeId)
       .single();
 
-    if (bikeError || !bike) {
+    if (vehicleError || !vehicle) {
       return NextResponse.json(
-        { error: 'Bike not found' },
+        { error: 'Vehicle not found' },
         { status: 404 }
       );
     }
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate rental price
-    const rentalPrice = bike.daily_rate * days;
+    const rentalPrice = vehicle.price_per_day * days;
 
     // Get delivery fee if a delivery option was selected
     let deliveryFee = 0;
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       breakdown: {
-        dailyRate: bike.daily_rate,
+        dailyRate: vehicle.price_per_day,
         days: days,
         rentalPrice: rentalPrice,
         deliveryFee: deliveryFee,

@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Search, Calendar, Bike, Sparkles, MapPin, X } from "lucide-react"
+import { Search, Calendar, Bike, Car, Truck, Sparkles, MapPin, X } from "lucide-react"
 import { Button } from "./ui/Button"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { motion, AnimatePresence } from "framer-motion"
+import { VehicleType } from "@/lib/types"
 
 interface SearchBarProps {
   onSearch: (searchParams: SearchParams) => void
@@ -15,17 +16,19 @@ export interface SearchParams {
   startDate: string
   endDate: string
   budget: number
-  bikeType: string
+  vehicleType: VehicleType
+  category: string
 }
 
-const bikeTypes = [
-  "Any Type",
-  "Scooter",
-  "Semi-automatic",
-  "Manual",
-  "Dirt Bike",
-  "Electric"
-]
+// Vehicle types
+const vehicleTypes: VehicleType[] = ['motorcycle', 'car', 'tuktuk'];
+
+// Categories for each vehicle type
+const vehicleCategories = {
+  motorcycle: ["Any Type", "Scooter", "Semi-automatic", "Manual", "Dirt Bike", "Electric"],
+  car: ["Any Type", "Sedan", "SUV", "Van", "Pickup", "Compact"],
+  tuktuk: ["Any Type", "Standard", "Premium", "Electric"]
+};
 
 // Predefined Siargao locations
 const siargaoLocations = [
@@ -119,7 +122,8 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [budget, setBudget] = useState(500) // Default budget in PHP
-  const [bikeType, setBikeType] = useState("Any Type")
+  const [vehicleType, setVehicleType] = useState<VehicleType>('motorcycle')
+  const [category, setCategory] = useState("Any Type")
   const [activeField, setActiveField] = useState<string | null>(null)
   const [currentDate, setCurrentDate] = useState("")
   const [isSearching, setIsSearching] = useState(false)
@@ -254,6 +258,14 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
     }
   }
 
+  // Handle vehicle type change
+  const handleVehicleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newVehicleType = e.target.value as VehicleType;
+    setVehicleType(newVehicleType);
+    // Reset category when changing vehicle type
+    setCategory("Any Type");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -280,11 +292,24 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
         startDate,
         endDate,
         budget,
-        bikeType
+        vehicleType,
+        category
       })
       setIsSearching(false)
     }, 800)
   }
+
+  // Get the appropriate icon for the current vehicle type
+  const VehicleIcon = () => {
+    switch(vehicleType) {
+      case 'car':
+        return <Car size={18} className="text-white/40" />;
+      case 'tuktuk':
+        return <Truck size={18} className="text-white/40" />;
+      default:
+        return <Bike size={18} className="text-white/40" />;
+    }
+  };
 
   return (
     <motion.div 
@@ -522,7 +547,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           </motion.div>
         </motion.div>
 
-        {/* Budget and Bike Type in a grid */}
+        {/* Budget and Vehicle Type in a grid */}
         <motion.div 
           className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
           variants={itemVariants}
@@ -571,22 +596,24 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             </div>
           </motion.div>
 
-          {/* Bike Type */}
+          {/* Vehicle Type Selector */}
           <motion.div 
-            className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'bikeType' ? 'scale-[1.01]' : ''}`}
+            className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'vehicleType' ? 'scale-[1.01]' : ''}`}
             whileHover={{ scale: 1.005 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
-              <Bike size={14} className="text-primary" />
-              Bike Type
+              {vehicleType === 'motorcycle' && <Bike size={14} className="text-primary" />}
+              {vehicleType === 'car' && <Car size={14} className="text-primary" />}
+              {vehicleType === 'tuktuk' && <Truck size={14} className="text-primary" />}
+              Vehicle Type
             </label>
             <div className="relative">
               <motion.select
-                value={bikeType}
-                onChange={(e) => setBikeType(e.target.value)}
+                value={vehicleType}
+                onChange={handleVehicleTypeChange}
                 onFocus={() => {
-                  setActiveField('bikeType')
+                  setActiveField('vehicleType')
                   setShowLocations(false)
                 }}
                 onBlur={() => setActiveField(null)}
@@ -599,15 +626,56 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 }}
                 whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
               >
-                {bikeTypes.map((type) => (
+                {vehicleTypes.map((type) => (
                   <option key={type} value={type} className="bg-gray-900 text-white">
-                    {type}
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
                   </option>
                 ))}
               </motion.select>
-              <Bike size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              {vehicleType === 'motorcycle' && <Bike size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />}
+              {vehicleType === 'car' && <Car size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />}
+              {vehicleType === 'tuktuk' && <Truck size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />}
             </div>
           </motion.div>
+        </motion.div>
+
+        {/* Vehicle Category */}
+        <motion.div
+          className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'category' ? 'scale-[1.01]' : ''}`}
+          whileHover={{ scale: 1.005 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          variants={itemVariants}
+        >
+          <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
+            <Sparkles size={14} className="text-primary" />
+            {vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1)} Category
+          </label>
+          <div className="relative">
+            <motion.select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              onFocus={() => {
+                setActiveField('category')
+                setShowLocations(false)
+              }}
+              onBlur={() => setActiveField(null)}
+              className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 appearance-none text-white pl-10"
+              style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ffffff' viewBox='0 0 24 24' stroke='%23ffffff' opacity='0.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                backgroundPosition: 'right 0.75rem center',
+                backgroundSize: '1rem',
+                backgroundRepeat: 'no-repeat',
+                paddingRight: '2.5rem'
+              }}
+              whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
+            >
+              {vehicleCategories[vehicleType].map((cat) => (
+                <option key={cat} value={cat} className="bg-gray-900 text-white">
+                  {cat}
+                </option>
+              ))}
+            </motion.select>
+            <VehicleIcon />
+          </div>
         </motion.div>
 
         {/* Submit Button */}
@@ -634,7 +702,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     animate={{ rotate: 360 }}
                     transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
                   ></motion.div>
-                  <span>Finding bikes...</span>
+                  <span>Finding {vehicleType}s...</span>
                 </>
               ) : (
                 <>
@@ -644,7 +712,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   >
                     <Search size={16} className="mr-2" />
                   </motion.div>
-                  <span>Find Your Perfect Ride</span>
+                  <span>Find Your Perfect {vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1)}</span>
                 </>
               )}
             </div>

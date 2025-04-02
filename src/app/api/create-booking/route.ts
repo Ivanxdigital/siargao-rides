@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     
     // Parse request body
     const {
-      bikeId,
+      vehicleId,
+      vehicleTypeId,
       startDate,
       endDate,
       deliveryOptionId,
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     } = await request.json();
 
     // Validate input
-    if (!bikeId || !startDate || !endDate || !paymentMethodId) {
+    if (!vehicleId || !vehicleTypeId || !startDate || !endDate || !paymentMethodId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -57,25 +58,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if bike exists and get shop_id
-    const { data: bike, error: bikeError } = await supabase
-      .from('motorcycles')
-      .select('id, model, daily_rate, shop_id')
-      .eq('id', bikeId)
+    // Check if vehicle exists and get shop_id
+    const { data: vehicle, error: vehicleError } = await supabase
+      .from('vehicles')
+      .select('id, name, price_per_day, shop_id')
+      .eq('id', vehicleId)
+      .eq('vehicle_type_id', vehicleTypeId)
       .single();
 
-    if (bikeError || !bike) {
+    if (vehicleError || !vehicle) {
       return NextResponse.json(
-        { error: 'Bike not found' },
+        { error: 'Vehicle not found' },
         { status: 404 }
       );
     }
 
-    // Check bike availability
+    // Check vehicle availability
     const { data: overlappingBookings } = await supabase
       .from('rentals')
       .select('id')
-      .eq('motorcycle_id', bikeId)
+      .eq('vehicle_id', vehicleId)
+      .eq('vehicle_type_id', vehicleTypeId)
       .or(`status.eq.pending,status.eq.confirmed`)
       .or(
         `and(start_date.lte.${parsedEndDate.toISOString()},end_date.gte.${parsedStartDate.toISOString()})`
@@ -83,14 +86,14 @@ export async function POST(request: NextRequest) {
 
     if (overlappingBookings && overlappingBookings.length > 0) {
       return NextResponse.json(
-        { error: 'Bike is not available for the selected dates' },
+        { error: 'Vehicle is not available for the selected dates' },
         { status: 409 }
       );
     }
 
     // Calculate rental days and price
     const days = differenceInCalendarDays(parsedEndDate, parsedStartDate);
-    const rentalPrice = bike.daily_rate * days;
+    const rentalPrice = vehicle.price_per_day * days;
 
     // Get delivery fee if option selected
     let deliveryFee = 0;
@@ -121,8 +124,9 @@ export async function POST(request: NextRequest) {
 
     // Create booking record
     const bookingData = {
-      motorcycle_id: bikeId,
-      shop_id: bike.shop_id,
+      vehicle_id: vehicleId,
+      vehicle_type_id: vehicleTypeId,
+      shop_id: vehicle.shop_id,
       user_id: userId || null,
       start_date: parsedStartDate.toISOString(),
       end_date: parsedEndDate.toISOString(),

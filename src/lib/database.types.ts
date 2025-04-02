@@ -1,4 +1,4 @@
-import { BikeCategory, PaymentStatus, RentalStatus } from "./types";
+import { BikeCategory, PaymentStatus, RentalStatus, VehicleType } from "./types";
 
 export type Json =
   | string
@@ -175,7 +175,8 @@ export interface Database {
       rentals: {
         Row: {
           id: string
-          bike_id: string
+          vehicle_id: string
+          vehicle_type_id: string
           user_id: string
           shop_id: string
           start_date: string
@@ -188,7 +189,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          bike_id: string
+          vehicle_id: string
+          vehicle_type_id: string
           user_id: string
           shop_id: string
           start_date: string
@@ -201,7 +203,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          bike_id?: string
+          vehicle_id?: string
+          vehicle_type_id?: string
           user_id?: string
           shop_id?: string
           start_date?: string
@@ -217,7 +220,8 @@ export interface Database {
         Row: {
           id: string
           shop_id: string
-          bike_id: string | null
+          vehicle_id: string | null
+          vehicle_type_id: string | null
           user_id: string
           rental_id: string
           rating: number
@@ -230,7 +234,8 @@ export interface Database {
         Insert: {
           id?: string
           shop_id: string
-          bike_id?: string | null
+          vehicle_id?: string | null
+          vehicle_type_id?: string | null
           user_id: string
           rental_id: string
           rating: number
@@ -243,7 +248,8 @@ export interface Database {
         Update: {
           id?: string
           shop_id?: string
-          bike_id?: string | null
+          vehicle_id?: string | null
+          vehicle_type_id?: string | null
           user_id?: string
           rental_id?: string
           rating?: number
@@ -258,19 +264,22 @@ export interface Database {
         Row: {
           id: string
           user_id: string
-          bike_id: string
+          vehicle_id: string
+          vehicle_type_id: string
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          bike_id: string
+          vehicle_id: string
+          vehicle_type_id: string
           created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          bike_id?: string
+          vehicle_id?: string
+          vehicle_type_id?: string
           created_at?: string
         }
       }
@@ -280,6 +289,7 @@ export interface Database {
           name: string
           description: string | null
           icon: string | null
+          vehicle_type_id: string
           created_at: string
           updated_at: string
         }
@@ -288,6 +298,7 @@ export interface Database {
           name: string
           description?: string | null
           icon?: string | null
+          vehicle_type_id: string
           created_at?: string
           updated_at?: string
         }
@@ -296,8 +307,102 @@ export interface Database {
           name?: string
           description?: string | null
           icon?: string | null
+          vehicle_type_id?: string
           created_at?: string
           updated_at?: string
+        }
+      }
+      vehicle_types: {
+        Row: {
+          id: string
+          name: VehicleType
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: VehicleType
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: VehicleType
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      vehicles: {
+        Row: {
+          id: string
+          shop_id: string
+          vehicle_type_id: string
+          name: string
+          description: string | null
+          category_id: string
+          price_per_day: number
+          price_per_week: number | null
+          price_per_month: number | null
+          is_available: boolean
+          specifications: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          shop_id: string
+          vehicle_type_id: string
+          name: string
+          description?: string | null
+          category_id: string
+          price_per_day: number
+          price_per_week?: number | null
+          price_per_month?: number | null
+          is_available?: boolean
+          specifications?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          shop_id?: string
+          vehicle_type_id?: string
+          name?: string
+          description?: string | null
+          category_id?: string
+          price_per_day?: number
+          price_per_week?: number | null
+          price_per_month?: number | null
+          is_available?: boolean
+          specifications?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      vehicle_images: {
+        Row: {
+          id: string
+          vehicle_id: string
+          image_url: string
+          is_primary: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          vehicle_id: string
+          image_url: string
+          is_primary?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          vehicle_id?: string
+          image_url?: string
+          is_primary?: boolean
+          created_at?: string
         }
       }
     }

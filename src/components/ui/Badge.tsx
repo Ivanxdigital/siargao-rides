@@ -15,6 +15,9 @@ const badgeVariants = cva(
         verified: "bg-tropical-teal text-background",
         rating: "bg-tropical-yellow text-background",
         pending: "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 backdrop-blur-sm shadow-[0_0_15px_rgba(234,179,8,0.2)] animate-pulse-subtle",
+        motorcycle: "bg-primary/20 text-primary border border-primary/30 backdrop-blur-sm",
+        car: "bg-blue-500/20 text-blue-400 border border-blue-500/30 backdrop-blur-sm",
+        tuktuk: "bg-amber-500/20 text-amber-400 border border-amber-500/30 backdrop-blur-sm",
       },
     },
     defaultVariants: {
@@ -33,4 +36,4 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   )
 }
 
-export { Badge, badgeVariants } 
+export { Badge, badgeVariants }

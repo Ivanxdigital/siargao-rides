@@ -2,10 +2,11 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Star, MapPin, Bike } from "lucide-react"
+import { Star, MapPin, Bike, Car, Truck } from "lucide-react"
 import { Badge } from "./ui/Badge"
 import { Button } from "./ui/Button"
 import { motion } from "framer-motion"
+import { VehicleType } from "@/lib/types"
 
 interface RentalShopCardProps {
   id: string
@@ -17,6 +18,7 @@ interface RentalShopCardProps {
   availableBikes?: number
   totalBikes?: number
   location?: string
+  vehicleTypes?: VehicleType[]
 }
 
 const RentalShopCard = ({
@@ -28,7 +30,8 @@ const RentalShopCard = ({
   reviewCount,
   availableBikes,
   totalBikes,
-  location
+  location,
+  vehicleTypes = ['motorcycle']
 }: RentalShopCardProps) => {
   const fallbackImage = "https://placehold.co/600x400/1e3b8a/white?text=Shop+Image"
   
@@ -51,6 +54,25 @@ const RentalShopCard = ({
           <Star size={14} className="text-yellow-400 fill-yellow-400" />
           <span className="text-xs font-medium text-white">{rating.toFixed(1)}</span>
           <span className="text-xs text-gray-300">({reviewCount})</span>
+        </div>
+        
+        {/* Vehicle Type Badges */}
+        <div className="absolute bottom-2 left-2 flex gap-1">
+          {vehicleTypes.includes('motorcycle') && (
+            <div className="bg-primary/60 backdrop-blur-sm rounded-full p-1">
+              <Bike size={14} className="text-white" />
+            </div>
+          )}
+          {vehicleTypes.includes('car') && (
+            <div className="bg-blue-500/60 backdrop-blur-sm rounded-full p-1">
+              <Car size={14} className="text-white" />
+            </div>
+          )}
+          {vehicleTypes.includes('tuktuk') && (
+            <div className="bg-amber-500/60 backdrop-blur-sm rounded-full p-1">
+              <Truck size={14} className="text-white" />
+            </div>
+          )}
         </div>
       </div>
 
@@ -75,13 +97,26 @@ const RentalShopCard = ({
           <p className="text-xs text-muted-foreground">Starting price</p>
         </div>
         
-        {/* Available Bikes */}
+        {/* Available Vehicles */}
         {(availableBikes !== undefined && totalBikes !== undefined) && (
           <div className="flex items-center mb-3">
-            <Bike size={12} className="text-muted-foreground mr-1" />
-            <span className="text-xs text-muted-foreground">
-              {availableBikes} of {totalBikes} bikes available
-            </span>
+            {vehicleTypes.length > 1 ? (
+              <div className="text-xs text-muted-foreground flex items-center">
+                <div className="flex mr-1">
+                  {vehicleTypes.includes('motorcycle') && <Bike size={12} className="text-muted-foreground" />}
+                  {vehicleTypes.includes('car') && <Car size={12} className="text-muted-foreground ml-0.5" />}
+                  {vehicleTypes.includes('tuktuk') && <Truck size={12} className="text-muted-foreground ml-0.5" />}
+                </div>
+                <span>{availableBikes} of {totalBikes} vehicles available</span>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <Bike size={12} className="text-muted-foreground mr-1" />
+                <span className="text-xs text-muted-foreground">
+                  {availableBikes} of {totalBikes} {vehicleTypes[0] === 'motorcycle' ? 'bikes' : vehicleTypes[0] === 'car' ? 'cars' : 'tuktuks'} available
+                </span>
+              </div>
+            )}
           </div>
         )}
 

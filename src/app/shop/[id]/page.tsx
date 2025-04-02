@@ -3,23 +3,34 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
-import { Star, MapPin, Phone, Mail, MessageCircle } from "lucide-react"
-import BikeCard from "@/components/BikeCard"
+import { Star, MapPin, Phone, Mail, MessageCircle, Bike, Car, Truck } from "lucide-react"
+import VehicleCard from "@/components/VehicleCard"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import * as service from "@/lib/service"
-import { Bike, RentalShop, Review } from "@/lib/types"
+import { Vehicle, VehicleType, RentalShop, Review } from "@/lib/types"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 export default function ShopPage() {
   const { id } = useParams()
   const router = useRouter()
-  const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null)
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null)
   const [shop, setShop] = useState<RentalShop | null>(null)
-  const [bikes, setBikes] = useState<Bike[]>([])
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType | 'all'>('all')
+  
+  // Group vehicles by type
+  const motorcycles = vehicles.filter(v => v.vehicle_type === 'motorcycle')
+  const cars = vehicles.filter(v => v.vehicle_type === 'car')
+  const tuktuks = vehicles.filter(v => v.vehicle_type === 'tuktuk')
+  
+  // Check if shop has each type of vehicle
+  const hasMotorcycles = motorcycles.length > 0
+  const hasCars = cars.length > 0
+  const hasTuktuks = tuktuks.length > 0
   
   useEffect(() => {
     async function fetchShopData() {
@@ -49,30 +60,61 @@ export default function ShopPage() {
         
         setShop(shopData)
         
-        // Get bikes for this shop
-        const { data: bikesData, error: bikesError } = await supabase
-          .from('bikes')
-          .select(`
-            *,
-            bike_images(*)
-          `)
-          .eq('shop_id', id)
-          .eq('is_available', true);
+        // For backwards compatibility: Try to get vehicles first, fall back to bikes if needed
+        try {
+          // Get vehicles for this shop 
+          const { data: vehiclesData, error: vehiclesError } = await supabase
+            .from('vehicles')
+            .select(`
+              *,
+              vehicle_images(*),
+              vehicle_types(*)
+            `)
+            .eq('shop_id', id)
+            .eq('is_available', true);
+            
+          if (vehiclesError) {
+            throw vehiclesError;
+          }
           
-        if (bikesError) {
-          console.error('Error fetching bikes:', bikesError);
-          setError('Failed to load bikes')
-          setLoading(false)
-          return
+          // Transform data to match our Vehicle type
+          const formattedVehicles = vehiclesData.map(vehicle => ({
+            ...vehicle,
+            vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
+            images: vehicle.vehicle_images || []
+          }));
+          
+          setVehicles(formattedVehicles)
+        } catch (vehicleError) {
+          console.log('Error fetching vehicles, falling back to bikes:', vehicleError);
+          
+          // Fallback to bikes for backward compatibility
+          const { data: bikesData, error: bikesError } = await supabase
+            .from('bikes')
+            .select(`
+              *,
+              bike_images(*)
+            `)
+            .eq('shop_id', id)
+            .eq('is_available', true);
+            
+          if (bikesError) {
+            console.error('Error fetching bikes:', bikesError);
+            setError('Failed to load vehicles')
+            setLoading(false)
+            return
+          }
+          
+          // Transform bike data to vehicle format for compatibility
+          const formattedBikes = bikesData.map(bike => ({
+            ...bike,
+            vehicle_type: 'motorcycle' as VehicleType,
+            vehicle_type_id: '1', // Assume motorcycles have ID 1
+            images: bike.bike_images || []
+          }));
+          
+          setVehicles(formattedBikes)
         }
-        
-        // Transform data to match our Bike type
-        const formattedBikes = bikesData.map(bike => ({
-          ...bike,
-          images: bike.bike_images || []
-        }));
-        
-        setBikes(formattedBikes)
         
         // Get reviews for this shop
         const { data: reviewsData, error: reviewsError } = await supabase
@@ -97,10 +139,10 @@ export default function ShopPage() {
     fetchShopData()
   }, [id])
   
-  const handleBookClick = (bikeId: string) => {
-    setSelectedBikeId(bikeId)
-    // Navigate to the booking page with bike ID and shop ID
-    router.push(`/booking/${bikeId}?shop=${id}`)
+  const handleBookClick = (vehicleId: string) => {
+    setSelectedVehicleId(vehicleId)
+    // Navigate to the booking page with vehicle ID and shop ID
+    router.push(`/booking/${vehicleId}?shop=${id}`)
   }
 
   // Loading state
@@ -182,6 +224,25 @@ export default function ShopPage() {
               }
             </div>
             <p className="text-white/70 mt-4 max-w-2xl">{shop.description || "No description available."}</p>
+            
+            {/* Vehicle type badges */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              {hasMotorcycles && (
+                <Badge className="bg-primary/20 text-primary border-primary/30">
+                  <Bike size={14} className="mr-1" /> Motorcycles
+                </Badge>
+              )}
+              {hasCars && (
+                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                  <Car size={14} className="mr-1" /> Cars
+                </Badge>
+              )}
+              {hasTuktuks && (
+                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                  <Truck size={14} className="mr-1" /> Tuktuks
+                </Badge>
+              )}
+            </div>
           </div>
           
           {/* Contact Info Card with improved styling */}
@@ -238,39 +299,95 @@ export default function ShopPage() {
             <div>
               <h3 className="text-yellow-400 font-medium text-sm md:text-base">Important Rental Information</h3>
               <p className="text-white/90 text-xs md:text-sm mt-1">
-                Most motorbike rental shops in Siargao will request a valid ID as a deposit. These IDs are safely returned to you when you bring back the bike. Please be prepared to provide identification when renting.
+                Most rental shops in Siargao will request a valid ID as a deposit. These IDs are safely returned to you when you bring back the vehicle. Please be prepared to provide identification when renting.
               </p>
             </div>
           </div>
         </div>
       </div>
       
-      {/* Bike Listings with improved styling */}
+      {/* Vehicle Type Tabs */}
+      {vehicles.length > 0 && (
+        <div className="container mx-auto px-4 mt-8 relative z-10">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant={selectedVehicleType === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedVehicleType('all')}
+              className="rounded-full"
+            >
+              All Vehicles
+            </Button>
+            
+            {hasMotorcycles && (
+              <Button 
+                variant={selectedVehicleType === 'motorcycle' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedVehicleType('motorcycle')}
+                className="rounded-full"
+              >
+                <Bike size={14} className="mr-1" /> Motorcycles
+              </Button>
+            )}
+            
+            {hasCars && (
+              <Button 
+                variant={selectedVehicleType === 'car' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedVehicleType('car')}
+                className="rounded-full"
+              >
+                <Car size={14} className="mr-1" /> Cars
+              </Button>
+            )}
+            
+            {hasTuktuks && (
+              <Button 
+                variant={selectedVehicleType === 'tuktuk' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedVehicleType('tuktuk')}
+                className="rounded-full"
+              >
+                <Truck size={14} className="mr-1" /> Tuktuks
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Vehicle Listings with improved styling */}
       <div className="container mx-auto px-4 py-12 relative z-10">
         <h2 className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-white/10">
-          Available Bikes
+          {selectedVehicleType === 'all' ? 'Available Vehicles' : 
+           selectedVehicleType === 'motorcycle' ? 'Available Motorcycles' :
+           selectedVehicleType === 'car' ? 'Available Cars' : 'Available Tuktuks'}
         </h2>
         
-        {bikes.length === 0 ? (
+        {vehicles.length === 0 ? (
           <div className="text-center py-12 bg-black/40 backdrop-blur-sm rounded-lg border border-dashed border-white/10">
-            <p className="text-white/50">No bikes available from this shop at the moment.</p>
+            <p className="text-white/50">No vehicles available from this shop at the moment.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {bikes.map(bike => (
-              <BikeCard
-                key={bike.id}
-                id={bike.id}
-                model={bike.name}
-                images={bike.images?.map(img => img.image_url) || []}
-                prices={{
-                  daily: bike.price_per_day,
-                  weekly: bike.price_per_week,
-                  monthly: bike.price_per_month
-                }}
-                isAvailable={bike.is_available}
-                onBookClick={handleBookClick}
-              />
+            {vehicles
+              .filter(v => selectedVehicleType === 'all' || v.vehicle_type === selectedVehicleType)
+              .map(vehicle => (
+                <VehicleCard
+                  key={vehicle.id}
+                  id={vehicle.id}
+                  model={vehicle.name}
+                  vehicleType={vehicle.vehicle_type}
+                  category={vehicle.category}
+                  images={vehicle.images?.map(img => img.image_url) || []}
+                  prices={{
+                    daily: vehicle.price_per_day,
+                    weekly: vehicle.price_per_week,
+                    monthly: vehicle.price_per_month
+                  }}
+                  specifications={vehicle.specifications}
+                  isAvailable={vehicle.is_available}
+                  onBookClick={handleBookClick}
+                />
             ))}
           </div>
         )}
