@@ -158,7 +158,7 @@ export default function BookingPage() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 pt-20 md:pt-24 pb-8">
           <Button variant="ghost" onClick={goBack} className="mb-6">
             <ArrowLeft size={18} className="mr-2" />
             Back
@@ -179,7 +179,7 @@ export default function BookingPage() {
   if (error || !vehicle || !shop) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 pt-20 md:pt-24 pb-8">
           <Button variant="ghost" onClick={goBack} className="mb-6">
             <ArrowLeft size={18} className="mr-2" />
             Back
@@ -201,7 +201,7 @@ export default function BookingPage() {
   
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 pt-20 md:pt-24 pb-8">
         <Button variant="ghost" onClick={goBack} className="mb-6">
           <ArrowLeft size={18} className="mr-2" />
           Back to Shop
