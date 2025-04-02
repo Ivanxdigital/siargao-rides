@@ -9,6 +9,8 @@ import Link from "next/link";
 import { CheckCircle, XCircle, ExternalLink, AlertCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { VerifiableRentalShop } from "../types";
+import Image from "next/image";
+import { Dialog, DialogContent } from "@/components/ui/Dialog";
 
 // Add this type definition before the component function
 type RentalShopWithUser = {
@@ -56,47 +58,66 @@ const extractDocuments = (description: string) => {
 
 // Add this new component for displaying documents
 const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) => {
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  
+  // Clean the URL by removing any trailing punctuation or whitespace
+  const cleanUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+  
   return (
-    <div className="relative group">
-      <div className="bg-muted/30 border border-border rounded-lg p-4 hover:border-primary/50 transition-all duration-300">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            {type === 'id' ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="18" height="16" rx="2" />
-                <circle cx="9" cy="10" r="2" />
-                <path d="M15 8h2" />
-                <path d="M15 12h2" />
-                <path d="M7 16h10" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <path d="M14 2v6h6" />
-                <path d="M16 13H8" />
-                <path d="M16 17H8" />
-                <path d="M10 9H8" />
-              </svg>
-            )}
-          </div>
-          <div>
-            <h4 className="text-sm font-medium">
-              {type === 'id' ? 'Government ID' : 'Business Permit'}
-            </h4>
-            <a 
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer" 
-              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
-            >
-              View Document
-              <ExternalLink size={12} />
-            </a>
+    <>
+      <div className="relative group">
+        <div className="bg-muted/30 border border-border rounded-lg p-4 hover:border-primary/50 transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              {type === 'id' ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="16" rx="2" />
+                  <circle cx="9" cy="10" r="2" />
+                  <path d="M15 8h2" />
+                  <path d="M15 12h2" />
+                  <path d="M7 16h10" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <path d="M14 2v6h6" />
+                  <path d="M16 13H8" />
+                  <path d="M16 17H8" />
+                  <path d="M10 9H8" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <h4 className="text-sm font-medium">
+                {type === 'id' ? 'Government ID' : 'Business Permit'}
+              </h4>
+              <button 
+                onClick={() => setIsPreviewOpen(true)}
+                className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 group"
+              >
+                View Document
+                <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </div>
           </div>
         </div>
+        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300" />
       </div>
-      <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300" />
-    </div>
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <div className="relative w-full h-[80vh]">
+            <Image
+              src={cleanUrl}
+              alt={`${type === 'id' ? 'Government ID' : 'Business Permit'} Document`}
+              fill
+              className="object-contain"
+              unoptimized // Since we're loading from Supabase storage
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
