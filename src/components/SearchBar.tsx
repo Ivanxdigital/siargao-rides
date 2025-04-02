@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Search, Calendar, Bike, Sparkles, MapPin, X } from "lucide-react"
 import { Button } from "./ui/Button"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
-import { createPortal } from "react-dom"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface SearchBarProps {
   onSearch: (searchParams: SearchParams) => void
@@ -43,6 +43,76 @@ const siargaoLocations = [
   "Sugba Lagoon",
   "Magpupungko Rock Pools"
 ]
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.07,
+      delayChildren: 0.1,
+      duration: 0.3
+    }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+}
+
+const dropdownVariants = {
+  hidden: { opacity: 0, y: -5, height: 0 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    height: "auto",
+    transition: { 
+      duration: 0.2,
+      ease: "easeOut"
+    }
+  },
+  exit: {
+    opacity: 0,
+    y: -5,
+    height: 0,
+    transition: {
+      duration: 0.2,
+      ease: "easeIn"
+    }
+  }
+}
+
+const buttonVariants = {
+  hover: { 
+    scale: 1.02,
+    boxShadow: "0 5px 15px rgba(0, 0, 0, 0.2)",
+    transition: { 
+      type: "spring", 
+      stiffness: 400, 
+      damping: 10 
+    }
+  },
+  tap: { 
+    scale: 0.98,
+    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+    transition: { 
+      type: "spring", 
+      stiffness: 500, 
+      damping: 10 
+    }
+  }
+}
 
 const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [location, setLocation] = useState("")
@@ -217,27 +287,55 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   }
 
   return (
-    <div className="bg-black/40 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10 p-3 sm:p-4 transition-all duration-300 relative overflow-hidden group">
+    <motion.div 
+      className="bg-black/40 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10 p-3 sm:p-4 transition-all duration-300 relative overflow-hidden group"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
       {/* Animated gradient accent */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-purple-500/20 to-blue-500/30 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-500 animate-gradient-x"></div>
+      <motion.div 
+        className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-purple-500/20 to-blue-500/30 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-500 animate-gradient-x"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.2 }}
+        transition={{ duration: 0.8 }}
+      ></motion.div>
       
       {/* AI glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+      <motion.div 
+        className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.05 }}
+        transition={{ duration: 1.2, delay: 0.3 }}
+      ></motion.div>
       
-      <form ref={formRef} onSubmit={handleSubmit} className="relative space-y-3 sm:space-y-4 z-10">
-        <div className="flex items-center mb-2 sm:mb-3">
+      <motion.form 
+        ref={formRef} 
+        onSubmit={handleSubmit} 
+        className="relative space-y-3 sm:space-y-4 z-10"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div 
+          className="flex items-center mb-2 sm:mb-3"
+          variants={itemVariants}
+        >
           <Sparkles size={16} className="text-primary mr-2 animate-pulse" />
           <h3 className="text-xs sm:text-sm font-medium text-white/90">AI-Powered Search</h3>
-        </div>
+        </motion.div>
         
         {/* Location */}
-        <div className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'location' ? 'scale-[1.01]' : ''} relative`}>
+        <motion.div 
+          className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'location' ? 'scale-[1.01]' : ''} relative`}
+          variants={itemVariants}
+        >
           <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
             <MapPin size={14} className="text-primary" />
             Location
           </label>
           <div className="relative" ref={locationInputRef}>
-            <input
+            <motion.input
               type="text"
               placeholder="Where in Siargao are you staying?"
               value={location}
@@ -245,65 +343,97 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
               onFocus={handleLocationFocus}
               onKeyDown={handleLocationKeyDown}
               className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 pr-8 text-white placeholder:text-white/40"
+              whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
             />
             <MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
             
             {/* Clear button */}
             {location && (
-              <button
+              <motion.button
                 type="button"
                 onClick={handleClearLocation}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                whileHover={{ rotate: 90, transition: { duration: 0.2 } }}
+                whileTap={{ scale: 0.9 }}
               >
                 <X size={16} />
-              </button>
+              </motion.button>
             )}
             
-            {/* Simple Dropdown - directly attached to the input */}
-            {showLocations && (
-              <div 
-                ref={locationsDropdownRef}
-                className="absolute top-full left-0 right-0 mt-1 bg-black border border-gray-700 rounded-lg shadow-2xl z-[9999]"
-                style={{
-                  maxHeight: "15rem",
-                  overflowY: "auto",
-                  position: "absolute",
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.9)"
-                }}
-              >
-                {filteredLocations.length > 0 ? (
-                  filteredLocations.map((loc, index) => (
-                    <div 
-                      key={loc}
-                      className={`p-3 cursor-pointer text-base hover:bg-gray-800 ${
-                        index === keyboardIndex ? "bg-gray-800" : ""
-                      }`}
-                      onClick={() => handleLocationSelect(loc)}
-                      onMouseEnter={() => setKeyboardIndex(index)}
+            {/* Animated Dropdown */}
+            <AnimatePresence>
+              {showLocations && (
+                <motion.div 
+                  ref={locationsDropdownRef}
+                  className="absolute top-full left-0 right-0 mt-1 bg-black border border-gray-700 rounded-lg shadow-2xl z-[9999] overflow-hidden"
+                  style={{
+                    maxHeight: "15rem",
+                    overflowY: "auto",
+                    position: "absolute",
+                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.9)"
+                  }}
+                  variants={dropdownVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  {filteredLocations.length > 0 ? (
+                    filteredLocations.map((loc, index) => (
+                      <motion.div 
+                        key={loc}
+                        className={`p-3 cursor-pointer text-base hover:bg-gray-800 ${
+                          index === keyboardIndex ? "bg-gray-800" : ""
+                        }`}
+                        onClick={() => handleLocationSelect(loc)}
+                        onMouseEnter={() => setKeyboardIndex(index)}
+                        whileHover={{ backgroundColor: "rgba(75, 85, 99, 0.5)" }}
+                        initial={{ opacity: 0, x: -5 }}
+                        animate={{ 
+                          opacity: 1, 
+                          x: 0,
+                          transition: { delay: index * 0.03, duration: 0.15 }
+                        }}
+                      >
+                        <div className="flex items-center">
+                          <MapPin size={16} className="text-primary mr-2" />
+                          <span className="font-medium text-white">{loc}</span>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <motion.div 
+                      className="p-3 text-gray-300"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                     >
-                      <div className="flex items-center">
-                        <MapPin size={16} className="text-primary mr-2" />
-                        <span className="font-medium text-white">{loc}</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-3 text-gray-300">No locations found</div>
-                )}
-              </div>
-            )}
+                      No locations found
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Date Range - add margin top when dropdown is visible */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 ${showLocations ? 'mt-64 sm:mt-72' : ''} transition-all duration-200`}>
-          <div className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'startDate' ? 'scale-[1.01]' : ''}`}>
+        {/* Date Range */}
+        <motion.div 
+          className={`grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 ${showLocations ? 'mt-64 sm:mt-72' : ''} transition-all duration-200`}
+          variants={itemVariants}
+        >
+          <motion.div 
+            className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'startDate' ? 'scale-[1.01]' : ''}`}
+            whileHover={{ scale: 1.005 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
               <Calendar size={14} className="text-primary" />
               Start Date
             </label>
             <div className="relative">
-              <input
+              <motion.input
                 type="date"
                 value={startDate}
                 min={currentDate}
@@ -319,6 +449,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   colorScheme: 'dark'
                 }}
                 required
+                whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
               />
               <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
               
@@ -339,15 +470,19 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
           
-          <div className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'endDate' ? 'scale-[1.01]' : ''}`}>
+          <motion.div 
+            className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'endDate' ? 'scale-[1.01]' : ''}`}
+            whileHover={{ scale: 1.005 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
               <Calendar size={14} className="text-primary" />
               End Date
             </label>
             <div className="relative">
-              <input
+              <motion.input
                 type="date"
                 value={endDate}
                 min={startDate || currentDate}
@@ -363,6 +498,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   colorScheme: 'dark'
                 }}
                 required
+                whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
               />
               <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
               
@@ -383,19 +519,36 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 </div>
               )}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Budget and Bike Type in a grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <motion.div 
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
+          variants={itemVariants}
+        >
           {/* Budget Slider */}
-          <div className={`space-y-1 sm:space-y-2 transition-all duration-300 ${activeField === 'budget' ? 'scale-[1.01]' : ''}`}>
+          <motion.div 
+            className={`space-y-1 sm:space-y-2 transition-all duration-300 ${activeField === 'budget' ? 'scale-[1.01]' : ''}`}
+            whileHover={{ scale: 1.005 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
               <span>Daily Budget:</span>
-              <span className="ml-1 text-xs font-semibold bg-primary/20 text-primary px-2 py-0.5 rounded-md">₱{budget}</span>
+              <motion.span 
+                className="ml-1 text-xs font-semibold bg-primary/20 text-primary px-2 py-0.5 rounded-md"
+                animate={{ 
+                  scale: [1, 1.05, 1],
+                  backgroundColor: budget > 1500 ? ["rgba(139, 92, 246, 0.2)", "rgba(236, 72, 153, 0.2)", "rgba(139, 92, 246, 0.2)"] : ["rgba(139, 92, 246, 0.2)"]
+                }}
+                transition={{ duration: 0.3 }}
+                key={budget}
+              >
+                ₱{budget}
+              </motion.span>
             </label>
             <div className="px-1.5 py-0 sm:py-1">
-              <input
+              <motion.input
                 type="range"
                 min="100"
                 max="2000"
@@ -408,22 +561,28 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 }}
                 onBlur={() => setActiveField(null)}
                 className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(139,92,246,0.5)] sm:[&::-webkit-slider-thumb]:w-5 sm:[&::-webkit-slider-thumb]:h-5 touch-manipulation"
+                whileTap={{ scale: 1.02 }}
+                whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.15)" }}
               />
               <div className="flex justify-between text-[10px] text-white/40 mt-1 sm:mt-1.5 px-1">
                 <span>₱100</span>
                 <span>₱2000</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Bike Type */}
-          <div className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'bikeType' ? 'scale-[1.01]' : ''}`}>
+          <motion.div 
+            className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'bikeType' ? 'scale-[1.01]' : ''}`}
+            whileHover={{ scale: 1.005 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
             <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
               <Bike size={14} className="text-primary" />
               Bike Type
             </label>
             <div className="relative">
-              <select
+              <motion.select
                 value={bikeType}
                 onChange={(e) => setBikeType(e.target.value)}
                 onFocus={() => {
@@ -438,40 +597,59 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   backgroundRepeat: 'no-repeat',
                   paddingRight: '2.5rem'
                 }}
+                whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
               >
                 {bikeTypes.map((type) => (
                   <option key={type} value={type} className="bg-gray-900 text-white">
                     {type}
                   </option>
                 ))}
-              </select>
+              </motion.select>
               <Bike size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Submit Button */}
-        <Button 
-          type="submit" 
-          className="w-full py-2 sm:py-2.5 text-sm font-medium bg-gradient-to-r from-primary/90 to-purple-600/90 hover:from-primary hover:to-purple-600 transition-all 
-          duration-300 transform hover:scale-[1.01] active:scale-[0.99] rounded-lg shadow-md hover:shadow-lg relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
-          disabled={isSearching}
+        <motion.div
+          variants={itemVariants}
         >
-          <div className="absolute inset-0 bg-black opacity-0 hover:opacity-10 transition-opacity duration-300"></div>
-          <div className="relative flex items-center justify-center">
-            {isSearching ? (
-              <>
-                <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin mr-2"></div>
-                <span>Finding bikes...</span>
-              </>
-            ) : (
-              <>
-                <Search size={16} className="mr-2" />
-                <span>Find Your Perfect Ride</span>
-              </>
-            )}
-          </div>
-        </Button>
+          <motion.button
+            type="submit"
+            className="w-full py-2 sm:py-2.5 text-sm font-medium bg-gradient-to-r from-primary/90 to-purple-600/90 transition-all duration-300 rounded-lg shadow-md relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
+            disabled={isSearching}
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <motion.div 
+              className="absolute inset-0 bg-black opacity-0 hover:opacity-10 transition-opacity duration-300"
+              whileHover={{ opacity: 0.1 }}
+            ></motion.div>
+            <div className="relative flex items-center justify-center">
+              {isSearching ? (
+                <>
+                  <motion.div 
+                    className="w-4 h-4 rounded-full border-2 border-white border-t-transparent mr-2"
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+                  ></motion.div>
+                  <span>Finding bikes...</span>
+                </>
+              ) : (
+                <>
+                  <motion.div
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5, repeatType: "reverse" }}
+                  >
+                    <Search size={16} className="mr-2" />
+                  </motion.div>
+                  <span>Find Your Perfect Ride</span>
+                </>
+              )}
+            </div>
+          </motion.button>
+        </motion.div>
         
         {/* Add animated styles */}
         <style jsx global>{`
@@ -516,8 +694,8 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             }
           }
         `}</style>
-      </form>
-    </div>
+      </motion.form>
+    </motion.div>
   )
 }
 
