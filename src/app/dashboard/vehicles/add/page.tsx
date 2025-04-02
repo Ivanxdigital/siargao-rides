@@ -51,6 +51,7 @@ export default function AddVehiclePage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState<number>(1); // Default to motorcycle
+  const [selectedVehicleTypeUUID, setSelectedVehicleTypeUUID] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("");
   const [price, setPrice] = useState<PriceInput>("");
   const [images, setImages] = useState<ImageInput[]>([
@@ -89,16 +90,47 @@ export default function AddVehiclePage() {
     }
   }, [user, router]);
   
-  // Fetch categories when vehicle type changes
+  // Fetch vehicle type UUID when vehicleTypeId changes
+  useEffect(() => {
+    const fetchVehicleTypeUUID = async () => {
+      try {
+        const supabase = createClientComponentClient();
+        const selectedType = vehicleTypes.find(type => type.id === vehicleTypeId);
+        
+        if (selectedType) {
+          const { data, error } = await supabase
+            .from("vehicle_types")
+            .select("id")
+            .eq("name", selectedType.value)
+            .single();
+            
+          if (error) {
+            console.error("Error fetching vehicle type UUID:", error);
+            return;
+          }
+          
+          setSelectedVehicleTypeUUID(data.id);
+        }
+      } catch (err) {
+        console.error("Error in fetchVehicleTypeUUID:", err);
+      }
+    };
+    
+    fetchVehicleTypeUUID();
+  }, [vehicleTypeId]);
+  
+  // Fetch categories when vehicle type UUID changes
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        if (!selectedVehicleTypeUUID) return;
+        
         const supabase = createClientComponentClient();
         
         const { data, error } = await supabase
           .from("categories")
           .select("id, name")
-          .eq("vehicle_type_id", vehicleTypeId);
+          .eq("vehicle_type_id", selectedVehicleTypeUUID);
           
         if (error) {
           console.error("Error fetching categories:", error);
@@ -114,7 +146,7 @@ export default function AddVehiclePage() {
     };
     
     fetchCategories();
-  }, [vehicleTypeId]);
+  }, [selectedVehicleTypeUUID]);
 
   const handleAddImage = () => {
     const newId = (images.length + 1).toString();
@@ -159,6 +191,9 @@ export default function AddVehiclePage() {
       // Validation
       if (!name) {
         throw new Error("Vehicle name is required");
+      }
+      if (!selectedVehicleTypeUUID) {
+        throw new Error("Vehicle type could not be determined");
       }
       if (!price || parseInt(price) <= 0) {
         throw new Error("Price is required and must be greater than 0");
@@ -245,7 +280,7 @@ export default function AddVehiclePage() {
       const vehicleData: any = {
         name,
         description,
-        vehicle_type_id: vehicleTypeId,
+        vehicle_type_id: selectedVehicleTypeUUID,
         category_id: category,
         price_per_day: parseInt(price),
         is_available: isAvailable,

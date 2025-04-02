@@ -55,7 +55,8 @@ export default function MyBookingsPage() {
           total_price, 
           status,
           created_at,
-          bike_id,
+          vehicle_id,
+          vehicle_type_id,
           shop_id
         `)
         .eq("user_id", user!.id)
@@ -81,49 +82,60 @@ export default function MyBookingsPage() {
         const processedBookings = await Promise.all(
           rentalData.map(async (rental) => {
             try {
-              // Get bike info with all possible image fields
-              const { data: bikeData, error: bikeError } = await supabase
-                .from("bikes")
+              // Get vehicle info with all possible image fields
+              const { data: vehicleData, error: vehicleError } = await supabase
+                .from("vehicles")
                 .select("*")  // Select all fields to ensure we get all image related fields
-                .eq("id", rental.bike_id)
+                .eq("id", rental.vehicle_id)
                 .single();
                 
-              if (bikeError) {
-                console.error("Error fetching bike data:", bikeError);
+              if (vehicleError) {
+                console.error("Error fetching vehicle data:", vehicleError);
                 return {
                   ...rental,
-                  bike: { name: "Unknown Bike" },
+                  vehicle: { name: "Unknown Vehicle" },
                   shop: null
                 };
               }
               
-              console.log("Full bike data:", bikeData);
+              console.log("Full vehicle data:", vehicleData);
               
-              // Try multiple possible sources for the bike image
-              let bikeImageUrl: string | null = null;
+              // Try multiple possible sources for the vehicle image
+              let vehicleImageUrl: string | null = null;
               
-              // Check for image_url (direct field)
-              if (bikeData?.image_url) {
-                bikeImageUrl = bikeData.image_url;
+              // Check if we have vehicle images
+              const { data: vehicleImages, error: vehicleImagesError } = await supabase
+                .from("vehicle_images")
+                .select("*")
+                .eq("vehicle_id", rental.vehicle_id)
+                .eq("is_primary", true)
+                .limit(1);
+              
+              if (!vehicleImagesError && vehicleImages && vehicleImages.length > 0) {
+                vehicleImageUrl = vehicleImages[0].image_url;
+              }
+              // Fallback to other possible image sources
+              else if (vehicleData?.image_url) {
+                vehicleImageUrl = vehicleData.image_url;
               } 
               // Check for images array (structured as objects with image_url)
-              else if (bikeData?.images && Array.isArray(bikeData.images) && bikeData.images.length > 0) {
-                if (typeof bikeData.images[0] === 'string') {
-                  bikeImageUrl = bikeData.images[0];
-                } else if (bikeData.images[0]?.image_url) {
-                  bikeImageUrl = bikeData.images[0].image_url;
+              else if (vehicleData?.images && Array.isArray(vehicleData.images) && vehicleData.images.length > 0) {
+                if (typeof vehicleData.images[0] === 'string') {
+                  vehicleImageUrl = vehicleData.images[0];
+                } else if (vehicleData.images[0]?.image_url) {
+                  vehicleImageUrl = vehicleData.images[0].image_url;
                 }
               }
               // Check for main_image_url field
-              else if (bikeData?.main_image_url) {
-                bikeImageUrl = bikeData.main_image_url;
+              else if (vehicleData?.main_image_url) {
+                vehicleImageUrl = vehicleData.main_image_url;
               }
               // Check for thumbnail field
-              else if (bikeData?.thumbnail) {
-                bikeImageUrl = bikeData.thumbnail;
+              else if (vehicleData?.thumbnail) {
+                vehicleImageUrl = vehicleData.thumbnail;
               }
               
-              console.log("Final resolved bike image URL:", bikeImageUrl);
+              console.log("Final resolved vehicle image URL:", vehicleImageUrl);
               
               // Get shop info
               const { data: shopData } = await supabase
@@ -134,9 +146,9 @@ export default function MyBookingsPage() {
               
               return {
                 ...rental,
-                bike: {
-                  ...bikeData,
-                  imageUrl: bikeImageUrl
+                vehicle: {
+                  ...vehicleData,
+                  imageUrl: vehicleImageUrl
                 },
                 shop: shopData
               };
@@ -144,7 +156,7 @@ export default function MyBookingsPage() {
               console.error("Error processing booking:", error);
               return {
                 ...rental,
-                bike: { name: "Error loading bike data" },
+                vehicle: { name: "Error loading vehicle data" },
                 shop: null
               };
             }
@@ -258,7 +270,7 @@ export default function MyBookingsPage() {
       <div className="bg-black text-white">
         <div className="container mx-auto px-4 py-12">
           <h1 className="text-4xl font-bold mb-2">My Bookings</h1>
-          <p className="text-lg">Manage your bike rentals and view your booking history</p>
+          <p className="text-lg">Manage your vehicle rentals and view your booking history</p>
         </div>
       </div>
       
@@ -319,7 +331,7 @@ export default function MyBookingsPage() {
                 : "You haven't made any bookings yet."}
             </p>
             <Button asChild>
-              <Link href="/browse">Browse Bikes</Link>
+              <Link href="/browse">Browse Vehicles</Link>
             </Button>
           </div>
         ) : (
@@ -327,15 +339,15 @@ export default function MyBookingsPage() {
             {bookings.map((booking) => (
               <div key={booking.id} className="bg-white/5 border border-white/10 rounded-lg overflow-hidden hover:border-white/20 transition-colors">
                 <div className="p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6">
-                  {/* Bike Image */}
+                  {/* Vehicle Image */}
                   <div className="w-full md:w-48 h-32 rounded-md overflow-hidden flex-shrink-0 bg-gray-800">
                     <img 
-                      src={booking.bike?.imageUrl || booking.bike?.image_url || "/placeholder-bike.jpg"} 
-                      alt={booking.bike?.name || "Bike"} 
+                      src={booking.vehicle?.imageUrl || booking.vehicle?.image_url || "/placeholder.jpg"} 
+                      alt={booking.vehicle?.name || "Vehicle"} 
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         console.error("Image failed to load:", e.currentTarget.src);
-                        e.currentTarget.src = "/placeholder-bike.jpg";
+                        e.currentTarget.src = "/placeholder.jpg";
                       }}
                     />
                   </div>
@@ -344,7 +356,7 @@ export default function MyBookingsPage() {
                   <div className="flex-grow flex flex-col justify-between">
                     <div>
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-2 mb-2">
-                        <h3 className="text-xl font-semibold">{booking.bike?.name || "Bike Rental"}</h3>
+                        <h3 className="text-xl font-semibold">{booking.vehicle?.name || "Vehicle Rental"}</h3>
                         {getStatusBadge(booking.status)}
                       </div>
                       
@@ -360,7 +372,7 @@ export default function MyBookingsPage() {
                         <div className="flex items-center gap-2">
                           <Bike className="h-4 w-4 text-primary" />
                           <span className="text-sm">
-                            ₱{booking.bike?.price_per_day || 0}/day • Total: ₱{booking.total_price}
+                            ₱{booking.vehicle?.price_per_day || 0}/day • Total: ₱{booking.total_price}
                           </span>
                         </div>
                       </div>

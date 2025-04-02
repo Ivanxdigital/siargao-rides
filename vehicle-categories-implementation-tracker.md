@@ -57,14 +57,14 @@ This document tracks our progress in implementing the multi-vehicle type system 
 
 | Task | Status | Date | Notes |
 |------|--------|------|-------|
-| 6.1 Execute database migration | Pending | | |
+| 6.1 Execute database migration | Completed | May 12, 2023 | Migration scripts successfully executed in production |
 | 6.2 Deploy code changes | Pending | | |
 
 ### 9. Path Migration
 
 | Task | Status | Date | Notes |
 |------|--------|------|-------|
-| 9.1 Implement URL redirections | Pending | | |
+| 9.1 Implement URL redirections | In Progress | May 12, 2023 | Created redirects from /dashboard/bikes to /dashboard/vehicles |
 
 ## Testing Results
 
@@ -82,8 +82,15 @@ This document tracks our progress in implementing the multi-vehicle type system 
 
 | Issue | Status | Priority | Notes |
 |-------|--------|----------|-------|
-| | | | |
+| My Bookings page errors with "column rentals.bike_id does not exist" | Resolved | High | Fixed by updating references from bike_id to vehicle_id and querying the vehicles table instead of bikes table |
+| Dashboard page errors with "Error fetching rentals/recent bookings" | Resolved | High | Fixed by updating all references from bikes table to vehicles table and bike_id to vehicle_id |
+| Duplicate "Manage Bikes" and "Manage Vehicles" sections in dashboard | Resolved | Medium | Removed "Manage Bikes" link from navigation and created redirects from /dashboard/bikes/* to /dashboard/vehicles/* paths |
+| Add Vehicle page error: "Error fetching categories" | Resolved | High | Fixed by correctly querying vehicle_type_id UUID from vehicle_types table instead of using numeric ID |
 
 ## Next Steps
 1. Implement and test migrations
 2. Deploy to production 
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Update "bikes" references to "vehicles" on Shop page | Complete | Updated all instances of "bike" to "vehicle" in the shop page, including UI labels, state variables, and navigation links | 

@@ -76,10 +76,10 @@ export default function ManageShopPage() {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
-  const [bikeStats, setBikeStats] = useState({
-    totalBikes: 0,
-    availableBikes: 0,
-    rentedBikes: 0
+  const [vehicleStats, setVehicleStats] = useState({
+    totalVehicles: 0,
+    availableVehicles: 0,
+    rentedVehicles: 0
   });
   
   // New states for image uploads
@@ -150,17 +150,17 @@ export default function ManageShopPage() {
           setLogoPreview(shopData.logo_url);
         }
         
-        // Fetch bike statistics
+        // Fetch vehicle statistics
         const { data: bikes, error: bikesError } = await supabase
           .from("bikes")
           .select("*")
           .eq("shop_id", shopData.id);
         
         if (!bikesError && bikes) {
-          setBikeStats({
-            totalBikes: bikes.length,
-            availableBikes: bikes.filter(bike => bike.is_available).length,
-            rentedBikes: bikes.filter(bike => !bike.is_available).length
+          setVehicleStats({
+            totalVehicles: bikes.length,
+            availableVehicles: bikes.filter(bike => bike.is_available).length,
+            rentedVehicles: bikes.filter(bike => !bike.is_available).length
           });
         }
       } catch (error) {
@@ -914,20 +914,20 @@ export default function ManageShopPage() {
                   </div>
                 </div>
                 
-                {/* Bike Stats */}
+                {/* Vehicle Stats */}
                 <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm hover:shadow-md transition-shadow">
                   <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border">Inventory Summary</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-primary/5 rounded-lg p-5 text-center hover:shadow-md transition-shadow">
-                      <div className="text-3xl font-bold mb-1 text-primary">{bikeStats.totalBikes}</div>
-                      <div className="text-sm text-muted-foreground">Total Bikes</div>
+                      <div className="text-3xl font-bold mb-1 text-primary">{vehicleStats.totalVehicles}</div>
+                      <div className="text-sm text-muted-foreground">Total Vehicles</div>
                     </div>
                     <div className="bg-green-500/5 rounded-lg p-5 text-center hover:shadow-md transition-shadow">
-                      <div className="text-3xl font-bold mb-1 text-green-500">{bikeStats.availableBikes}</div>
+                      <div className="text-3xl font-bold mb-1 text-green-500">{vehicleStats.availableVehicles}</div>
                       <div className="text-sm text-muted-foreground">Available</div>
                     </div>
                     <div className="bg-red-500/5 rounded-lg p-5 text-center hover:shadow-md transition-shadow">
-                      <div className="text-3xl font-bold mb-1 text-red-500">{bikeStats.rentedBikes}</div>
+                      <div className="text-3xl font-bold mb-1 text-red-500">{vehicleStats.rentedVehicles}</div>
                       <div className="text-sm text-muted-foreground">Rented</div>
                     </div>
                   </div>
@@ -942,16 +942,16 @@ export default function ManageShopPage() {
                 </h2>
                 <div className="space-y-3">
                   <Button variant="outline" className="w-full justify-start hover:bg-primary/5 transition-colors" asChild>
-                    <Link href="/dashboard/bikes">
+                    <Link href="/dashboard/vehicles">
                       <span className="bg-primary/10 text-primary w-8 h-8 rounded-full inline-flex items-center justify-center mr-3">1</span>
-                      Manage Bikes
+                      Manage Vehicles
                     </Link>
                   </Button>
                   
                   <Button variant="outline" className="w-full justify-start hover:bg-primary/5 transition-colors" asChild>
-                    <Link href="/dashboard/bikes/add">
+                    <Link href="/dashboard/vehicles/add">
                       <span className="bg-primary/10 text-primary w-8 h-8 rounded-full inline-flex items-center justify-center mr-3">2</span>
-                      Add New Bike
+                      Add New Vehicle
                     </Link>
                   </Button>
                   

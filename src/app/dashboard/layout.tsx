@@ -255,18 +255,7 @@ export default function DashboardLayout({
                       href="/dashboard/vehicles"
                       icon={<Car size={18} />}
                       title="Manage Vehicles"
-                      active={pathname === "/dashboard/vehicles"}
-                    />
-                  </motion.div>
-                  <motion.div 
-                    onClick={handleLinkClick}
-                    variants={itemVariants}
-                  >
-                    <SidebarItem
-                      href="/dashboard/bikes"
-                      icon={<Bike size={18} />}
-                      title="Manage Bikes"
-                      active={pathname === "/dashboard/bikes"}
+                      active={pathname.startsWith("/dashboard/vehicles") || pathname.startsWith("/dashboard/bikes")}
                     />
                   </motion.div>
                   <motion.div 

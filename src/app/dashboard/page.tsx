@@ -23,22 +23,22 @@ import { motion } from "framer-motion";
 
 // Types for our dashboard data
 interface ShopStats {
-  totalBikes: number;
-  availableBikes: number;
-  unavailableBikes: number;
+  totalVehicles: number;
+  availableVehicles: number;
+  unavailableVehicles: number;
   activeBookings: number;
   totalRevenue: number;
 }
 
 interface UserStats {
   activeBookings: number;
-  savedBikes: number;
+  savedVehicles: number;
   profileCompletionPercentage: number;
 }
 
 interface BookingData {
   id: string;
-  bikeName: string;
+  vehicleName: string;
   customerName: string;
   startDate: string;
   endDate: string;
@@ -46,7 +46,7 @@ interface BookingData {
 }
 
 // Define types for Supabase data
-interface BikeData {
+interface VehicleData {
   id: string;
   is_available: boolean;
   price_per_day: number;
@@ -58,7 +58,7 @@ interface RentalData {
   end_date: string;
   status: string;
   total_price?: number;
-  bikes?: {
+  vehicles?: {
     name: string;
   };
   users?: {
@@ -110,15 +110,15 @@ export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [shopStats, setShopStats] = useState<ShopStats>({
-    totalBikes: 0,
-    availableBikes: 0,
-    unavailableBikes: 0,
+    totalVehicles: 0,
+    availableVehicles: 0,
+    unavailableVehicles: 0,
     activeBookings: 0,
     totalRevenue: 0
   });
   const [userStats, setUserStats] = useState<UserStats>({
     activeBookings: 0,
-    savedBikes: 0,
+    savedVehicles: 0,
     profileCompletionPercentage: 40 // Default value
   });
   const [recentBookings, setRecentBookings] = useState<BookingData[]>([]);
@@ -183,24 +183,24 @@ export default function DashboardPage() {
       
       const shopId = shops.id;
       
-      // 2. Get bike statistics
-      const { data: bikes, error: bikesError } = await supabase
-        .from("bikes")
+      // 2. Get vehicle statistics
+      const { data: vehicles, error: vehiclesError } = await supabase
+        .from("vehicles")
         .select("id, is_available, price_per_day")
         .eq("shop_id", shopId);
       
-      if (bikesError) {
-        console.error("Error fetching bikes:", bikesError);
+      if (vehiclesError) {
+        console.error("Error fetching vehicles:", vehiclesError);
         return;
       }
       
-      console.log("Bikes data:", bikes); // Debug log
+      console.log("Vehicles data:", vehicles); // Debug log
       
-      const totalBikes = bikes?.length || 0;
-      const availableBikes = bikes?.filter((bike: any) => bike.is_available).length || 0;
+      const totalVehicles = vehicles?.length || 0;
+      const availableVehicles = vehicles?.filter((vehicle: any) => vehicle.is_available).length || 0;
       
-      console.log("Total bikes:", totalBikes); // Debug log
-      console.log("Available bikes:", availableBikes); // Debug log
+      console.log("Total vehicles:", totalVehicles); // Debug log
+      console.log("Available vehicles:", availableVehicles); // Debug log
       
       // 3. Get active bookings
       const { data: activeBookings, error: bookingsError } = await supabase
@@ -236,7 +236,7 @@ export default function DashboardPage() {
         // First get basic rental info
         const { data: rentalsData, error: rentalsError } = await supabase
           .from("rentals")
-          .select("id, start_date, end_date, status, bike_id, user_id")
+          .select("id, start_date, end_date, status, vehicle_id, user_id")
           .eq("shop_id", shopId)
           .order("created_at", { ascending: false })
           .limit(5);
@@ -250,19 +250,19 @@ export default function DashboardPage() {
         if (rentalsData && rentalsData.length > 0) {
           // Format the bookings with placeholder data first
           const formattedBookings = await Promise.all(rentalsData.map(async (rental) => {
-            let bikeName = "Unknown Bike";
+            let vehicleName = "Unknown Vehicle";
             let customerName = "Guest";
             
-            // Get bike name
-            if (rental.bike_id) {
-              const { data: bikeData } = await supabase
-                .from("bikes")
+            // Get vehicle name
+            if (rental.vehicle_id) {
+              const { data: vehicleData } = await supabase
+                .from("vehicles")
                 .select("name")
-                .eq("id", rental.bike_id)
+                .eq("id", rental.vehicle_id)
                 .single();
                 
-              if (bikeData) {
-                bikeName = bikeData.name || "Unknown Bike";
+              if (vehicleData) {
+                vehicleName = vehicleData.name || "Unknown Vehicle";
               }
             }
             
@@ -281,7 +281,7 @@ export default function DashboardPage() {
             
             return {
               id: rental.id,
-              bikeName,
+              vehicleName,
               customerName,
               startDate: rental.start_date,
               endDate: rental.end_date,
@@ -299,9 +299,9 @@ export default function DashboardPage() {
       
       // Update state with all the shop owner data
       setShopStats({
-        totalBikes,
-        availableBikes,
-        unavailableBikes: totalBikes - availableBikes,
+        totalVehicles,
+        availableVehicles,
+        unavailableVehicles: totalVehicles - availableVehicles,
         activeBookings: activeBookings?.length || 0,
         totalRevenue
       });
@@ -326,8 +326,8 @@ export default function DashboardPage() {
         return;
       }
       
-      // 2. Get user's saved bikes (favorites)
-      const { data: savedBikes, error: favoritesError } = await supabase
+      // 2. Get user's saved vehicles (favorites)
+      const { data: savedVehicles, error: favoritesError } = await supabase
         .from("favorites")
         .select("id")
         .eq("user_id", user!.id);
@@ -355,7 +355,7 @@ export default function DashboardPage() {
       // Update state with all the user data
       setUserStats({
         activeBookings: activeBookings?.length || 0,
-        savedBikes: savedBikes?.length || 0,
+        savedVehicles: savedVehicles?.length || 0,
         profileCompletionPercentage
       });
     } catch (err) {
@@ -394,7 +394,7 @@ export default function DashboardPage() {
         </h1>
         <p className="text-white/70 text-sm md:text-base">
           {isShopOwner
-            ? "Manage your shop, bikes, and bookings from your dashboard."
+            ? "Manage your shop, vehicles, and bookings from your dashboard."
             : "Manage your bookings, favorites, and account settings."}
         </p>
       </motion.div>
@@ -422,12 +422,12 @@ export default function DashboardPage() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Bikes</h2>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Vehicles</h2>
                   <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                     {isDataLoading ? (
                       <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
                     ) : (
-                      shopStats.totalBikes
+                      shopStats.totalVehicles
                     )}
                   </div>
                 </div>
@@ -436,10 +436,10 @@ export default function DashboardPage() {
                 </div>
               </div>
               <Link 
-                href="/dashboard/bikes" 
+                href="/dashboard/vehicles" 
                 className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
               >
-                View all bikes
+                View all vehicles
                 <ChevronRight size={12} />
               </Link>
             </motion.div>
@@ -455,7 +455,7 @@ export default function DashboardPage() {
                     {isDataLoading ? (
                       <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
                     ) : (
-                      shopStats.availableBikes
+                      shopStats.availableVehicles
                     )}
                   </div>
                 </div>
@@ -464,7 +464,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="text-xs text-white/60 mt-1">
-                {Math.round((shopStats.availableBikes / (shopStats.totalBikes || 1)) * 100) || 0}% of your fleet
+                {Math.round((shopStats.availableVehicles / (shopStats.totalVehicles || 1)) * 100) || 0}% of your fleet
               </p>
             </motion.div>
 
@@ -550,7 +550,7 @@ export default function DashboardPage() {
               </div>
               <p className="text-xs text-white/60 mt-1">
                 {userStats.activeBookings === 0 
-                  ? "No bikes currently rented" 
+                  ? "No vehicles currently rented" 
                   : userStats.activeBookings === 1
                     ? "You have 1 active booking"
                     : `You have ${userStats.activeBookings} active bookings`
@@ -564,12 +564,12 @@ export default function DashboardPage() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Saved Bikes</h2>
+                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Saved Vehicles</h2>
                   <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                     {isDataLoading ? (
                       <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
                     ) : (
-                      userStats.savedBikes
+                      userStats.savedVehicles
                     )}
                   </div>
                 </div>
@@ -578,11 +578,11 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="text-xs text-white/60 mt-1">
-                {userStats.savedBikes === 0 
-                  ? "No bikes saved to favorites" 
-                  : userStats.savedBikes === 1
-                    ? "You have 1 saved bike"
-                    : `You have ${userStats.savedBikes} saved bikes`
+                {userStats.savedVehicles === 0 
+                  ? "No vehicles saved to favorites" 
+                  : userStats.savedVehicles === 1
+                    ? "You have 1 saved vehicle"
+                    : `You have ${userStats.savedVehicles} saved vehicles`
                 }
               </p>
             </motion.div>
@@ -653,12 +653,12 @@ export default function DashboardPage() {
             {isShopOwner ? (
               <>
                 <motion.div variants={cardVariants}>
-                  <Link href="/dashboard/bikes/add" className="group">
+                  <Link href="/dashboard/vehicles/add" className="group">
                     <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
                       <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
                         <PlusCircle size={20} className="text-primary" />
                       </div>
-                      <span className="font-medium text-white/90 text-sm md:text-base">Add New Bike</span>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Add New Vehicle</span>
                     </div>
                   </Link>
                 </motion.div>
@@ -673,12 +673,12 @@ export default function DashboardPage() {
                   </Link>
                 </motion.div>
                 <motion.div variants={cardVariants}>
-                  <Link href="/dashboard/bikes" className="group">
+                  <Link href="/dashboard/vehicles" className="group">
                     <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
                       <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
                         <Bike size={20} className="text-primary" />
                       </div>
-                      <span className="font-medium text-white/90 text-sm md:text-base">Manage Bikes</span>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Manage Vehicles</span>
                     </div>
                   </Link>
                 </motion.div>
@@ -701,7 +701,7 @@ export default function DashboardPage() {
                       <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
                         <Bike size={20} className="text-primary" />
                       </div>
-                      <span className="font-medium text-white/90 text-sm md:text-base">Browse Bikes</span>
+                      <span className="font-medium text-white/90 text-sm md:text-base">Browse Vehicles</span>
                     </div>
                   </Link>
                 </motion.div>
@@ -777,7 +777,7 @@ export default function DashboardPage() {
                     <thead>
                       <tr className="border-b border-white/10">
                         <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                          Bike
+                          Vehicle
                         </th>
                         <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider hidden sm:table-cell">
                           Customer
@@ -807,7 +807,7 @@ export default function DashboardPage() {
                               <div className="h-7 w-7 md:h-8 md:w-8 bg-primary/20 rounded-full flex items-center justify-center mr-2">
                                 <Bike size={14} className="text-primary" />
                               </div>
-                              <span className="font-medium text-white/90 text-sm">{booking.bikeName}</span>
+                              <span className="font-medium text-white/90 text-sm">{booking.vehicleName}</span>
                             </div>
                           </td>
                           <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap hidden sm:table-cell">
@@ -886,7 +886,7 @@ export default function DashboardPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
               <div>
                 <h2 className="text-lg md:text-xl font-semibold mb-2 text-white">
-                  Own a Motorbike Rental Shop?
+                  Own a Vehicle Rental Shop?
                 </h2>
                 <p className="text-white/70 text-xs md:text-sm max-w-xl">
                   List your shop on Siargao Rides to reach more tourists and
