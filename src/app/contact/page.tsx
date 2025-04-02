@@ -4,6 +4,44 @@ import { useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { Mail, MapPin, MessageCircle } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
+import { motion } from "framer-motion"
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.1,
+      duration: 0.5
+    }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20
+    }
+  }
+}
+
+const fadeInVariants = {
+  hidden: { opacity: 0, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      duration: 0.5
+    }
+  }
+}
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -38,29 +76,62 @@ export default function ContactPage() {
   }
   
   return (
-    <div className="min-h-screen pt-20">
+    <motion.div 
+      className="min-h-screen pt-20"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       <section className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden min-h-screen">
         {/* Background with overlay gradient */}
-        <div className="absolute inset-0 z-0 opacity-20">
+        <motion.div 
+          className="absolute inset-0 z-0 opacity-20"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.2 }}
+          transition={{ duration: 1.2 }}
+        >
           <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
-        </div>
+        </motion.div>
         
         <div className="container mx-auto px-4 py-12 relative z-10">
-          <div className="text-center mb-8">
+          <motion.div 
+            className="text-center mb-8"
+            variants={itemVariants}
+          >
             <Badge className="mb-4 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
               Get In Touch
             </Badge>
-            <h1 className="text-3xl font-bold">Contact Us</h1>
-            <p className="text-gray-300 mt-2 max-w-2xl mx-auto">
+            <motion.h1 
+              className="text-3xl font-bold"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              Contact Us
+            </motion.h1>
+            <motion.p 
+              className="text-gray-300 mt-2 max-w-2xl mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
               Have questions or feedback? We'd love to hear from you.
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Contact Form */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <motion.div 
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+              variants={itemVariants}
+            >
               {isSubmitted ? (
-                <div className="text-center py-8">
+                <motion.div 
+                  className="text-center py-8"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                >
                   <h2 className="text-xl font-semibold mb-4">Thank You!</h2>
                   <p className="text-gray-300 mb-6">
                     Your message has been sent successfully. We'll get back to you as soon as possible.
@@ -68,10 +139,13 @@ export default function ContactPage() {
                   <Button asChild className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm">
                     <a href="/">Return to Homepage</a>
                   </Button>
-                </div>
+                </motion.div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
+                <motion.form 
+                  onSubmit={handleSubmit} 
+                  className="space-y-4"
+                >
+                  <motion.div variants={fadeInVariants}>
                     <label htmlFor="name" className="block text-sm font-medium mb-1 text-gray-200">
                       Your Name
                     </label>
@@ -84,9 +158,9 @@ export default function ContactPage() {
                       className="appearance-none block w-full px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-white"
                       required
                     />
-                  </div>
+                  </motion.div>
                   
-                  <div>
+                  <motion.div variants={fadeInVariants}>
                     <label htmlFor="email" className="block text-sm font-medium mb-1 text-gray-200">
                       Email Address
                     </label>
@@ -99,9 +173,9 @@ export default function ContactPage() {
                       className="appearance-none block w-full px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-white"
                       required
                     />
-                  </div>
+                  </motion.div>
                   
-                  <div>
+                  <motion.div variants={fadeInVariants}>
                     <label htmlFor="message" className="block text-sm font-medium mb-1 text-gray-200">
                       Your Message
                     </label>
@@ -114,25 +188,38 @@ export default function ContactPage() {
                       className="appearance-none block w-full px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-white"
                       required
                     ></textarea>
-                  </div>
+                  </motion.div>
                   
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
-                    disabled={isSubmitting}
+                  <motion.div
+                    variants={fadeInVariants}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    {isSubmitting ? "Sending..." : "Send Message"}
-                  </Button>
-                </form>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Sending..." : "Send Message"}
+                    </Button>
+                  </motion.div>
+                </motion.form>
               )}
-            </div>
+            </motion.div>
             
             {/* Contact Info */}
             <div className="space-y-6">
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+              <motion.div 
+                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+                variants={itemVariants}
+              >
                 <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3">
+                  <motion.div 
+                    className="flex items-start gap-3"
+                    variants={fadeInVariants}
+                    whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                  >
                     <MapPin size={20} className="text-primary mt-1" />
                     <div>
                       <h3 className="font-medium text-gray-200">Address</h3>
@@ -142,9 +229,13 @@ export default function ContactPage() {
                         Philippines
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                   
-                  <div className="flex items-start gap-3">
+                  <motion.div 
+                    className="flex items-start gap-3"
+                    variants={fadeInVariants}
+                    whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                  >
                     <Mail size={20} className="text-primary mt-1" />
                     <div>
                       <h3 className="font-medium text-gray-200">Email</h3>
@@ -155,9 +246,13 @@ export default function ContactPage() {
                         info@siargaorides.com
                       </a>
                     </div>
-                  </div>
+                  </motion.div>
                   
-                  <div className="flex items-start gap-3">
+                  <motion.div 
+                    className="flex items-start gap-3"
+                    variants={fadeInVariants}
+                    whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                  >
                     <MessageCircle size={20} className="text-primary mt-1" />
                     <div>
                       <h3 className="font-medium text-gray-200">WhatsApp</h3>
@@ -168,31 +263,43 @@ export default function ContactPage() {
                         +63 912 345 6789
                       </a>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
               
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+              <motion.div 
+                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+                variants={itemVariants}
+              >
                 <h2 className="text-xl font-semibold mb-4">Business Hours</h2>
                 <div className="space-y-2 text-gray-300">
-                  <div className="flex justify-between">
+                  <motion.div 
+                    className="flex justify-between"
+                    variants={fadeInVariants}
+                  >
                     <span>Monday - Friday:</span>
                     <span>8:00 AM - 6:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
+                  </motion.div>
+                  <motion.div 
+                    className="flex justify-between"
+                    variants={fadeInVariants}
+                  >
                     <span>Saturday:</span>
                     <span>9:00 AM - 5:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
+                  </motion.div>
+                  <motion.div 
+                    className="flex justify-between"
+                    variants={fadeInVariants}
+                  >
                     <span>Sunday:</span>
                     <span>10:00 AM - 4:00 PM</span>
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>
       </section>
-    </div>
+    </motion.div>
   )
 } 
