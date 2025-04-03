@@ -21,11 +21,12 @@ interface Vehicle {
   id: string;
   name: string;
   shop_id: string;
-  vehicle_type_id: number;
+  vehicle_type_id: string;
   is_available: boolean;
   price_per_day: number;
   vehicle_images?: { id: string; image_url: string; url?: string }[];
   images?: { id: string; image_url: string; url?: string }[];
+  vehicle_types?: { id: string; name: string };
 }
 
 export default function ManageVehiclesPage() {
@@ -36,6 +37,7 @@ export default function ManageVehiclesPage() {
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<VehicleType | "all">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [vehicleTypeMap, setVehicleTypeMap] = useState<Record<string, VehicleType>>({});
 
   useEffect(() => {
     // Check if user is a shop owner
@@ -57,6 +59,22 @@ export default function ManageVehiclesPage() {
         
         const supabase = createClientComponentClient();
         
+        // First, get all vehicle types for mapping
+        const { data: vehicleTypesData, error: typesError } = await supabase
+          .from("vehicle_types")
+          .select("id, name");
+          
+        if (typesError) {
+          console.error("Error fetching vehicle types:", typesError);
+        } else if (vehicleTypesData) {
+          // Create a mapping of type IDs to type names
+          const typeMap: Record<string, VehicleType> = {};
+          vehicleTypesData.forEach(type => {
+            typeMap[type.id] = type.name as VehicleType;
+          });
+          setVehicleTypeMap(typeMap);
+        }
+        
         // Get shop ID for the current user
         const { data: shopData, error: shopError } = await supabase
           .from("rental_shops")
@@ -76,7 +94,8 @@ export default function ManageVehiclesPage() {
           .from("vehicles")
           .select(`
             *,
-            vehicle_images(*)
+            vehicle_images(*),
+            vehicle_types(id, name)
           `)
           .eq("shop_id", shopData.id);
         
@@ -177,23 +196,41 @@ export default function ManageVehiclesPage() {
   };
 
   // Map vehicle_type_id to our VehicleType
-  const getVehicleType = (typeId: number): VehicleType => {
-    switch (typeId) {
-      case 1:
-        return "motorcycle";
-      case 2:
-        return "car";
-      case 3:
-        return "tuktuk";
-      default:
-        return "motorcycle";
+  const getVehicleType = (typeId: string): VehicleType => {
+    // First check if we have the type in the map
+    if (vehicleTypeMap[typeId]) {
+      return vehicleTypeMap[typeId];
     }
+    
+    // If we have the vehicle_types relation loaded, use that
+    const vehicle = vehicles.find(v => v.vehicle_type_id === typeId);
+    if (vehicle?.vehicle_types?.name) {
+      return vehicle.vehicle_types.name as VehicleType;
+    }
+    
+    // Fallback for backward compatibility with numeric IDs
+    if (typeof typeId === 'number' || !isNaN(Number(typeId))) {
+      const numericId = Number(typeId);
+      switch (numericId) {
+        case 1:
+          return "motorcycle";
+        case 2:
+          return "car";
+        case 3:
+          return "tuktuk";
+      }
+    }
+    
+    // Default to motorcycle if nothing else works
+    console.warn(`Unknown vehicle type ID: ${typeId}, defaulting to motorcycle`);
+    return "motorcycle";
   };
 
   // Filter vehicles based on search query and vehicle type
   const filteredVehicles = vehicles.filter((vehicle) => {
     const matchesSearch = vehicle.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = vehicleTypeFilter === "all" || getVehicleType(vehicle.vehicle_type_id) === vehicleTypeFilter;
+    const currentVehicleType = getVehicleType(vehicle.vehicle_type_id);
+    const matchesType = vehicleTypeFilter === "all" || currentVehicleType === vehicleTypeFilter;
     
     return matchesSearch && matchesType;
   });

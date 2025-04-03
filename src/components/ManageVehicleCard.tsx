@@ -138,7 +138,7 @@ const ManageVehicleCard = ({
           <Button
             size="sm"
             variant="ghost"
-            className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+            className="text-destructive hover:text-white hover:bg-destructive/90 border border-transparent hover:border-destructive transition-colors"
             onClick={() => onDelete(id)}
           >
             <Trash size={16} className="mr-1" />
