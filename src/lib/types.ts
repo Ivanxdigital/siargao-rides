@@ -82,6 +82,9 @@ export type RentalShop = {
   logo_url?: string
   banner_url?: string
   is_verified: boolean
+  location_area?: string
+  offers_delivery?: boolean
+  delivery_fee?: number
   created_at: string
   updated_at: string
 }

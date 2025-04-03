@@ -179,9 +179,9 @@ export default function BookingSummary({
             </div>
             
             {deliveryFee > 0 && (
-              <div className="flex justify-between">
-                <span className="text-white/70">Delivery Fee:</span>
-                <span>{formatCurrency(deliveryFee)}</span>
+              <div className="flex justify-between bg-primary/10 p-2 rounded-md -mx-2">
+                <span className="text-white/80">Delivery Fee:</span>
+                <span className="text-primary font-medium">{formatCurrency(deliveryFee)}</span>
               </div>
             )}
           </div>

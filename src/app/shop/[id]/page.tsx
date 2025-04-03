@@ -243,6 +243,27 @@ export default function ShopPage() {
                 </Badge>
               )}
             </div>
+
+            {/* In the shop details section, add delivery information */}
+            {shop.offers_delivery && (
+              <div className="bg-primary/20 border border-primary/30 rounded-lg p-4 mt-6">
+                <div className="flex items-center gap-2">
+                  <div className="text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="8 12 12 16 16 12"></polyline>
+                      <line x1="12" y1="8" x2="12" y2="16"></line>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-primary font-medium text-sm">Delivery Available</h3>
+                    <p className="text-white/90 text-xs">
+                      This shop offers delivery to your accommodation for ₱{shop.delivery_fee}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Contact Info Card with improved styling */}

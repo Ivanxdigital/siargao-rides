@@ -44,6 +44,8 @@ interface RentalShop {
   updated_at: string;
   owner_id: string;
   location_area: string | null;
+  offers_delivery: boolean;
+  delivery_fee: number;
 }
 
 // Define form data type
@@ -56,6 +58,8 @@ interface ShopFormData {
   whatsapp: string;
   email: string;
   location_area: string;
+  offers_delivery: boolean;
+  delivery_fee: number;
 }
 
 export default function ManageShopPage() {
@@ -72,7 +76,9 @@ export default function ManageShopPage() {
     phone_number: "",
     whatsapp: "",
     email: "",
-    location_area: ""
+    location_area: "",
+    offers_delivery: false,
+    delivery_fee: 0
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -139,6 +145,8 @@ export default function ManageShopPage() {
           whatsapp: shopData.whatsapp || "",
           email: shopData.email || "",
           location_area: shopData.location_area || "",
+          offers_delivery: shopData.offers_delivery || false,
+          delivery_fee: shopData.delivery_fee || 0
         });
         
         // Set banner and logo preview if they exist
@@ -188,11 +196,20 @@ export default function ManageShopPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev: any) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { name, value, type } = e.target as HTMLInputElement;
+    
+    if (type === 'checkbox') {
+      const { checked } = e.target as HTMLInputElement;
+      setFormData((prev: any) => ({
+        ...prev,
+        [name]: checked,
+      }));
+    } else {
+      setFormData((prev: any) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
   
   // New file input handlers
@@ -307,6 +324,8 @@ export default function ManageShopPage() {
         whatsapp: formData.whatsapp,
         email: formData.email,
         location_area: formData.location_area,
+        offers_delivery: formData.offers_delivery,
+        delivery_fee: formData.delivery_fee,
         updated_at: new Date().toISOString()
       };
       
@@ -835,6 +854,46 @@ export default function ManageShopPage() {
                       className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                       rows={5}
                     />
+                  </div>
+                  
+                  {/* Add delivery options section */}
+                  <div className="md:col-span-2 mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <h3 className="text-lg font-medium mb-4">Delivery Options</h3>
+                    
+                    <div className="flex items-center space-x-2 mb-4">
+                      <input
+                        type="checkbox"
+                        id="offers_delivery"
+                        name="offers_delivery"
+                        checked={formData.offers_delivery}
+                        onChange={handleInputChange}
+                        className="h-4 w-4"
+                      />
+                      <label htmlFor="offers_delivery" className="text-sm font-medium">
+                        Offer delivery service to customers
+                      </label>
+                    </div>
+                    
+                    {formData.offers_delivery && (
+                      <div>
+                        <label htmlFor="delivery_fee" className="block text-sm font-medium mb-2">
+                          Delivery Fee (₱)
+                        </label>
+                        <input
+                          type="number"
+                          id="delivery_fee"
+                          name="delivery_fee"
+                          value={formData.delivery_fee}
+                          onChange={handleInputChange}
+                          min="0"
+                          step="10"
+                          className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          This is the fee you charge for delivering vehicles to the customer's accommodation.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 

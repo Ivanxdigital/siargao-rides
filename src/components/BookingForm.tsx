@@ -63,7 +63,26 @@ export default function BookingForm({
         if (deliveryError) {
           console.error("Error fetching delivery options:", deliveryError);
         } else {
-          setDeliveryOptions(deliveryData || []);
+          // If shop offers delivery, add/modify the delivery option
+          let options = [...(deliveryData || [])];
+          
+          // Filter out accommodation delivery option if it exists
+          options = options.filter(option => !option.name.toLowerCase().includes('accommodation'));
+          
+          // Add shop-specific delivery option if shop offers delivery
+          if (shop.offers_delivery) {
+            const shopDeliveryOption = {
+              id: "shop-delivery",
+              name: "Delivery to Accommodation",
+              description: `Have your vehicle delivered to your accommodation by ${shop.name}`,
+              fee: shop.delivery_fee || 0,
+              is_active: true,
+              requires_address: true
+            };
+            options.push(shopDeliveryOption);
+          }
+          
+          setDeliveryOptions(options);
         }
         
         // Fetch payment methods (cash only for now)
@@ -229,119 +248,8 @@ export default function BookingForm({
   
   // Conditional rendering for vehicle-specific options
   const renderVehicleSpecificOptions = () => {
-    const vehicleType = getVehicleType();
-    
-    switch(vehicleType) {
-      case 'car':
-        return (
-          <div className="space-y-4 mt-6 p-4 bg-white/5 rounded-md border border-white/10">
-            <h3 className="text-lg font-medium">Car Options</h3>
-            
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="additional-driver" 
-                className="h-4 w-4"
-              />
-              <label htmlFor="additional-driver" className="text-sm">
-                Additional Driver
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="child-seat" 
-                className="h-4 w-4"
-              />
-              <label htmlFor="child-seat" className="text-sm">
-                Child Seat (+₱200)
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="gps" 
-                className="h-4 w-4"
-              />
-              <label htmlFor="gps" className="text-sm">
-                GPS Navigation (+₱150)
-              </label>
-            </div>
-          </div>
-        );
-        
-      case 'tuktuk':
-        return (
-          <div className="space-y-4 mt-6 p-4 bg-white/5 rounded-md border border-white/10">
-            <h3 className="text-lg font-medium">Tuktuk Options</h3>
-            
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="decorated" 
-                className="h-4 w-4"
-              />
-              <label htmlFor="decorated" className="text-sm">
-                Decorated Tuktuk (+₱300)
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="tour-guide" 
-                className="h-4 w-4"
-              />
-              <label htmlFor="tour-guide" className="text-sm">
-                Tour Guide (+₱1500/day)
-              </label>
-            </div>
-          </div>
-        );
-        
-      case 'motorcycle': 
-      default:
-        return (
-          <div className="space-y-4 mt-6 p-4 bg-white/5 rounded-md border border-white/10">
-            <h3 className="text-lg font-medium">Bike Options</h3>
-            
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="helmet" 
-                className="h-4 w-4"
-              />
-              <label htmlFor="helmet" className="text-sm">
-                Extra Helmet (+₱50)
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="lock" 
-                className="h-4 w-4"
-              />
-              <label htmlFor="lock" className="text-sm">
-                Security Lock (+₱30)
-              </label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="basket" 
-                className="h-4 w-4"
-              />
-              <label htmlFor="basket" className="text-sm">
-                Storage Basket (+₱80)
-              </label>
-            </div>
-          </div>
-        );
-    }
+    // Return null for all vehicle types to remove all options
+    return null;
   };
   
   return (
