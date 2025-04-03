@@ -138,8 +138,11 @@ const VehicleCard = ({
         )}
         
         {/* Availability Badge */}
-        <div className="absolute top-2 right-2">
-          <Badge variant={isAvailable ? 'available' : 'unavailable'}>
+        <div className="absolute top-3 right-3 z-10">
+          <Badge 
+            variant={isAvailable ? 'available' : 'unavailable'} 
+            className="px-3 py-1 text-xs font-bold shadow-lg"
+          >
             {isAvailable ? 'Available' : 'Not Available'}
           </Badge>
         </div>
