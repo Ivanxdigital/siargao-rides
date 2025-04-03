@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { getShops, getBikes, getVehicles, getVehicleTypes } from "@/lib/api"
 import { RentalShop, Vehicle, VehicleType, VehicleCategory, BikeCategory, CarCategory, TuktukCategory } from "@/lib/types"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 // Interface for shop data with additional calculated fields
 interface ShopWithMetadata extends RentalShop {
@@ -125,6 +126,35 @@ export default function BrowsePage() {
         // In a real implementation, we'd use getVehicles() instead
         const vehiclesData = await getBikes()
         
+        // Create Supabase client for direct queries
+        const supabase = createClientComponentClient()
+        
+        // Get all vehicle types for each shop
+        const shopVehicleTypes: Record<string, VehicleType[]> = {}
+        
+        // First, check the vehicles table for proper vehicle types
+        const { data: vehicleTypeData, error: vehicleTypeError } = await supabase
+          .from('vehicles')
+          .select('shop_id, vehicle_types(name)')
+        
+        if (vehicleTypeData && !vehicleTypeError) {
+          // Process the data to extract vehicle types for each shop
+          vehicleTypeData.forEach((vehicleType) => {
+            const shopId = vehicleType.shop_id
+            const type = vehicleType.vehicle_types?.name as VehicleType
+            
+            if (shopId && type) {
+              if (!shopVehicleTypes[shopId]) {
+                shopVehicleTypes[shopId] = []
+              }
+              
+              if (!shopVehicleTypes[shopId].includes(type)) {
+                shopVehicleTypes[shopId].push(type)
+              }
+            }
+          })
+        }
+        
         // Process shop data with vehicles
         const enhancedShops: ShopWithMetadata[] = shopsData.map(shop => {
           // Filter vehicles for this shop
@@ -135,12 +165,36 @@ export default function BrowsePage() {
             ? Math.min(...shopVehicles.map(vehicle => vehicle.price_per_day))
             : 0
           
-          // For now, treat all vehicles as motorcycles for backward compatibility
-          // In a real implementation, we'd separate them by vehicle type
+          // Since we're using getBikes() for backward compatibility, 
+          // we'll treat all bikes as motorcycles
           const motorcycleTypes = Array.from(new Set(shopVehicles.map(vehicle => vehicle.category))) as BikeCategory[]
+          
+          // In the current implementation, we don't have cars or tuktuks from getBikes(),
+          // but we're setting up the structure for future implementation
+          const carTypes: CarCategory[] = []
+          const tuktukTypes: TuktukCategory[] = []
+          
+          // Get shop's vehicle types from our direct database query
+          // If none found, default to just motorcycles (backward compatibility)
+          const shopTypes = shopVehicleTypes[shop.id] || ['motorcycle']
+          
+          // Count bikes (from getBikes) for motorcycles
+          const motorcycles = shopVehicles
+          
+          // For cars and tuktuks, we'll use empty arrays but set their counts based on vehicle types
+          const cars: any[] = [] 
+          const tuktuks: any[] = [] 
           
           // Calculate available vehicles count
           const availableVehicles = shopVehicles.filter(vehicle => vehicle.is_available).length
+          const availableMotorcycles = availableVehicles // All vehicles are motorcycles for now
+          const availableCars = 0 // Placeholder
+          const availableTuktuks = 0 // Placeholder
+          
+          // Get minimum prices
+          const motorcycleMinPrice = startingPrice
+          const carMinPrice = 0 // Placeholder
+          const tuktukMinPrice = 0 // Placeholder
           
           // Collect images from vehicles for this shop (or use placeholders)
           const images = shopVehicles.length > 0 && shopVehicles.some(vehicle => vehicle.images && vehicle.images.length > 0)
@@ -150,31 +204,29 @@ export default function BrowsePage() {
                 .map(img => img.image_url)
             : [`https://placehold.co/600x400/1e3b8a/white?text=${encodeURIComponent(shop.name)}`]
           
-          // For now, simulate having different vehicle types
-          // In a real implementation, we'd use data from the vehicles table
           return {
             ...shop,
             startingPrice,
             rating: 4.5, // Placeholder
             reviewCount: 0, // Placeholder
-            vehicleTypes: ['motorcycle'] as VehicleType[], // For now, only motorcycles
+            vehicleTypes: shopTypes, // Use vehicle types from database
             motorcycles: {
-              count: shopVehicles.length,
+              count: motorcycles.length,
               types: motorcycleTypes,
-              minPrice: startingPrice,
-              available: availableVehicles
+              minPrice: motorcycleMinPrice,
+              available: availableMotorcycles
             },
             cars: {
-              count: 0, // Placeholder
-              types: [] as CarCategory[],
-              minPrice: 0,
-              available: 0
+              count: shopTypes.includes('car') ? 1 : 0, // Use database information
+              types: carTypes,
+              minPrice: carMinPrice,
+              available: availableCars
             },
             tuktuks: {
-              count: 0, // Placeholder
-              types: [] as TuktukCategory[],
-              minPrice: 0,
-              available: 0
+              count: shopTypes.includes('tuktuk') ? 1 : 0, // Use database information
+              types: tuktukTypes,
+              minPrice: tuktukMinPrice,
+              available: availableTuktuks
             },
             totalVehicles: shopVehicles.length,
             availableVehicles,
