@@ -63,7 +63,7 @@ export default function BookingDetailsPage() {
             total_price, 
             status,
             created_at,
-            bike_id,
+            vehicle_id,
             shop_id,
             user_id,
             payment_method_id,
@@ -84,25 +84,25 @@ export default function BookingDetailsPage() {
         console.log("Base booking data:", bookingData);
 
         // Now fetch all the related data in separate queries
-        let bikeData = null;
+        let vehicleData = null;
         let shopData = null;
         let userData = null;
         let paymentMethodData = null;
         let deliveryOptionData = null;
 
-        // Get bike data
-        if (bookingData.bike_id) {
-          const { data: bike, error: bikeError } = await supabase
-            .from("bikes")
+        // Get vehicle data
+        if (bookingData.vehicle_id) {
+          const { data: vehicle, error: vehicleError } = await supabase
+            .from("vehicles")
             .select("*")
-            .eq("id", bookingData.bike_id)
+            .eq("id", bookingData.vehicle_id)
             .single();
             
-          if (bikeError) {
-            console.error("Error fetching bike:", bikeError);
+          if (vehicleError) {
+            console.error("Error fetching vehicle:", vehicleError);
           } else {
-            bikeData = bike;
-            console.log("Bike data:", bikeData);
+            vehicleData = vehicle;
+            console.log("Vehicle data:", vehicleData);
           }
         }
 
@@ -173,7 +173,7 @@ export default function BookingDetailsPage() {
         // Combine all data
         const fullBookingData = {
           ...bookingData,
-          bikes: bikeData,
+          vehicles: vehicleData,
           rental_shops: shopData,
           users: userData,
           payment_methods: paymentMethodData,
@@ -295,8 +295,8 @@ export default function BookingDetailsPage() {
   const endDate = new Date(booking.end_date);
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Add null checks for bikes and related properties
-  const pricePerDay = booking.bikes?.price_per_day || 0;
+  // Add null checks for vehicles and related properties
+  const pricePerDay = booking.vehicles?.price_per_day || 0;
   const rentalPrice = pricePerDay * days;
   const deliveryFee = booking.delivery_options?.fee || 0;
   
@@ -307,28 +307,28 @@ export default function BookingDetailsPage() {
   const customerEmail = booking.users?.email || "N/A";
   const customerPhone = booking.users?.phone || "N/A";
 
-  const renderBikeDetails = () => {
-    if (!booking || !booking.bikes) return null;
+  const renderVehicleDetails = () => {
+    if (!booking || !booking.vehicles) return null;
     
     return (
       <div className="bg-white/5 rounded-lg p-4">
-        <h2 className="text-lg font-medium mb-4">Bike Details</h2>
+        <h2 className="text-lg font-medium mb-4">Vehicle Details</h2>
         <div className="flex gap-4">
           <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
             <img
-              src={booking.bikes.image_url || "/placeholder-bike.jpg"}
-              alt={booking.bikes.name || "Bike"}
+              src={booking.vehicles.image_url || "/placeholder-vehicle.jpg"}
+              alt={booking.vehicles.name || "Vehicle"}
               className="w-full h-full object-cover"
             />
           </div>
           <div>
-            <h3 className="text-xl font-semibold">{booking.bikes.name || "Bike"}</h3>
-            <p className="text-gray-400">Daily Rate: ₱{(booking.bikes.price_per_day || 0).toFixed(2)}</p>
+            <h3 className="text-xl font-semibold">{booking.vehicles.name || "Vehicle"}</h3>
+            <p className="text-gray-400">Daily Rate: ₱{(booking.vehicles.price_per_day || 0).toFixed(2)}</p>
             <Link
-              href={`/dashboard/bikes/${booking.bike_id}`}
+              href={`/dashboard/vehicles/${booking.vehicle_id}`}
               className="text-primary hover:underline text-sm inline-block mt-2"
             >
-              View Bike Details
+              View Vehicle Details
             </Link>
           </div>
         </div>
@@ -400,7 +400,7 @@ export default function BookingDetailsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            {renderBikeDetails()}
+            {renderVehicleDetails()}
 
             {/* Booking Details */}
             <div className="bg-white/5 rounded-lg p-4">
