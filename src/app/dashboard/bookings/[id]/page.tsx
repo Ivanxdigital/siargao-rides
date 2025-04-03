@@ -8,6 +8,15 @@ import { Button } from "@/components/ui/Button";
 import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle, Eye } from "lucide-react";
 import { format } from "date-fns";
 
+interface VehicleData {
+  id: string;
+  name: string;
+  price_per_day: number;
+  description?: string;
+  image_url?: string;
+  [key: string]: any; // For other properties
+}
+
 export default function BookingDetailsPage() {
   // Use the useParams hook to get the id parameter
   const params = useParams();
@@ -84,7 +93,7 @@ export default function BookingDetailsPage() {
         console.log("Base booking data:", bookingData);
 
         // Now fetch all the related data in separate queries
-        let vehicleData = null;
+        let vehicleData: VehicleData | null = null;
         let shopData = null;
         let userData = null;
         let paymentMethodData = null;
@@ -103,6 +112,34 @@ export default function BookingDetailsPage() {
           } else {
             vehicleData = vehicle;
             console.log("Vehicle data:", vehicleData);
+            
+            // Get vehicle image
+            const { data: vehicleImages, error: imagesError } = await supabase
+              .from("vehicle_images")
+              .select("image_url")
+              .eq("vehicle_id", bookingData.vehicle_id)
+              .eq("is_primary", true)
+              .limit(1);
+              
+            if (!imagesError && vehicleImages && vehicleImages.length > 0 && vehicleData) {
+              (vehicleData as any).image_url = vehicleImages[0].image_url;
+              console.log("Found primary image:", vehicleData.image_url);
+            } else {
+              // If no primary image, try to get any image
+              const { data: anyImage } = await supabase
+                .from("vehicle_images")
+                .select("image_url")
+                .eq("vehicle_id", bookingData.vehicle_id)
+                .limit(1);
+                
+              if (anyImage && anyImage.length > 0 && vehicleData) {
+                (vehicleData as any).image_url = anyImage[0].image_url;
+                console.log("Found alternative image:", vehicleData.image_url);
+              } else if (vehicleData) {
+                (vehicleData as any).image_url = "/placeholder.jpg";
+                console.log("No images found for vehicle, using placeholder");
+              }
+            }
           }
         }
 
@@ -310,26 +347,33 @@ export default function BookingDetailsPage() {
   const renderVehicleDetails = () => {
     if (!booking || !booking.vehicles) return null;
     
+    console.log("Rendering vehicle details with image:", booking.vehicles.image_url);
+    
     return (
       <div className="bg-white/5 rounded-lg p-4">
         <h2 className="text-lg font-medium mb-4">Vehicle Details</h2>
         <div className="flex gap-4">
           <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
             <img
-              src={booking.vehicles.image_url || "/placeholder-vehicle.jpg"}
+              src={booking.vehicles.image_url || "/placeholder.jpg"}
               alt={booking.vehicles.name || "Vehicle"}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.log("Image failed to load:", e.currentTarget.src);
+                e.currentTarget.src = "/placeholder.jpg";
+              }}
             />
           </div>
           <div>
             <h3 className="text-xl font-semibold">{booking.vehicles.name || "Vehicle"}</h3>
             <p className="text-gray-400">Daily Rate: ₱{(booking.vehicles.price_per_day || 0).toFixed(2)}</p>
-            <Link
+            {/* Link disabled until vehicle details page is created */}
+            {/* <Link
               href={`/dashboard/vehicles/${booking.vehicle_id}`}
               className="text-primary hover:underline text-sm inline-block mt-2"
             >
               View Vehicle Details
-            </Link>
+            </Link> */}
           </div>
         </div>
       </div>
