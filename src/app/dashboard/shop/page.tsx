@@ -53,7 +53,6 @@ interface ShopFormData {
   name: string;
   description: string;
   address: string;
-  city: string;
   phone_number: string;
   whatsapp: string;
   email: string;
@@ -72,7 +71,6 @@ export default function ManageShopPage() {
     name: "",
     description: "",
     address: "",
-    city: "",
     phone_number: "",
     whatsapp: "",
     email: "",
@@ -140,7 +138,6 @@ export default function ManageShopPage() {
           name: shopData.name,
           description: shopData.description || "",
           address: shopData.address,
-          city: shopData.city,
           phone_number: shopData.phone_number || "",
           whatsapp: shopData.whatsapp || "",
           email: shopData.email || "",
@@ -319,7 +316,6 @@ export default function ManageShopPage() {
         name: formData.name,
         description: formData.description,
         address: formData.address,
-        city: formData.city,
         phone_number: formData.phone_number,
         whatsapp: formData.whatsapp,
         email: formData.email,
@@ -805,21 +801,6 @@ export default function ManageShopPage() {
                   </div>
                   
                   <div>
-                    <label htmlFor="city" className="block text-sm font-medium mb-2">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      id="city"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
                     <label htmlFor="location_area" className="block text-sm font-medium mb-2">
                       Location Area
                     </label>
@@ -948,7 +929,6 @@ export default function ManageShopPage() {
                       <MapPin size={20} className="mr-3 mt-0.5 text-primary shrink-0" />
                       <div>
                         <p className="text-foreground font-medium">{shop.address}</p>
-                        <p className="text-muted-foreground">{shop.city}</p>
                         {shop.location_area && (
                           <span className="inline-flex items-center mt-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
                             {shop.location_area} Area

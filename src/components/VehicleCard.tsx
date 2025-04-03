@@ -23,6 +23,7 @@ interface VehicleCardProps {
   isAvailable: boolean
   specifications?: Record<string, any>
   onBookClick?: (vehicleId: string) => void
+  onViewShopClick?: () => void
   shop?: {
     id: string
     name: string
@@ -41,6 +42,7 @@ const VehicleCard = ({
   isAvailable,
   specifications,
   onBookClick,
+  onViewShopClick,
   shop,
 }: VehicleCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -219,13 +221,23 @@ const VehicleCard = ({
           </div>
         )}
 
-        {/* Book/Inquire Button */}
-        {isAvailable && onBookClick && (
+        {/* Action Button */}
+        {onBookClick && isAvailable && (
           <Button
             className="w-full"
             onClick={() => onBookClick(id)}
           >
             Book Now
+          </Button>
+        )}
+        
+        {onViewShopClick && (
+          <Button
+            className="w-full"
+            onClick={onViewShopClick}
+            variant="outline"
+          >
+            View Details
           </Button>
         )}
       </div>

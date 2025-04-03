@@ -119,7 +119,7 @@ export default function BrowsePage() {
             *,
             vehicle_images(*),
             vehicle_types(*),
-            rental_shops(id, name, logo_url, city)
+            rental_shops(id, name, logo_url, location_area)
           `)
           .order('price_per_day')
         
@@ -135,7 +135,7 @@ export default function BrowsePage() {
             .select(`
               *,
               bike_images(*),
-              rental_shops(id, name, logo_url, city)
+              rental_shops(id, name, logo_url, location_area)
             `)
             .order('price_per_day')
             
@@ -153,7 +153,7 @@ export default function BrowsePage() {
             shopId: bike.shop_id,
             shopName: bike.rental_shops?.name || 'Unknown Shop',
             shopLogo: bike.rental_shops?.logo_url,
-            shopLocation: bike.rental_shops?.city,
+            shopLocation: bike.rental_shops?.location_area,
             vehicle_type_id: '1', // Assuming 1 is the ID for motorcycles
             vehicle_type: 'motorcycle' as VehicleType,
             name: bike.name,
@@ -183,7 +183,7 @@ export default function BrowsePage() {
             shopId: vehicle.shop_id,
             shopName: vehicle.rental_shops?.name || 'Unknown Shop',
             shopLogo: vehicle.rental_shops?.logo_url,
-            shopLocation: vehicle.rental_shops?.city,
+            shopLocation: vehicle.rental_shops?.location_area,
             vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
             images: vehicle.vehicle_images || []
           })) || []
@@ -218,11 +218,11 @@ export default function BrowsePage() {
         // Get all unique locations from shops
         const { data: shopData } = await supabase
           .from('rental_shops')
-          .select('city')
-          .order('city')
+          .select('location_area')
+          .order('location_area')
         
         const allLocations = Array.from(
-          new Set(shopData?.map(shop => shop.city).filter(Boolean) || [])
+          new Set(shopData?.map(shop => shop.location_area).filter(Boolean) || [])
         ) as string[]
         
         setAvailableCategories(allCategories)
@@ -254,9 +254,9 @@ export default function BrowsePage() {
     setEngineSizeRange(value)
   }
   
-  const handleBookClick = (vehicleId: string) => {
-    // Navigate to booking page
-    router.push(`/booking/${vehicleId}`)
+  const handleViewShopClick = (shopId: string) => {
+    // Navigate to shop page instead of directly to booking
+    router.push(`/shop/${shopId}`)
   }
 
   // Apply filters
@@ -964,7 +964,7 @@ export default function BrowsePage() {
                             logo: vehicle.shopLogo,
                             location: vehicle.shopLocation
                           }}
-                          onBookClick={handleBookClick}
+                          onViewShopClick={() => handleViewShopClick(vehicle.shopId)}
                         />
                       </motion.div>
                     ))}
