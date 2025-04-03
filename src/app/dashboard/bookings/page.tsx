@@ -79,7 +79,17 @@ export default function DashboardBookingsPage() {
       // Base query for rentals
       let query = supabase
         .from("rentals")
-        .select("*")
+        .select(`
+          id, 
+          vehicle_id,
+          vehicle_type_id,
+          user_id,
+          start_date, 
+          end_date, 
+          total_price, 
+          status,
+          created_at
+        `)
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -107,34 +117,86 @@ export default function DashboardBookingsPage() {
       if (rentalData && rentalData.length > 0) {
         const processedBookings = await Promise.all(
           rentalData.map(async (rental) => {
-            // Get bike info
-            const { data: bikeData } = await supabase
-              .from("bikes")
-              .select("name, image_url")
-              .eq("id", rental.bike_id)
-              .single();
-            
-            // Get user info if available
-            let userData = null;
-            if (rental.user_id) {
-              const { data: user } = await supabase
-                .from("users")
-                .select("first_name, last_name")
-                .eq("id", rental.user_id)
+            try {
+              console.log("Processing rental with vehicle_id:", rental.vehicle_id);
+              
+              // Get vehicle info
+              const { data: vehicleData, error: vehicleError } = await supabase
+                .from("vehicles")
+                .select("name, price_per_day")
+                .eq("id", rental.vehicle_id)
                 .single();
-              userData = user;
+              
+              if (vehicleError) {
+                console.error("Error fetching vehicle:", vehicleError);
+                throw vehicleError;
+              }
+              
+              console.log("Vehicle data found:", vehicleData);
+              
+              // Get vehicle image (primary image first)
+              const { data: vehicleImages, error: imagesError } = await supabase
+                .from("vehicle_images")
+                .select("image_url")
+                .eq("vehicle_id", rental.vehicle_id)
+                .eq("is_primary", true)
+                .limit(1);
+              
+              let vehicleImageUrl = "/placeholder.jpg";
+              
+              if (!imagesError && vehicleImages && vehicleImages.length > 0) {
+                vehicleImageUrl = vehicleImages[0].image_url;
+                console.log("Found primary image:", vehicleImageUrl);
+              } else {
+                console.log("No primary image found, looking for any image");
+                // If no primary image, try to get any image
+                const { data: anyImage } = await supabase
+                  .from("vehicle_images")
+                  .select("image_url")
+                  .eq("vehicle_id", rental.vehicle_id)
+                  .limit(1);
+                
+                if (anyImage && anyImage.length > 0) {
+                  vehicleImageUrl = anyImage[0].image_url;
+                  console.log("Found alternative image:", vehicleImageUrl);
+                } else {
+                  console.log("No images found for vehicle, using placeholder");
+                }
+              }
+              
+              // Get user info if available
+              let userData = null;
+              if (rental.user_id) {
+                const { data: user } = await supabase
+                  .from("users")
+                  .select("first_name, last_name")
+                  .eq("id", rental.user_id)
+                  .single();
+                userData = user;
+              }
+              
+              return {
+                ...rental,
+                vehicle: {
+                  ...vehicleData,
+                  image_url: vehicleImageUrl
+                },
+                user: userData
+              };
+            } catch (error) {
+              console.error("Error processing booking:", error);
+              return {
+                ...rental,
+                vehicle: { name: "Unknown Vehicle" },
+                user: null
+              };
             }
-            
-            return {
-              ...rental,
-              bike: bikeData,
-              user: userData
-            };
           })
         );
         
         // Format the bookings data
         const formattedBookings = formatBookings(processedBookings);
+        console.log("Formatted bookings:", formattedBookings);
         setBookings(formattedBookings);
       } else {
         // No bookings found
@@ -157,8 +219,8 @@ export default function DashboardBookingsPage() {
         
       return {
         id: booking.id,
-        bikeName: booking.bike?.name || "Unknown Bike",
-        bikeImage: booking.bike?.image_url || "/placeholder-bike.jpg",
+        vehicleName: booking.vehicle?.name || "Unknown Vehicle",
+        vehicleImage: booking.vehicle?.image_url || "/placeholder.jpg",
         customerName,
         startDate: booking.start_date,
         endDate: booking.end_date,
@@ -361,19 +423,23 @@ export default function DashboardBookingsPage() {
                 <tr key={booking.id} className="hover:bg-white/5">
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 flex-shrink-0 rounded overflow-hidden">
+                      <div className="h-10 w-10 flex-shrink-0 rounded overflow-hidden bg-muted">
                         <img
-                          src={booking.bikeImage}
-                          alt={booking.bikeName}
+                          src={booking.vehicleImage || "/placeholder.jpg"}
+                          alt={`${booking.vehicleName || "Vehicle"}`}
                           className="h-full w-full object-cover"
+                          onError={(e) => {
+                            console.log("Image failed to load:", e.currentTarget.src);
+                            e.currentTarget.src = "/placeholder.jpg";
+                          }}
                         />
                       </div>
                       <div>
                         <p className="font-medium truncate w-40">
-                          {booking.bikeName}
+                          {booking.vehicleName || "Unknown Vehicle"}
                         </p>
                         <p className="text-sm text-gray-400">
-                          ₱{booking.totalPrice.toFixed(2)}
+                          ₱{(booking.totalPrice || 0).toFixed(2)}
                         </p>
                       </div>
                     </div>
