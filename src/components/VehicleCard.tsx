@@ -23,6 +23,12 @@ interface VehicleCardProps {
   isAvailable: boolean
   specifications?: Record<string, any>
   onBookClick?: (vehicleId: string) => void
+  shop?: {
+    id: string
+    name: string
+    logo?: string
+    location?: string
+  }
 }
 
 const VehicleCard = ({
@@ -35,6 +41,7 @@ const VehicleCard = ({
   isAvailable,
   specifications,
   onBookClick,
+  shop,
 }: VehicleCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
@@ -61,12 +68,12 @@ const VehicleCard = ({
 
   return (
     <motion.div 
-      className="bg-card rounded-lg overflow-hidden border border-border shadow-sm"
+      className="bg-card rounded-lg overflow-hidden border border-border shadow-sm h-full flex flex-col"
       whileHover={{ y: -3 }}
       transition={{ duration: 0.2 }}
     >
       {/* Image Gallery */}
-      <div className="relative h-56 w-full">
+      <div className="relative h-48 w-full">
         {images.length > 0 ? (
           <Image
             src={images[currentImageIndex] || '/placeholder.jpg'}
@@ -139,7 +146,7 @@ const VehicleCard = ({
       </div>
 
       {/* Vehicle Details */}
-      <div className="p-4">
+      <div className="p-4 flex-grow flex flex-col">
         <h3 className="text-lg font-medium text-foreground mb-1">{model}</h3>
         
         {category && (
@@ -181,13 +188,41 @@ const VehicleCard = ({
           )}
         </div>
 
+        {/* Shop information */}
+        {shop && (
+          <div className="mb-4 mt-auto">
+            <div className="flex items-center space-x-2 border-t border-border pt-3">
+              <div className="w-8 h-8 relative rounded-full overflow-hidden bg-muted flex-shrink-0">
+                {shop.logo ? (
+                  <Image 
+                    src={shop.logo} 
+                    alt={shop.name} 
+                    fill 
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-medium text-xs">
+                    {shop.name.substring(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{shop.name}</p>
+                {shop.location && (
+                  <p className="text-xs text-muted-foreground truncate">{shop.location}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Book/Inquire Button */}
         {isAvailable && onBookClick && (
           <Button
             className="w-full"
             onClick={() => onBookClick(id)}
           >
-            Book This {vehicleType === 'motorcycle' ? 'Bike' : vehicleType === 'car' ? 'Car' : 'Tuktuk'}
+            Book Now
           </Button>
         )}
       </div>

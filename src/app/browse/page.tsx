@@ -1,26 +1,21 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import RentalShopCard from "@/components/RentalShopCard"
+import VehicleCard from "@/components/VehicleCard"
 import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { getShops, getBikes, getVehicles, getVehicleTypes } from "@/lib/api"
 import { RentalShop, Vehicle, VehicleType, VehicleCategory, BikeCategory, CarCategory, TuktukCategory } from "@/lib/types"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { useRouter } from "next/navigation"
 
-// Interface for shop data with additional calculated fields
-interface ShopWithMetadata extends RentalShop {
-  startingPrice: number;
-  rating: number;
-  reviewCount: number;
-  vehicleTypes: VehicleType[];
-  motorcycles: { count: number, types: BikeCategory[], minPrice: number, available: number };
-  cars: { count: number, types: CarCategory[], minPrice: number, available: number };
-  tuktuks: { count: number, types: TuktukCategory[], minPrice: number, available: number };
-  totalVehicles: number;
-  availableVehicles: number;
-  images: string[];
+// Interface for vehicle data with additional calculated fields
+interface VehicleWithMetadata extends Vehicle {
+  shopName: string;
+  shopLogo?: string;
+  shopLocation?: string;
+  shopId: string;
 }
 
 const BikeTypeCheckbox = ({ type, checked, onChange }: { type: string, checked: boolean, onChange: () => void }) => {
@@ -82,13 +77,14 @@ const VehicleTypeSelector = ({ selectedType, onChange }: {
 };
 
 export default function BrowsePage() {
+  const router = useRouter()
   const [priceRange, setPriceRange] = useState([100, 2000])
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType | 'all'>('all')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [minRating, setMinRating] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [shops, setShops] = useState<ShopWithMetadata[]>([])
+  const [vehicles, setVehicles] = useState<VehicleWithMetadata[]>([])
   const [availableCategories, setAvailableCategories] = useState<Record<VehicleType, string[]>>({
     motorcycle: [],
     car: [],
@@ -107,153 +103,134 @@ export default function BrowsePage() {
   const [minSeats, setMinSeats] = useState<number>(0)
   const [transmission, setTransmission] = useState<string>("any")
 
-  // Fetch shops and vehicles data
+  // Fetch vehicles data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true)
         
-        // Fetch shops from Supabase
-        const shopsData = await getShops()
-        
-        if (!shopsData || shopsData.length === 0) {
-          setShops([])
-          setIsLoading(false)
-          return
-        }
-        
-        // For now we'll continue using getBikes for backward compatibility
-        // In a real implementation, we'd use getVehicles() instead
-        const vehiclesData = await getBikes()
-        
-        // Create Supabase client for direct queries
+        // Create Supabase client
         const supabase = createClientComponentClient()
         
-        // Get all vehicle types for each shop
-        const shopVehicleTypes: Record<string, VehicleType[]> = {}
-        
-        // First, check the vehicles table for proper vehicle types
-        const { data: vehicleTypeData, error: vehicleTypeError } = await supabase
+        // Fetch all vehicles with joined shop data
+        const { data: vehicleData, error: vehicleError } = await supabase
           .from('vehicles')
-          .select('shop_id, vehicle_types(name)')
+          .select(`
+            *,
+            vehicle_images(*),
+            vehicle_types(*),
+            rental_shops(id, name, logo_url, city)
+          `)
+          .order('price_per_day')
         
-        if (vehicleTypeData && !vehicleTypeError) {
-          // Process the data to extract vehicle types for each shop
-          vehicleTypeData.forEach((vehicleType) => {
-            const shopId = vehicleType.shop_id
-            const type = vehicleType.vehicle_types?.name as VehicleType
+        if (vehicleError) {
+          // If there's an error or no data in the vehicles table,
+          // we'll try to fetch from the legacy bikes table for backward compatibility
+          console.error('Error fetching vehicles:', vehicleError)
+          console.log('Falling back to bikes table for backward compatibility')
+          
+          // Fetch bikes from legacy bikes table
+          const { data: bikeData, error: bikeError } = await supabase
+            .from('bikes')
+            .select(`
+              *,
+              bike_images(*),
+              rental_shops(id, name, logo_url, city)
+            `)
+            .order('price_per_day')
             
-            if (shopId && type) {
-              if (!shopVehicleTypes[shopId]) {
-                shopVehicleTypes[shopId] = []
-              }
-              
-              if (!shopVehicleTypes[shopId].includes(type)) {
-                shopVehicleTypes[shopId].push(type)
-              }
+          if (bikeError) {
+            console.error('Error fetching bikes:', bikeError)
+            setError('Failed to load vehicles. Please try again later.')
+            setIsLoading(false)
+            return
+          }
+          
+          // Transform bike data to match our vehicle format
+          const formattedVehicles = bikeData?.map(bike => ({
+            id: bike.id,
+            shop_id: bike.shop_id,
+            shopId: bike.shop_id,
+            shopName: bike.rental_shops?.name || 'Unknown Shop',
+            shopLogo: bike.rental_shops?.logo_url,
+            shopLocation: bike.rental_shops?.city,
+            vehicle_type_id: '1', // Assuming 1 is the ID for motorcycles
+            vehicle_type: 'motorcycle' as VehicleType,
+            name: bike.name,
+            description: bike.description,
+            category: bike.category,
+            price_per_day: bike.price_per_day,
+            price_per_week: bike.price_per_week,
+            price_per_month: bike.price_per_month,
+            is_available: bike.is_available,
+            specifications: bike.specifications,
+            created_at: bike.created_at,
+            updated_at: bike.updated_at,
+            images: bike.bike_images?.map((img: any) => ({
+              id: img.id,
+              vehicle_id: img.bike_id,
+              image_url: img.image_url,
+              is_primary: img.is_primary,
+              created_at: img.created_at
+            })) || []
+          })) || []
+          
+          setVehicles(formattedVehicles)
+        } else {
+          // Process vehicle data
+          const formattedVehicles = vehicleData?.map(vehicle => ({
+            ...vehicle,
+            shopId: vehicle.shop_id,
+            shopName: vehicle.rental_shops?.name || 'Unknown Shop',
+            shopLogo: vehicle.rental_shops?.logo_url,
+            shopLocation: vehicle.rental_shops?.city,
+            vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
+            images: vehicle.vehicle_images || []
+          })) || []
+          
+          setVehicles(formattedVehicles)
+        }
+        
+        // Gather all categories by vehicle type
+        const allCategories: Record<VehicleType, string[]> = {
+          motorcycle: [],
+          car: [],
+          tuktuk: []
+        }
+        
+        // Get categories from vehicle types table
+        const { data: categoryData } = await supabase
+          .from('categories')
+          .select('*')
+        
+        if (categoryData) {
+          categoryData.forEach((category) => {
+            const vehicleType = category.vehicle_type_id === '1' ? 'motorcycle' :
+                              category.vehicle_type_id === '2' ? 'car' :
+                              category.vehicle_type_id === '3' ? 'tuktuk' : null
+                              
+            if (vehicleType && !allCategories[vehicleType as VehicleType].includes(category.name)) {
+              allCategories[vehicleType as VehicleType].push(category.name)
             }
           })
         }
         
-        // Process shop data with vehicles
-        const enhancedShops: ShopWithMetadata[] = shopsData.map(shop => {
-          // Filter vehicles for this shop
-          const shopVehicles = vehiclesData.filter(vehicle => vehicle.shop_id === shop.id)
-          
-          // Calculate starting price (lowest price among vehicles)
-          const startingPrice = shopVehicles.length > 0 
-            ? Math.min(...shopVehicles.map(vehicle => vehicle.price_per_day))
-            : 0
-          
-          // Since we're using getBikes() for backward compatibility, 
-          // we'll treat all bikes as motorcycles
-          const motorcycleTypes = Array.from(new Set(shopVehicles.map(vehicle => vehicle.category))) as BikeCategory[]
-          
-          // In the current implementation, we don't have cars or tuktuks from getBikes(),
-          // but we're setting up the structure for future implementation
-          const carTypes: CarCategory[] = []
-          const tuktukTypes: TuktukCategory[] = []
-          
-          // Get shop's vehicle types from our direct database query
-          // If none found, default to just motorcycles (backward compatibility)
-          const shopTypes = shopVehicleTypes[shop.id] || ['motorcycle']
-          
-          // Count bikes (from getBikes) for motorcycles
-          const motorcycles = shopVehicles
-          
-          // For cars and tuktuks, we'll use empty arrays but set their counts based on vehicle types
-          const cars: any[] = [] 
-          const tuktuks: any[] = [] 
-          
-          // Calculate available vehicles count
-          const availableVehicles = shopVehicles.filter(vehicle => vehicle.is_available).length
-          const availableMotorcycles = availableVehicles // All vehicles are motorcycles for now
-          const availableCars = 0 // Placeholder
-          const availableTuktuks = 0 // Placeholder
-          
-          // Get minimum prices
-          const motorcycleMinPrice = startingPrice
-          const carMinPrice = 0 // Placeholder
-          const tuktukMinPrice = 0 // Placeholder
-          
-          // Collect images from vehicles for this shop (or use placeholders)
-          const images = shopVehicles.length > 0 && shopVehicles.some(vehicle => vehicle.images && vehicle.images.length > 0)
-            ? shopVehicles
-                .flatMap(vehicle => vehicle.images || [])
-                .filter(img => img.is_primary)
-                .map(img => img.image_url)
-            : [`https://placehold.co/600x400/1e3b8a/white?text=${encodeURIComponent(shop.name)}`]
-          
-          return {
-            ...shop,
-            startingPrice,
-            rating: 4.5, // Placeholder
-            reviewCount: 0, // Placeholder
-            vehicleTypes: shopTypes, // Use vehicle types from database
-            motorcycles: {
-              count: motorcycles.length,
-              types: motorcycleTypes,
-              minPrice: motorcycleMinPrice,
-              available: availableMotorcycles
-            },
-            cars: {
-              count: shopTypes.includes('car') ? 1 : 0, // Use database information
-              types: carTypes,
-              minPrice: carMinPrice,
-              available: availableCars
-            },
-            tuktuks: {
-              count: shopTypes.includes('tuktuk') ? 1 : 0, // Use database information
-              types: tuktukTypes,
-              minPrice: tuktukMinPrice,
-              available: availableTuktuks
-            },
-            totalVehicles: shopVehicles.length,
-            availableVehicles,
-            images
-          }
-        })
+        // Get all unique locations from shops
+        const { data: shopData } = await supabase
+          .from('rental_shops')
+          .select('city')
+          .order('city')
         
-        // Gather all unique categories by vehicle type
-        const allCategories: Record<VehicleType, string[]> = {
-          motorcycle: Array.from(new Set(enhancedShops.flatMap(shop => 
-            shop.motorcycles.types))),
-          car: [], // In real implementation, these would be populated
-          tuktuk: [] // In real implementation, these would be populated
-        }
-        
-        // Gather all unique locations
         const allLocations = Array.from(
-          new Set(enhancedShops.map(shop => shop.city))
-        )
+          new Set(shopData?.map(shop => shop.city).filter(Boolean) || [])
+        ) as string[]
         
-        setShops(enhancedShops)
         setAvailableCategories(allCategories)
         setLocations(allLocations)
         setIsLoading(false)
       } catch (err) {
-        console.error('Error fetching shop data:', err)
-        setError('Failed to load shops. Please try again later.')
+        console.error('Error fetching vehicle data:', err)
+        setError('Failed to load vehicles. Please try again later.')
         setIsLoading(false)
       }
     }
@@ -276,97 +253,72 @@ export default function BrowsePage() {
   const handleEngineSizeChange = (value: [number, number]) => {
     setEngineSizeRange(value)
   }
+  
+  const handleBookClick = (vehicleId: string) => {
+    // Navigate to booking page
+    router.push(`/booking/${vehicleId}`)
+  }
 
   // Apply filters
-  const filteredShops = shops.filter(shop => {
+  const filteredVehicles = vehicles.filter(vehicle => {
     // Price filter
-    if (shop.startingPrice < priceRange[0] || shop.startingPrice > priceRange[1]) {
+    if (vehicle.price_per_day < priceRange[0] || vehicle.price_per_day > priceRange[1]) {
       return false
     }
     
     // Vehicle type filter
-    if (selectedVehicleType !== 'all' && !shop.vehicleTypes.includes(selectedVehicleType)) {
+    if (selectedVehicleType !== 'all' && vehicle.vehicle_type !== selectedVehicleType) {
       return false
     }
     
-    // Category filter - only apply if there are selected categories and a vehicle type is selected
-    if (selectedCategories.length > 0 && selectedVehicleType !== 'all') {
-      // Check if shop has any of the selected categories for the current vehicle type
-      switch (selectedVehicleType) {
-        case 'motorcycle':
-          if (!shop.motorcycles.types.some(type => selectedCategories.includes(type))) {
-            return false
-          }
-          break;
-        case 'car':
-          if (!shop.cars.types.some(type => selectedCategories.includes(type))) {
-            return false
-          }
-          break;
-        case 'tuktuk':
-          if (!shop.tuktuks.types.some(type => selectedCategories.includes(type))) {
-            return false
-          }
-          break;
+    // Category filter - only apply if there are selected categories
+    if (selectedCategories.length > 0) {
+      if (!selectedCategories.includes(vehicle.category)) {
+        return false
       }
     }
     
-    // Rating filter
-    if (shop.rating < minRating) {
-      return false
-    }
-    
     // Location filter
-    if (selectedLocation && shop.city !== selectedLocation) {
+    if (selectedLocation && vehicle.shopLocation !== selectedLocation) {
       return false
     }
     
     // Availability filter
-    if (onlyShowAvailable) {
-      if (selectedVehicleType === 'all') {
-        if (shop.availableVehicles === 0) {
-          return false
-        }
-      } else {
-        // Check availability for the specific vehicle type
-        switch (selectedVehicleType) {
-          case 'motorcycle':
-            if (shop.motorcycles.available === 0) return false;
-            break;
-          case 'car':
-            if (shop.cars.available === 0) return false;
-            break;
-          case 'tuktuk':
-            if (shop.tuktuks.available === 0) return false;
-            break;
-        }
-      }
+    if (onlyShowAvailable && !vehicle.is_available) {
+      return false
     }
     
     // Vehicle-specific filters
-    if (selectedVehicleType === 'car' && minSeats > 0) {
-      // Filter shops that don't have cars with enough seats
-      // In a real implementation, this would filter based on car specifications
-      return true; // Placeholder - would actually check car seats
+    if (vehicle.vehicle_type === 'car') {
+      // Filter by minimum seats
+      if (minSeats > 0 && (!vehicle.specifications?.seats || vehicle.specifications.seats < minSeats)) {
+        return false
+      }
+      
+      // Filter by transmission
+      if (transmission !== 'any' && (!vehicle.specifications?.transmission || vehicle.specifications.transmission !== transmission)) {
+        return false
+      }
     }
     
-    if (selectedVehicleType === 'car' && transmission !== 'any') {
-      // Filter shops that don't have cars with the selected transmission
-      // In a real implementation, this would filter based on car specifications
-      return true; // Placeholder - would actually check transmission
+    // Motorcycle-specific filters
+    if (vehicle.vehicle_type === 'motorcycle') {
+      // Engine size filter
+      const engineSize = parseFloat(vehicle.specifications?.engine || '0')
+      if (engineSize < engineSizeRange[0] || engineSize > engineSizeRange[1]) {
+        return false
+      }
     }
     
     return true
   }).sort((a, b) => {
     switch (sortBy) {
       case "price_asc":
-        return a.startingPrice - b.startingPrice
+        return a.price_per_day - b.price_per_day
       case "price_desc":
-        return b.startingPrice - a.startingPrice
+        return b.price_per_day - a.price_per_day
       case "rating_desc":
-        return b.rating - a.rating
-      case "availability":
-        return b.availableVehicles - a.availableVehicles
+        return 0 // No rating for vehicles yet
       default:
         return 0
     }
@@ -459,7 +411,7 @@ export default function BrowsePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
             >
-              Browse Vehicle Rentals
+              Browse Available Vehicles
             </motion.h1>
             <motion.p 
               className="text-lg text-gray-300"
@@ -574,14 +526,14 @@ export default function BrowsePage() {
                 </div>
                 
                 {/* Category Filter - show categories based on selected vehicle type */}
-                {selectedVehicleType !== 'all' && (
+                {selectedVehicleType !== 'all' && availableCategories[selectedVehicleType].length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-md font-bold mb-3 flex items-center">
                       <BikeIcon size={16} className="mr-1.5 text-primary/70" />
                       {selectedVehicleType.charAt(0).toUpperCase() + selectedVehicleType.slice(1)} Categories
                     </h3>
                     <div className="space-y-2">
-                      {availableCategories[selectedVehicleType as VehicleType].map((type) => (
+                      {availableCategories[selectedVehicleType].map((type) => (
                         <BikeTypeCheckbox 
                           key={type}
                           type={type.replace('_', ' ')}
@@ -686,29 +638,6 @@ export default function BrowsePage() {
                   </div>
                 </div>
                 
-                {/* Minimum Rating Filter */}
-                <div className="mb-6">
-                  <h3 className="text-md font-bold mb-3">Minimum Rating</h3>
-                  <div className="px-2">
-                    <div className="flex justify-between mb-2 text-sm">
-                      <span>0</span>
-                      <span>5</span>
-                    </div>
-                    <input 
-                      type="range"
-                      min={0}
-                      max={5}
-                      step={0.5}
-                      value={minRating}
-                      onChange={(e) => setMinRating(parseFloat(e.target.value))}
-                      className="w-full accent-primary"
-                    />
-                    <div className="mt-2 text-center text-sm font-medium py-1 px-2 rounded bg-gray-800/50 border border-gray-700">
-                      {minRating} stars & up
-                    </div>
-                  </div>
-                </div>
-                
                 {/* Sort By Filter */}
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3">Sort By</h3>
@@ -719,8 +648,6 @@ export default function BrowsePage() {
                   >
                     <option value="price_asc">Price: Low to High</option>
                     <option value="price_desc">Price: High to Low</option>
-                    <option value="rating_desc">Highest Rated</option>
-                    <option value="availability">Most Available Bikes</option>
                   </select>
                 </div>
                 
@@ -735,6 +662,9 @@ export default function BrowsePage() {
                         setSelectedLocation("")
                         setOnlyShowAvailable(false)
                         setSortBy("price_asc")
+                        setMinSeats(0)
+                        setTransmission("any")
+                        setEngineSizeRange([0, 1000])
                       }}
                       className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
                     >
@@ -753,8 +683,20 @@ export default function BrowsePage() {
                     initial="closed"
                     animate="open"
                     exit="closed"
-                    className="md:hidden overflow-hidden mb-6"
+                    className="md:hidden overflow-hidden mb-6 bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700 p-4"
                   >
+                    {/* Vehicle Type (Mobile) */}
+                    <div className="mb-6">
+                      <h3 className="text-md font-bold mb-3 flex items-center">
+                        <BikeIcon size={16} className="mr-1.5 text-primary/70" />
+                        Vehicle Type
+                      </h3>
+                      <VehicleTypeSelector
+                        selectedType={selectedVehicleType}
+                        onChange={setSelectedVehicleType}
+                      />
+                    </div>
+                    
                     {/* Location Filter (Mobile) */}
                     <div className="mb-6">
                       <h3 className="text-md font-bold mb-3 flex items-center">
@@ -795,23 +737,25 @@ export default function BrowsePage() {
                       </div>
                     </div>
                     
-                    {/* Vehicle Type (Mobile) */}
-                    <div className="mb-6">
-                      <h3 className="text-md font-bold mb-3 flex items-center">
-                        <BikeIcon size={16} className="mr-1.5 text-primary/70" />
-                        Vehicle Type
-                      </h3>
-                      <div className="space-y-2">
-                        {Object.keys(availableCategories).map((type) => (
-                          <BikeTypeCheckbox 
-                            key={type}
-                            type={type.replace('_', ' ')}
-                            checked={selectedCategories.includes(type)}
-                            onChange={() => toggleBikeType(type)}
-                          />
-                        ))}
+                    {/* Category Filter - Mobile */}
+                    {selectedVehicleType !== 'all' && availableCategories[selectedVehicleType].length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-md font-bold mb-3 flex items-center">
+                          <BikeIcon size={16} className="mr-1.5 text-primary/70" />
+                          {selectedVehicleType.charAt(0).toUpperCase() + selectedVehicleType.slice(1)} Categories
+                        </h3>
+                        <div className="space-y-2">
+                          {availableCategories[selectedVehicleType].map((type) => (
+                            <BikeTypeCheckbox 
+                              key={type}
+                              type={type.replace('_', ' ')}
+                              checked={selectedCategories.includes(type)}
+                              onChange={() => toggleBikeType(type)}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     
                     {/* Price Range (Mobile) */}
                     <div className="mb-6">
@@ -840,28 +784,69 @@ export default function BrowsePage() {
                       </div>
                     </div>
                     
-                    {/* Minimum Rating (Mobile) */}
-                    <div className="mb-6">
-                      <h3 className="text-md font-bold mb-3">Minimum Rating</h3>
-                      <div className="px-2">
-                        <div className="flex justify-between mb-2 text-sm">
-                          <span>0</span>
-                          <span>5</span>
-                        </div>
-                        <input 
-                          type="range"
-                          min={0}
-                          max={5}
-                          step={0.5}
-                          value={minRating}
-                          onChange={(e) => setMinRating(parseFloat(e.target.value))}
-                          className="w-full accent-primary"
-                        />
-                        <div className="mt-2 text-center text-sm font-medium py-1 px-2 rounded bg-gray-800/50 border border-gray-700">
-                          {minRating} stars & up
+                    {/* Mobile-specific filters */}
+                    {selectedVehicleType === 'motorcycle' && (
+                      <div className="mb-6">
+                        <h3 className="text-md font-bold mb-3">Engine Size</h3>
+                        <div className="px-2">
+                          <div className="flex justify-between mb-2 text-sm">
+                            <span>{engineSizeRange[0]}cc</span>
+                            <span>{engineSizeRange[1]}cc</span>
+                          </div>
+                          <input 
+                            type="range"
+                            min={0}
+                            max={1000}
+                            value={engineSizeRange[0]}
+                            onChange={(e) => handleEngineSizeChange([parseInt(e.target.value), engineSizeRange[1]])}
+                            className="w-full mb-2 accent-primary"
+                          />
+                          <input 
+                            type="range"
+                            min={0}
+                            max={1000}
+                            value={engineSizeRange[1]}
+                            onChange={(e) => handleEngineSizeChange([engineSizeRange[0], parseInt(e.target.value)])}
+                            className="w-full accent-primary"
+                          />
                         </div>
                       </div>
-                    </div>
+                    )}
+                    
+                    {/* Car-specific filters - mobile */}
+                    {selectedVehicleType === 'car' && (
+                      <div className="mb-6">
+                        <h3 className="text-md font-bold mb-3">Car Options</h3>
+                        
+                        <div className="mb-4">
+                          <h4 className="text-sm font-medium mb-2">Minimum Seats</h4>
+                          <select
+                            value={minSeats}
+                            onChange={(e) => setMinSeats(parseInt(e.target.value))}
+                            className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-md p-2 text-sm"
+                          >
+                            <option value={0}>Any</option>
+                            <option value={2}>2+ seats</option>
+                            <option value={4}>4+ seats</option>
+                            <option value={5}>5+ seats</option>
+                            <option value={7}>7+ seats</option>
+                          </select>
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Transmission</h4>
+                          <select
+                            value={transmission}
+                            onChange={(e) => setTransmission(e.target.value)}
+                            className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-md p-2 text-sm"
+                          >
+                            <option value="any">Any</option>
+                            <option value="automatic">Automatic</option>
+                            <option value="manual">Manual</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Sort By (Mobile) */}
                     <div className="mb-6">
@@ -873,8 +858,6 @@ export default function BrowsePage() {
                       >
                         <option value="price_asc">Price: Low to High</option>
                         <option value="price_desc">Price: High to Low</option>
-                        <option value="rating_desc">Highest Rated</option>
-                        <option value="availability">Most Available Bikes</option>
                       </select>
                     </div>
                     
@@ -889,6 +872,9 @@ export default function BrowsePage() {
                             setSelectedLocation("")
                             setOnlyShowAvailable(false)
                             setSortBy("price_asc")
+                            setMinSeats(0)
+                            setTransmission("any")
+                            setEngineSizeRange([0, 1000])
                           }}
                           className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
                         >
@@ -901,12 +887,12 @@ export default function BrowsePage() {
               </AnimatePresence>
             </motion.div>
             
-            {/* Shop Listings */}
+            {/* Vehicle Listings */}
             <div className="md:col-span-3">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
-                  <p className="text-gray-400">Loading shops...</p>
+                  <p className="text-gray-400">Loading vehicles...</p>
                 </div>
               ) : error ? (
                 <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-center">
@@ -918,9 +904,9 @@ export default function BrowsePage() {
                     Try Again
                   </button>
                 </div>
-              ) : filteredShops.length === 0 ? (
+              ) : filteredVehicles.length === 0 ? (
                 <div className="bg-gray-800/40 backdrop-blur-sm border border-gray-700 rounded-lg p-8 text-center">
-                  <h3 className="text-xl font-semibold mb-2">No shops found</h3>
+                  <h3 className="text-xl font-semibold mb-2">No vehicles found</h3>
                   <p className="text-gray-400 mb-4">Try adjusting your filters to see more results</p>
                   <button 
                     onClick={() => {
@@ -930,6 +916,9 @@ export default function BrowsePage() {
                       setSelectedLocation("")
                       setOnlyShowAvailable(false)
                       setSortBy("price_asc")
+                      setMinSeats(0)
+                      setTransmission("any")
+                      setEngineSizeRange([0, 1000])
                     }}
                     className="px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded-md text-sm"
                   >
@@ -940,10 +929,10 @@ export default function BrowsePage() {
                 <>
                   <div className="flex justify-between items-center mb-4">
                     <p className="text-gray-300">
-                      <span className="font-semibold">{filteredShops.length}</span> {filteredShops.length === 1 ? 'shop' : 'shops'} found
+                      <span className="font-semibold">{filteredVehicles.length}</span> {filteredVehicles.length === 1 ? 'vehicle' : 'vehicles'} found
                     </p>
                     <Badge className="bg-primary/10 text-xs text-primary border-primary/20 py-1">
-                      {(selectedCategories.length > 0 || minRating > 0 || selectedLocation || onlyShowAvailable) 
+                      {(selectedCategories.length > 0 || minRating > 0 || selectedLocation || onlyShowAvailable || selectedVehicleType !== 'all') 
                         ? `Filters applied` 
                         : 'No filters applied'}
                     </Badge>
@@ -954,18 +943,28 @@ export default function BrowsePage() {
                     initial="hidden"
                     animate="show"
                   >
-                    {filteredShops.map((shop) => (
-                      <motion.div key={shop.id} variants={itemVariants} className="h-full">
-                        <RentalShopCard
-                          id={shop.id}
-                          name={shop.name}
-                          images={shop.images}
-                          startingPrice={shop.startingPrice}
-                          rating={shop.rating}
-                          reviewCount={shop.reviewCount}
-                          availableBikes={shop.availableVehicles}
-                          totalBikes={shop.totalVehicles}
-                          location={shop.city}
+                    {filteredVehicles.map((vehicle) => (
+                      <motion.div key={vehicle.id} variants={itemVariants} className="h-full">
+                        <VehicleCard
+                          id={vehicle.id}
+                          model={vehicle.name}
+                          vehicleType={vehicle.vehicle_type}
+                          category={vehicle.category}
+                          images={vehicle.images?.map(img => img.image_url) || []}
+                          prices={{
+                            daily: vehicle.price_per_day,
+                            weekly: vehicle.price_per_week,
+                            monthly: vehicle.price_per_month
+                          }}
+                          specifications={vehicle.specifications}
+                          isAvailable={vehicle.is_available}
+                          shop={{
+                            id: vehicle.shopId,
+                            name: vehicle.shopName,
+                            logo: vehicle.shopLogo,
+                            location: vehicle.shopLocation
+                          }}
+                          onBookClick={handleBookClick}
                         />
                       </motion.div>
                     ))}
