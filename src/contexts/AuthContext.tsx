@@ -184,11 +184,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
               setIsSettingUp(false);
             }
           } else {
-            // Existing user, just update role and redirect
+            // Existing user, just update role but don't redirect
             const role = user.user_metadata?.role;
             setIsAdmin(role === 'admin');
             setIsLoading(false);
-            router.push("/dashboard");
+            // Removed automatic redirect here to allow users to browse the homepage
           }
         } else {
           setIsAdmin(false);
@@ -305,8 +305,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Check if we have a valid session
       const { data } = await supabase.auth.getSession();
       if (data?.session) {
-        console.log("Sign in successful, redirecting to dashboard");
-        router.push("/dashboard");
+        console.log("Sign in successful");
+        // Don't automatically redirect to dashboard
+        // Let the page that called signIn handle any redirections
         router.refresh();
         return { error: null };
       } 

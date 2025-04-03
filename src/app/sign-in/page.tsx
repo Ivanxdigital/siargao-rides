@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ArrowRight, Clock, Mail } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 // Rate limit tracking
 const RATE_LIMIT_KEY = "siargao_auth_rate_limit";
@@ -41,6 +42,7 @@ export default function SignInPage() {
   const { signIn, signInWithGoogle } = useAuth();
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSubmittingRef = useRef(false);
+  const router = useRouter();
 
   // Load rate limit state from localStorage on component mount
   useEffect(() => {
@@ -243,6 +245,8 @@ export default function SignInPage() {
         } else {
           // If login successful, reset rate limit counter
           updateRateLimitState(false, false);
+          // Manually redirect to dashboard after successful sign-in
+          router.push('/dashboard');
         }
       } catch (err) {
         console.error("Unexpected error during sign-in:", err);
@@ -264,19 +268,30 @@ export default function SignInPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    setError(null);
-    setGoogleLoading(true);
+    if (isRateLimited) {
+      setError("Please wait before trying again.");
+      return;
+    }
     
     try {
+      setGoogleLoading(true);
+      setError(null);
+      
       const { error } = await signInWithGoogle();
       
       if (error) {
-        setError(error.message || "Failed to sign in with Google");
+        console.error("Google sign-in error:", error);
+        setError(error.message || "Failed to sign in with Google.");
+        
+        // Check if this is a rate limit error
+        const isRateLimitErr = isRateLimitError(error);
+        updateRateLimitState(true, isRateLimitErr);
       }
-      // No need to handle success case since the user will be redirected
+      // Note: No need to redirect here as Google OAuth will handle the redirect flow
+      // The AuthContext.tsx will handle the post-authentication setup and dashboard redirect
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Google sign-in error:", err);
+      console.error("Unexpected error during Google sign-in:", err);
+      setError("An error occurred during Google sign-in. Please try again.");
     } finally {
       setGoogleLoading(false);
     }

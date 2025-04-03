@@ -286,8 +286,10 @@ export default function Home() {
         {/* Hero Content - improved padding and spacing for mobile */}
         <div className="container mx-auto relative z-20 h-full flex flex-col justify-center py-8 pb-16 sm:py-12 sm:pb-24 px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
-            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 tracking-tight leading-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-primary animate-gradient-x">Explore Siargao</span> on Two Wheels
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 drop-shadow-sm">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-primary animate-gradient-x leading-relaxed drop-shadow-lg filter-shadow">
+                Because Walking in Flip-Flops Only Gets You So Far
+              </span>
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
               Discover the island's hidden gems with our premium motorbike rentals. Convenient pickup locations, competitive rates, and the freedom to explore at your own pace.
@@ -298,14 +300,6 @@ export default function Home() {
           <div className="w-full max-w-4xl mx-auto relative mb-8 sm:mb-12 lg:mb-16 shadow-2xl px-2 sm:px-0">
             <SearchBar onSearch={handleSearch} />
           </div>
-        </div>
-        
-        {/* Scroll Down Indicator - Desktop Only */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 hidden md:flex flex-col items-center animate-bounce">
-          <span className="text-white/80 text-xs mb-1">Scroll Down</span>
-          <svg className="w-5 h-5 text-white/80" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-            <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-          </svg>
         </div>
       </section>
 
@@ -362,6 +356,24 @@ export default function Home() {
             overflow-x: hidden;
             width: 100%;
           }
+        }
+        
+        /* Gradient animation for heading */
+        @keyframes gradient-x {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        
+        .animate-gradient-x {
+          background-size: 200% 100%;
+          animation: gradient-x 15s ease infinite;
         }
       `}</style>
 
@@ -423,6 +435,12 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      <style jsx>{`
+        .filter-shadow {
+          filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.25));
+        }
+      `}</style>
     </div>
   )
 }
