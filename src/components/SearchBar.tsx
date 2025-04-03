@@ -674,7 +674,6 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 </option>
               ))}
             </motion.select>
-            <VehicleIcon />
           </div>
         </motion.div>
 
