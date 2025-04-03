@@ -41,24 +41,53 @@ type RentalShopWithUser = {
 const extractDocuments = (description: string) => {
   const documents: { type: 'id' | 'permit', url: string }[] = [];
   
-  // Extract ID URL
-  const idMatch = description.match(/ID:(https:\/\/[^\s]+)/);
+  if (!description || !description.includes('Documents:')) {
+    console.log('No documents section found in description:', description);
+    return documents;
+  }
+  
+  console.log('Extracting documents from:', description);
+  
+  // Extract ID URL - more robust pattern with lookahead to handle URLs that might have spaces or end with quotes
+  const idPattern = /ID:(https:\/\/[^\s"]+)(?:\s|"|$)/;
+  const idMatch = description.match(idPattern);
   if (idMatch) {
-    documents.push({ type: 'id', url: idMatch[1] });
+    const url = idMatch[1].trim();
+    // Only add if it looks like a valid URL
+    if (url.startsWith('https://')) {
+      documents.push({ type: 'id', url });
+      console.log('Found ID document:', url);
+    } else {
+      console.log('Found ID match but URL is invalid:', url);
+    }
+  } else {
+    console.log('No ID document found with pattern:', idPattern);
   }
   
-  // Extract Permit URL
-  const permitMatch = description.match(/Permit:(https:\/\/[^\s]+)/);
+  // Extract Permit URL - similar robust pattern for business permits
+  const permitPattern = /Permit:(https:\/\/[^\s"]+)(?:\s|"|$)/;
+  const permitMatch = description.match(permitPattern);
   if (permitMatch) {
-    documents.push({ type: 'permit', url: permitMatch[1] });
+    const url = permitMatch[1].trim();
+    // Only add if it looks like a valid URL
+    if (url.startsWith('https://')) {
+      documents.push({ type: 'permit', url });
+      console.log('Found Permit document:', url);
+    } else {
+      console.log('Found Permit match but URL is invalid:', url);
+    }
+  } else {
+    console.log('No Permit document found with pattern:', permitPattern);
   }
   
+  console.log('Extracted documents:', documents);
   return documents;
 };
 
 // Add this new component for displaying documents
 const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   // Clean the URL by removing any trailing punctuation or whitespace
   const cleanUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
@@ -91,13 +120,29 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
               <h4 className="text-sm font-medium">
                 {type === 'id' ? 'Government ID' : 'Business Permit'}
               </h4>
-              <button 
-                onClick={() => setIsPreviewOpen(true)}
-                className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 group"
-              >
-                View Document
-                <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
-              </button>
+              <div className="flex items-center gap-2 mt-1">
+                <button 
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="text-xs text-primary hover:underline flex items-center gap-1 group"
+                >
+                  View Document
+                  <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
+                </button>
+                <a 
+                  href={cleanUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-muted-foreground hover:text-primary hover:underline flex items-center gap-1 group"
+                >
+                  Open in New Tab
+                  <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
+                </a>
+              </div>
+              {imageError && (
+                <p className="text-xs text-red-500 mt-1">
+                  Document preview unavailable. Try opening in new tab.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -106,15 +151,35 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-3xl p-0 overflow-hidden">
-          <div className="relative w-full h-[80vh]">
-            <Image
-              src={cleanUrl}
-              alt={`${type === 'id' ? 'Government ID' : 'Business Permit'} Document`}
-              fill
-              className="object-contain"
-              unoptimized // Since we're loading from Supabase storage
-            />
-          </div>
+          {imageError ? (
+            <div className="flex flex-col items-center justify-center h-[80vh] p-6 text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+              <h3 className="text-xl font-medium mb-2">Unable to load document</h3>
+              <p className="text-muted-foreground mb-4">
+                The document image could not be loaded. This might be due to the file being removed or insufficient permissions.
+              </p>
+              <a 
+                href={cleanUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline flex items-center gap-1"
+              >
+                Try opening directly in browser
+                <ExternalLink size={16} />
+              </a>
+            </div>
+          ) : (
+            <div className="relative w-full h-[80vh]">
+              <Image
+                src={cleanUrl}
+                alt={`${type === 'id' ? 'Government ID' : 'Business Permit'} Document`}
+                fill
+                className="object-contain"
+                unoptimized // Since we're loading from Supabase storage
+                onError={() => setImageError(true)}
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
@@ -431,7 +496,10 @@ export default function ShopVerificationPage() {
                             <div className="mb-4">
                               <h4 className="text-sm font-medium mb-2">Description</h4>
                               <p className="text-sm">
-                                {shop.description?.replace(/Documents: ID:.*$/, '').trim() || 'No description provided.'}
+                                {shop.description 
+                                  ? shop.description.replace(/Documents:.*$/, '').trim() || 'No description provided.'
+                                  : 'No description provided.'
+                                }
                               </p>
                             </div>
                             
@@ -440,9 +508,15 @@ export default function ShopVerificationPage() {
                               <div>
                                 <h4 className="text-sm font-medium mb-3">Uploaded Documents</h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  {extractDocuments(shop.description).map((doc, index) => (
-                                    <DocumentPreview key={index} type={doc.type} url={doc.url} />
-                                  ))}
+                                  {extractDocuments(shop.description).length > 0 ? (
+                                    extractDocuments(shop.description).map((doc, index) => (
+                                      <DocumentPreview key={index} type={doc.type} url={doc.url} />
+                                    ))
+                                  ) : (
+                                    <div className="col-span-2 p-4 rounded-lg bg-muted/30 border border-border text-sm text-muted-foreground">
+                                      No documents were uploaded or document URLs couldn't be extracted from the description.
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
