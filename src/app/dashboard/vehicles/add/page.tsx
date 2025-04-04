@@ -648,66 +648,129 @@ export default function AddVehiclePage() {
         {/* Images */}
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Images</h2>
-          <div className="space-y-4">
-            {images.map((image, index) => (
-              <div key={image.id} className="flex items-center gap-4">
-                <div className="flex-1 border border-border rounded-md p-2 bg-background">
-                  <div className="flex items-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        handleImageChange(
-                          image.id,
-                          e.target.files ? e.target.files[0] : null
-                        )
-                      }
-                      className="flex-1"
-                      disabled={image.isUploading}
-                    />
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(image.id)}
-                        className="text-red-500 hover:text-red-700"
-                        disabled={image.isUploading}
-                      >
-                        <XCircle size={20} />
-                      </button>
+          <div className="space-y-5">
+            <div className="bg-background/50 border border-border rounded-md p-4">
+              <div className="text-sm text-muted-foreground mb-3">
+                <p>Upload clear, high-quality images of your vehicle. The first image will be set as the primary image shown to potential renters.</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {images.map((image, index) => (
+                  <div 
+                    key={image.id} 
+                    className={`relative group rounded-lg transition-all duration-200 ${
+                      index === 0 
+                        ? 'border-2 border-primary bg-primary/5' 
+                        : 'border border-border bg-background'
+                    }`}
+                  >
+                    {/* Image Preview */}
+                    {image.preview ? (
+                      <div className="relative aspect-video w-full overflow-hidden rounded-t-md bg-muted">
+                        <img
+                          src={image.preview}
+                          alt={`Vehicle image ${index + 1}`}
+                          className="h-full w-full object-cover transition-all hover:scale-105"
+                        />
+                        
+                        {/* Primary badge */}
+                        {index === 0 && (
+                          <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded-full shadow-md">
+                            Primary
+                          </div>
+                        )}
+                        
+                        {/* Remove button overlay */}
+                        {index > 0 && (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(image.id)}
+                              className="bg-red-500/90 hover:bg-red-600 text-white p-2 rounded-full shadow-lg"
+                              disabled={image.isUploading}
+                            >
+                              <XCircle size={20} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="aspect-video w-full flex items-center justify-center bg-muted rounded-t-md">
+                        <div className="text-muted-foreground text-sm">No image selected</div>
+                      </div>
                     )}
-                  </div>
-                  {image.preview && (
-                    <div className="mt-2 relative h-40 rounded-md overflow-hidden">
-                      <img
-                        src={image.preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                    
+                    {/* Upload interface */}
+                    <div className="p-3 border-t border-border">
+                      {image.isUploading ? (
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                          <p className="text-xs text-center mt-2 text-muted-foreground">Uploading...</p>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center w-full cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              handleImageChange(
+                                image.id,
+                                e.target.files ? e.target.files[0] : null
+                              )
+                            }
+                            className="hidden"
+                            disabled={image.isUploading}
+                          />
+                          <div className="flex items-center space-x-2 py-2 px-3 bg-background border border-border rounded-md hover:bg-muted/50 hover:border-primary/50 transition-colors w-full text-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                              <line x1="16" y1="5" x2="22" y2="5"></line>
+                              <line x1="19" y1="2" x2="19" y2="8"></line>
+                              <circle cx="9" cy="9" r="2"></circle>
+                              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                            </svg>
+                            <span className="text-xs font-medium">{image.preview ? 'Change Image' : 'Upload Image'}</span>
+                          </div>
+                        </label>
+                      )}
+                      
                       {index === 0 && (
-                        <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded">
-                          Primary
+                        <div className="mt-2 text-xs text-center text-primary font-medium">
+                          Primary Image
                         </div>
                       )}
                     </div>
-                  )}
-                  {image.isUploading && (
-                    <div className="mt-2 h-4 bg-gray-200 rounded">
-                      <div className="h-full bg-primary rounded animate-pulse"></div>
+                  </div>
+                ))}
+                
+                {/* Add Image Button */}
+                {images.length < 6 && (
+                  <button
+                    type="button"
+                    onClick={handleAddImage}
+                    className="border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center p-4 h-full min-h-[200px] hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                    disabled={isSubmitting}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <PlusCircle size={24} className="text-primary" />
                     </div>
-                  )}
-                </div>
+                    <span className="text-sm font-medium">Add Another Image</span>
+                    <span className="text-xs text-muted-foreground mt-1">({images.length}/6)</span>
+                  </button>
+                )}
               </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={handleAddImage}
-              className="flex items-center text-primary hover:text-primary/80"
-              disabled={isSubmitting}
-            >
-              <PlusCircle size={16} className="mr-2" />
-              Add Another Image
-            </button>
+            </div>
+            
+            <div className="flex items-center justify-between text-sm text-muted-foreground bg-muted/30 rounded-md p-3 border border-border">
+              <div className="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <p>You can upload up to 6 images. The first image will be used as the primary display image.</p>
+              </div>
+            </div>
           </div>
         </div>
 
