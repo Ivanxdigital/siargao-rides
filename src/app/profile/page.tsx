@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { supabase } from "@/lib/supabase";
 import { Camera, Upload, X, Lock, Calendar, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+import imageCompression from 'browser-image-compression';
 
 // Animation variants
 const fadeIn = {
@@ -113,13 +114,55 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      // Create a preview URL
-      const objectUrl = URL.createObjectURL(file);
+    if (!file) return;
+
+    setMessage(null); // Clear previous messages
+    setLoading(true); // Show loading indicator during potential compression
+
+    console.log(`Original file size: ${file.size / 1024 / 1024} MB`);
+
+    const options = {
+      maxSizeMB: 10, // Set max size to 10MB
+      maxWidthOrHeight: 1920, // Optional: limit resolution
+      useWebWorker: true, // Use multi-threading for faster compression
+      onProgress: (p: number) => { // Optional: log progress
+        console.log(`Compression Progress: ${p}%`);
+      }
+    };
+
+    try {
+      let processedFile = file;
+      // Check if compression is needed
+      if (file.size > options.maxSizeMB * 1024 * 1024) {
+        console.log('File size exceeds 10MB, attempting compression...');
+        setMessage({ type: "success", text: "Image is large, compressing..." }); // Inform user
+        processedFile = await imageCompression(file, options);
+        console.log(`Compressed file size: ${processedFile.size / 1024 / 1024} MB`);
+        setMessage({ type: "success", text: "Compression complete." }); // Update user
+      } else {
+        console.log('File size is within limits, no compression needed.');
+      }
+
+      setAvatarFile(processedFile);
+
+      // Clean up previous object URL to avoid memory leaks
+      if (avatarUrl && avatarUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarUrl);
+      }
+      
+      // Create a new preview URL for the processed file
+      const objectUrl = URL.createObjectURL(processedFile);
       setAvatarUrl(objectUrl);
+
+    } catch (error) {
+      console.error('Error during image processing:', error);
+      setMessage({ type: "error", text: "Could not process image. Please try a different file." });
+      // Reset if there was an error
+      removeSelectedImage(); 
+    } finally {
+      setLoading(false); // Hide loading indicator
     }
   };
 
@@ -323,6 +366,7 @@ export default function ProfilePage() {
                       />
                       <p className="text-sm text-white/60">
                         Click to upload profile picture
+                        {(loading && !uploading) && <span className="ml-2 text-primary animate-pulse">Processing...</span>} 
                       </p>
                     </div>
 
@@ -376,10 +420,15 @@ export default function ProfilePage() {
                         disabled={loading || uploading}
                         className="bg-gradient-to-r from-black/90 to-gray-900 hover:from-primary/70 hover:to-primary/90 text-white font-medium px-6 py-2.5 border border-primary/30 rounded-lg transition-all duration-300 shadow-md"
                       >
-                        {loading || uploading ? (
+                        {uploading ? (
                           <div className="flex items-center">
                             <div className="h-4 w-4 rounded-full border-2 border-white/60 border-t-transparent animate-spin mr-2"></div>
-                            Saving...
+                            Uploading...
+                          </div>
+                        ) : loading ? (
+                           <div className="flex items-center">
+                            <div className="h-4 w-4 rounded-full border-2 border-white/60 border-t-transparent animate-spin mr-2"></div>
+                            Processing...
                           </div>
                         ) : "Save Changes"}
                       </Button>
