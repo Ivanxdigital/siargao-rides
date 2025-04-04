@@ -32,15 +32,40 @@ import {
 import { Vehicle, VehicleType } from "@/lib/types";
 
 export default function BookingConfirmationPage() {
-  // Use the useParams hook to get the id parameter
+  // Get booking ID from URL using multiple methods
   const params = useParams();
-  const bookingId = params?.id as string;
+  const router = useRouter();
+  
+  // Log what we're getting to debug
+  console.log("Full URL:", typeof window !== 'undefined' ? window.location.href : 'Not in browser');
+  console.log("Params object:", params);
+  
+  // Method 1: From params object
+  let bookingId = params?.id;
+  
+  // Method 2: Try from URL path if params failed
+  if (!bookingId && typeof window !== 'undefined') {
+    const pathParts = window.location.pathname.split('/');
+    const idFromPath = pathParts[pathParts.length - 1];
+    if (idFromPath && idFromPath !== '[id]') {
+      bookingId = idFromPath;
+      console.log("Got ID from URL path:", bookingId);
+    }
+  }
+  
+  // Final check
+  if (bookingId) {
+    // If it's an array, take the first item
+    bookingId = Array.isArray(bookingId) ? bookingId[0] : bookingId;
+    console.log("Final resolved bookingId:", bookingId);
+  } else {
+    console.error("Failed to get booking ID from URL");
+  }
 
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
-  const router = useRouter();
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -83,15 +108,62 @@ export default function BookingConfirmationPage() {
           return;
         }
 
-        // Now fetch all related data separately
-        const [vehicleResponse, vehicleTypeResponse, shopResponse, userResponse, paymentMethodResponse, deliveryOptionResponse] = await Promise.all([
-          // Get vehicle data
-          supabase
-            .from("vehicles")
-            .select("*")
-            .eq("id", bookingData.vehicle_id)
-            .single(),
-            
+        // Get vehicle with all possible fields
+        const { data: vehicleData, error: vehicleError } = await supabase
+          .from("vehicles")
+          .select("*")
+          .eq("id", bookingData.vehicle_id)
+          .single();
+          
+        if (vehicleError) {
+          console.error("Error fetching vehicle:", vehicleError);
+        }
+        
+        // Try multiple possible sources for the vehicle image
+        let vehicleImageUrl: string | null = null;
+        
+        // Check if we have vehicle images
+        const { data: vehicleImages, error: vehicleImagesError } = await supabase
+          .from("vehicle_images")
+          .select("*")
+          .eq("vehicle_id", bookingData.vehicle_id)
+          .eq("is_primary", true)
+          .limit(1);
+        
+        if (!vehicleImagesError && vehicleImages && vehicleImages.length > 0) {
+          vehicleImageUrl = vehicleImages[0].image_url;
+        }
+        // Fallback to other possible image sources
+        else if (vehicleData?.image_url) {
+          vehicleImageUrl = vehicleData.image_url;
+        } 
+        // Check for images array (structured as objects with image_url)
+        else if (vehicleData?.images && Array.isArray(vehicleData.images) && vehicleData.images.length > 0) {
+          if (typeof vehicleData.images[0] === 'string') {
+            vehicleImageUrl = vehicleData.images[0];
+          } else if (vehicleData.images[0]?.image_url) {
+            vehicleImageUrl = vehicleData.images[0].image_url;
+          }
+        }
+        // Check for main_image_url field
+        else if (vehicleData?.main_image_url) {
+          vehicleImageUrl = vehicleData.main_image_url;
+        }
+        // Check for thumbnail field
+        else if (vehicleData?.thumbnail) {
+          vehicleImageUrl = vehicleData.thumbnail;
+        }
+        
+        console.log("Vehicle image URL for confirmation:", vehicleImageUrl);
+        
+        // Add imageUrl to vehicle data
+        const enhancedVehicleData = {
+          ...vehicleData,
+          imageUrl: vehicleImageUrl
+        };
+
+        // Now fetch remaining related data separately
+        const [vehicleTypeResponse, shopResponse, userResponse, paymentMethodResponse, deliveryOptionResponse] = await Promise.all([
           // Get vehicle type
           supabase
             .from("vehicle_types")
@@ -137,7 +209,7 @@ export default function BookingConfirmationPage() {
         // Combine all data
         const fullBookingData = {
           ...bookingData,
-          vehicle: vehicleResponse.data,
+          vehicle: enhancedVehicleData,
           vehicleType: vehicleTypeResponse.data,
           shop: shopResponse.data,
           user: userResponse.data,
@@ -188,7 +260,12 @@ export default function BookingConfirmationPage() {
     }
   };
 
-  const getVehicleTypeIcon = (type: string) => {
+  const getVehicleTypeIcon = (type?: string) => {
+    // Return default icon if type is undefined or null
+    if (!type) {
+      return <Bike className="text-primary" />;
+    }
+    
     switch (type.toLowerCase()) {
       case 'car':
         return <Car className="text-primary" />;
@@ -247,10 +324,19 @@ export default function BookingConfirmationPage() {
               <AlertCircle size={64} className="text-red-500" />
               <h1 className="text-2xl font-bold">{error || "Booking not found"}</h1>
               <p className="text-gray-400 mb-4">We couldn't find the booking you're looking for.</p>
+              
+              {/* Add debugging info for users */}
+              <div className="text-left text-xs text-gray-400 mb-4 p-2 bg-gray-800/50 rounded-md">
+                <p>Debug info:</p>
+                <p>URL ID: {bookingId || 'Not found'}</p>
+                <p>Params: {JSON.stringify(params)}</p>
+                <p>Path: {typeof window !== 'undefined' ? window.location.pathname : 'Not available'}</p>
+              </div>
+              
               <Button asChild>
-                <Link href="/">
-                  <ChevronLeft size={16} className="mr-2" />
-                  Return to Home
+                <Link href="/my-bookings">
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Back to My Bookings
                 </Link>
               </Button>
             </div>
@@ -260,10 +346,11 @@ export default function BookingConfirmationPage() {
     );
   }
 
+  // Add more fallbacks for potentially undefined properties
   const startDate = new Date(booking.start_date);
   const endDate = new Date(booking.end_date);
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  const rentalPrice = booking.vehicle.price_per_day * days;
+  const rentalPrice = (booking.vehicle?.price_per_day || 0) * days;
   const deliveryFee = booking.deliveryOption?.fee || 0;
   
   // Get customer info - use user data if available
@@ -300,11 +387,11 @@ export default function BookingConfirmationPage() {
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="print:hidden">
           <Link
-            href="/"
+            href="/my-bookings"
             className="inline-flex items-center gap-2 text-white/70 hover:text-white mb-8 transition-colors"
           >
             <ChevronLeft size={16} />
-            Return to Home
+            Back to My Bookings
           </Link>
         </div>
 
@@ -358,22 +445,29 @@ export default function BookingConfirmationPage() {
             <div className="absolute inset-0 flex items-end p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
               <div className="flex items-center gap-4 w-full">
                 <img
-                  src={booking.vehicle.image_url || "/placeholder-vehicle.jpg"}
-                  alt={booking.vehicle.name}
+                  src={booking.vehicle?.imageUrl || "/placeholder.jpg"}
+                  alt={booking.vehicle?.name || "Vehicle"}
                   className="w-20 h-20 object-cover rounded-md border border-white/20"
+                  onError={(e) => {
+                    console.error("Image failed to load:", e.currentTarget.src);
+                    // Only fall back to placeholder if it's not already the placeholder
+                    if (e.currentTarget.src !== window.location.origin + "/placeholder.jpg") {
+                      e.currentTarget.src = "/placeholder.jpg";
+                    }
+                  }}
                 />
                 <div className="flex-grow">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-semibold">{booking.vehicle.name}</h2>
+                    <h2 className="text-xl font-semibold">{booking.vehicle?.name || 'Vehicle'}</h2>
                     <div className="px-2 py-1 rounded-full text-xs bg-white/10 flex items-center gap-1">
-                      {getVehicleTypeIcon(booking.vehicleType.slug)}
-                      <span className="capitalize">{booking.vehicleType.name}</span>
+                      {getVehicleTypeIcon(booking?.vehicleType?.slug)}
+                      <span className="capitalize">{booking.vehicleType?.name || 'Vehicle'}</span>
                     </div>
                   </div>
-                  <p className="text-gray-300">{booking.shop.name}</p>
+                  <p className="text-gray-300">{booking.shop?.name || 'Rental Shop'}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-bold">₱{booking.total_price.toFixed(2)}</div>
+                  <div className="text-xl font-bold">₱{booking.total_price?.toFixed(2) || '0.00'}</div>
                   <div className="text-sm text-gray-300">{days} day{days !== 1 ? 's' : ''}</div>
                 </div>
               </div>
@@ -401,7 +495,7 @@ export default function BookingConfirmationPage() {
                   <h3 className="font-medium">
                     {booking.deliveryOption?.name || "Pickup at Shop"}
                   </h3>
-                  <p className="text-sm text-gray-400">{booking.shop.address}</p>
+                  <p className="text-sm text-gray-400">{booking.shop?.address || 'Address not available'}</p>
                   
                   {booking.delivery_address && (
                     <div className="mt-1 p-2 bg-white/5 rounded-md text-sm">
@@ -454,34 +548,40 @@ export default function BookingConfirmationPage() {
 
               {/* Vehicle details section */}
               <div className="flex items-start gap-3">
-                {getVehicleTypeIcon(booking.vehicleType.slug)}
+                {getVehicleTypeIcon(booking?.vehicleType?.slug)}
                 <div>
                   <h3 className="font-medium">Vehicle Details</h3>
-                  <p className="capitalize">{booking.vehicleType.name}: {booking.vehicle.name}</p>
+                  <p className="capitalize">{booking.vehicleType?.name || 'Vehicle'}: {booking.vehicle?.name || 'Unknown'}</p>
                   
                   <div className="mt-1 space-y-1 text-sm text-gray-400">
-                    {booking.vehicleType.slug === 'motorcycle' && (
+                    {booking.vehicleType?.slug === 'motorcycle' && (
                       <>
-                        <p>Engine Size: {booking.vehicle.engine_size}cc</p>
-                        {booking.vehicle.top_speed && <p>Top Speed: {booking.vehicle.top_speed} km/h</p>}
+                        <p>Engine Size: {booking.vehicle?.engine_size || 'N/A'}cc</p>
+                        {booking.vehicle?.features && (
+                          <p>Features: {booking.vehicle.features}</p>
+                        )}
                       </>
                     )}
                     
-                    {booking.vehicleType.slug === 'car' && (
+                    {booking.vehicleType?.slug === 'car' && (
                       <>
-                        <p>Seats: {booking.vehicle.seats} passengers</p>
-                        <p>Transmission: {booking.vehicle.transmission}</p>
+                        <p>Seats: {booking.vehicle?.seats || 'N/A'} passengers</p>
+                        {booking.vehicle?.features && (
+                          <p>Features: {booking.vehicle.features}</p>
+                        )}
                       </>
                     )}
                     
-                    {booking.vehicleType.slug === 'tuktuk' && (
+                    {booking.vehicleType?.slug === 'tuktuk' && (
                       <>
-                        <p>Seats: {booking.vehicle.seats} passengers</p>
-                        {booking.vehicle.engine_size && <p>Engine Size: {booking.vehicle.engine_size}cc</p>}
+                        <p>Seats: {booking.vehicle?.seats || 'N/A'} passengers</p>
+                        {booking.vehicle?.features && (
+                          <p>Features: {booking.vehicle.features}</p>
+                        )}
                       </>
                     )}
 
-                    {booking.vehicle.color && <p>Color: {booking.vehicle.color}</p>}
+                    {booking.vehicle?.color && <p>Color: {booking.vehicle.color}</p>}
                   </div>
                 </div>
               </div>
@@ -494,7 +594,7 @@ export default function BookingConfirmationPage() {
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between">
                     <span className="text-gray-400">
-                      Rental ({days} days × ₱{booking.vehicle.price_per_day.toFixed(2)})
+                      Rental ({days} days × ₱{booking.vehicle?.price_per_day?.toFixed(2) || '0.00'})
                     </span>
                     <span>₱{rentalPrice.toFixed(2)}</span>
                   </div>
@@ -509,30 +609,30 @@ export default function BookingConfirmationPage() {
                 </div>
                 <div className="border-t border-white/10 pt-3 flex justify-between font-bold">
                   <span>Total</span>
-                  <span>₱{booking.total_price.toFixed(2)}</span>
+                  <span>₱{booking.total_price?.toFixed(2) || '0.00'}</span>
                 </div>
               </div>
               
               <div className="bg-white/5 rounded-lg p-4">
                 <h3 className="font-medium mb-3">Shop Information</h3>
                 <div className="space-y-3">
-                  <p className="font-medium">{booking.shop.name}</p>
-                  <p className="text-sm text-gray-400">{booking.shop.address}</p>
+                  <p className="font-medium">{booking.shop?.name || 'Rental Shop'}</p>
+                  <p className="text-sm text-gray-400">{booking.shop?.address || 'Address not available'}</p>
                   
-                  {booking.shop.phone && (
+                  {booking.shop?.phone && (
                     <div className="flex items-center gap-1 text-sm">
                       <Phone size={14} className="text-primary" />
-                      <a href={`tel:${booking.shop.phone}`} className="hover:text-primary transition-colors">
-                        {booking.shop.phone}
+                      <a href={`tel:${booking.shop?.phone}`} className="hover:text-primary transition-colors">
+                        {booking.shop?.phone}
                       </a>
                     </div>
                   )}
                   
-                  {booking.shop.email && (
+                  {booking.shop?.email && (
                     <div className="flex items-center gap-1 text-sm">
                       <Mail size={14} className="text-primary" />
-                      <a href={`mailto:${booking.shop.email}`} className="hover:text-primary transition-colors">
-                        {booking.shop.email}
+                      <a href={`mailto:${booking.shop?.email}`} className="hover:text-primary transition-colors">
+                        {booking.shop?.email}
                       </a>
                     </div>
                   )}

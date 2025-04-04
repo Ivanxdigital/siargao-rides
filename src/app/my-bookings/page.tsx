@@ -75,7 +75,13 @@ export default function MyBookingsPage() {
         throw new Error(rentalsError.message);
       }
       
+      // Enhanced logging to debug id issues
       console.log("Rental data:", rentalData);
+      if (rentalData && rentalData.length > 0) {
+        console.log("Sample booking ID:", rentalData[0].id);
+        console.log("Booking ID type:", typeof rentalData[0].id);
+        console.log("All booking IDs:", rentalData.map(b => b.id));
+      }
       
       // Process the rentals to fetch related data
       if (rentalData && rentalData.length > 0) {
@@ -384,8 +390,16 @@ export default function MyBookingsPage() {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/booking/confirmation/${booking.id}`}>
+                        <Button 
+                          asChild 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            console.log("Booking ID before navigation:", booking.id);
+                            console.log("Full booking object:", booking);
+                          }}
+                        >
+                          <Link href={`/booking/confirmation/${booking.id?.toString()}`}>
                             View Details
                           </Link>
                         </Button>
