@@ -54,27 +54,8 @@ export function VehicleAvailabilityCalendar({
           return;
         }
         
-        // Check for bike_id bookings too (legacy support)
-        const { data: bikeRentals, error: bikeRentalsError } = await supabase
-          .from('rentals')
-          .select('id, start_date, end_date')
-          .eq('bike_id', vehicleId)
-          .in('status', ['pending', 'confirmed'])
-          .gte('end_date', today.toISOString().split('T')[0])
-          .lte('start_date', threeMonthsLater.toISOString().split('T')[0]);
-          
-        if (bikeRentalsError) {
-          console.error('Error fetching bike bookings:', bikeRentalsError);
-        }
-        
-        // Combine both results
-        const allRentals = [
-          ...(rentals || []),
-          ...(bikeRentals || [])
-        ];
-        
         // Transform into booked periods
-        const periods: BookedPeriod[] = allRentals.map(rental => ({
+        const periods: BookedPeriod[] = (rentals || []).map(rental => ({
           startDate: new Date(rental.start_date),
           endDate: new Date(rental.end_date)
         }));

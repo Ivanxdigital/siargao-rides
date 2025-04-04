@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { format, addHours } from "date-fns";
+import { format, addHours, isAfter, isBefore, parseISO } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   Clock, 
@@ -14,11 +14,29 @@ import {
   Filter,
   Calendar,
   Bike,
-  ChevronRight
+  ChevronRight,
+  CalendarClock
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from 'sonner';
 import { notifyBookingStatusChange } from '@/lib/notifications';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/Dialog";
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from "@/components/ui/Popover";
+import { Calendar as CalendarComponent } from "@/components/ui/Calendar";
+import { Input } from "@/components/ui/Input";
+import { cn } from "@/lib/utils";
 
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -26,6 +44,14 @@ export default function MyBookingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [isDateChangeOpen, setIsDateChangeOpen] = useState(false);
+  const [newStartDate, setNewStartDate] = useState<Date | undefined>(undefined);
+  const [newEndDate, setNewEndDate] = useState<Date | undefined>(undefined);
+  const [dateChangeReason, setDateChangeReason] = useState("");
+  const [isSubmittingDateChange, setIsSubmittingDateChange] = useState(false);
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
   
   const supabase = createClientComponentClient();
   const router = useRouter();
@@ -185,6 +211,20 @@ export default function MyBookingsPage() {
     }
   };
 
+  const canChangeDates = (booking: any) => {
+    // Allow date change only if:
+    // 1. Booking is in "pending" or "confirmed" status
+    // 2. Start date is at least 48 hours in the future
+    const allowedStatuses = ["pending", "confirmed"];
+    if (!allowedStatuses.includes(booking.status)) return false;
+    
+    const now = new Date();
+    const startDate = new Date(booking.start_date);
+    const hoursUntilStart = Math.floor((startDate.getTime() - now.getTime()) / (1000 * 60 * 60));
+    
+    return hoursUntilStart >= 48;
+  };
+
   const canCancelBooking = (booking: any) => {
     // Allow cancellation only if:
     // 1. Booking is in "pending" or "confirmed" status
@@ -243,6 +283,106 @@ export default function MyBookingsPage() {
       });
     } finally {
       setCancelling(null);
+    }
+  };
+
+  const handleDateChangeRequest = async () => {
+    if (!selectedBooking || !newStartDate || !newEndDate || !dateChangeReason.trim()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    
+    // Validate dates
+    if (isBefore(newEndDate, newStartDate)) {
+      toast.error("End date cannot be before start date");
+      return;
+    }
+    
+    const now = new Date();
+    if (isBefore(newStartDate, now)) {
+      toast.error("Start date cannot be in the past");
+      return;
+    }
+    
+    try {
+      setIsSubmittingDateChange(true);
+      
+      // First check if the new dates are available
+      const { data: availabilityData, error: availabilityError } = await supabase
+        .from("vehicles")
+        .select("id")
+        .eq("id", selectedBooking.vehicle_id)
+        .not("rentals", "id", "eq", selectedBooking.id)
+        .or(`end_date.lt.${newStartDate.toISOString()},start_date.gt.${newEndDate.toISOString()}`);
+        
+      if (availabilityError) {
+        throw availabilityError;
+      }
+      
+      if (!availabilityData || availabilityData.length === 0) {
+        toast.error("The vehicle is not available for the selected dates");
+        return;
+      }
+      
+      // Create a date change request
+      const { data: requestData, error: requestError } = await supabase
+        .from("date_change_requests")
+        .insert({
+          booking_id: selectedBooking.id,
+          user_id: user!.id,
+          original_start_date: selectedBooking.start_date,
+          original_end_date: selectedBooking.end_date,
+          requested_start_date: newStartDate.toISOString(),
+          requested_end_date: newEndDate.toISOString(),
+          reason: dateChangeReason,
+          status: "pending"
+        })
+        .select();
+        
+      if (requestError) {
+        throw requestError;
+      }
+      
+      // Add to booking history
+      await supabase
+        .from("booking_history")
+        .insert({
+          booking_id: selectedBooking.id,
+          event_type: "date_change_request",
+          notes: `Date change requested: ${format(newStartDate, "MMM d, yyyy")} to ${format(newEndDate, "MMM d, yyyy")}`,
+          created_by: user!.id,
+          metadata: {
+            original_start_date: selectedBooking.start_date,
+            original_end_date: selectedBooking.end_date,
+            requested_start_date: newStartDate.toISOString(),
+            requested_end_date: newEndDate.toISOString(),
+            reason: dateChangeReason
+          }
+        });
+      
+      // Close the dialog and show success message
+      setIsDateChangeOpen(false);
+      
+      // Clear form
+      setSelectedBooking(null);
+      setNewStartDate(undefined);
+      setNewEndDate(undefined);
+      setDateChangeReason("");
+      
+      toast.success("Date change request submitted", {
+        description: "The shop owner will review your request and get back to you"
+      });
+      
+      // Refresh bookings
+      fetchUserBookings();
+      
+    } catch (error) {
+      console.error("Error submitting date change request:", error);
+      toast.error("Failed to submit date change request", {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    } finally {
+      setIsSubmittingDateChange(false);
     }
   };
 
@@ -424,6 +564,23 @@ export default function MyBookingsPage() {
                           </Link>
                         </Button>
                         
+                        {canChangeDates(booking) && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedBooking(booking);
+                              setNewStartDate(parseISO(booking.start_date));
+                              setNewEndDate(parseISO(booking.end_date));
+                              setIsDateChangeOpen(true);
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            <CalendarClock size={14} />
+                            Change Dates
+                          </Button>
+                        )}
+                        
                         {canCancelBooking(booking) && (
                           <Button 
                             variant="destructive" 
@@ -443,6 +600,120 @@ export default function MyBookingsPage() {
           </div>
         )}
       </div>
+      
+      {/* Date Change Request Dialog */}
+      <Dialog open={isDateChangeOpen} onOpenChange={setIsDateChangeOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Request Date Change</DialogTitle>
+            <DialogDescription>
+              Submit a request to change your booking dates. The shop owner will need to approve this request.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedBooking && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">Current Dates:</span>
+                <span>
+                  {format(new Date(selectedBooking.start_date), "MMM d, yyyy")} - {format(new Date(selectedBooking.end_date), "MMM d, yyyy")}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="start-date" className="text-sm font-medium">New Start Date</label>
+                  <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="start-date"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !newStartDate && "text-gray-400"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {newStartDate ? format(newStartDate, "PPP") : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={newStartDate}
+                        onSelect={(date) => {
+                          setNewStartDate(date);
+                          setStartDateOpen(false);
+                        }}
+                        disabled={(date) => isBefore(date, new Date())}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="end-date" className="text-sm font-medium">New End Date</label>
+                  <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="end-date"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !newEndDate && "text-gray-400"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {newEndDate ? format(newEndDate, "PPP") : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={newEndDate}
+                        onSelect={(date) => {
+                          setNewEndDate(date);
+                          setEndDateOpen(false);
+                        }}
+                        disabled={(date) => (
+                          newStartDate ? isBefore(date, newStartDate) : isBefore(date, new Date())
+                        )}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="reason" className="text-sm font-medium">Reason for Date Change</label>
+                <Input
+                  id="reason"
+                  placeholder="Please explain why you need to change the dates"
+                  value={dateChangeReason}
+                  onChange={(e) => setDateChangeReason(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDateChangeOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleDateChangeRequest} 
+              disabled={isSubmittingDateChange || !newStartDate || !newEndDate || !dateChangeReason.trim()}
+            >
+              {isSubmittingDateChange ? "Submitting..." : "Submit Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

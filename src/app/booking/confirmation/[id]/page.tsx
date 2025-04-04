@@ -7,6 +7,9 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { motion } from "framer-motion";
+import { RatingStars } from "@/components/RatingStars";
+import { Textarea } from "@/components/ui/Textarea";
+import { toast } from "sonner";
 
 // Icons
 import { 
@@ -27,7 +30,10 @@ import {
   XCircle,
   Car,
   Bike,
-  Truck
+  Truck,
+  History,
+  Star,
+  MessageSquare
 } from "lucide-react";
 import { Vehicle, VehicleType } from "@/lib/types";
 
@@ -65,6 +71,12 @@ export default function BookingConfirmationPage() {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bookingHistory, setBookingHistory] = useState<any[]>([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [existingReview, setExistingReview] = useState<any>(null);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -106,6 +118,47 @@ export default function BookingConfirmationPage() {
           setError("Booking not found. Please check the booking ID.");
           setLoading(false);
           return;
+        }
+
+        // Now fetch booking history
+        const { data: historyData, error: historyError } = await supabase
+          .from("booking_history")
+          .select("*")
+          .eq("booking_id", bookingId)
+          .order("created_at", { ascending: true });
+
+        if (historyError) {
+          console.error("Error fetching booking history:", historyError);
+        } else {
+          setBookingHistory(historyData || []);
+          
+          // If no history exists yet, create a default history entry for booking creation
+          if (!historyData || historyData.length === 0) {
+            // Create default history based on booking creation
+            const defaultHistory = [
+              {
+                id: 'creation',
+                booking_id: bookingData.id,
+                status: bookingData.status,
+                created_at: bookingData.created_at,
+                notes: 'Booking created',
+                event_type: 'creation'
+              }
+            ];
+            
+            if (bookingData.status !== 'pending') {
+              defaultHistory.push({
+                id: 'status-change',
+                booking_id: bookingData.id,
+                status: bookingData.status,
+                created_at: bookingData.updated_at || bookingData.created_at,
+                notes: `Status changed to ${bookingData.status}`,
+                event_type: 'status_change'
+              });
+            }
+            
+            setBookingHistory(defaultHistory);
+          }
         }
 
         // Get vehicle with all possible fields
@@ -219,6 +272,20 @@ export default function BookingConfirmationPage() {
 
         console.log("Full booking data:", fullBookingData);
         setBooking(fullBookingData);
+
+        // Also fetch any existing review
+        const { data: reviewData, error: reviewError } = await supabase
+          .from("vehicle_reviews")
+          .select("*")
+          .eq("booking_id", bookingId)
+          .maybeSingle();
+
+        if (!reviewError && reviewData) {
+          setExistingReview(reviewData);
+          setReviewText(reviewData.comment || "");
+          setReviewRating(reviewData.rating || 0);
+        }
+
         setLoading(false);
       } catch (error) {
         console.error("Error fetching booking:", error);
@@ -298,6 +365,136 @@ export default function BookingConfirmationPage() {
       navigator.clipboard.writeText(window.location.href);
       alert('Link copied to clipboard!');
     }
+  };
+
+  // Helper function to format booking history event
+  const formatHistoryEvent = (event: any) => {
+    let icon;
+    let title;
+    let colorClass;
+    
+    switch (event.event_type) {
+      case 'creation':
+        icon = <Info size={16} />;
+        title = 'Booking Created';
+        colorClass = 'text-blue-400';
+        break;
+      case 'status_change':
+        if (event.status === 'confirmed') {
+          icon = <CheckCircle size={16} />;
+          title = 'Booking Confirmed';
+          colorClass = 'text-green-400';
+        } else if (event.status === 'cancelled') {
+          icon = <XCircle size={16} />;
+          title = 'Booking Cancelled';
+          colorClass = 'text-red-400';
+        } else if (event.status === 'completed') {
+          icon = <CheckCircle size={16} />;
+          title = 'Rental Completed';
+          colorClass = 'text-blue-400';
+        } else {
+          icon = <Info size={16} />;
+          title = `Status changed to ${event.status}`;
+          colorClass = 'text-yellow-400';
+        }
+        break;
+      case 'date_change':
+        icon = <Calendar size={16} />;
+        title = 'Dates Changed';
+        colorClass = 'text-purple-400';
+        break;
+      case 'comment':
+        icon = <Mail size={16} />;
+        title = 'Comment Added';
+        colorClass = 'text-gray-400';
+        break;
+      default:
+        icon = <Info size={16} />;
+        title = event.notes || 'Booking Updated';
+        colorClass = 'text-gray-400';
+    }
+    
+    return { icon, title, colorClass };
+  };
+
+  const handleSubmitReview = async () => {
+    if (reviewRating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    try {
+      setReviewSubmitting(true);
+
+      const reviewData = {
+        booking_id: booking.id,
+        vehicle_id: booking.vehicle_id,
+        shop_id: booking.shop_id,
+        user_id: booking.user_id,
+        rating: reviewRating,
+        comment: reviewText.trim(),
+        created_at: new Date().toISOString()
+      };
+
+      let result;
+      
+      if (existingReview) {
+        // Update existing review
+        const { data, error } = await supabase
+          .from("vehicle_reviews")
+          .update({
+            rating: reviewRating,
+            comment: reviewText.trim(),
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", existingReview.id)
+          .select();
+          
+        if (error) throw error;
+        result = data;
+        
+        toast.success("Your review has been updated");
+      } else {
+        // Create new review
+        const { data, error } = await supabase
+          .from("vehicle_reviews")
+          .insert(reviewData)
+          .select();
+          
+        if (error) throw error;
+        result = data;
+        
+        // Add to booking history
+        await supabase
+          .from("booking_history")
+          .insert({
+            booking_id: booking.id,
+            event_type: "review",
+            notes: `Review submitted with ${reviewRating} star rating`,
+            created_by: booking.user_id,
+            metadata: {
+              rating: reviewRating,
+              review_id: result[0].id
+            }
+          });
+          
+        toast.success("Your review has been submitted");
+      }
+      
+      setExistingReview(result[0]);
+      setShowReviewForm(false);
+      
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      toast.error("Failed to submit review");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const canReview = () => {
+    if (!booking) return false;
+    return booking.status === 'completed' && booking.user_id;
   };
 
   if (loading) {
@@ -640,6 +837,84 @@ export default function BookingConfirmationPage() {
               </div>
             </motion.div>
           </div>
+
+          {/* Review section - Add before timeline */}
+          {canReview() && (
+            <motion.div variants={itemVariants} className="border-t border-white/10 pt-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-primary" />
+                  <h3 className="font-medium">Your Review</h3>
+                </div>
+                
+                {existingReview && !showReviewForm && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowReviewForm(true)}
+                  >
+                    Edit Review
+                  </Button>
+                )}
+              </div>
+              
+              {existingReview && !showReviewForm ? (
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <RatingStars value={existingReview.rating} readOnly size="md" />
+                    <span className="text-xs text-gray-400">
+                      {format(new Date(existingReview.created_at), "MMMM d, yyyy")}
+                    </span>
+                  </div>
+                  
+                  {existingReview.comment && (
+                    <p className="text-sm text-gray-200 mt-2">{existingReview.comment}</p>
+                  )}
+                </div>
+              ) : showReviewForm || !existingReview ? (
+                <div className="bg-white/5 rounded-lg p-4 space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Rating</label>
+                    <RatingStars 
+                      value={reviewRating} 
+                      onChange={setReviewRating} 
+                      size="lg" 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Review (Optional)</label>
+                    <Textarea
+                      value={reviewText}
+              <div className="relative pl-8 border-l border-white/10 space-y-6 py-2">
+                {bookingHistory.map((event, index) => {
+                  const { icon, title, colorClass } = formatHistoryEvent(event);
+                  
+                  return (
+                    <div key={event.id || index} className="relative">
+                      {/* Timeline dot */}
+                      <div className="absolute left-0 w-3 h-3 rounded-full bg-white/30 -translate-x-[calc(50%+1px)]"></div>
+                      
+                      <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
+                        <div className={`flex items-center gap-1 ${colorClass} font-medium`}>
+                          {icon}
+                          <span>{title}</span>
+                        </div>
+                        
+                        <div className="text-sm text-gray-400">
+                          {format(new Date(event.created_at), "MMMM d, yyyy 'at' h:mm a")}
+                        </div>
+                      </div>
+                      
+                      {event.notes && event.notes !== title && (
+                        <p className="mt-1 text-sm text-gray-300">{event.notes}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
 
           {/* Footer with additional info */}
           <motion.div variants={itemVariants} className="border-t border-white/10 pt-6 print:border-gray-200">
