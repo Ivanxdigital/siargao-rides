@@ -10,6 +10,36 @@ import { Badge } from "@/components/ui/Badge"
 import * as service from "@/lib/service"
 import { Vehicle, VehicleType, RentalShop, Review } from "@/lib/types"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { VehicleAvailabilityCalendar } from "@/components/VehicleAvailabilityCalendar"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog"
+
+// Create a new component for the availability section
+const VehicleAvailabilitySection = ({ vehicleId, vehicleName, vehicleType }: { vehicleId: string, vehicleName: string, vehicleType: VehicleType }) => {
+  const getVehicleIcon = () => {
+    switch(vehicleType) {
+      case 'car':
+        return <Car size={16} className="mr-1 text-blue-400" />;
+      case 'tuktuk':
+        return <Truck size={16} className="mr-1 text-amber-400" />;
+      case 'motorcycle':
+      default:
+        return <Bike size={16} className="mr-1 text-primary" />;
+    }
+  };
+
+  return (
+    <div className="mt-8 p-6 bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg">
+      <h3 className="text-xl font-semibold mb-4 flex items-center">
+        {getVehicleIcon()}
+        <span className="ml-2">{vehicleName} Availability</span>
+      </h3>
+      <p className="text-sm text-white/70 mb-4">
+        Check which dates this vehicle is available for rent. Red dates are already booked.
+      </p>
+      <VehicleAvailabilityCalendar vehicleId={vehicleId} />
+    </div>
+  );
+};
 
 export default function ShopPage() {
   const { id } = useParams()
@@ -413,6 +443,22 @@ export default function ShopPage() {
           </div>
         )}
       </div>
+      
+      {/* Conditionally render the availability section when a vehicle is selected */}
+      {selectedVehicleId && vehicles.length > 0 && (
+        <div className="container mx-auto px-4 pb-12 relative z-10">
+          {vehicles
+            .filter(v => v.id === selectedVehicleId)
+            .map(vehicle => (
+              <VehicleAvailabilitySection 
+                key={vehicle.id}
+                vehicleId={vehicle.id} 
+                vehicleName={vehicle.name}
+                vehicleType={vehicle.vehicle_type}
+              />
+            ))}
+        </div>
+      )}
       
       {/* Reviews with enhanced design */}
       <div className="py-16 bg-gradient-to-b from-transparent to-black/70 border-t border-white/10 relative z-10">

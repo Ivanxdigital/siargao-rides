@@ -9,6 +9,8 @@ import { getShops, getBikes, getVehicles, getVehicleTypes } from "@/lib/api"
 import { RentalShop, Vehicle, VehicleType, VehicleCategory, BikeCategory, CarCategory, TuktukCategory } from "@/lib/types"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
+import { DateRangePicker } from "@/components/DateRangePicker"
+import { parseISO } from "date-fns"
 
 // Interface for vehicle data with additional calculated fields
 interface VehicleWithMetadata extends Vehicle {
@@ -115,6 +117,14 @@ export default function BrowsePage() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [dateRangeSelected, setDateRangeSelected] = useState<boolean>(false);
+
+  // Convert string dates to Date objects for the DateRangePicker
+  const [startDateObj, setStartDateObj] = useState<Date | null>(null);
+  const [endDateObj, setEndDateObj] = useState<Date | null>(null);
+
+  // Add refs to store the handlers
+  const handleDateRangeChangeRef = useRef<(start: string, end: string) => void>(() => {});
+  const handleDatePickerChangeRef = useRef<(startDate: Date | null, endDate: Date | null) => void>(() => {});
 
   // Fetch vehicles data
   useEffect(() => {
@@ -273,34 +283,62 @@ export default function BrowsePage() {
       }
     }
     
-    fetchData()
+    // Define handleDatePickerChange inside the effect where fetchData is available
+    const handleLocalDatePickerChange = (startDate: Date | null, endDate: Date | null) => {
+      setStartDateObj(startDate);
+      setEndDateObj(endDate);
+      
+      if (startDate && endDate) {
+        const formattedStart = startDate.toISOString();
+        const formattedEnd = endDate.toISOString();
+        setStartDate(formattedStart);
+        setEndDate(formattedEnd);
+        setDateRangeSelected(true);
+        
+        // Now fetchData is in scope
+        fetchData({ startDate: formattedStart, endDate: formattedEnd });
+      }
+    };
     
-    // Add function to handle date range changes
-    window.handleDateRangeChange = (start: string, end: string) => {
+    // Define handleDateRangeChange inside the effect where fetchData is available
+    const handleLocalDateRangeChange = (start: string, end: string) => {
       setStartDate(start);
       setEndDate(end);
       setDateRangeSelected(!!start && !!end);
       
+      // Also update Date objects for the DateRangePicker
+      setStartDateObj(start ? parseISO(start) : null);
+      setEndDateObj(end ? parseISO(end) : null);
+      
+      // Fetch vehicles with date range filter
       if (start && end) {
         fetchData({ startDate: start, endDate: end });
       }
     };
     
+    // Expose the local handlers to the component
+    window.handleDateRangeChange = handleLocalDateRangeChange;
+    
+    // Store references to the local handlers
+    handleDateRangeChangeRef.current = handleLocalDateRangeChange;
+    handleDatePickerChangeRef.current = handleLocalDatePickerChange;
+    
+    // Initial fetch
+    fetchData();
+    
     return () => {
-      // Cleanup
+      // Clean up
       delete window.handleDateRangeChange;
-    };
+    }
   }, [])
   
-  // Handler for date range changes
+  // Public handlers that use the refs
   const handleDateRangeChange = (start: string, end: string) => {
-    setStartDate(start);
-    setEndDate(end);
-    setDateRangeSelected(!!start && !!end);
-    
-    if (window.handleDateRangeChange) {
-      window.handleDateRangeChange(start, end);
-    }
+    handleDateRangeChangeRef.current(start, end);
+  };
+  
+  const handleDatePickerChange = (startDate: Date | null, endDate: Date | null) => {
+    handleDatePickerChangeRef.current(startDate, endDate);
   };
 
   const toggleBikeType = (type: string) => {
@@ -574,9 +612,20 @@ export default function BrowsePage() {
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3 flex items-center">
                     <Calendar size={16} className="mr-1.5 text-primary/70" />
-                    Availability
+                    Date Range
                   </h3>
-                  <div className="flex items-center space-x-2">
+                  <div className="mb-3">
+                    <DateRangePicker
+                      startDate={startDateObj}
+                      endDate={endDateObj}
+                      onStartDateChange={(date) => handleDatePickerChange(date, endDateObj)}
+                      onEndDateChange={(date) => handleDatePickerChange(startDateObj, date)}
+                    />
+                    <p className="text-xs text-white/60 mt-1.5">
+                      Select dates to see available vehicles
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2 mt-3">
                     <input 
                       type="checkbox" 
                       id="available-vehicles" 
@@ -585,7 +634,9 @@ export default function BrowsePage() {
                       className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
                     />
                     <label htmlFor="available-vehicles" className="text-sm text-gray-300">
-                      Only show available vehicles
+                      {dateRangeSelected 
+                        ? "Only show available for selected dates" 
+                        : "Only show available vehicles"}
                     </label>
                   </div>
                 </div>
@@ -786,9 +837,20 @@ export default function BrowsePage() {
                     <div className="mb-6">
                       <h3 className="text-md font-bold mb-3 flex items-center">
                         <Calendar size={16} className="mr-1.5 text-primary/70" />
-                        Availability
+                        Date Range
                       </h3>
-                      <div className="flex items-center space-x-2">
+                      <div className="mb-3">
+                        <DateRangePicker
+                          startDate={startDateObj}
+                          endDate={endDateObj}
+                          onStartDateChange={(date) => handleDatePickerChange(date, endDateObj)}
+                          onEndDateChange={(date) => handleDatePickerChange(startDateObj, date)}
+                        />
+                        <p className="text-xs text-white/60 mt-1.5">
+                          Select dates to see available vehicles
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-3">
                         <input 
                           type="checkbox" 
                           id="mobile-available-vehicles" 
@@ -797,7 +859,9 @@ export default function BrowsePage() {
                           className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
                         />
                         <label htmlFor="mobile-available-vehicles" className="text-sm text-gray-300">
-                          Only show available vehicles
+                          {dateRangeSelected 
+                            ? "Only show available for selected dates" 
+                            : "Only show available vehicles"}
                         </label>
                       </div>
                     </div>
@@ -1029,6 +1093,15 @@ export default function BrowsePage() {
                             logo: vehicle.shopLogo,
                             location: vehicle.shopLocation
                           }}
+                          availabilityInfo={
+                            dateRangeSelected 
+                              ? {
+                                  isAvailableForDates: !!vehicle.is_available_for_dates,
+                                  startDate: startDate,
+                                  endDate: endDate
+                                }
+                              : undefined
+                          }
                           onViewShopClick={() => handleViewShopClick(vehicle.shopId)}
                         />
                       </motion.div>

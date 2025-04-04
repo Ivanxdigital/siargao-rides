@@ -8,6 +8,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Bike, RentalShop, Vehicle } from "@/lib/types";
 import { User } from "@supabase/auth-helpers-nextjs";
 import { Info, AlertCircle } from "lucide-react";
+import { addDays, subDays, format, isWithinInterval } from "date-fns";
 
 interface BookingFormProps {
   bike?: Bike;
@@ -20,6 +21,11 @@ interface BookingFormProps {
   onStartDateChange: (date: Date | null) => void;
   onEndDateChange: (date: Date | null) => void;
   onDeliveryFeeChange: (fee: number) => void;
+}
+
+interface DateRange {
+  startDate: Date;
+  endDate: Date;
 }
 
 export default function BookingForm({ 
@@ -168,17 +174,66 @@ export default function BookingForm({
       }
     }
     
-    // Calculate pricing
-    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const rentalPrice = rentalVehicle.price_per_day * days;
-    const deliveryFeeAmount = deliveryOptions.find(o => o.id === deliveryOption)?.fee || 0;
-    const totalPrice = rentalPrice + deliveryFeeAmount;
-    
+    // Double-check vehicle availability before proceeding
     setLoading(true);
     setFormError(null);
     
     try {
       const supabase = createClientComponentClient();
+      
+      // Make an API call to check if the vehicle is still available for the selected dates
+      const vehicleId = vehicle?.id || bike?.id;
+      
+      if (!vehicleId) {
+        setFormError("Vehicle ID is missing.");
+        setLoading(false);
+        return;
+      }
+      
+      const response = await fetch(`/api/vehicles/check-availability`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vehicleId,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        }),
+      });
+      
+      const availabilityData = await response.json();
+      
+      if (!availabilityData.available) {
+        // Vehicle is not available for the selected dates
+        // Find alternative dates
+        const alternativeDates = await findAlternativeDates(vehicleId, startDate, endDate);
+        
+        if (alternativeDates.length > 0) {
+          const formattedAlternatives = alternativeDates.map(period => 
+            `${format(period.startDate, 'MMM d')} - ${format(period.endDate, 'MMM d, yyyy')}`
+          ).join(', ');
+          
+          setFormError(
+            `Sorry, this vehicle is no longer available for the selected dates. ` +
+            `Alternative dates: ${formattedAlternatives}`
+          );
+        } else {
+          setFormError(
+            "Sorry, this vehicle is no longer available for the selected dates. " +
+            "Please choose different dates or select another vehicle."
+          );
+        }
+        
+        setLoading(false);
+        return;
+      }
+      
+      // Calculate pricing
+      const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const rentalPrice = rentalVehicle.price_per_day * days;
+      const deliveryFeeAmount = deliveryOptions.find(o => o.id === deliveryOption)?.fee || 0;
+      const totalPrice = rentalPrice + deliveryFeeAmount;
       
       // Get current user session
       const { data: { session } } = await supabase.auth.getSession();
@@ -246,6 +301,88 @@ export default function BookingForm({
     }
   };
   
+  // Function to find alternative available dates
+  const findAlternativeDates = async (vehicleId: string, initialStartDate: Date, initialEndDate: Date) => {
+    const supabase = createClientComponentClient();
+    const today = new Date();
+    const alternativesCount = 3; // Number of alternatives to suggest
+    
+    const alternatives: DateRange[] = [];
+    
+    // Get existing bookings for this vehicle
+    const { data: rentals, error: rentalsError } = await supabase
+      .from('rentals')
+      .select('id, start_date, end_date')
+      .or(`vehicle_id.eq.${vehicleId},bike_id.eq.${vehicleId}`)
+      .in('status', ['pending', 'confirmed'])
+      .gte('end_date', today.toISOString().split('T')[0]);
+      
+    if (rentalsError) {
+      console.error('Error fetching vehicle bookings:', rentalsError);
+      return [];
+    }
+    
+    // Convert to BookedPeriod objects
+    const bookedPeriods: DateRange[] = (rentals || []).map(rental => ({
+      startDate: new Date(rental.start_date),
+      endDate: new Date(rental.end_date)
+    }));
+    
+    // Get the rental duration
+    const daysDifference = Math.ceil(
+      (initialEndDate.getTime() - initialStartDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    
+    // Try dates before the selected period
+    const alternateBefore: DateRange = {
+      startDate: subDays(initialStartDate, 7),
+      endDate: subDays(initialEndDate, 7)
+    };
+    
+    // Check if this period is available
+    if (alternateBefore.startDate >= today && 
+        !isDateRangeOverlapping(alternateBefore.startDate, alternateBefore.endDate, bookedPeriods)) {
+      alternatives.push(alternateBefore);
+    }
+    
+    // Try dates after the selected period
+    const alternateAfter: DateRange = {
+      startDate: addDays(initialStartDate, 7),
+      endDate: addDays(initialEndDate, 7)
+    };
+    
+    // Check if this period is available
+    if (!isDateRangeOverlapping(alternateAfter.startDate, alternateAfter.endDate, bookedPeriods)) {
+      alternatives.push(alternateAfter);
+    }
+    
+    // Try an additional period further in the future
+    const alternateFurther: DateRange = {
+      startDate: addDays(initialStartDate, 14),
+      endDate: addDays(initialEndDate, 14)
+    };
+    
+    // Check if this period is available
+    if (!isDateRangeOverlapping(alternateFurther.startDate, alternateFurther.endDate, bookedPeriods)) {
+      alternatives.push(alternateFurther);
+    }
+    
+    return alternatives.slice(0, alternativesCount);
+  };
+  
+  // Helper function to check if a date range overlaps with any booked periods
+  const isDateRangeOverlapping = (start: Date, end: Date, bookedPeriods: DateRange[]) => {
+    return bookedPeriods.some(period => {
+      // Check if either the start or end date falls within a booked period
+      return (
+        isWithinInterval(start, { start: period.startDate, end: period.endDate }) ||
+        isWithinInterval(end, { start: period.startDate, end: period.endDate }) ||
+        // Or if the date range completely encompasses a booked period
+        (start <= period.startDate && end >= period.endDate)
+      );
+    });
+  };
+  
   // Conditional rendering for vehicle-specific options
   const renderVehicleSpecificOptions = () => {
     // Return null for all vehicle types to remove all options
@@ -270,7 +407,12 @@ export default function BookingForm({
           endDate={endDate}
           onStartDateChange={onStartDateChange}
           onEndDateChange={onEndDateChange}
+          vehicleId={vehicle?.id || bike?.id}
+          showAvailabilityIndicator={true}
         />
+        <p className="text-xs text-white/60 mt-1.5">
+          Dates in red are already booked and cannot be selected.
+        </p>
       </div>
       
       {/* Vehicle-specific options */}

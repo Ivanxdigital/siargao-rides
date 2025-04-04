@@ -2,12 +2,15 @@
 
 import Image from "next/image"
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, Bike, Car, Truck } from "lucide-react"
+import { ChevronLeft, ChevronRight, Bike, Car, Truck, Calendar } from "lucide-react"
 import { motion } from "framer-motion"
 import { Badge } from "./ui/Badge"
 import { Button } from "./ui/Button"
 import { VehicleType } from "@/lib/types"
 import { VehicleDetailsDisplay } from "./VehicleDetailsDisplay"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog"
+import { VehicleAvailabilityCalendar } from "./VehicleAvailabilityCalendar"
+import { format, parseISO } from "date-fns"
 
 interface VehicleCardProps {
   id: string
@@ -30,6 +33,11 @@ interface VehicleCardProps {
     logo?: string
     location?: string
   }
+  availabilityInfo?: {
+    isAvailableForDates: boolean
+    startDate: string
+    endDate: string
+  }
 }
 
 const VehicleCard = ({
@@ -44,6 +52,7 @@ const VehicleCard = ({
   onBookClick,
   onViewShopClick,
   shop,
+  availabilityInfo,
 }: VehicleCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
@@ -67,6 +76,17 @@ const VehicleCard = ({
         return <Bike size={16} className="mr-1 text-primary" />
     }
   }
+
+  // Add this function to format the dates
+  const formatDateRange = (startDate: string, endDate: string) => {
+    try {
+      const start = parseISO(startDate);
+      const end = parseISO(endDate);
+      return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
+    } catch (error) {
+      return '';
+    }
+  };
 
   return (
     <motion.div 
@@ -141,12 +161,23 @@ const VehicleCard = ({
         
         {/* Availability Badge */}
         <div className="absolute top-3 right-3 z-10">
-          <Badge 
-            variant={isAvailable ? 'available' : 'unavailable'} 
-            className="px-3 py-1 text-xs font-bold shadow-lg"
-          >
-            {isAvailable ? 'Available' : 'Not Available'}
-          </Badge>
+          {availabilityInfo ? (
+            <Badge 
+              variant={availabilityInfo.isAvailableForDates ? 'available' : 'unavailable'} 
+              className="px-3 py-1 text-xs font-bold shadow-lg"
+            >
+              {availabilityInfo.isAvailableForDates 
+                ? 'Available for Selected Dates' 
+                : 'Unavailable for Selected Dates'}
+            </Badge>
+          ) : (
+            <Badge 
+              variant={isAvailable ? 'available' : 'unavailable'} 
+              className="px-3 py-1 text-xs font-bold shadow-lg"
+            >
+              {isAvailable ? 'Available' : 'Not Available'}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -189,6 +220,19 @@ const VehicleCard = ({
           )}
         </div>
 
+        {/* Date Range Info */}
+        {availabilityInfo && (
+          <div className="mb-4 mt-2 bg-primary/5 border border-primary/20 rounded-md p-2 text-sm">
+            <div className="flex items-center gap-1.5 text-primary">
+              <Calendar size={14} />
+              <span className="font-medium">Selected Dates:</span>
+            </div>
+            <div className="mt-1 text-sm">
+              {formatDateRange(availabilityInfo.startDate, availabilityInfo.endDate)}
+            </div>
+          </div>
+        )}
+
         {/* Shop information */}
         {shop && (
           <div className="mb-4 mt-auto">
@@ -217,25 +261,42 @@ const VehicleCard = ({
           </div>
         )}
 
-        {/* Action Button */}
-        {onBookClick && isAvailable && (
-          <Button
-            className="w-full"
-            onClick={() => onBookClick(id)}
+        {/* Actions */}
+        <div className="p-4 flex gap-2 border-t border-border mt-auto">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 text-xs"
+              >
+                <Calendar size={14} className="mr-1" />
+                Availability
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xl">
+              <DialogHeader>
+                <DialogTitle className="mb-2 flex items-center">
+                  {getVehicleIcon()}
+                  <span className="ml-2">{model} Availability</span>
+                </DialogTitle>
+              </DialogHeader>
+              <VehicleAvailabilityCalendar vehicleId={id} numberOfMonths={1} />
+              <p className="text-sm text-white/70 mt-2">
+                Check which dates this vehicle is available for rent. Red dates are already booked.
+              </p>
+            </DialogContent>
+          </Dialog>
+          
+          <Button 
+            size="sm"
+            className="flex-1"
+            onClick={() => onBookClick?.(id)}
+            disabled={!isAvailable}
           >
             Book Now
           </Button>
-        )}
-        
-        {onViewShopClick && (
-          <Button
-            className="w-full"
-            onClick={onViewShopClick}
-            variant="outline"
-          >
-            View Details
-          </Button>
-        )}
+        </div>
       </div>
     </motion.div>
   )

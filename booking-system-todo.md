@@ -12,7 +12,7 @@
   - ✅ Add date filter parameters to vehicle search API
   - ✅ Modify frontend to show available vehicles for selected dates
 
-## Phase 2: Shop Owner Dashboard 🔄
+## Phase 2: Shop Owner Dashboard ✅
 - ✅ Create booking management views
   - ✅ Implement list view with filters
   - ✅ Implement calendar view with color coding by status
@@ -24,20 +24,20 @@
 - ✅ Update dashboard navigation
   - ✅ Add bookings section to sidebar
   - ✅ Create submenu for list/calendar views
-- Add booking notifications
-  - Implement new booking notification
-  - Add booking status change alerts
-- Fix linter errors
+- ✅ Add booking notifications
+  - ✅ Implement new booking notification
+  - ✅ Add booking status change alerts
+- ✅ Fix linter errors
   - ✅ Fix TypeScript errors in browse page component
-  - Fix missing Separator component error
+  - ✅ Fix missing Separator component error
 
-## Phase 3: User Experience 🔜
-- Enhance vehicle detail page
-  - Add availability calendar showing booked dates
-  - Prevent selecting unavailable dates in booking form
-  - Show visual indicators for available/unavailable dates
+## Phase 3: User Experience 🔄
+- ✅ Enhance vehicle detail page
+  - ✅ Add availability calendar showing booked dates
+  - ✅ Prevent selecting unavailable dates in booking form
+  - ✅ Show visual indicators for available/unavailable dates
 - Improve booking flow
-  - Add availability check before confirming booking
+  - 🔄 Add availability check before confirming booking
   - Show clear messaging when vehicle is unavailable
   - Suggest alternative dates if selected period is unavailable
 - Add user booking management
