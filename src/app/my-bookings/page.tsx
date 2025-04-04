@@ -17,6 +17,8 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { toast } from 'sonner';
+import { notifyBookingStatusChange } from '@/lib/notifications';
 
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -201,6 +203,19 @@ export default function MyBookingsPage() {
     try {
       setCancelling(bookingId);
       
+      // Get the booking details for the notification
+      const { data: bookingData, error: fetchError } = await supabase
+        .from("rentals")
+        .select("*, vehicle:vehicles(*)")
+        .eq("id", bookingId)
+        .single();
+        
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      const vehicleName = bookingData?.vehicle?.name || 'Vehicle';
+      
       // Update booking status to cancelled
       const { error } = await supabase
         .from("rentals")
@@ -217,10 +232,15 @@ export default function MyBookingsPage() {
 
       // Refresh bookings
       fetchUserBookings();
-      alert("Booking cancelled successfully");
+      
+      // Use toast notification instead of alert
+      notifyBookingStatusChange(bookingId, vehicleName, 'cancelled');
     } catch (error) {
       console.error("Error cancelling booking:", error);
-      alert("Failed to cancel booking. Please try again.");
+      // Show error with toast instead of alert
+      toast.error("Failed to cancel booking", {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
     } finally {
       setCancelling(null);
     }

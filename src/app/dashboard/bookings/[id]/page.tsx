@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Separator } from "@/components/ui/Separator";
+import { notifyBookingStatusChange } from '@/lib/notifications';
+import { toast } from 'sonner';
 
 interface VehicleData {
   id: string;
@@ -436,6 +438,9 @@ export default function BookingDetailsPage() {
       
       if (error) throw error;
       
+      // Get vehicle name for the notification
+      const vehicleName = booking?.vehicle?.name || 'Vehicle';
+      
       // Instead of fetching all new data, just update the status in our existing state
       setBooking((prevBooking) => {
         if (!prevBooking) return null;
@@ -447,12 +452,15 @@ export default function BookingDetailsPage() {
       
       setProcessing(false);
       
-      // Show success message
-      alert(`Booking status updated to ${newStatus}`);
+      // Show success message using toast instead of alert
+      notifyBookingStatusChange(bookingId, vehicleName, newStatus as any);
       
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Failed to update booking status");
+      // Show error message using toast instead of alert
+      toast.error("Failed to update booking status", {
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+      });
       setProcessing(false);
     }
   };

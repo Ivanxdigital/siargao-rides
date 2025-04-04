@@ -13,6 +13,7 @@ import {
   createClientComponentClient
 } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from "next/navigation";
+import { subscribeToBookingNotifications } from '@/lib/notifications';
 
 interface VerificationResult {
   error: any;
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isSettingUp, setIsSettingUp] = useState<boolean>(false);
   const supabase = createClientComponentClient();
   const router = useRouter();
+  const [notificationSubscription, setNotificationSubscription] = useState<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -78,8 +80,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (session?.user) {
           const role = session.user.user_metadata?.role;
           setIsAdmin(role === 'admin');
+          
+          // Subscribe to booking notifications
+          if (!notificationSubscription && session.user.id) {
+            const subscription = subscribeToBookingNotifications(session.user.id);
+            setNotificationSubscription(subscription);
+          }
         } else {
           setIsAdmin(false);
+          
+          // Unsubscribe from notifications if user is no longer authenticated
+          if (notificationSubscription) {
+            notificationSubscription.unsubscribe();
+            setNotificationSubscription(null);
+          }
         }
       } catch (error) {
         console.error("Error getting session:", error);
@@ -190,17 +204,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setIsLoading(false);
             // Removed automatic redirect here to allow users to browse the homepage
           }
+          
+          // Subscribe to booking notifications if not already subscribed
+          if (!notificationSubscription && session.user.id) {
+            const subscription = subscribeToBookingNotifications(session.user.id);
+            setNotificationSubscription(subscription);
+          }
         } else {
           setIsAdmin(false);
           setIsLoading(false);
+          
+          // Unsubscribe from notifications if user is no longer authenticated
+          if (notificationSubscription) {
+            notificationSubscription.unsubscribe();
+            setNotificationSubscription(null);
+          }
         }
       }
     );
 
     return () => {
       subscription.unsubscribe();
+      
+      // Cleanup notification subscription on unmount
+      if (notificationSubscription) {
+        notificationSubscription.unsubscribe();
+      }
     };
-  }, [supabase.auth, router]);
+  }, [supabase.auth, router, notificationSubscription]);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);

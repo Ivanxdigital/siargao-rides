@@ -16,6 +16,7 @@ interface VehicleWithMetadata extends Vehicle {
   shopLogo?: string;
   shopLocation?: string;
   shopId: string;
+  is_available_for_dates?: boolean;
 }
 
 // Extend Window interface to include our custom properties
@@ -178,9 +179,9 @@ export default function BrowsePage() {
             shopLocation: vehicle.rental_shops?.location_area,
             vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
             images: vehicle.vehicle_images || []
-          })) || []
+          })) as VehicleWithMetadata[];
           
-          processedVehicles = formattedVehicles as VehicleWithMetadata[];
+          processedVehicles = formattedVehicles;
         }
         
         // If date range is provided, filter by available dates
