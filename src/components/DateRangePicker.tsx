@@ -50,37 +50,31 @@ export function DateRangePicker({
         const today = new Date();
         
         // Get bookings for this vehicle
-        const { data: rentals, error: rentalsError } = await supabase
-          .from('rentals')
-          .select('id, start_date, end_date')
-          .eq('vehicle_id', vehicleId)
-          .in('status', ['pending', 'confirmed'])
-          .gte('end_date', today.toISOString().split('T')[0]);
-          
-        if (rentalsError) {
-          console.error('Error fetching vehicle bookings:', rentalsError);
-          setError('Could not load availability data');
-          setLoading(false);
-          return;
+        let rentals: any[] = [];
+        
+        try {
+          const { data: vehicleRentals, error: rentalsError } = await supabase
+            .from('rentals')
+            .select('id, start_date, end_date')
+            .eq('vehicle_id', vehicleId)
+            .in('status', ['pending', 'confirmed'])
+            .gte('end_date', today.toISOString().split('T')[0]);
+            
+          if (rentalsError) {
+            console.error('Error fetching vehicle bookings:', rentalsError);
+            setError('Could not load availability data for vehicle');
+            // Continue with empty rentals but don't return early
+          } else {
+            rentals = vehicleRentals || [];
+          }
+        } catch (err) {
+          console.error('Exception fetching vehicle bookings:', err);
+          setError('Could not load availability data for vehicle');
+          // Continue with empty rentals
         }
         
-        // Check for bike_id bookings too (legacy support)
-        const { data: bikeRentals, error: bikeRentalsError } = await supabase
-          .from('rentals')
-          .select('id, start_date, end_date')
-          .eq('bike_id', vehicleId)
-          .in('status', ['pending', 'confirmed'])
-          .gte('end_date', today.toISOString().split('T')[0]);
-          
-        if (bikeRentalsError) {
-          console.error('Error fetching bike bookings:', bikeRentalsError);
-        }
-        
-        // Combine both results
-        const allRentals = [
-          ...(rentals || []),
-          ...(bikeRentals || [])
-        ];
+        // Combine both results (now just vehicle rentals)
+        const allRentals = [...rentals];
         
         // Transform into booked periods
         const periods: BookedPeriod[] = allRentals.map(rental => ({
@@ -102,6 +96,10 @@ export function DateRangePicker({
   
   // Function to check if a date is booked
   const isDateBooked = (date: Date) => {
+    if (!vehicleId || bookedPeriods.length === 0) {
+      return false;
+    }
+    
     return bookedPeriods.some(period => 
       isWithinInterval(date, { 
         start: period.startDate, 

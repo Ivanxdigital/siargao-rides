@@ -356,10 +356,24 @@ export default function BrowsePage() {
   const handleEngineSizeChange = (value: [number, number]) => {
     setEngineSizeRange(value)
   }
-  
+
   const handleViewShopClick = (shopId: string) => {
     // Navigate to shop page instead of directly to booking
     router.push(`/shop/${shopId}`)
+  }
+
+  // Handle Book Now button click
+  const handleBookClick = (vehicleId: string) => {
+    // Find the vehicle to get its shop ID
+    const vehicle = vehicles.find(v => v.id === vehicleId)
+    if (vehicle && vehicle.shopId) {
+      // Navigate to the booking page with vehicle ID and shop ID
+      router.push(`/booking/${vehicleId}?shop=${vehicle.shopId}`)
+    } else {
+      console.error("Could not find shop ID for vehicle:", vehicleId)
+      // Fallback to just the vehicle ID
+      router.push(`/booking/${vehicleId}`)
+    }
   }
 
   // Apply filters
@@ -1103,6 +1117,7 @@ export default function BrowsePage() {
                               : undefined
                           }
                           onViewShopClick={() => handleViewShopClick(vehicle.shopId)}
+                          onBookClick={handleBookClick}
                         />
                       </motion.div>
                     ))}
