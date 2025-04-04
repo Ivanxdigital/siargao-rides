@@ -251,28 +251,35 @@ export default function DashboardLayout({
                   </motion.div>
                   {pathname.startsWith("/dashboard/bookings") && (
                     <motion.div
-                      className="pl-7 space-y-1 mt-1"
-                      variants={itemVariants}
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
+                      className="pl-7 space-y-1"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                        <SidebarItem
-                          href="/dashboard/bookings"
-                          icon={<List size={16} />}
-                          title="List View"
-                          active={pathname === "/dashboard/bookings"}
-                        />
-                      </motion.div>
-                      <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                        <SidebarItem
-                          href="/dashboard/bookings/calendar"
-                          icon={<CalendarDays size={16} />}
-                          title="Calendar View"
-                          active={pathname === "/dashboard/bookings/calendar"}
-                        />
-                      </motion.div>
+                      <Link 
+                        href="/dashboard/bookings" 
+                        className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                          pathname === "/dashboard/bookings" 
+                            ? "bg-primary/20 text-primary" 
+                            : "text-white/70 hover:text-white hover:bg-white/10"
+                        }`}
+                        onClick={handleLinkClick}
+                      >
+                        <List size={16} />
+                        <span>List View</span>
+                      </Link>
+                      <Link 
+                        href="/dashboard/bookings/calendar" 
+                        className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                          pathname === "/dashboard/bookings/calendar" 
+                            ? "bg-primary/20 text-primary" 
+                            : "text-white/70 hover:text-white hover:bg-white/10"
+                        }`}
+                        onClick={handleLinkClick}
+                      >
+                        <CalendarDays size={16} />
+                        <span>Calendar View</span>
+                      </Link>
                     </motion.div>
                   )}
                   <motion.div 
