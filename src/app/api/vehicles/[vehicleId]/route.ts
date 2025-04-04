@@ -76,6 +76,8 @@ export async function PUT(
       vehicle_type_id: string;
       category_id: string;
       price_per_day: number;
+      price_per_week: number | null;
+      price_per_month: number | null;
       is_available: boolean;
       color: string | null;
       year: number | null;
@@ -86,6 +88,8 @@ export async function PUT(
       vehicle_type_id: vehicleData.vehicle_type_id,
       category_id: vehicleData.category_id,
       price_per_day: vehicleData.price_per_day,
+      price_per_week: vehicleData.price_per_week || null,
+      price_per_month: vehicleData.price_per_month || null,
       is_available: vehicleData.is_available,
       color: vehicleData.color || null,
       year: vehicleData.year || null,

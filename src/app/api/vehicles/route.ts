@@ -107,6 +107,8 @@ export async function POST(request: NextRequest) {
       vehicle_type_id: number;
       category_id: string;
       price_per_day: number;
+      price_per_week: number | null;
+      price_per_month: number | null;
       shop_id: string;
       is_available: boolean;
       color: string | null;
@@ -118,6 +120,8 @@ export async function POST(request: NextRequest) {
       vehicle_type_id: vehicleData.vehicle_type_id,
       category_id: vehicleData.category_id,
       price_per_day: vehicleData.price_per_day,
+      price_per_week: vehicleData.price_per_week || null,
+      price_per_month: vehicleData.price_per_month || null,
       shop_id: shopData.id,
       is_available: vehicleData.is_available ?? true,
       color: vehicleData.color || null,

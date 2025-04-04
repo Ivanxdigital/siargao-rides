@@ -59,6 +59,8 @@ export default function EditVehiclePage() {
   const [selectedVehicleTypeUUID, setSelectedVehicleTypeUUID] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("");
   const [price, setPrice] = useState<PriceInput>("");
+  const [weeklyPrice, setWeeklyPrice] = useState<PriceInput>("");
+  const [monthlyPrice, setMonthlyPrice] = useState<PriceInput>("");
   const [images, setImages] = useState<ImageInput[]>([
     { id: "1", file: null, preview: "", isUploading: false },
   ]);
@@ -163,6 +165,8 @@ export default function EditVehiclePage() {
         setSelectedVehicleTypeUUID(vehicle.vehicle_type_id);
         setCategory(vehicle.category_id || "");
         setPrice(vehicle.price_per_day?.toString() || "");
+        setWeeklyPrice(vehicle.price_per_week?.toString() || "");
+        setMonthlyPrice(vehicle.price_per_month?.toString() || "");
         setIsAvailable(vehicle.is_available !== false);
 
         // Set specifications
@@ -310,7 +314,7 @@ export default function EditVehiclePage() {
         throw new Error("Vehicle type could not be determined");
       }
       if (!price || parseInt(price) <= 0) {
-        throw new Error("Price is required and must be greater than 0");
+        throw new Error("Daily price is required and must be greater than 0");
       }
       if (!category) {
         throw new Error("Category is required");
@@ -395,6 +399,8 @@ export default function EditVehiclePage() {
         vehicle_type_id: selectedVehicleTypeUUID,
         category_id: category,
         price_per_day: parseInt(price),
+        price_per_week: weeklyPrice ? parseInt(weeklyPrice) : null,
+        price_per_month: monthlyPrice ? parseInt(monthlyPrice) : null,
         is_available: isAvailable,
         color: specifications.color,
         year: specifications.year ? parseInt(specifications.year) : null,
@@ -617,30 +623,89 @@ export default function EditVehiclePage() {
         {/* Pricing */}
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Pricing</h2>
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              htmlFor="dailyPrice"
-            >
-              Daily Price (₱) *
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                ₱
-              </span>
-              <input
-                id="dailyPrice"
-                type="text"
-                className="w-full pl-7 pr-3 py-2 border border-border rounded-md bg-background"
-                value={price}
-                onChange={(e) => {
-                  // Only allow numbers
-                  if (/^[0-9]*$/.test(e.target.value)) {
-                    setPrice(e.target.value);
-                  }
-                }}
-                required
-              />
+          <div className="space-y-4">
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="dailyPrice"
+              >
+                Daily Price (₱) *
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                  ₱
+                </span>
+                <input
+                  id="dailyPrice"
+                  type="text"
+                  className="w-full pl-7 pr-3 py-2 border border-border rounded-md bg-background"
+                  value={price}
+                  onChange={(e) => {
+                    // Only allow numbers
+                    if (/^[0-9]*$/.test(e.target.value)) {
+                      setPrice(e.target.value);
+                    }
+                  }}
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Required. This is the base rate for daily rentals.</p>
+            </div>
+
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="weeklyPrice"
+              >
+                Weekly Price (₱)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                  ₱
+                </span>
+                <input
+                  id="weeklyPrice"
+                  type="text"
+                  className="w-full pl-7 pr-3 py-2 border border-border rounded-md bg-background"
+                  value={weeklyPrice}
+                  placeholder={price ? `Suggested: ₱${parseInt(price) * 6}` : ""}
+                  onChange={(e) => {
+                    // Only allow numbers
+                    if (/^[0-9]*$/.test(e.target.value)) {
+                      setWeeklyPrice(e.target.value);
+                    }
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Optional. Special rate for weekly rentals (typically 7 days for the price of 6).</p>
+            </div>
+
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="monthlyPrice"
+              >
+                Monthly Price (₱)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                  ₱
+                </span>
+                <input
+                  id="monthlyPrice"
+                  type="text"
+                  className="w-full pl-7 pr-3 py-2 border border-border rounded-md bg-background"
+                  value={monthlyPrice}
+                  placeholder={price ? `Suggested: ₱${parseInt(price) * 25}` : ""}
+                  onChange={(e) => {
+                    // Only allow numbers
+                    if (/^[0-9]*$/.test(e.target.value)) {
+                      setMonthlyPrice(e.target.value);
+                    }
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Optional. Special rate for monthly rentals (typically 30 days for a discounted price).</p>
             </div>
           </div>
         </div>
