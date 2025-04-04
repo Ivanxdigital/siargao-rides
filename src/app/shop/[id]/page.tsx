@@ -12,6 +12,44 @@ import { Vehicle, VehicleType, RentalShop, Review } from "@/lib/types"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { VehicleAvailabilityCalendar } from "@/components/VehicleAvailabilityCalendar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog"
+import { motion } from 'framer-motion';
+
+// --- Animation Variants ---
+const pageVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } }
+};
+
+const bannerVariants = {
+  hidden: { opacity: 0, scale: 1.02 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
+};
+
+const slideUpFadeIn = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+};
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1, // Time delay between child animations
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+};
+// --- End Animation Variants ---
 
 // Create a new component for the availability section
 const VehicleAvailabilitySection = ({ vehicleId, vehicleName, vehicleType }: { vehicleId: string, vehicleName: string, vehicleType: VehicleType }) => {
@@ -205,7 +243,12 @@ export default function ShopPage() {
     : 0
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative">
+    <motion.div
+      className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Background with enhanced overlay gradient */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/30 via-purple-900/25 to-blue-900/20"></div>
@@ -214,7 +257,10 @@ export default function ShopPage() {
       </div>
       
       {/* Banner with enhanced height and overlay */}
-      <div className="relative h-60 md:h-80 w-full z-10">
+      <motion.div
+        className="relative h-60 md:h-80 w-full z-10"
+        variants={bannerVariants}
+      >
         <Image
           src={shop.banner_url || 'https://placehold.co/1200x400/1e3b8a/white?text=Shop+Banner'}
           alt={`${shop.name} banner`}
@@ -223,7 +269,7 @@ export default function ShopPage() {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
-      </div>
+      </motion.div>
       
       {/* Shop Info with better positioning and card styling */}
       <div className="container mx-auto px-4 -mt-24 md:-mt-28 relative z-10">
@@ -239,7 +285,10 @@ export default function ShopPage() {
           </div>
           
           {/* Shop Details with better typography */}
-          <div className="flex-1 bg-black/60 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/10">
+          <motion.div
+            className="flex-1 bg-black/60 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/10"
+            variants={slideUpFadeIn}
+          >
             <h1 className="text-2xl md:text-4xl font-bold">{shop.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <div className="flex items-center bg-yellow-900/20 px-2 py-1 rounded-md">
@@ -294,10 +343,13 @@ export default function ShopPage() {
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
           
           {/* Contact Info Card with improved styling */}
-          <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-5 shadow-sm w-full md:w-auto md:min-w-72 mt-4 md:mt-0">
+          <motion.div
+            className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-5 shadow-sm w-full md:w-auto md:min-w-72 mt-4 md:mt-0"
+            variants={slideUpFadeIn}
+          >
             <h3 className="font-semibold mb-4 text-lg pb-2 border-b border-white/10">Contact Information</h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3 group">
@@ -332,12 +384,19 @@ export default function ShopPage() {
                 </Button>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
       
       {/* Notice about ID requirements - moved here for better visibility */}
-      <div className="container mx-auto px-4 mt-8 mb-2 relative z-10">
+      <motion.div 
+        className="container mx-auto px-4 mt-8 mb-2 relative z-10"
+        variants={fadeIn}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        transition={{ delay: 0.2 }}
+      >
         <div className="bg-yellow-900/40 backdrop-blur-md border border-yellow-500/30 rounded-lg p-4 shadow-md">
           <div className="flex items-start gap-3">
             <div className="text-yellow-400 mt-0.5 shrink-0">
@@ -355,11 +414,18 @@ export default function ShopPage() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
       
       {/* Vehicle Type Tabs */}
       {vehicles.length > 0 && (
-        <div className="container mx-auto px-4 mt-8 relative z-10">
+        <motion.div 
+          className="container mx-auto px-4 mt-8 relative z-10"
+          variants={fadeIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="flex flex-wrap gap-2">
             <Button 
               variant={selectedVehicleType === 'all' ? 'default' : 'outline'}
@@ -403,44 +469,66 @@ export default function ShopPage() {
               </Button>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
       
       {/* Vehicle Listings with improved styling */}
       <div className="container mx-auto px-4 py-12 relative z-10">
-        <h2 className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-white/10">
+        <motion.h2 
+          className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-white/10"
+          variants={fadeIn} 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+        >
           {selectedVehicleType === 'all' ? 'Available Vehicles' : 
            selectedVehicleType === 'motorcycle' ? 'Available Motorcycles' :
            selectedVehicleType === 'car' ? 'Available Cars' : 'Available Tuktuks'}
-        </h2>
+        </motion.h2>
         
         {vehicles.length === 0 ? (
-          <div className="text-center py-12 bg-black/40 backdrop-blur-sm rounded-lg border border-dashed border-white/10">
+          <motion.div 
+            className="text-center py-12 bg-black/40 backdrop-blur-sm rounded-lg border border-dashed border-white/10"
+            variants={fadeIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            transition={{ delay: 0.5 }}
+          >
             <p className="text-white/50">No vehicles available from this shop at the moment.</p>
-          </div>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            transition={{ delay: 0.5 }} 
+          >
             {vehicles
               .filter(v => selectedVehicleType === 'all' || v.vehicle_type === selectedVehicleType)
               .map(vehicle => (
-                <VehicleCard
-                  key={vehicle.id}
-                  id={vehicle.id}
-                  model={vehicle.name}
-                  vehicleType={vehicle.vehicle_type}
-                  category={vehicle.category}
-                  images={vehicle.images?.map(img => img.image_url) || []}
-                  prices={{
-                    daily: vehicle.price_per_day,
-                    weekly: vehicle.price_per_week,
-                    monthly: vehicle.price_per_month
-                  }}
-                  specifications={vehicle.specifications}
-                  isAvailable={vehicle.is_available}
-                  onBookClick={handleBookClick}
-                />
+                <motion.div key={vehicle.id} variants={itemVariants}>
+                  <VehicleCard
+                    id={vehicle.id}
+                    model={vehicle.name}
+                    vehicleType={vehicle.vehicle_type}
+                    category={vehicle.category}
+                    images={vehicle.images?.map(img => img.image_url) || []}
+                    prices={{
+                      daily: vehicle.price_per_day,
+                      weekly: vehicle.price_per_week,
+                      monthly: vehicle.price_per_month
+                    }}
+                    specifications={vehicle.specifications}
+                    isAvailable={vehicle.is_available}
+                    onBookClick={handleBookClick}
+                  />
+                </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
       
@@ -463,16 +551,30 @@ export default function ShopPage() {
       {/* Reviews with enhanced design */}
       <div className="py-16 bg-gradient-to-b from-transparent to-black/70 border-t border-white/10 relative z-10">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center mb-10">
+          <motion.div
+            className="flex flex-col items-center mb-10"
+            variants={slideUpFadeIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
             <h2 className="text-3xl font-bold mb-2">Customer Reviews</h2>
             <div className="w-20 h-1 bg-primary rounded-full mb-4"></div>
             <p className="text-white/70 text-center max-w-md">
               See what our customers have to say about their experience with {shop.name}
             </p>
-          </div>
+          </motion.div>
           
           {reviews.length === 0 ? (
-            <div className="max-w-2xl mx-auto bg-black/60 backdrop-blur-sm rounded-xl border border-dashed border-primary/30 overflow-hidden shadow-sm">
+            <motion.div
+              className="max-w-2xl mx-auto bg-black/60 backdrop-blur-sm rounded-xl border border-dashed border-primary/30 overflow-hidden shadow-sm"
+              variants={fadeIn}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+            >
               <div className="p-8 flex flex-col items-center">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <Star size={24} className="text-primary" />
@@ -488,11 +590,22 @@ export default function ShopPage() {
                   Write a Review
                 </Button>
               </div>
-            </div>
+            </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+            >
               {reviews.map(review => (
-                <div key={review.id} className="bg-black/60 backdrop-blur-sm border border-white/10 hover:border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+                <motion.div
+                  key={review.id}
+                  className="bg-black/60 backdrop-blur-sm border border-white/10 hover:border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all"
+                  variants={itemVariants}
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -542,20 +655,27 @@ export default function ShopPage() {
                       </div>
                     </div>
                   )}
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
           
           {reviews.length > 0 && (
-            <div className="flex justify-center mt-10">
+            <motion.div
+              className="flex justify-center mt-10"
+              variants={fadeIn}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+            >
               <Button className="bg-primary text-white" size="sm">
                 Write a Review
               </Button>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 } 
