@@ -7,6 +7,17 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle, Eye } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Separator } from "@/components/ui/Separator";
 
 interface VehicleData {
   id: string;
@@ -17,10 +28,18 @@ interface VehicleData {
   [key: string]: any; // For other properties
 }
 
+// Add this helper function at the top of the file (outside the component)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Add a timestamp cache for auth operations
+let lastAuthRefresh = 0;
+const MIN_AUTH_REFRESH_INTERVAL = 60000; // 1 minute minimum between refreshes
+
 export default function BookingDetailsPage() {
   // Use the useParams hook to get the id parameter
   const params = useParams();
   const bookingId = params?.id as string;
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
@@ -32,203 +51,377 @@ export default function BookingDetailsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkUserAndFetchBooking = async () => {
+    const checkUserAndFetchBooking = async (retryCount = 0) => {
       if (!bookingId) {
         setError("Booking ID is missing");
         setLoading(false);
         return;
       }
 
+      console.log(`Starting to fetch details for booking ID: ${bookingId} (attempt ${retryCount + 1})`);
+
       try {
         // Check if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        if (!user) {
+          console.log("User not authenticated, redirecting to sign-in");
           router.push("/sign-in");
           return;
         }
 
-        // Get user's shop
-        const { data: shop, error: shopError } = await supabase
-          .from("rental_shops")
-          .select("id")
-          .eq("owner_id", session.user.id)
-          .single();
+        // Use the same Supabase client instance for all operations
+        // Only check auth if we haven't refreshed recently
+        let freshSupabase = supabase;
+        const now = Date.now();
+        
+        try {
+          if (now - lastAuthRefresh > MIN_AUTH_REFRESH_INTERVAL) {
+            console.log("Checking auth session...");
+            
+            // Get current session but don't force a refresh every time
+            const { data: sessionData } = await freshSupabase.auth.getSession();
+            
+            if (!sessionData.session) {
+              console.error("No active session found, redirecting to login");
+              router.push("/sign-in");
+              return;
+            }
+            
+            // Only refresh if token is about to expire (within 5 minutes)
+            const expiresAt = sessionData.session.expires_at;
+            const expiresIn = expiresAt ? expiresAt - Math.floor(now / 1000) : 0;
+            
+            if (expiresIn < 300) { // less than 5 minutes left
+              console.log("Token expiring soon, refreshing auth session...");
+              const { error: refreshError } = await freshSupabase.auth.refreshSession();
+              
+              if (refreshError) {
+                if (refreshError.message.includes("rate limit") && retryCount < 2) {
+                  console.log("Hit rate limit, waiting before retry...");
+                  // Exponential backoff - wait longer for each retry
+                  const backoffTime = Math.pow(2, retryCount) * 2000;
+                  await delay(backoffTime);
+                  checkUserAndFetchBooking(retryCount + 1);
+                  return;
+                }
+                
+                console.error("Failed to refresh session:", refreshError);
+                // If rate limited, wait before continuing
+                if (refreshError.message.includes("rate limit")) {
+                  await delay(2000);
+                }
+              } else {
+                // Update the timestamp for successful refresh
+                lastAuthRefresh = now;
+              }
+            } else {
+              console.log(`Token valid for ${Math.floor(expiresIn / 60)} more minutes, no refresh needed`);
+            }
+          } else {
+            console.log("Recent auth refresh exists, skipping");
+          }
+        } catch (authError) {
+          console.error("Auth check failed:", authError);
+          // Continue with existing client, don't retry auth immediately
+        }
 
-        if (shopError || !shop) {
+        console.log(`Fetching shop for user ID: ${user.id}`);
+
+        // Get user's shop
+        let shopQuery;
+        try {
+          shopQuery = await freshSupabase
+            .from("rental_shops")
+            .select("id")
+            .eq("owner_id", user.id)
+            .single();
+        } catch (shopQueryError) {
+          console.error("Error executing shop query:", shopQueryError);
+          throw new Error("Failed to query shop data");
+        }
+        
+        const { data: shop, error: shopError } = shopQuery;
+
+        if (shopError) {
+          if (Object.keys(shopError).length > 0) {
+            console.error("Shop query error details:", {
+              message: shopError.message,
+              details: shopError.details,
+              hint: shopError.hint,
+              code: shopError.code
+            });
+            setError(`Shop error: ${shopError.message || "Unknown shop error"}`);
+          } else {
+            console.error("Empty shop error object - likely an auth issue");
+            
+            // If this is not the final retry attempt, try again with exponential backoff
+            if (retryCount < 2) {
+              console.log(`Retrying data fetch (attempt ${retryCount + 2})...`);
+              // Exponential backoff for retries
+              const backoffTime = Math.pow(2, retryCount) * 1000;
+              await delay(backoffTime);
+              checkUserAndFetchBooking(retryCount + 1);
+              return;
+            }
+            
+            setError("Authentication error. Please refresh the page or sign in again.");
+          }
+          setLoading(false);
+          return;
+        }
+
+        if (!shop) {
+          console.error("No shop found for user:", user.id);
           setError("You don't have a shop. Please create one first.");
           setLoading(false);
           return;
         }
 
+        console.log(`Found shop with ID: ${shop.id}`);
         setShopId(shop.id);
         
-        // Fetch the booking details
-        const { data: bookingData, error: bookingError } = await supabase
-          .from("rentals")
-          .select(`
-            id, 
-            start_date, 
-            end_date, 
-            total_price, 
-            status,
-            created_at,
-            vehicle_id,
-            shop_id,
-            user_id,
-            payment_method_id,
-            delivery_option_id,
-            payment_status
-          `)
-          .eq("id", bookingId)
-          .eq("shop_id", shop.id)
-          .single();
-
-        if (bookingError) {
-          console.error("Error fetching booking:", bookingError);
-          setError("Booking not found or you don't have permission to view it.");
-          setLoading(false);
-          return;
-        }
-
-        console.log("Base booking data:", bookingData);
-
-        // Now fetch all the related data in separate queries
-        let vehicleData: VehicleData | null = null;
-        let shopData = null;
-        let userData = null;
-        let paymentMethodData = null;
-        let deliveryOptionData = null;
-
-        // Get vehicle data
-        if (bookingData.vehicle_id) {
-          const { data: vehicle, error: vehicleError } = await supabase
-            .from("vehicles")
-            .select("*")
-            .eq("id", bookingData.vehicle_id)
-            .single();
+        console.log(`Fetching booking with ID: ${bookingId} for shop: ${shop.id}`);
+        
+        try {
+          // Fetch the booking details - use the same client instance, don't create a new one
+          console.log(`Executing query for booking ${bookingId} in shop ${shop.id}`);
+          let bookingResult;
+          try {
+            console.log("About to execute Supabase query...");
             
-          if (vehicleError) {
-            console.error("Error fetching vehicle:", vehicleError);
-          } else {
-            vehicleData = vehicle;
-            console.log("Vehicle data:", vehicleData);
+            // Use simple field selection for more reliability, removing guest fields that don't exist
+            bookingResult = await freshSupabase
+              .from("rentals")
+              .select("id, start_date, end_date, total_price, status, created_at, vehicle_id, shop_id, user_id, payment_method_id, delivery_option_id, payment_status")
+              .eq("id", bookingId)
+              .eq("shop_id", shop.id)
+              .single();
             
-            // Get vehicle image
-            const { data: vehicleImages, error: imagesError } = await supabase
-              .from("vehicle_images")
-              .select("image_url")
-              .eq("vehicle_id", bookingData.vehicle_id)
-              .eq("is_primary", true)
-              .limit(1);
-              
-            if (!imagesError && vehicleImages && vehicleImages.length > 0 && vehicleData) {
-              (vehicleData as any).image_url = vehicleImages[0].image_url;
-              console.log("Found primary image:", vehicleData.image_url);
+            console.log("Query executed");
+          } catch (queryExecutionError) {
+            console.error("Error during Supabase query execution:", queryExecutionError);
+            
+            // Try to handle network errors specifically
+            if (queryExecutionError instanceof Error) {
+              if (queryExecutionError.message.includes('fetch') || 
+                  queryExecutionError.message.includes('network') ||
+                  queryExecutionError.message.includes('Failed to fetch')) {
+                throw new Error("Network connection error. Please check your internet connection and try again.");
+              }
+            }
+            
+            // If this is not the final retry attempt, try again with exponential backoff
+            if (retryCount < 2) {
+              console.log(`Retrying after query execution error (attempt ${retryCount + 2})...`);
+              // Exponential backoff for retries
+              const backoffTime = Math.pow(2, retryCount) * 1000;
+              await delay(backoffTime);
+              checkUserAndFetchBooking(retryCount + 1);
+              return;
+            }
+            
+            throw new Error(`Query execution error: ${queryExecutionError instanceof Error ? queryExecutionError.message : 'Unknown error'}`);
+          }
+
+          const { data: bookingData, error: bookingError } = bookingResult;
+
+          if (bookingError) {
+            // If we have a structured error, log the details
+            if (Object.keys(bookingError).length > 0) {
+              console.error("Booking query error details:", {
+                message: bookingError.message,
+                details: bookingError.details,
+                hint: bookingError.hint,
+                code: bookingError.code
+              });
+              setError(`Booking error: ${bookingError.message || "Booking not found or you don't have permission to view it."}`);
             } else {
-              // If no primary image, try to get any image
-              const { data: anyImage } = await supabase
+              // If we get an empty error object and this is not the final retry attempt, try again
+              console.error("Empty booking error object - likely an auth issue");
+              
+              if (retryCount < 2) {
+                console.log(`Retrying after empty error object (attempt ${retryCount + 2})...`);
+                // Exponential backoff for retries
+                const backoffTime = Math.pow(2, retryCount) * 1000;
+                await delay(backoffTime);
+                checkUserAndFetchBooking(retryCount + 1);
+                return;
+              }
+              
+              setError("Authentication error. Please try refreshing the page or signing in again.");
+            }
+            setLoading(false);
+            return;
+          }
+  
+          if (!bookingData) {
+            console.error("No booking data returned for ID:", bookingId);
+            setError("Booking not found");
+            setLoading(false);
+            return;
+          }
+  
+          console.log("Base booking data:", bookingData);
+  
+          // Now fetch all the related data in separate queries
+          let vehicleData: VehicleData = {
+            id: "",
+            name: "Unknown Vehicle",
+            price_per_day: 0,
+            description: "",
+            image_url: "/placeholder.jpg"
+          };
+          let shopData = null;
+          let userData = null;
+          let paymentMethodData = null;
+          let deliveryOptionData = null;
+  
+          // Get vehicle data
+          if (bookingData.vehicle_id) {
+            console.log(`Fetching vehicle with ID: ${bookingData.vehicle_id}`);
+            const { data: vehicle, error: vehicleError } = await freshSupabase
+              .from("vehicles")
+              .select("*")
+              .eq("id", bookingData.vehicle_id)
+              .single();
+  
+            if (vehicleError) {
+              console.warn("Error fetching vehicle details:", vehicleError);
+            } else if (vehicle) {
+              vehicleData = vehicle as VehicleData;
+              
+              // Get vehicle image (primary first)
+              const { data: images } = await freshSupabase
                 .from("vehicle_images")
                 .select("image_url")
-                .eq("vehicle_id", bookingData.vehicle_id)
+                .eq("vehicle_id", vehicle.id)
+                .eq("is_primary", true)
                 .limit(1);
+              
+              if (images && images.length > 0) {
+                vehicleData.image_url = images[0].image_url;
+              } else {
+                // Try to get any image
+                const { data: anyImage } = await freshSupabase
+                  .from("vehicle_images")
+                  .select("image_url")
+                  .eq("vehicle_id", vehicle.id)
+                  .limit(1);
                 
-              if (anyImage && anyImage.length > 0 && vehicleData) {
-                (vehicleData as any).image_url = anyImage[0].image_url;
-                console.log("Found alternative image:", vehicleData.image_url);
-              } else if (vehicleData) {
-                (vehicleData as any).image_url = "/placeholder.jpg";
-                console.log("No images found for vehicle, using placeholder");
+                if (anyImage && anyImage.length > 0) {
+                  vehicleData.image_url = anyImage[0].image_url;
+                } else {
+                  // Fallback to placeholder
+                  vehicleData.image_url = "/placeholder.jpg";
+                }
               }
             }
           }
-        }
-
-        // Get shop data
-        if (bookingData.shop_id) {
-          const { data: shop, error: shopFetchError } = await supabase
-            .from("rental_shops")
-            .select("*")
-            .eq("id", bookingData.shop_id)
-            .single();
-            
-          if (shopFetchError) {
-            console.error("Error fetching shop:", shopFetchError);
-          } else {
-            shopData = shop;
-            console.log("Shop data:", shopData);
+  
+          // Get shop data
+          if (bookingData.shop_id) {
+            console.log(`Fetching shop with ID: ${bookingData.shop_id}`);
+            const { data: shop, error: shopDetailError } = await freshSupabase
+              .from("rental_shops")
+              .select("*")
+              .eq("id", bookingData.shop_id)
+              .single();
+  
+            if (shopDetailError) {
+              console.warn("Error fetching shop details:", shopDetailError);
+            } else {
+              shopData = shop;
+            }
           }
-        }
-
-        // Get user data
-        if (bookingData.user_id) {
-          const { data: user, error: userError } = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", bookingData.user_id)
-            .single();
-            
-          if (userError) {
-            console.error("Error fetching user:", userError);
-          } else {
-            userData = user;
-            console.log("User data:", userData);
+  
+          // Get user data
+          if (bookingData.user_id) {
+            console.log(`Fetching user with ID: ${bookingData.user_id}`);
+            try {
+              const { data: user, error: userError } = await freshSupabase
+                .from("users")
+                .select("*")
+                .eq("id", bookingData.user_id)
+                .single();
+    
+              if (userError) {
+                if (Object.keys(userError).length > 0) {
+                  console.error("User query error details:", {
+                    message: userError.message,
+                    details: userError.details,
+                    hint: userError.hint,
+                    code: userError.code
+                  });
+                } else {
+                  console.error("Empty user error object - likely an auth issue");
+                }
+              } else if (user) {
+                userData = user;
+              }
+            } catch (userFetchError) {
+              console.error("Error fetching user data:", userFetchError);
+            }
           }
-        }
-
-        // Get payment method data
-        if (bookingData.payment_method_id) {
-          const { data: paymentMethod, error: paymentError } = await supabase
-            .from("payment_methods")
-            .select("*")
-            .eq("id", bookingData.payment_method_id)
-            .single();
-            
-          if (paymentError) {
-            console.error("Error fetching payment method:", paymentError);
-          } else {
-            paymentMethodData = paymentMethod;
-            console.log("Payment method data:", paymentMethodData);
+  
+          // Get payment method
+          if (bookingData.payment_method_id) {
+            console.log(`Fetching payment method with ID: ${bookingData.payment_method_id}`);
+            const { data: method, error: methodError } = await freshSupabase
+              .from("payment_methods")
+              .select("*")
+              .eq("id", bookingData.payment_method_id)
+              .single();
+  
+            if (methodError) {
+              console.warn("Error fetching payment method:", methodError);
+            } else {
+              paymentMethodData = method;
+            }
           }
-        }
-
-        // Get delivery option data
-        if (bookingData.delivery_option_id) {
-          const { data: deliveryOption, error: deliveryError } = await supabase
-            .from("delivery_options")
-            .select("*")
-            .eq("id", bookingData.delivery_option_id)
-            .single();
-            
-          if (deliveryError) {
-            console.error("Error fetching delivery option:", deliveryError);
-          } else {
-            deliveryOptionData = deliveryOption;
-            console.log("Delivery option data:", deliveryOptionData);
+  
+          // Get delivery option
+          if (bookingData.delivery_option_id) {
+            console.log(`Fetching delivery option with ID: ${bookingData.delivery_option_id}`);
+            const { data: delivery, error: deliveryError } = await freshSupabase
+              .from("delivery_options")
+              .select("*")
+              .eq("id", bookingData.delivery_option_id)
+              .single();
+  
+            if (deliveryError) {
+              console.warn("Error fetching delivery option:", deliveryError);
+            } else {
+              deliveryOptionData = delivery;
+            }
           }
+  
+          // Combine all the data
+          const completeBooking = {
+            ...bookingData,
+            vehicle: vehicleData,
+            shop: shopData,
+            user: userData,
+            payment_method: paymentMethodData,
+            delivery_option: deliveryOptionData
+          };
+  
+          console.log("Complete booking data:", completeBooking);
+          setBooking(completeBooking);
+          setLoading(false);
+        } catch (err) {
+          console.error("Error fetching booking details:", err);
+          setError(`Failed to load booking details: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          setLoading(false);
         }
-
-        // Combine all data
-        const fullBookingData = {
-          ...bookingData,
-          vehicles: vehicleData,
-          rental_shops: shopData,
-          users: userData,
-          payment_methods: paymentMethodData,
-          delivery_options: deliveryOptionData
-        };
-
-        console.log("Full booking data:", fullBookingData);
-        setBooking(fullBookingData);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error checking user/shop:", error);
-        setError("Failed to verify your account.");
+      } catch (err) {
+        console.error("Top level error in checkUserAndFetchBooking:", err);
+        setError(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setLoading(false);
       }
     };
 
+    // Start the data fetching process
     checkUserAndFetchBooking();
-  }, [bookingId, supabase, router]);
+  }, [bookingId, user, router, supabase]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!bookingId) return;
@@ -264,67 +457,90 @@ export default function BookingDetailsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-500";
+        return (
+          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-200/30 hover:bg-amber-500/20 hover:text-amber-700">
+            <Clock className="w-3 h-3 mr-1" />
+            Pending
+          </Badge>
+        );
       case "confirmed":
-        return "bg-green-500";
+        return (
+          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200/30 hover:bg-green-500/20 hover:text-green-700">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Confirmed
+          </Badge>
+        );
       case "completed":
-        return "bg-blue-500";
+        return (
+          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-200/30 hover:bg-blue-500/20 hover:text-blue-700">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Completed
+          </Badge>
+        );
       case "cancelled":
-        return "bg-red-500";
+        return (
+          <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-200/30 hover:bg-red-500/20 hover:text-red-700">
+            <XCircle className="w-3 h-3 mr-1" />
+            Cancelled
+          </Badge>
+        );
       default:
-        return "bg-gray-500";
-    }
-  };
-  
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Clock className="w-5 h-5" />;
-      case "confirmed":
-        return <CheckCircle className="w-5 h-5" />;
-      case "completed":
-        return <CheckCircle className="w-5 h-5" />;
-      case "cancelled":
-        return <XCircle className="w-5 h-5" />;
-      default:
-        return null;
+        return (
+          <Badge variant="outline" className="bg-gray-500/10 text-gray-600 border-gray-200/30">
+            {status}
+          </Badge>
+        );
     }
   };
 
   if (loading) {
     return (
-      <div className="animate-pulse text-center py-20">Loading booking details...</div>
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-500/10 border border-red-500/20 rounded-md p-4 text-center">
-        <p className="text-red-400">{error}</p>
-        <Link
-          href="/dashboard/bookings"
-          className="inline-block mt-4 px-4 py-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors"
-        >
-          Back to Bookings
-        </Link>
-      </div>
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="text-destructive">Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{error}</p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/bookings">
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Bookings
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
     );
   }
 
   if (!booking) {
     return (
-      <div className="text-center py-20">
-        <p>Booking not found</p>
-        <Link
-          href="/dashboard/bookings"
-          className="inline-block mt-4 px-4 py-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors"
-        >
-          Back to Bookings
-        </Link>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Booking Not Found</CardTitle>
+          <CardDescription>The booking you are looking for does not exist or has been removed.</CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/bookings">
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Bookings
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
     );
   }
 
@@ -333,68 +549,78 @@ export default function BookingDetailsPage() {
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   
   // Add null checks for vehicles and related properties
-  const pricePerDay = booking.vehicles?.price_per_day || 0;
+  const pricePerDay = booking.vehicle?.price_per_day || 0;
   const rentalPrice = pricePerDay * days;
-  const deliveryFee = booking.delivery_options?.fee || 0;
+  const deliveryFee = booking.delivery_option?.fee || 0;
   
-  const customerName = booking.users 
-    ? `${booking.users.first_name || ''} ${booking.users.last_name || ''}`.trim() 
-    : "Guest";
+  const customerName = booking.guest_name || (booking.user 
+    ? `${booking.user.first_name || ''} ${booking.user.last_name || ''}`.trim() 
+    : "Guest");
     
-  const customerEmail = booking.users?.email || "N/A";
-  const customerPhone = booking.users?.phone || "N/A";
+  const customerEmail = booking.guest_email || booking.user?.email || "N/A";
+  const customerPhone = booking.guest_phone || booking.user?.phone || "N/A";
 
   const renderVehicleDetails = () => {
-    if (!booking || !booking.vehicles) return null;
-    
-    console.log("Rendering vehicle details with image:", booking.vehicles.image_url);
+    if (!booking.vehicle) {
+      return (
+        <div className="text-muted-foreground">Vehicle information not available</div>
+      );
+    }
     
     return (
-      <div className="bg-white/5 rounded-lg p-4">
-        <h2 className="text-lg font-medium mb-4">Vehicle Details</h2>
-        <div className="flex gap-4">
-          <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
-            <img
-              src={booking.vehicles.image_url || "/placeholder.jpg"}
-              alt={booking.vehicles.name || "Vehicle"}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.log("Image failed to load:", e.currentTarget.src);
-                e.currentTarget.src = "/placeholder.jpg";
-              }}
-            />
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold">{booking.vehicles.name || "Vehicle"}</h3>
-            <p className="text-gray-400">Daily Rate: ₱{(booking.vehicles.price_per_day || 0).toFixed(2)}</p>
-            {/* Link disabled until vehicle details page is created */}
-            {/* <Link
-              href={`/dashboard/vehicles/${booking.vehicle_id}`}
-              className="text-primary hover:underline text-sm inline-block mt-2"
-            >
-              View Vehicle Details
-            </Link> */}
-          </div>
+      <div className="flex items-start gap-4">
+        <div className="h-20 w-20 rounded-md overflow-hidden bg-muted">
+          <img
+            src={booking.vehicle.image_url || "/placeholder.jpg"}
+            alt={booking.vehicle.name}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/placeholder.jpg";
+            }}
+          />
+        </div>
+        <div>
+          <h3 className="font-medium text-lg">{booking.vehicle.name}</h3>
+          <p className="text-muted-foreground">{booking.vehicle.description || "No description provided"}</p>
+          <p className="mt-1">₱{pricePerDay.toLocaleString()} per day</p>
         </div>
       </div>
     );
-  }
+  };
 
   const renderShopDetails = () => {
-    if (!booking || !booking.rental_shops) return null;
+    if (!booking.shop) {
+      return (
+        <div className="text-muted-foreground">Shop information not available</div>
+      );
+    }
     
     return (
       <div className="flex items-start gap-3">
         <MapPin className="w-5 h-5 text-primary mt-0.5" />
         <div>
-          <h3 className="font-medium">
-            {booking.delivery_options?.name || "Pickup at Shop"}
-          </h3>
-          <p className="text-sm text-gray-400">{booking.rental_shops.address}</p>
+          <h3 className="font-medium">Shop Location</h3>
+          <p>{booking.shop.name}</p>
+          <p className="text-sm text-muted-foreground">{booking.shop.address || "No address provided"}</p>
         </div>
       </div>
     );
-  }
+  };
+
+  const renderPaymentDetails = () => {
+    return (
+      <div className="flex items-start gap-3">
+        <CreditCard className="w-5 h-5 text-primary mt-0.5" />
+        <div>
+          <h3 className="font-medium">Payment</h3>
+          <p>{booking.payment_method?.name || "Cash on delivery"}</p>
+          <p className="text-sm text-muted-foreground">
+            Status: {booking.payment_status || "Not paid"}
+          </p>
+        </div>
+      </div>
+    );
+  };
 
   const renderCustomerInfo = () => {
     return (
@@ -403,8 +629,8 @@ export default function BookingDetailsPage() {
         <div>
           <h3 className="font-medium">Customer</h3>
           <p>{customerName}</p>
-          <p className="text-sm text-gray-400">{customerEmail}</p>
-          <p className="text-sm text-gray-400">{customerPhone}</p>
+          <p className="text-sm text-muted-foreground">{customerEmail}</p>
+          <p className="text-sm text-muted-foreground">{customerPhone}</p>
         </div>
       </div>
     );
@@ -412,145 +638,137 @@ export default function BookingDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Button asChild variant="ghost" size="sm" className="gap-1">
+      <div className="flex items-center justify-between">
+        <Button asChild variant="outline" size="sm">
           <Link href="/dashboard/bookings">
-            <ChevronLeft size={16} />
+            <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Bookings
           </Link>
         </Button>
+        {getStatusBadge(booking.status)}
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-              booking.status
-            )}/20 text-${getStatusColor(booking.status).replace("bg-", "")}`}
-          >
-            {getStatusIcon(booking.status)}
-            <span className="capitalize">{booking.status}</span>
-          </span>
-        </div>
-      </div>
-
-      <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <h1 className="text-2xl font-bold">Booking #{booking.id.substring(0, 8)}</h1>
-          <p className="text-sm text-gray-400">
-            Created on {format(new Date(booking.created_at), "MMMM d, yyyy 'at' h:mm a")}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            {renderVehicleDetails()}
-
-            {/* Booking Details */}
-            <div className="bg-white/5 rounded-lg p-4">
-              <h2 className="text-lg font-medium mb-4">Booking Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-5">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">Rental Period</h3>
-                      <p>
-                        {format(startDate, "MMMM d, yyyy")} to{" "}
-                        {format(endDate, "MMMM d, yyyy")}
-                      </p>
-                      <p className="text-sm text-gray-400">{days} days</p>
-                    </div>
-                  </div>
-
-                  {renderShopDetails()}
-                </div>
-
-                <div className="space-y-5">
-                  <div className="flex items-start gap-3">
-                    <CreditCard className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">Payment Method</h3>
-                      <p>{booking.payment_methods?.name || "Not specified"}</p>
-                      <p className="text-sm text-gray-400">
-                        {booking.payment_methods?.description || ""}
-                      </p>
-                    </div>
-                  </div>
-
-                  {renderCustomerInfo()}
-                </div>
-              </div>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Booking #{booking.id.substring(0, 8)}</CardTitle>
+              <CardDescription>
+                Created on {format(new Date(booking.created_at), "MMMM d, yyyy 'at' h:mm a")}
+              </CardDescription>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            {/* Price Summary */}
-            <div className="bg-white/5 rounded-lg p-4">
-              <h2 className="text-lg font-medium mb-4">Price Summary</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">
-                    Rental ({days} days × ₱{pricePerDay.toFixed(2)})
-                  </span>
-                  <span>₱{rentalPrice.toFixed(2)}</span>
-                </div>
-                {booking.delivery_options && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">
-                      {booking.delivery_options.name}
-                    </span>
-                    <span>₱{deliveryFee.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="border-t border-white/10 pt-3 flex justify-between font-bold">
-                  <span>Total</span>
-                  <span>₱{(booking.total_price || 0).toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Status Management */}
-            <div className="bg-white/5 rounded-lg p-4">
-              <h2 className="text-lg font-medium mb-4">Manage Booking</h2>
-              <div className="space-y-4">
-                {booking.status === "pending" && (
-                  <button
-                    onClick={() => handleStatusChange("confirmed")}
-                    disabled={processing}
-                    className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CheckCircle size={16} />
-                    Confirm Booking
-                  </button>
-                )}
-                
-                {(booking.status === "pending" || booking.status === "confirmed") && (
-                  <button
-                    onClick={() => handleStatusChange("completed")}
-                    disabled={processing}
-                    className="flex items-center justify-center gap-2 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CheckCircle size={16} />
-                    Mark as Completed
-                  </button>
-                )}
-                
-                {booking.status !== "cancelled" && booking.status !== "completed" && (
-                  <button
+            
+            <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+              {booking.status !== "cancelled" && booking.status !== "completed" && (
+                <>
+                  {booking.status !== "confirmed" && (
+                    <Button 
+                      variant="outline"
+                      className="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                      onClick={() => handleStatusChange("confirmed")}
+                      disabled={processing}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Confirm
+                    </Button>
+                  )}
+                  {booking.status !== "completed" && (
+                    <Button 
+                      variant="outline"
+                      className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                      onClick={() => handleStatusChange("completed")}
+                      disabled={processing}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Complete
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline"
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                     onClick={() => handleStatusChange("cancelled")}
                     disabled={processing}
-                    className="flex items-center justify-center gap-2 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <XCircle size={16} />
-                    Cancel Booking
-                  </button>
-                )}
-              </div>
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Cancel
+                  </Button>
+                </>
+              )}
             </div>
           </div>
-        </div>
-      </div>
+        </CardHeader>
+        
+        <Separator />
+        
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <div>
+                <h2 className="text-lg font-medium mb-4">Vehicle Details</h2>
+                {renderVehicleDetails()}
+              </div>
+
+              <Separator />
+
+              <div>
+                <h2 className="text-lg font-medium mb-4">Booking Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-5">
+                    <div className="flex items-start gap-3">
+                      <Calendar className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <h3 className="font-medium">Rental Period</h3>
+                        <p>
+                          {format(startDate, "MMMM d, yyyy")} to{" "}
+                          {format(endDate, "MMMM d, yyyy")}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{days} days</p>
+                      </div>
+                    </div>
+
+                    {renderShopDetails()}
+                  </div>
+
+                  <div className="space-y-5">
+                    {renderCustomerInfo()}
+                    {renderPaymentDetails()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Price Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Rental Fee</span>
+                      <span>₱{rentalPrice.toLocaleString()}</span>
+                    </div>
+                    
+                    {deliveryFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Delivery Fee</span>
+                        <span>₱{deliveryFee.toLocaleString()}</span>
+                      </div>
+                    )}
+                    
+                    <Separator />
+                    
+                    <div className="flex justify-between font-medium">
+                      <span>Total</span>
+                      <span>₱{booking.total_price.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 } 

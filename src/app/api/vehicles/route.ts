@@ -204,6 +204,8 @@ export async function GET(request: NextRequest) {
     const vehicleTypeId = url.searchParams.get('vehicle_type_id');
     const categoryId = url.searchParams.get('category_id');
     const isAvailable = url.searchParams.get('is_available');
+    const startDate = url.searchParams.get('start_date');
+    const endDate = url.searchParams.get('end_date');
     
     // Build query
     let query = supabase
@@ -229,12 +231,13 @@ export async function GET(request: NextRequest) {
       query = query.eq('category_id', categoryId);
     }
     
+    // Filter by general availability first if requested
     if (isAvailable === 'true') {
       query = query.eq('is_available', true);
     }
     
-    // Execute query
-    const { data, error } = await query;
+    // Execute query to get vehicles
+    const { data: vehicles, error } = await query;
     
     if (error) {
       return NextResponse.json(
@@ -243,7 +246,70 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    return NextResponse.json(data);
+    // If start date and end date are provided, check date-specific availability
+    if (startDate && endDate && vehicles && vehicles.length > 0) {
+      // Validate date format
+      const parsedStartDate = new Date(startDate);
+      const parsedEndDate = new Date(endDate);
+      
+      if (
+        isNaN(parsedStartDate.getTime()) || 
+        isNaN(parsedEndDate.getTime()) || 
+        parsedStartDate >= parsedEndDate
+      ) {
+        return NextResponse.json(
+          { error: 'Invalid date range' },
+          { status: 400 }
+        );
+      }
+      
+      // Format dates for the database query
+      const formattedStartDate = parsedStartDate.toISOString().split('T')[0];
+      const formattedEndDate = parsedEndDate.toISOString().split('T')[0];
+      
+      // Get all vehicle IDs for batch availability check
+      const vehicleIds = vehicles.map(vehicle => vehicle.id);
+      
+      // Check availability for each vehicle using our database function
+      const availabilityPromises = vehicleIds.map(async (vehicleId) => {
+        const { data, error } = await supabase
+          .rpc('check_vehicle_availability', {
+            vehicle_id: vehicleId,
+            start_date: formattedStartDate,
+            end_date: formattedEndDate
+          });
+          
+        if (error) {
+          console.error(`Error checking availability for vehicle ${vehicleId}:`, error);
+          return { vehicleId, available: false };
+        }
+        
+        return { vehicleId, available: data === true };
+      });
+      
+      // Wait for all availability checks to complete
+      const availabilityResults = await Promise.all(availabilityPromises);
+      
+      // Create map of available vehicle IDs
+      const availableVehicleIds = availabilityResults
+        .filter(result => result.available)
+        .map(result => result.vehicleId);
+      
+      // Filter vehicles by availability for the specific dates
+      const availableVehicles = vehicles.filter(vehicle => 
+        availableVehicleIds.includes(vehicle.id)
+      );
+      
+      // Add availability information to each vehicle
+      const vehiclesWithAvailability = availableVehicles.map(vehicle => ({
+        ...vehicle,
+        is_available_for_dates: true
+      }));
+      
+      return NextResponse.json(vehiclesWithAvailability);
+    }
+    
+    return NextResponse.json(vehicles);
     
   } catch (error) {
     console.error('Error in get vehicles API:', error);

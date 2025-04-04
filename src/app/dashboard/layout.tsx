@@ -15,7 +15,9 @@ import {
   UsersRound,
   Menu,
   X,
-  Car
+  Car,
+  List,
+  CalendarDays
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -244,9 +246,35 @@ export default function DashboardLayout({
                       href="/dashboard/bookings"
                       icon={<Calendar size={18} />}
                       title="Manage Bookings"
-                      active={pathname === "/dashboard/bookings"}
+                      active={pathname.startsWith("/dashboard/bookings")}
                     />
                   </motion.div>
+                  {pathname.startsWith("/dashboard/bookings") && (
+                    <motion.div
+                      className="pl-7 space-y-1 mt-1"
+                      variants={itemVariants}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                        <SidebarItem
+                          href="/dashboard/bookings"
+                          icon={<List size={16} />}
+                          title="List View"
+                          active={pathname === "/dashboard/bookings"}
+                        />
+                      </motion.div>
+                      <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                        <SidebarItem
+                          href="/dashboard/bookings/calendar"
+                          icon={<CalendarDays size={16} />}
+                          title="Calendar View"
+                          active={pathname === "/dashboard/bookings/calendar"}
+                        />
+                      </motion.div>
+                    </motion.div>
+                  )}
                   <motion.div 
                     onClick={handleLinkClick}
                     variants={itemVariants}

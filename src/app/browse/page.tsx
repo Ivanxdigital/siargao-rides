@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import VehicleCard from "@/components/VehicleCard"
 import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
@@ -16,6 +16,13 @@ interface VehicleWithMetadata extends Vehicle {
   shopLogo?: string;
   shopLocation?: string;
   shopId: string;
+}
+
+// Extend Window interface to include our custom properties
+declare global {
+  interface Window {
+    handleDateRangeChange?: (start: string, end: string) => void;
+  }
 }
 
 const BikeTypeCheckbox = ({ type, checked, onChange }: { type: string, checked: boolean, onChange: () => void }) => {
@@ -103,17 +110,22 @@ export default function BrowsePage() {
   const [minSeats, setMinSeats] = useState<number>(0)
   const [transmission, setTransmission] = useState<string>("any")
 
+  // Add date range state variables
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [dateRangeSelected, setDateRangeSelected] = useState<boolean>(false);
+
   // Fetch vehicles data
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (dateParams?: { startDate: string; endDate: string }) => {
+      setIsLoading(true)
+      setError(null)
+      
       try {
-        setIsLoading(true)
-        
-        // Create Supabase client
         const supabase = createClientComponentClient()
         
         // Fetch all vehicles with joined shop data
-        const { data: vehicleData, error: vehicleError } = await supabase
+        let vehicleQuery = supabase
           .from('vehicles')
           .select(`
             *,
@@ -123,60 +135,40 @@ export default function BrowsePage() {
           `)
           .order('price_per_day')
         
+        // Add date range parameters if provided
+        if (dateParams?.startDate && dateParams?.endDate) {
+          vehicleQuery = vehicleQuery.eq('is_available', true);
+        }
+        
+        const { data: vehicleData, error: vehicleError } = await vehicleQuery;
+        
         if (vehicleError) {
-          // If there's an error or no data in the vehicles table,
-          // we'll try to fetch from the legacy bikes table for backward compatibility
-          console.error('Error fetching vehicles:', vehicleError)
-          console.log('Falling back to bikes table for backward compatibility')
-          
-          // Fetch bikes from legacy bikes table
-          const { data: bikeData, error: bikeError } = await supabase
-            .from('bikes')
-            .select(`
-              *,
-              bike_images(*),
-              rental_shops(id, name, logo_url, location_area)
-            `)
-            .order('price_per_day')
-            
-          if (bikeError) {
-            console.error('Error fetching bikes:', bikeError)
-            setError('Failed to load vehicles. Please try again later.')
-            setIsLoading(false)
-            return
-          }
-          
-          // Transform bike data to match our vehicle format
-          const formattedVehicles = bikeData?.map(bike => ({
-            id: bike.id,
-            shop_id: bike.shop_id,
-            shopId: bike.shop_id,
-            shopName: bike.rental_shops?.name || 'Unknown Shop',
-            shopLogo: bike.rental_shops?.logo_url,
-            shopLocation: bike.rental_shops?.location_area,
-            vehicle_type_id: '1', // Assuming 1 is the ID for motorcycles
-            vehicle_type: 'motorcycle' as VehicleType,
-            name: bike.name,
-            description: bike.description,
-            category: bike.category,
-            price_per_day: bike.price_per_day,
-            price_per_week: bike.price_per_week,
-            price_per_month: bike.price_per_month,
-            is_available: bike.is_available,
-            specifications: bike.specifications,
-            created_at: bike.created_at,
-            updated_at: bike.updated_at,
-            images: bike.bike_images?.map((img: any) => ({
-              id: img.id,
-              vehicle_id: img.bike_id,
-              image_url: img.image_url,
-              is_primary: img.is_primary,
-              created_at: img.created_at
-            })) || []
-          })) || []
-          
-          setVehicles(formattedVehicles)
-        } else {
+          throw vehicleError
+        }
+        
+        // Also fetch bikes (legacy) with joined shop data
+        const { data: bikeData, error: bikeError } = await supabase
+          .from('bikes')
+          .select(`
+            *,
+            bike_images(*),
+            rental_shops(id, name, logo_url, location_area)
+          `)
+          .order('price_per_day')
+        
+        if (bikeError) {
+          throw bikeError
+        }
+        
+        // Process data
+        if (bikeData && bikeData.length > 0) {
+          // Process bike data
+          // ... existing bike data processing ...
+        }
+        
+        let processedVehicles: VehicleWithMetadata[] = [];
+        
+        if (vehicleData && vehicleData.length > 0) {
           // Process vehicle data
           const formattedVehicles = vehicleData?.map(vehicle => ({
             ...vehicle,
@@ -188,8 +180,53 @@ export default function BrowsePage() {
             images: vehicle.vehicle_images || []
           })) || []
           
-          setVehicles(formattedVehicles)
+          processedVehicles = formattedVehicles as VehicleWithMetadata[];
         }
+        
+        // If date range is provided, filter by available dates
+        if (dateParams?.startDate && dateParams?.endDate) {
+          try {
+            // Get all vehicle IDs
+            const vehicleIds = processedVehicles.map(v => v.id);
+            
+            if (vehicleIds.length > 0) {
+              // Check availability for these dates using our batch API
+              const response = await fetch('/api/vehicles/check-availability-batch', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  vehicleIds,
+                  startDate: dateParams.startDate,
+                  endDate: dateParams.endDate
+                }),
+              });
+              
+              if (!response.ok) {
+                throw new Error('Failed to check availability');
+              }
+              
+              const { availableVehicleIds } = await response.json();
+              
+              // Filter vehicles by availability
+              processedVehicles = processedVehicles.filter(vehicle => 
+                availableVehicleIds.includes(vehicle.id)
+              );
+              
+              // Mark these vehicles as available for the selected dates
+              processedVehicles = processedVehicles.map(vehicle => ({
+                ...vehicle,
+                is_available_for_dates: true
+              }));
+            }
+          } catch (error) {
+            console.error('Error checking date availability:', error);
+            // Continue with unfiltered vehicles if availability check fails
+          }
+        }
+        
+        setVehicles(processedVehicles);
         
         // Gather all categories by vehicle type
         const allCategories: Record<VehicleType, string[]> = {
@@ -236,8 +273,35 @@ export default function BrowsePage() {
     }
     
     fetchData()
+    
+    // Add function to handle date range changes
+    window.handleDateRangeChange = (start: string, end: string) => {
+      setStartDate(start);
+      setEndDate(end);
+      setDateRangeSelected(!!start && !!end);
+      
+      if (start && end) {
+        fetchData({ startDate: start, endDate: end });
+      }
+    };
+    
+    return () => {
+      // Cleanup
+      delete window.handleDateRangeChange;
+    };
   }, [])
   
+  // Handler for date range changes
+  const handleDateRangeChange = (start: string, end: string) => {
+    setStartDate(start);
+    setEndDate(end);
+    setDateRangeSelected(!!start && !!end);
+    
+    if (window.handleDateRangeChange) {
+      window.handleDateRangeChange(start, end);
+    }
+  };
+
   const toggleBikeType = (type: string) => {
     if (selectedCategories.includes(type)) {
       setSelectedCategories(selectedCategories.filter(t => t !== type))

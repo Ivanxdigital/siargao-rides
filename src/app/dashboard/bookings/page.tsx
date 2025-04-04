@@ -5,55 +5,146 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/Button";
+import { 
+  CalendarDays, 
+  Search, 
+  Filter, 
+  ChevronDown, 
+  ArrowUpDown, 
+  Eye, 
+  CheckCircle, 
+  XCircle, 
+  ClockIcon,
+  Loader
+} from "lucide-react";
 
 // Icons
 import { 
   Clock, 
-  CheckCircle, 
-  XCircle, 
   AlertTriangle, 
-  Search, 
   ChevronLeft, 
-  ChevronRight,
-  Filter
+  ChevronRight
 } from "lucide-react";
 
-export default function DashboardBookingsPage() {
+export default function BookingsPage() {
+  const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [shopId, setShopId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalBookings, setTotalBookings] = useState(0);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null); // For debugging
   const dropdownRef = useRef<HTMLDivElement>(null);
   const bookingsPerPage = 10;
   
   const supabase = createClientComponentClient();
   const router = useRouter();
 
+  // Add error boundary to catch render errors
   useEffect(() => {
+    // Global error handler to catch errors during fetch and render
+    const errorHandler = (event: ErrorEvent) => {
+      console.error("Unhandled error in BookingsPage:", event.error);
+      setError(`An unexpected error occurred: ${event.error?.message || "Unknown error"}`);
+      setIsLoading(false);
+      setDebugInfo(JSON.stringify(event.error, null, 2));
+      event.preventDefault();
+    };
+
+    window.addEventListener('error', errorHandler);
+    console.log("BookingsPage component mounted with error handler");
+
+    return () => {
+      window.removeEventListener('error', errorHandler);
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log("BookingsPage data fetch starting");
     const checkUserAndShop = async () => {
       try {
+        console.log("Checking user and shop...");
         // Check if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        if (!user) {
+          console.log("User not authenticated, redirecting to sign-in");
           router.push("/sign-in");
           return;
+        }
+        console.log("User is authenticated:", user.id);
+
+        // Ensure authentication is fresh
+        try {
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error("Session error:", sessionError);
+            throw new Error(`Authentication error: ${sessionError.message}`);
+          }
+          
+          if (!sessionData.session) {
+            console.error("No active session found");
+            router.push("/sign-in");
+            return;
+          }
+          
+          // Check if token is about to expire (within 5 minutes)
+          const expiresAt = sessionData.session.expires_at;
+          const expiresIn = expiresAt ? expiresAt - Math.floor(Date.now() / 1000) : 0;
+          
+          if (expiresIn < 300) { // less than 5 minutes left
+            console.log("Session about to expire, refreshing...");
+            const { error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+              console.error("Failed to refresh session:", refreshError);
+              // Continue anyway, maybe it will work
+            }
+          }
+        } catch (authError) {
+          console.error("Auth check failed:", authError);
+          // Try to continue anyway
         }
 
         // Get user's shop
         const { data: shop, error: shopError } = await supabase
           .from("rental_shops")
           .select("id")
-          .eq("owner_id", session.user.id)
+          .eq("owner_id", user.id)
           .single();
 
         if (shopError || !shop) {
-          setError("You don't have a shop. Please create one first.");
-          setLoading(false);
+          setError("No shop found for your account. Please set up your shop first.");
+          setIsLoading(false);
+          return;
+        }
+
+        // ADDED: Check rentals table structure to ensure schema compatibility
+        try {
+          console.log("Validating rentals table schema...");
+          // First, check if the rentals table exists by doing a minimal query
+          const { error: tableCheckError } = await supabase
+            .from('rentals')
+            .select('id')
+            .limit(1);
+            
+          if (tableCheckError) {
+            console.error("Error checking rentals table:", tableCheckError);
+            setError(`Database schema issue: ${tableCheckError.message}`);
+            setIsLoading(false);
+            return;
+          }
+          
+          console.log("Rentals table exists, proceeding with fetching data");
+        } catch (schemaError) {
+          console.error("Schema validation error:", schemaError);
+          setError("Failed to validate database schema. Please check your database configuration.");
+          setIsLoading(false);
           return;
         }
 
@@ -62,131 +153,164 @@ export default function DashboardBookingsPage() {
       } catch (error) {
         console.error("Error checking user/shop:", error);
         setError("Failed to verify your account.");
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     checkUserAndShop();
-  }, [supabase, router]);
+  }, [user, supabase, router]);
 
   const fetchBookings = async (shopId: string) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
+      setError(''); // Clear previous errors
+      console.log("fetchBookings: Starting to fetch bookings for shop:", shopId);
+      
       // Calculate pagination
       const from = (currentPage - 1) * bookingsPerPage;
       const to = from + bookingsPerPage - 1;
       
-      console.log("Fetching bookings for shop:", shopId, "page:", currentPage);
+      // Create a fresh client for this request
+      const freshSupabase = createClientComponentClient();
       
-      // Base query for rentals
-      let query = supabase
-        .from("rentals")
-        .select(`
-          id, 
-          vehicle_id,
-          vehicle_type_id,
-          user_id,
-          start_date, 
-          end_date, 
-          total_price, 
-          status,
-          created_at
-        `)
-        .eq("shop_id", shopId)
-        .order("created_at", { ascending: false })
-        .range(from, to);
-      
-      // Apply status filter if not "all"
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
-      
-      // Execute the query to get rentals
-      const { data: rentalData, error: rentalsError } = await query;
-      
-      if (rentalsError) {
-        console.error("Supabase rentals query error:", rentalsError);
-        throw new Error(rentalsError.message);
-      }
-      
-      console.log("Rental data:", rentalData);
-      
-      // For now, set a dummy total count - we'll handle real pagination later
-      // This is a workaround to avoid the TypeScript error with count parameter
-      setTotalBookings(100); // Just show multiple pages for now
-      
-      // Process the rentals to fetch related data
-      if (rentalData && rentalData.length > 0) {
+      try {
+        console.log("fetchBookings: Building query...");
+        
+        // Use minimal field selection to avoid schema issues
+        let query = freshSupabase
+          .from("rentals")
+          .select(`
+            id, 
+            vehicle_id,
+            user_id,
+            start_date, 
+            end_date, 
+            total_price, 
+            status,
+            created_at
+          `)
+          .eq("shop_id", shopId)
+          .order("created_at", { ascending: false })
+          .range(from, to);
+        
+        if (statusFilter !== "all") {
+          query = query.eq("status", statusFilter);
+        }
+        
+        console.log("fetchBookings: Executing rentals query...");
+        const { data: rentalData, error: rentalsError } = await query;
+        
+        if (rentalsError) {
+          console.error("fetchBookings: Supabase rentals query error:", rentalsError);
+          throw new Error(`Database error: ${rentalsError.message || 'Unknown error'}`);
+        }
+        
+        if (!rentalData) {
+          console.log("fetchBookings: No rental data returned (null)");
+          setBookings([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log(`fetchBookings: Found ${rentalData.length} bookings`);
+        
+        if (rentalData.length === 0) {
+          // No bookings, but this isn't an error
+          setBookings([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Process the rentals to fetch related data
+        console.log("fetchBookings: Processing bookings with related data");
         const processedBookings = await Promise.all(
           rentalData.map(async (rental) => {
             try {
-              console.log("Processing rental with vehicle_id:", rental.vehicle_id);
+              console.log(`Processing rental ${rental.id} with vehicle_id: ${rental.vehicle_id}`);
               
               // Get vehicle info
-              const { data: vehicleData, error: vehicleError } = await supabase
-                .from("vehicles")
-                .select("name, price_per_day")
-                .eq("id", rental.vehicle_id)
-                .single();
-              
-              if (vehicleError) {
-                console.error("Error fetching vehicle:", vehicleError);
-                throw vehicleError;
-              }
-              
-              console.log("Vehicle data found:", vehicleData);
-              
-              // Get vehicle image (primary image first)
-              const { data: vehicleImages, error: imagesError } = await supabase
-                .from("vehicle_images")
-                .select("image_url")
-                .eq("vehicle_id", rental.vehicle_id)
-                .eq("is_primary", true)
-                .limit(1);
-              
+              let vehicleName = "Unknown Vehicle";
               let vehicleImageUrl = "/placeholder.jpg";
               
-              if (!imagesError && vehicleImages && vehicleImages.length > 0) {
-                vehicleImageUrl = vehicleImages[0].image_url;
-                console.log("Found primary image:", vehicleImageUrl);
-              } else {
-                console.log("No primary image found, looking for any image");
-                // If no primary image, try to get any image
-                const { data: anyImage } = await supabase
+              if (rental.vehicle_id) {
+                // Get vehicle name
+                const { data: vehicleData, error: vehicleError } = await freshSupabase
+                  .from("vehicles")
+                  .select("name, price_per_day")
+                  .eq("id", rental.vehicle_id)
+                  .single();
+                
+                if (!vehicleError && vehicleData) {
+                  vehicleName = vehicleData.name;
+                  console.log(`Found vehicle: ${vehicleName}`);
+                } else {
+                  console.warn(`Error fetching vehicle ${rental.vehicle_id}:`, vehicleError);
+                }
+                
+                // Get vehicle image (primary image first)
+                const { data: vehicleImages, error: imagesError } = await freshSupabase
                   .from("vehicle_images")
                   .select("image_url")
                   .eq("vehicle_id", rental.vehicle_id)
+                  .eq("is_primary", true)
                   .limit(1);
                 
-                if (anyImage && anyImage.length > 0) {
-                  vehicleImageUrl = anyImage[0].image_url;
-                  console.log("Found alternative image:", vehicleImageUrl);
+                if (!imagesError && vehicleImages && vehicleImages.length > 0) {
+                  vehicleImageUrl = vehicleImages[0].image_url;
+                  console.log("Found primary image");
                 } else {
-                  console.log("No images found for vehicle, using placeholder");
+                  // If no primary image, try to get any image
+                  const { data: anyImage } = await freshSupabase
+                    .from("vehicle_images")
+                    .select("image_url")
+                    .eq("vehicle_id", rental.vehicle_id)
+                    .limit(1);
+                
+                  if (anyImage && anyImage.length > 0) {
+                    vehicleImageUrl = anyImage[0].image_url;
+                    console.log("Found alternative image");
+                  }
                 }
               }
               
               // Get user info if available
-              let userData = null;
+              let userData = {
+                first_name: "",
+                last_name: "",
+                email: ""
+              };
+
               if (rental.user_id) {
-                const { data: user } = await supabase
-                  .from("users")
-                  .select("first_name, last_name")
-                  .eq("id", rental.user_id)
-                  .single();
-                userData = user;
+                try {
+                  // First try the users table
+                  const { data: user, error: userError } = await freshSupabase
+                    .from("users")
+                    .select("first_name, last_name, email")
+                    .eq("id", rental.user_id)
+                    .single();
+                  
+                  if (!userError && user) {
+                    userData = user;
+                    console.log(`Found user: ${user.first_name || ''} ${user.last_name || ''}`);
+                  } else {
+                    // If not found in users table, we'll use the default empty values
+                    console.log("User not found in users table, using ID only");
+                  }
+                } catch (userFetchError) {
+                  console.error("Error fetching user data:", userFetchError);
+                }
               }
               
               return {
                 ...rental,
                 vehicle: {
-                  ...vehicleData,
+                  name: vehicleName,
                   image_url: vehicleImageUrl
                 },
                 user: userData
               };
             } catch (error) {
-              console.error("Error processing booking:", error);
+              console.error(`Error processing booking ${rental.id}:`, error);
               return {
                 ...rental,
                 vehicle: { name: "Unknown Vehicle" },
@@ -198,32 +322,45 @@ export default function DashboardBookingsPage() {
         
         // Format the bookings data
         const formattedBookings = formatBookings(processedBookings);
-        console.log("Formatted bookings:", formattedBookings);
+        console.log("Formatted bookings ready for display");
         setBookings(formattedBookings);
-      } else {
-        // No bookings found
-        setBookings([]);
+        setTotalBookings(100); // Just a placeholder for pagination
+        setIsLoading(false);
+        
+      } catch (queryError) {
+        console.error("fetchBookings: Error during query:", queryError);
+        const errorMessage = queryError instanceof Error ? queryError.message : "Unknown error";
+        setError(`Error fetching bookings: ${errorMessage}`);
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      setError(`Error fetching bookings: ${errorMessage}`);
-    } finally {
-      setLoading(false);
+    } catch (outerError) {
+      console.error("fetchBookings: Outer try-catch error:", outerError);
+      const errorMessage = outerError instanceof Error ? outerError.message : "Unknown error";
+      setError(`Error: ${errorMessage}`);
+      setIsLoading(false);
     }
   };
   
   const formatBookings = (bookings: any[]) => {
     return bookings.map(booking => {
+      // Use user data if available, otherwise create a generic customer name using the user ID
       const customerName = booking.user 
         ? `${booking.user.first_name || ''} ${booking.user.last_name || ''}`.trim() || "Guest"
-        : "Guest";
+        : booking.user_id 
+          ? `Guest ${booking.user_id.substring(0, 6)}` 
+          : "Guest";
+        
+      // Get email if available
+      const customerEmail = booking.user && booking.user.email 
+        ? booking.user.email 
+        : '-';
         
       return {
         id: booking.id,
         vehicleName: booking.vehicle?.name || "Unknown Vehicle",
         vehicleImage: booking.vehicle?.image_url || "/placeholder.jpg",
         customerName,
+        customerEmail,
         startDate: booking.start_date,
         endDate: booking.end_date,
         status: booking.status,
@@ -278,37 +415,36 @@ export default function DashboardBookingsPage() {
     switch (status) {
       case "pending":
         return (
-          <span className="flex items-center gap-1 text-yellow-400">
-            <Clock size={14} />
-            <span>Pending</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+            <ClockIcon size={12} className="mr-1" />
+            Pending
           </span>
         );
       case "confirmed":
         return (
-          <span className="flex items-center gap-1 text-green-400">
-            <CheckCircle size={14} />
-            <span>Confirmed</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <CheckCircle size={12} className="mr-1" />
+            Confirmed
           </span>
         );
       case "completed":
         return (
-          <span className="flex items-center gap-1 text-blue-400">
-            <CheckCircle size={14} />
-            <span>Completed</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <CheckCircle size={12} className="mr-1" />
+            Completed
           </span>
         );
       case "cancelled":
         return (
-          <span className="flex items-center gap-1 text-red-400">
-            <XCircle size={14} />
-            <span>Cancelled</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            <XCircle size={12} className="mr-1" />
+            Cancelled
           </span>
         );
       default:
         return (
-          <span className="flex items-center gap-1 text-gray-400">
-            <AlertTriangle size={14} />
-            <span>{status}</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            {status}
           </span>
         );
     }
@@ -344,210 +480,190 @@ export default function DashboardBookingsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen space-y-6 pb-36 overflow-visible relative">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-2xl font-bold">Manage Bookings</h1>
-        <div className="flex items-center gap-2">
-          <form onSubmit={handleSearch} className="relative">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search bookings..."
-              className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 h-4 w-4" />
-            <button type="submit" className="sr-only">Search</button>
-          </form>
-          <div className="relative group">
-            <button
-              className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-md"
-            >
-              <Filter size={16} /> 
-              <span>Filter</span>
-            </button>
-            <div className="absolute right-0 mt-2 py-2 w-48 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-10 hidden group-hover:block">
-              <button
-                onClick={() => handleFilterChange("all")}
-                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                  statusFilter === "all" ? "bg-white/10" : ""
-                }`}
-              >
-                All Bookings
-              </button>
-              <button
-                onClick={() => handleFilterChange("pending")}
-                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                  statusFilter === "pending" ? "bg-white/10" : ""
-                }`}
-              >
-                Pending
-              </button>
-              <button
-                onClick={() => handleFilterChange("confirmed")}
-                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                  statusFilter === "confirmed" ? "bg-white/10" : ""
-                }`}
-              >
-                Confirmed
-              </button>
-              <button
-                onClick={() => handleFilterChange("completed")}
-                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                  statusFilter === "completed" ? "bg-white/10" : ""
-                }`}
-              >
-                Completed
-              </button>
-              <button
-                onClick={() => handleFilterChange("cancelled")}
-                className={`block w-full text-left px-4 py-2 hover:bg-white/5 ${
-                  statusFilter === "cancelled" ? "bg-white/10" : ""
-                }`}
-              >
-                Cancelled
-              </button>
-            </div>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Manage Bookings</h1>
+          <p className="text-muted-foreground">View and manage your vehicle bookings</p>
+        </div>
+        
+        {/* Debug info for development - this will help identify issues */}
+        {debugInfo && (
+          <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-2 rounded text-xs w-full">
+            <strong>Debug:</strong> {debugInfo}
           </div>
+        )}
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+          >
+            <Filter size={16} className="mr-2" />
+            Filter
+            <ChevronDown size={16} className="ml-1" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            asChild 
+          >
+            <Link href="/dashboard/bookings/calendar">
+              <CalendarDays size={16} className="mr-2" />
+              Calendar View
+            </Link>
+          </Button>
         </div>
       </div>
-
-      {error ? (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-md p-4 text-center">
-          <p className="text-red-400">{error}</p>
+      
+      {/* Filters */}
+      {isFilterOpen && (
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              variant={statusFilter === 'all' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => handleFilterChange('all')}
+            >
+              All Bookings
+            </Button>
+            <Button 
+              variant={statusFilter === 'pending' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => handleFilterChange('pending')}
+              className="bg-amber-500/10 text-amber-600 border-amber-200/30 hover:bg-amber-500/20 hover:text-amber-700"
+            >
+              Pending
+            </Button>
+            <Button 
+              variant={statusFilter === 'confirmed' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => handleFilterChange('confirmed')}
+              className="bg-green-500/10 text-green-600 border-green-200/30 hover:bg-green-500/20 hover:text-green-700"
+            >
+              Confirmed
+            </Button>
+            <Button 
+              variant={statusFilter === 'completed' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => handleFilterChange('completed')}
+              className="bg-blue-500/10 text-blue-600 border-blue-200/30 hover:bg-blue-500/20 hover:text-blue-700"
+            >
+              Completed
+            </Button>
+            <Button 
+              variant={statusFilter === 'cancelled' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => handleFilterChange('cancelled')}
+              className="bg-red-500/10 text-red-600 border-red-200/30 hover:bg-red-500/20 hover:text-red-700"
+            >
+              Cancelled
+            </Button>
+          </div>
         </div>
-      ) : loading ? (
-        <div className="animate-pulse text-center py-20">Loading bookings...</div>
+      )}
+      
+      {/* Bookings List */}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-96 bg-card border border-border rounded-lg">
+          <Loader className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : error ? (
+        <div className="bg-destructive/10 border border-destructive text-destructive p-4 rounded-md">
+          {error}
+        </div>
       ) : bookings.length === 0 ? (
-        <div className="text-center py-20 bg-white/5 rounded-md">
-          <p className="text-gray-400">No bookings found.</p>
-          <p className="text-sm mt-2">
-            {statusFilter !== "all" 
-              ? `No ${statusFilter} bookings at the moment.` 
-              : "When customers book your bikes, they'll appear here."}
+        <div className="flex flex-col items-center justify-center h-96 bg-card border border-border rounded-lg p-6 text-center">
+          <CalendarDays size={48} className="text-muted-foreground mb-4" />
+          <h3 className="text-xl font-medium mb-2">No Bookings Found</h3>
+          <p className="text-muted-foreground mb-6">
+            {statusFilter !== 'all' 
+              ? `You don't have any ${statusFilter} bookings.` 
+              : "You don't have any bookings yet."}
           </p>
+          <Button variant="outline" onClick={() => handleFilterChange('all')}>
+            Show All Bookings
+          </Button>
         </div>
       ) : (
-        <div className="overflow-visible">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="px-4 py-3 text-left">Booking Details</th>
-                <th className="px-4 py-3 text-left">Customer</th>
-                <th className="px-4 py-3 text-left">Dates</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {bookings.map((booking) => (
-                <tr key={booking.id} className="hover:bg-white/5">
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 flex-shrink-0 rounded overflow-hidden bg-muted">
-                        <img
-                          src={booking.vehicleImage || "/placeholder.jpg"}
-                          alt={`${booking.vehicleName || "Vehicle"}`}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            console.log("Image failed to load:", e.currentTarget.src);
-                            e.currentTarget.src = "/placeholder.jpg";
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <p className="font-medium truncate w-40">
-                          {booking.vehicleName || "Unknown Vehicle"}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          ₱{(booking.totalPrice || 0).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <p className="font-medium">{booking.customerName}</p>
-                  </td>
-                  <td className="px-4 py-4">
-                    <p className="text-gray-200">
-                      {format(new Date(booking.startDate), "MMM d")} - {format(new Date(booking.endDate), "MMM d, yyyy")}
-                    </p>
-                    <p className="text-sm text-gray-400">Booked: {format(new Date(booking.created_at), "MMM d, yyyy")}</p>
-                  </td>
-                  <td className="px-4 py-4">
-                    {getStatusBadge(booking.status)}
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Link 
-                        href={`/dashboard/bookings/${booking.id}`}
-                        className="px-3 py-1 text-xs bg-white/10 rounded-md hover:bg-white/20 transition-colors"
-                      >
-                        View Details
-                      </Link>
-                      <div className="relative" ref={dropdownRef}>
-                        <button 
-                          className="px-3 py-1 text-xs bg-white/10 rounded-md hover:bg-white/20 transition-colors"
-                          onClick={() => toggleDropdown(booking.id)}
-                        >
-                          Update Status
-                        </button>
-                        {openDropdownId === booking.id && (
-                          <div className="absolute right-0 mt-1 py-2 w-40 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-50">
-                            {booking.status !== "confirmed" && booking.status !== "completed" && (
-                              <button
-                                onClick={() => {
-                                  handleStatusChange(booking.id, "confirmed");
-                                  setOpenDropdownId(null);
-                                }}
-                                className="block w-full text-left px-4 py-2 text-green-400 hover:bg-white/5"
-                              >
-                                Confirm
-                              </button>
-                            )}
-                            {booking.status !== "completed" && booking.status !== "cancelled" && (
-                              <button
-                                onClick={() => {
-                                  handleStatusChange(booking.id, "completed");
-                                  setOpenDropdownId(null);
-                                }}
-                                className="block w-full text-left px-4 py-2 text-blue-400 hover:bg-white/5"
-                              >
-                                Mark as Completed
-                              </button>
-                            )}
-                            {booking.status !== "cancelled" && booking.status !== "completed" && (
-                              <button
-                                onClick={() => {
-                                  handleStatusChange(booking.id, "cancelled");
-                                  setOpenDropdownId(null);
-                                }}
-                                className="block w-full text-left px-4 py-2 text-red-400 hover:bg-white/5"
-                              >
-                                Cancel Booking
-                              </button>
-                            )}
-                            {/* Show a message when no actions are available */}
-                            {booking.status === "completed" && (
-                              <div className="px-4 py-2 text-gray-400 text-sm">
-                                No actions available
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Vehicle
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Dates
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Price
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-card divide-y divide-border">
+                {bookings.map((booking) => (
+                  <tr key={booking.id} className="hover:bg-muted/50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0">
+                          <img 
+                            className="h-10 w-10 rounded-md object-cover" 
+                            src={booking.vehicleImage} 
+                            alt={booking.vehicleName}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder.jpg';
+                            }}
+                          />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium">{booking.vehicleName}</div>
+                          <div className="text-xs text-muted-foreground">Booked: {format(new Date(booking.created_at), "MMM d, yyyy")}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm">{booking.customerName}</div>
+                      <div className="text-xs text-muted-foreground">{booking.customerEmail}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm">{format(new Date(booking.startDate), "MMM d")}</div>
+                      <div className="text-xs text-muted-foreground">to {format(new Date(booking.endDate), "MMM d, yyyy")}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(booking.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      ₱{booking.totalPrice.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <Button variant="ghost" size="sm" className="text-primary hover:text-primary-dark" asChild>
+                        <Link href={`/dashboard/bookings/${booking.id}`}>
+                          <Eye size={16} className="mr-1" />
+                          View
+                        </Link>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Spacer to push pagination to bottom */}
-      <div className="flex-grow"></div>
-      
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-12 mb-6 pt-4 border-t border-white/10">

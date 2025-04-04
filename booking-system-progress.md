@@ -1,65 +1,61 @@
-# Siargao Rides: Booking System Implementation Progress
+# Vehicle Booking & Availability Management - Progress Tracker
 
-## Overview
-This document tracks our progress implementing the booking system for Siargao Rides, phase by phase.
+## Project Status
+**Current Phase:** Phase 2 - Shop Owner Dashboard  
+**Start Date:** Today  
+**Last Updated:** Today
 
-## Phase 1: Database Schema Setup ✅
-- [x] Create payment_methods table
-- [x] Create delivery_options table
-- [x] Create booking_statuses table
-- [x] Create payment_statuses table
-- [x] Enhance rentals table with booking fields
-- [x] Add initial data for payment methods (cash only)
-- [x] Add initial data for delivery options
-- [x] Add initial data for statuses
-- [x] Create timestamp update triggers
+## Completed Tasks
 
-## Phase 2: Booking Flow Implementation ✅
-- [x] Update shop page to connect "Book This Bike" buttons
-- [x] Create booking page (`/booking/[bikeId]`)
-- [x] Create BookingForm component
-- [x] Create BookingSummary component
-- [x] Create DateRangePicker component
-- [x] Implement booking UI
-- [x] Test booking UI functionality
+### Phase 1: Database & API Enhancement
+- ✅ Initial planning and architecture design
+- ✅ Create database function for checking vehicle availability
+  - ✅ Write SQL function to check for booking conflicts
+- ✅ Implement vehicle availability checking API
+  - ✅ Create `/api/vehicles/check-availability` endpoint
+  - ✅ Create `/api/vehicles/check-availability-batch` endpoint for multiple vehicles
+  - ✅ Handle date validation and error cases
+- ✅ Update search functionality to filter by availability
+  - ✅ Modify existing vehicles search API to consider booking dates
+  - ✅ Add date filter UI to browse page
 
-## Phase 3: API Routes & Confirmation ✅
-- [x] Implement check-availability API
-- [x] Implement calculate-price API
-- [x] Implement create-booking API
-- [x] Create booking confirmation page
-- [x] Implement email notification functionality (added to future phase)
+### Phase 2: Shop Owner Dashboard
+- ✅ Implement booking management calendar view
+  - ✅ Create `/dashboard/bookings/calendar` page
+  - ✅ Integrate calendar component (react-big-calendar)
+  - ✅ Style calendar to match site theme
+  - ✅ Add filtering by vehicle
+- ✅ Add dashboard navigation for bookings
+  - ✅ Update dashboard navigation to include bookings section
+  - ✅ Add list/calendar view toggle
+- ✅ Create booking detail page enhancements
+  - ✅ Add approval/rejection functionality
+  - ✅ Add booking status management
+  - ✅ Implement price breakdown view
+  - ✅ Display customer and vehicle information
 
-## Phase 4: Cash Payment & Booking Management ✅
-- [x] Implement booking management for shop owners
-- [x] Create booking history page for users
-- [x] Add confirmation/cancellation functionality
-- [x] Implement booking status updates
-- [x] Enhance booking confirmation page with modern UI
-- [x] Add print and share functionality for booking confirmations
-- [x] Implement detailed price breakdown and status indicators
+### Phase 3: User Experience
+*No tasks completed yet*
 
-### User Booking Management ✅
-- [x] Create "My Bookings" page for users to view their booking history
-- [x] Implement booking filtering by status
-- [x] Add booking cancellation with 24-hour restriction
-- [x] Add navigation links in profile and navbar
-- [x] Display booking details with status indicators
-- [x] Link to detailed booking confirmation view
+## Current Sprint
+- Implementing availability visualization in the vehicle detail page
+- Integrating availability checking with booking process
+- Adding visual indicators for available/unavailable dates
 
-## Phase 5: Testing & Refinement ⏳
-- [ ] Perform end-to-end testing
-- [ ] Refine user experience
-- [ ] Deploy to production environment
-- [ ] Fix any bugs identified during testing
+## Blockers & Issues
+- Need to fix linter errors in the browse page component
+- Separator component missing required dependency
 
-## Future Enhancements
-- [ ] PayMongo Integration
-- [ ] Booking modifications
-- [ ] Automatic reminders
-- [ ] Rating and review system
-- [ ] Loyalty program
-- [ ] Email notifications for booking status changes
-- [ ] Add QR code generation for booking verification
-- [ ] Implement a calendar view for shop owners
-- [ ] Add analytics dashboard for rental performance 
+## Notes
+- Planning session completed with detailed implementation steps
+- Reviewed existing search functionality in SearchBar.tsx
+- Discovered existing rentals table will be used as the bookings table
+- SQL function `check_vehicle_availability` created in Supabase to check for booking conflicts
+- Created API endpoints to check availability by date range
+- Successfully implemented booking management system with list and calendar views
+- Created consistent UI across dashboard with shadcn/ui components
+
+## Next Steps
+1. Fix linter errors in browse page component
+2. Add availability calendar component to vehicle detail page
+3. Prevent booking unavailable dates during the booking process 
