@@ -262,35 +262,10 @@ const VehicleCard = ({
         )}
 
         {/* Actions */}
-        <div className="p-4 flex gap-2 border-t border-border mt-auto">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 text-xs"
-              >
-                <Calendar size={14} className="mr-1" />
-                Availability
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-xl">
-              <DialogHeader>
-                <DialogTitle className="mb-2 flex items-center">
-                  {getVehicleIcon()}
-                  <span className="ml-2">{model} Availability</span>
-                </DialogTitle>
-              </DialogHeader>
-              <VehicleAvailabilityCalendar vehicleId={id} numberOfMonths={1} />
-              <p className="text-sm text-white/70 mt-2">
-                Check which dates this vehicle is available for rent. Red dates are already booked.
-              </p>
-            </DialogContent>
-          </Dialog>
-          
+        <div className="p-4 border-t border-border mt-auto">
           <Button 
             size="sm"
-            className="flex-1"
+            className="w-full"
             onClick={() => onBookClick?.(id)}
             disabled={!isAvailable}
           >
