@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Minus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface FAQItemProps {
@@ -9,6 +10,7 @@ interface FAQItemProps {
   answer: string
   isOpen: boolean
   onClick: () => void
+  index: number
 }
 
 const faqData = [
@@ -38,37 +40,69 @@ const faqData = [
   }
 ]
 
-const FAQItem: React.FC<FAQItemProps> = ({ question, answer, isOpen, onClick }) => {
+const FAQItem: React.FC<FAQItemProps> = ({ question, answer, isOpen, onClick, index }) => {
   return (
-    <div className="border-b border-white/10 last:border-b-0">
-      <button
-        className={cn(
-          "flex justify-between items-center w-full py-4 sm:py-5 px-4 sm:px-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200 ease-in-out",
-          isOpen ? "bg-white/5" : "hover:bg-white/5"
-        )}
-        onClick={onClick}
-        aria-expanded={isOpen}
-        aria-controls={`faq-answer-${question.replace(/\s+/g, '-')}`}
-      >
-        <span className="text-base font-medium text-white">{question}</span>
-        {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-primary flex-shrink-0 transition-transform duration-300 ease-in-out" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-300 ease-in-out" />
-        )}
-      </button>
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.1 }}
+      className="mb-4 last:mb-0"
+    >
       <div 
-        id={`faq-answer-${question.replace(/\s+/g, '-')}`}
         className={cn(
-          "overflow-hidden transition-all duration-300 ease-in-out",
-          isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          "bg-white/[0.03] backdrop-blur-sm rounded-xl overflow-hidden",
+          "border border-white/[0.05] shadow-sm transition-all duration-300",
+          isOpen ? "shadow-lg" : "hover:border-white/10 hover:bg-white/[0.05]"
         )}
       >
-        <div className="px-4 sm:px-6 pb-4 sm:pb-5 pt-1">
-          <p className="text-sm text-gray-300 leading-relaxed">{answer}</p>
-        </div>
+        <button
+          className="flex justify-between items-center w-full py-5 px-6 text-left focus:outline-none group"
+          onClick={onClick}
+          aria-expanded={isOpen}
+          aria-controls={`faq-answer-${question.replace(/\s+/g, '-')}`}
+        >
+          <span className="font-medium text-white text-base md:text-lg pr-2">{question}</span>
+          <div className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+            "transition-all duration-300 ease-out",
+            isOpen 
+              ? "bg-primary text-black rotate-0" 
+              : "bg-white/10 text-white group-hover:bg-white/20"
+          )}>
+            {isOpen ? (
+              <Minus className="w-4 h-4" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+          </div>
+        </button>
+        
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              key={`answer-${index}`}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ 
+                height: { duration: 0.3, ease: "easeInOut" },
+                opacity: { duration: 0.2, ease: "easeInOut" }
+              }}
+            >
+              <div className="px-6 pb-5 pt-0">
+                <motion.div
+                  initial={{ y: -10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.2, delay: 0.1 }}
+                >
+                  <p className="text-gray-300 leading-relaxed text-sm md:text-base">{answer}</p>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -80,33 +114,61 @@ export default function FAQSection() {
   }
 
   return (
-    <section className="py-10 sm:py-16 md:py-20 bg-gradient-to-b from-gray-900 to-black text-white overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6">
+    <section className="py-16 md:py-24 bg-gradient-to-b from-gray-900 via-gray-900 to-black text-white overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
         {/* Section Header */}
-        <div className="text-center mb-8 sm:mb-12 md:mb-16 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 sm:mb-3">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12 md:mb-16"
+        >
+          <h2 className="text-2xl md:text-3xl font-semibold mb-3 md:mb-4 relative inline-block">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-400 to-primary bg-size-200 animate-gradient">
               Frequently Asked Questions
             </span>
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
+          <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">
             Got questions? We've got answers. Find quick info about renting in Siargao.
           </p>
-        </div>
+        </motion.div>
 
         {/* Accordion Container */}
-        <div className="max-w-4xl mx-auto bg-gray-900/40 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg overflow-hidden">
-          {faqData.map((item, index) => (
-            <FAQItem
-              key={index}
-              question={item.question}
-              answer={item.answer}
-              isOpen={openIndex === index}
-              onClick={() => handleClick(index)}
-            />
-          ))}
+        <div className="relative">
+          {/* Decorative elements */}
+          <div className="absolute -top-10 -left-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl opacity-20"></div>
+          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl opacity-20"></div>
+          
+          {/* FAQ items */}
+          <div className="relative">
+            {faqData.map((item, index) => (
+              <FAQItem
+                key={index}
+                index={index}
+                question={item.question}
+                answer={item.answer}
+                isOpen={openIndex === index}
+                onClick={() => handleClick(index)}
+              />
+            ))}
+          </div>
         </div>
       </div>
+      
+      {/* Add some global styles for the animations */}
+      <style jsx global>{`
+        @keyframes gradientFlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-gradient {
+          animation: gradientFlow 3s ease infinite;
+        }
+        .bg-size-200 {
+          background-size: 200% auto;
+        }
+      `}</style>
     </section>
   )
 } 
