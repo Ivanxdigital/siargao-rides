@@ -9,6 +9,7 @@ import { Bike, RentalShop, Vehicle } from "@/lib/types";
 import { User } from "@supabase/auth-helpers-nextjs";
 import { Info, AlertCircle } from "lucide-react";
 import { addDays, subDays, format, isWithinInterval } from "date-fns";
+import { TermsAndConditions } from "./TermsAndConditions";
 
 interface BookingFormProps {
   bike?: Bike;
@@ -541,7 +542,7 @@ export default function BookingForm({
             className="mt-1"
           />
           <span className="text-sm text-white/70">
-            I agree to the <a href="#" className="text-primary hover:underline">terms and conditions</a> and understand that I will need to provide a valid ID as deposit when collecting the vehicle.
+            I agree to the <TermsAndConditions><span className="text-primary hover:underline cursor-pointer">terms and conditions</span></TermsAndConditions> and understand that I will need to provide a valid ID as deposit when collecting the vehicle.
           </span>
         </label>
       </div>
