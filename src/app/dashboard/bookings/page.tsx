@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -27,6 +27,8 @@ export default function DashboardBookingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalBookings, setTotalBookings] = useState(0);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const bookingsPerPage = 10;
   
   const supabase = createClientComponentClient();
@@ -322,8 +324,27 @@ export default function DashboardBookingsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter, shopId]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  
+  // Toggle dropdown visibility
+  const toggleDropdown = (bookingId: string) => {
+    setOpenDropdownId(openDropdownId === bookingId ? null : bookingId);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col min-h-screen space-y-6 pb-36 overflow-visible relative">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-2xl font-bold">Manage Bookings</h1>
         <div className="flex items-center gap-2">
@@ -407,7 +428,7 @@ export default function DashboardBookingsPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-visible">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10">
@@ -464,36 +485,50 @@ export default function DashboardBookingsPage() {
                       >
                         View Details
                       </Link>
-                      <div className="relative group">
-                        <button className="px-3 py-1 text-xs bg-white/10 rounded-md hover:bg-white/20 transition-colors">
+                      <div className="relative" ref={dropdownRef}>
+                        <button 
+                          className="px-3 py-1 text-xs bg-white/10 rounded-md hover:bg-white/20 transition-colors"
+                          onClick={() => toggleDropdown(booking.id)}
+                        >
                           Update Status
                         </button>
-                        <div className="hidden group-hover:block absolute right-0 mt-1 py-2 w-40 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-10">
-                          {booking.status !== "confirmed" && (
-                            <button
-                              onClick={() => handleStatusChange(booking.id, "confirmed")}
-                              className="block w-full text-left px-4 py-2 text-green-400 hover:bg-white/5"
-                            >
-                              Confirm
-                            </button>
-                          )}
-                          {booking.status !== "completed" && booking.status !== "cancelled" && (
-                            <button
-                              onClick={() => handleStatusChange(booking.id, "completed")}
-                              className="block w-full text-left px-4 py-2 text-blue-400 hover:bg-white/5"
-                            >
-                              Mark as Completed
-                            </button>
-                          )}
-                          {booking.status !== "cancelled" && (
-                            <button
-                              onClick={() => handleStatusChange(booking.id, "cancelled")}
-                              className="block w-full text-left px-4 py-2 text-red-400 hover:bg-white/5"
-                            >
-                              Cancel Booking
-                            </button>
-                          )}
-                        </div>
+                        {openDropdownId === booking.id && (
+                          <div className="absolute right-0 mt-1 py-2 w-40 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-50">
+                            {booking.status !== "confirmed" && (
+                              <button
+                                onClick={() => {
+                                  handleStatusChange(booking.id, "confirmed");
+                                  setOpenDropdownId(null);
+                                }}
+                                className="block w-full text-left px-4 py-2 text-green-400 hover:bg-white/5"
+                              >
+                                Confirm
+                              </button>
+                            )}
+                            {booking.status !== "completed" && booking.status !== "cancelled" && (
+                              <button
+                                onClick={() => {
+                                  handleStatusChange(booking.id, "completed");
+                                  setOpenDropdownId(null);
+                                }}
+                                className="block w-full text-left px-4 py-2 text-blue-400 hover:bg-white/5"
+                              >
+                                Mark as Completed
+                              </button>
+                            )}
+                            {booking.status !== "cancelled" && (
+                              <button
+                                onClick={() => {
+                                  handleStatusChange(booking.id, "cancelled");
+                                  setOpenDropdownId(null);
+                                }}
+                                className="block w-full text-left px-4 py-2 text-red-400 hover:bg-white/5"
+                              >
+                                Cancel Booking
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -504,9 +539,12 @@ export default function DashboardBookingsPage() {
         </div>
       )}
 
+      {/* Spacer to push pagination to bottom */}
+      <div className="flex-grow"></div>
+      
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center mt-12 mb-6 pt-4 border-t border-white/10">
           <div className="flex items-center gap-2">
             <button
               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
