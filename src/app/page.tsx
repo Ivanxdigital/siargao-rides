@@ -375,6 +375,31 @@ export default function Home() {
           background-size: 200% 100%;
           animation: gradient-x 15s ease infinite;
         }
+        
+        /* Animation for the Safety Tips section */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        /* Optimize animations for mobile */
+        @media (max-width: 768px) {
+          /* Reduce animation complexity for mobile */
+          .group:hover svg {
+            transform: scale(1.05) !important;
+          }
+          
+          /* Optimize animation performance */
+          .animate-fade-in-up,
+          [class*='animate-[fadeIn'],
+          [class*='animate-[fadeInUp'] {
+            will-change: opacity, transform;
+          }
+        }
       `}</style>
 
       {/* Featured Shops Section - improved for mobile */}
@@ -433,6 +458,88 @@ export default function Home() {
               </Link>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Safety Tips Section */}
+      <section className="py-10 sm:py-16 md:py-20 bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6">
+          {/* Section Header with animation */}
+          <div className="text-center mb-8 sm:mb-12 md:mb-16 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 sm:mb-3">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
+                Ride Safe, Ride Smart
+              </span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
+              Essential safety tips for exploring Siargao Island on two wheels
+            </p>
+          </div>
+
+          {/* Tips Grid - Improved mobile spacing */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 lg:gap-8">
+            {/* Tip 1 - Improved mobile sizing */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 group opacity-0 animate-[fadeInUp_0.5s_ease-out_0.1s_forwards]">
+              <div className="text-primary/80 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
+                  <path d="M12 2a8 8 0 0 0 0 16 8 8 0 0 0 0-16z"></path>
+                  <path d="M12 8v4l2 2"></path>
+                </svg>
+              </div>
+              <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Helmet Always</h3>
+              <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
+                Always wear a helmet, even for short trips. Most rental shops provide one, or you can bring your own.
+              </p>
+            </div>
+
+            {/* Tip 2 - Improved mobile sizing */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 group opacity-0 animate-[fadeInUp_0.5s_ease-out_0.2s_forwards]">
+              <div className="text-primary/80 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
+                  <path d="M2 12h2"></path>
+                  <path d="M20 12h2"></path>
+                  <path d="M12 2v2"></path>
+                  <path d="M12 20v2"></path>
+                  <path d="M6.34 6.34 4.93 4.93"></path>
+                  <path d="M19.07 4.93l-1.41 1.41"></path>
+                  <path d="M17.66 17.66 19.07 19.07"></path>
+                  <path d="M4.93 19.07l1.41-1.41"></path>
+                </svg>
+              </div>
+              <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Local Traffic Rules</h3>
+              <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
+                Ride on the right side, observe speed limits, and remember local driving can be unpredictable.
+              </p>
+            </div>
+
+            {/* Tip 3 - Improved mobile sizing */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 group opacity-0 animate-[fadeInUp_0.5s_ease-out_0.3s_forwards]">
+              <div className="text-primary/80 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <path d="M22 4 12 14.01l-3-3"></path>
+                </svg>
+              </div>
+              <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Inspect Your Bike</h3>
+              <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
+                Check brakes, lights, and tires before riding. Ask the rental shop to demonstrate any features you're unsure about.
+              </p>
+            </div>
+
+            {/* Tip 4 - Improved mobile sizing */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 group opacity-0 animate-[fadeInUp_0.5s_ease-out_0.4s_forwards]">
+              <div className="text-primary/80 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
+                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                  <path d="m9 12 2 2 4-4"></path>
+                </svg>
+              </div>
+              <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Weather Aware</h3>
+              <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
+                Siargao roads can become slippery during rain. Plan your trips according to weather forecasts.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
