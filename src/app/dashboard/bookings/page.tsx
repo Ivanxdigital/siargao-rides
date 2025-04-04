@@ -460,7 +460,7 @@ export default function DashboardBookingsPage() {
                     <div className="flex justify-end gap-2">
                       <Link 
                         href={`/dashboard/bookings/${booking.id}`}
-                        className="px-3 py-1 text-xs bg-primary rounded-md hover:bg-primary/80 transition-colors"
+                        className="px-3 py-1 text-xs bg-white/10 rounded-md hover:bg-white/20 transition-colors"
                       >
                         View Details
                       </Link>
