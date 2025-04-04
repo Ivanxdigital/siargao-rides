@@ -154,10 +154,6 @@ const VehicleCard = ({
       <div className="p-4 flex-grow flex flex-col">
         <h3 className="text-lg font-medium text-foreground mb-1">{model}</h3>
         
-        {category && (
-          <p className="text-sm text-muted-foreground mb-3">{category.replace('_', ' ')}</p>
-        )}
-
         {/* Vehicle-specific details */}
         {specifications && (
           <div className="mb-3">
