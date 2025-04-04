@@ -509,7 +509,7 @@ export default function Home() {
               </div>
               <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Local Traffic Rules</h3>
               <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
-                Ride on the right side, observe speed limits, and remember local driving can be unpredictable.
+                Always look left and right at intersections. Ride defensively as if others can't see you. Double beep your horn when overtaking other vehicles.
               </p>
             </div>
 
