@@ -8,6 +8,7 @@ import RentalShopCard from "@/components/RentalShopCard"
 import * as service from "@/lib/service"
 import { RentalShop, Bike, BikeCategory } from "@/lib/types"
 import { ArrowRight } from "lucide-react"
+import FAQSection from '@/components/FAQSection'
 
 // Transformed shop data for the RentalShopCard
 interface ShopCardData {
@@ -542,6 +543,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <FAQSection />
 
       <style jsx>{`
         .filter-shadow {
