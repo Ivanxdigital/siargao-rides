@@ -161,7 +161,7 @@ const Navbar = () => {
                       </Link>
                       
                       <Link
-                        href="/my-bookings"
+                        href="/dashboard/my-bookings"
                         className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
                         onClick={closeMenus}
                       >
@@ -252,7 +252,7 @@ const Navbar = () => {
                     Dashboard
                   </MobileNavLink>
                   
-                  <MobileNavLink href="/my-bookings" onClick={() => setIsMenuOpen(false)} icon={<Calendar size={16} />}>
+                  <MobileNavLink href="/dashboard/my-bookings" onClick={() => setIsMenuOpen(false)} icon={<Calendar size={16} />}>
                     My Bookings
                   </MobileNavLink>
                   

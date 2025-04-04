@@ -210,6 +210,17 @@ export default function DashboardLayout({
                   variants={itemVariants}
                 >
                   <SidebarItem
+                    href="/dashboard/my-bookings"
+                    icon={<Calendar size={18} />}
+                    title="My Bookings"
+                    active={pathname.startsWith("/dashboard/my-bookings")}
+                  />
+                </motion.div>
+                <motion.div 
+                  onClick={handleLinkClick}
+                  variants={itemVariants}
+                >
+                  <SidebarItem
                     href="/profile"
                     icon={<Settings size={18} />}
                     title="Profile Settings"

@@ -59,10 +59,11 @@ export default function MyBookingsPage() {
 
   useEffect(() => {
     // Check if user is authenticated
-    if (!isLoading && !isAuthenticated) {
-      router.push("/sign-in");
-      return;
-    }
+    // REMOVED: Auth check is now handled by the layout
+    // if (!isLoading && !isAuthenticated) {
+    //   router.push("/sign-in");
+    //   return;
+    // }
 
     if (isAuthenticated && user) {
       fetchUserBookings();
@@ -432,174 +433,167 @@ export default function MyBookingsPage() {
   }
 
   return (
-    <div className="pt-24">
-      <div className="bg-black text-white">
-        <div className="container mx-auto px-4 py-12">
-          <h1 className="text-4xl font-bold mb-2">My Bookings</h1>
-          <p className="text-lg">Manage your vehicle rentals and view your booking history</p>
+    // Removed the outer div and background/header section, as these are now handled by the layout
+    <div className="container mx-auto px-0 py-0">
+      {/* Adjusted padding and removed redundant headers */}
+      <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant={statusFilter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter("all")}
+          >
+            All Bookings
+          </Button>
+          <Button 
+            variant={statusFilter === "pending" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter("pending")}
+          >
+            Pending
+          </Button>
+          <Button 
+            variant={statusFilter === "confirmed" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter("confirmed")}
+          >
+            Confirmed
+          </Button>
+          <Button 
+            variant={statusFilter === "completed" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter("completed")}
+          >
+            Completed
+          </Button>
+          <Button 
+            variant={statusFilter === "cancelled" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter("cancelled")}
+          >
+            Cancelled
+          </Button>
         </div>
       </div>
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant={statusFilter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("all")}
-            >
-              All Bookings
-            </Button>
-            <Button 
-              variant={statusFilter === "pending" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("pending")}
-            >
-              Pending
-            </Button>
-            <Button 
-              variant={statusFilter === "confirmed" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("confirmed")}
-            >
-              Confirmed
-            </Button>
-            <Button 
-              variant={statusFilter === "completed" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("completed")}
-            >
-              Completed
-            </Button>
-            <Button 
-              variant={statusFilter === "cancelled" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("cancelled")}
-            >
-              Cancelled
-            </Button>
-          </div>
-        </div>
 
-        {error ? (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-md p-4 text-center">
-            <p className="text-red-400">{error}</p>
-          </div>
-        ) : loading ? (
-          <div className="animate-pulse text-center py-20">Loading bookings...</div>
-        ) : bookings.length === 0 ? (
-          <div className="text-center py-20 bg-white/5 rounded-lg">
-            <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-xl font-semibold mb-2">No bookings found</p>
-            <p className="text-gray-400 mb-6">
-              {statusFilter !== "all" 
-                ? `You don't have any ${statusFilter} bookings.` 
-                : "You haven't made any bookings yet."}
-            </p>
-            <Button asChild>
-              <Link href="/browse">Browse Vehicles</Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {bookings.map((booking) => (
-              <div key={booking.id} className="bg-white/5 border border-white/10 rounded-lg overflow-hidden hover:border-white/20 transition-colors">
-                <div className="p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6">
-                  {/* Vehicle Image */}
-                  <div className="w-full md:w-48 h-32 rounded-md overflow-hidden flex-shrink-0 bg-gray-800">
-                    <img 
-                      src={booking.vehicle?.imageUrl || booking.vehicle?.image_url || "/placeholder.jpg"} 
-                      alt={booking.vehicle?.name || "Vehicle"} 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        console.error("Image failed to load:", e.currentTarget.src);
-                        e.currentTarget.src = "/placeholder.jpg";
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Booking Details */}
-                  <div className="flex-grow flex flex-col justify-between">
-                    <div>
-                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-2 mb-2">
-                        <h3 className="text-xl font-semibold">{booking.vehicle?.name || "Vehicle Rental"}</h3>
-                        {getStatusBadge(booking.status)}
-                      </div>
-                      
-                      <p className="text-sm text-gray-400 mb-2">{booking.shop?.name} • {booking.shop?.address}</p>
-                      
-                      <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-2">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-primary" />
-                          <span className="text-sm">
-                            {format(new Date(booking.start_date), "MMM d")} - {format(new Date(booking.end_date), "MMM d, yyyy")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Bike className="h-4 w-4 text-primary" />
-                          <span className="text-sm">
-                            ₱{booking.vehicle?.price_per_day || 0}/day • Total: ₱{booking.total_price}
-                          </span>
-                        </div>
-                      </div>
+      {error ? (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-md p-4 text-center">
+          <p className="text-red-400">{error}</p>
+        </div>
+      ) : loading ? (
+        <div className="animate-pulse text-center py-20">Loading bookings...</div>
+      ) : bookings.length === 0 ? (
+        <div className="text-center py-20 bg-white/5 rounded-lg">
+          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-xl font-semibold mb-2">No bookings found</p>
+          <p className="text-gray-400 mb-6">
+            {statusFilter !== "all" 
+              ? `You don't have any ${statusFilter} bookings.` 
+              : "You haven't made any bookings yet."}
+          </p>
+          <Button asChild>
+            <Link href="/browse">Browse Vehicles</Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {bookings.map((booking) => (
+            <div key={booking.id} className="bg-white/5 border border-white/10 rounded-lg overflow-hidden hover:border-white/20 transition-colors">
+              <div className="p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6">
+                {/* Vehicle Image */}
+                <div className="w-full md:w-48 h-32 rounded-md overflow-hidden flex-shrink-0 bg-gray-800">
+                  <img 
+                    src={booking.vehicle?.imageUrl || booking.vehicle?.image_url || "/placeholder.jpg"} 
+                    alt={booking.vehicle?.name || "Vehicle"} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error("Image failed to load:", e.currentTarget.src);
+                      e.currentTarget.src = "/placeholder.jpg";
+                    }}
+                  />
+                </div>
+                
+                {/* Booking Details */}
+                <div className="flex-grow flex flex-col justify-between">
+                  <div>
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-2 mb-2">
+                      <h3 className="text-xl font-semibold">{booking.vehicle?.name || "Vehicle Rental"}</h3>
+                      {getStatusBadge(booking.status)}
                     </div>
                     
-                    <div className="flex flex-col md:flex-row gap-2 mt-4 justify-between items-start md:items-center">
-                      <div className="text-xs text-gray-400">
-                        Booked on {format(new Date(booking.created_at), "MMMM d, yyyy")}
+                    <p className="text-sm text-gray-400 mb-2">{booking.shop?.name} • {booking.shop?.address}</p>
+                    
+                    <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-2">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <span className="text-sm">
+                          {format(new Date(booking.start_date), "MMM d")} - {format(new Date(booking.end_date), "MMM d, yyyy")}
+                        </span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Bike className="h-4 w-4 text-primary" />
+                        <span className="text-sm">
+                          ₱{booking.vehicle?.price_per_day || 0}/day • Total: ₱{booking.total_price}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col md:flex-row gap-2 mt-4 justify-between items-start md:items-center">
+                    <div className="text-xs text-gray-400">
+                      Booked on {format(new Date(booking.created_at), "MMMM d, yyyy")}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        asChild 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          console.log("Booking ID before navigation:", booking.id);
+                          console.log("Full booking object:", booking);
+                        }}
+                      >
+                        <Link href={`/booking/confirmation/${booking.id?.toString()}`}>
+                          View Details
+                        </Link>
+                      </Button>
                       
-                      <div className="flex gap-2">
+                      {canChangeDates(booking) && (
                         <Button 
-                          asChild 
                           variant="outline" 
                           size="sm"
                           onClick={() => {
-                            console.log("Booking ID before navigation:", booking.id);
-                            console.log("Full booking object:", booking);
+                            setSelectedBooking(booking);
+                            setNewStartDate(parseISO(booking.start_date));
+                            setNewEndDate(parseISO(booking.end_date));
+                            setIsDateChangeOpen(true);
                           }}
+                          className="flex items-center gap-1"
                         >
-                          <Link href={`/booking/confirmation/${booking.id?.toString()}`}>
-                            View Details
-                          </Link>
+                          <CalendarClock size={14} />
+                          Change Dates
                         </Button>
-                        
-                        {canChangeDates(booking) && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedBooking(booking);
-                              setNewStartDate(parseISO(booking.start_date));
-                              setNewEndDate(parseISO(booking.end_date));
-                              setIsDateChangeOpen(true);
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            <CalendarClock size={14} />
-                            Change Dates
-                          </Button>
-                        )}
-                        
-                        {canCancelBooking(booking) && (
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleCancelBooking(booking.id)}
-                            disabled={cancelling === booking.id}
-                          >
-                            {cancelling === booking.id ? "Cancelling..." : "Cancel Booking"}
-                          </Button>
-                        )}
-                      </div>
+                      )}
+                      
+                      {canCancelBooking(booking) && (
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleCancelBooking(booking.id)}
+                          disabled={cancelling === booking.id}
+                        >
+                          {cancelling === booking.id ? "Cancelling..." : "Cancel Booking"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
       
       {/* Date Change Request Dialog */}
       <Dialog open={isDateChangeOpen} onOpenChange={setIsDateChangeOpen}>
