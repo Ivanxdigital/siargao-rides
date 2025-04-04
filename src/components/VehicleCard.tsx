@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { useState } from "react"
 import { ChevronLeft, ChevronRight, Bike, Car, Truck, Calendar } from "lucide-react"
 import { motion } from "framer-motion"
@@ -236,28 +237,30 @@ const VehicleCard = ({
         {/* Shop information */}
         {shop && (
           <div className="mb-4 mt-auto">
-            <div className="flex items-center space-x-2 border-t border-border pt-3">
-              <div className="w-8 h-8 relative rounded-full overflow-hidden bg-muted flex-shrink-0">
-                {shop.logo ? (
-                  <Image 
-                    src={shop.logo} 
-                    alt={shop.name} 
-                    fill 
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-medium text-xs">
-                    {shop.name.substring(0, 2).toUpperCase()}
-                  </div>
-                )}
+            <Link href={`/shop/${shop.id}`} className="block group">
+              <div className="flex items-center space-x-2 border-t border-border pt-3 rounded-md group-hover:bg-white/5 transition-colors duration-200 px-2 py-1 -mx-2 -my-1">
+                <div className="w-8 h-8 relative rounded-full overflow-hidden bg-muted flex-shrink-0 group-hover:ring-1 group-hover:ring-primary transition-all duration-200">
+                  {shop.logo ? (
+                    <Image 
+                      src={shop.logo} 
+                      alt={shop.name} 
+                      fill 
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-medium text-xs">
+                      {shop.name.substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate group-hover:text-primary transition-colors duration-200">{shop.name}</p>
+                  {shop.location && (
+                    <p className="text-xs text-muted-foreground truncate">{shop.location}</p>
+                  )}
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{shop.name}</p>
-                {shop.location && (
-                  <p className="text-xs text-muted-foreground truncate">{shop.location}</p>
-                )}
-              </div>
-            </div>
+            </Link>
           </div>
         )}
 
