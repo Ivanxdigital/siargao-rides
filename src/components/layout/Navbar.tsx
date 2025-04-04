@@ -6,6 +6,7 @@ import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
+import Image from "next/image"
 
 const styles = {
   shadowGlow: `
@@ -16,6 +17,15 @@ const styles = {
     }
     .shadow-glow {
       animation: glow 2s infinite;
+    }
+
+    @keyframes avatar-pulse {
+      0% { transform: scale(1); border-color: rgba(56, 189, 248, 0.3); }
+      50% { transform: scale(1.05); border-color: rgba(56, 189, 248, 0.7); }
+      100% { transform: scale(1); border-color: rgba(56, 189, 248, 0.3); }
+    }
+    .avatar-pulse {
+      animation: avatar-pulse 2s infinite;
     }
   `
 }
@@ -128,27 +138,60 @@ const Navbar = () => {
             {isAuthenticated ? (
               <div className="relative">
                 <button
-                  className="flex items-center gap-2 p-2 rounded-full hover:bg-white/10 transition-all duration-300 group"
+                  className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all duration-300 group ${isProfileMenuOpen ? 'bg-white/10' : 'hover:bg-white/10'}`}
                   onClick={toggleProfileMenu}
+                  aria-label="Open profile menu"
                 >
-                  <span className="text-sm font-medium text-white group-hover:text-primary transition-colors duration-300">
-                    {user?.user_metadata?.first_name || user?.email}
-                  </span>
-                  <ChevronDown size={16} className="text-white/70 group-hover:text-primary transition-colors duration-300 transform group-hover:rotate-180 duration-300" />
+                  <div className={`relative w-8 h-8 rounded-full overflow-hidden border-2 transition-all duration-300 ${isProfileMenuOpen ? 'border-primary avatar-pulse' : 'border-transparent group-hover:border-primary group-hover:avatar-pulse'}`}>
+                    {user?.user_metadata?.avatar_url ? (
+                      <Image 
+                        src={user.user_metadata.avatar_url}
+                        alt="Profile"
+                        fill
+                        sizes="32px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-primary/20 text-primary font-medium text-sm">
+                        {user?.user_metadata?.first_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                      </div>
+                    )}
+                  </div>
+                  <ChevronDown 
+                    size={16} 
+                    className={`transition-all duration-300 ${isProfileMenuOpen ? 'text-primary rotate-180' : 'text-white/70 group-hover:text-primary group-hover:rotate-180'}`} 
+                  />
                 </button>
                 
                 {/* Profile Menu Dropdown */}
                 {isProfileMenuOpen && (
                   <motion.div 
                     className="absolute right-0 mt-2 w-56 bg-card border border-border shadow-lg rounded-md overflow-hidden z-50"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
                   >
-                    <div className="p-2 border-b border-border bg-card/70">
-                      <p className="text-sm font-medium">{user?.user_metadata?.first_name} {user?.user_metadata?.last_name}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <div className="p-3 border-b border-border bg-card/70 flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10">
+                        {user?.user_metadata?.avatar_url ? (
+                          <Image 
+                            src={user.user_metadata.avatar_url}
+                            alt="Profile"
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-primary/20 text-primary font-medium">
+                            {user?.user_metadata?.first_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{user?.user_metadata?.first_name} {user?.user_metadata?.last_name}</p>
+                        <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      </div>
                     </div>
                     <div className="py-1">
                       <Link
@@ -225,10 +268,34 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu - Separate from the main nav */}
+      {/* Mobile Menu - Also update the mobile menu header */}
       {isMenuOpen && (
         <div className="md:hidden fixed inset-0 z-[998] bg-black/90 backdrop-blur-md pt-20">
           <div className="pb-8 px-6 overflow-y-auto max-h-screen">
+            {isAuthenticated && (
+              <div className="mb-6 p-4 bg-black/40 rounded-lg border border-white/10 flex items-center gap-4">
+                <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-primary/40">
+                  {user?.user_metadata?.avatar_url ? (
+                    <Image 
+                      src={user.user_metadata.avatar_url}
+                      alt="Profile"
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary/20 text-primary text-lg font-medium">
+                      {user?.user_metadata?.first_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">{user?.user_metadata?.first_name} {user?.user_metadata?.last_name}</p>
+                  <p className="text-xs text-white/70">{user?.email}</p>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-3 mb-6">
               <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)} icon={<Home size={16} />}>
                 Home
@@ -244,6 +311,7 @@ const Navbar = () => {
               </MobileNavLink>
             </div>
             
+            {/* Rest of the mobile menu remains unchanged */}
             {isAuthenticated ? (
               <>
                 <div className="h-px w-full bg-white/10 my-6"></div>
