@@ -494,7 +494,7 @@ export default function DashboardBookingsPage() {
                         </button>
                         {openDropdownId === booking.id && (
                           <div className="absolute right-0 mt-1 py-2 w-40 bg-black/90 backdrop-blur-sm border border-white/10 rounded-md shadow-lg z-50">
-                            {booking.status !== "confirmed" && (
+                            {booking.status !== "confirmed" && booking.status !== "completed" && (
                               <button
                                 onClick={() => {
                                   handleStatusChange(booking.id, "confirmed");
@@ -516,7 +516,7 @@ export default function DashboardBookingsPage() {
                                 Mark as Completed
                               </button>
                             )}
-                            {booking.status !== "cancelled" && (
+                            {booking.status !== "cancelled" && booking.status !== "completed" && (
                               <button
                                 onClick={() => {
                                   handleStatusChange(booking.id, "cancelled");
@@ -526,6 +526,12 @@ export default function DashboardBookingsPage() {
                               >
                                 Cancel Booking
                               </button>
+                            )}
+                            {/* Show a message when no actions are available */}
+                            {booking.status === "completed" && (
+                              <div className="px-4 py-2 text-gray-400 text-sm">
+                                No actions available
+                              </div>
                             )}
                           </div>
                         )}

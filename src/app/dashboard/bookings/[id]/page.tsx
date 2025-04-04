@@ -546,36 +546,10 @@ export default function BookingDetailsPage() {
                     Cancel Booking
                   </button>
                 )}
-                
-                {/* Link to print booking details */}
-                <Link
-                  href={`/booking/confirmation/${booking.id}`}
-                  target="_blank"
-                  className="flex items-center justify-center gap-2 w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-md transition-colors"
-                >
-                  View Confirmation Page
-                </Link>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="mt-6 flex flex-col md:flex-row gap-3">
-        <Button
-          asChild
-          variant="default"
-          size="default"
-        >
-          <Link
-            href={`/booking/confirmation/${booking.id}`}
-            className="flex items-center gap-2"
-            target="_blank"
-          >
-            <Eye size={16} />
-            View Booking Confirmation
-          </Link>
-        </Button>
       </div>
     </div>
   );
