@@ -9,7 +9,7 @@ import { uploadFile } from "@/lib/storage"
 import { createShop, getShops } from "@/lib/service"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 
 // Add animation variants for components
@@ -74,6 +74,225 @@ const buttonVariants = {
   initial: { scale: 1 },
   hover: { scale: 1.03, transition: { duration: 0.2 } },
   tap: { scale: 0.98, transition: { duration: 0.2 } }
+}
+
+// Add the InteractiveDashboardShowcase component
+const InteractiveDashboardShowcase = () => {
+  const [activeTab, setActiveTab] = useState('analytics')
+  
+  // Tab content configuration
+  const tabContent = {
+    analytics: {
+      title: "Performance Analytics",
+      description: "Track your business metrics with our powerful analytics dashboard. Monitor bookings, revenue streams, and customer trends in real time.",
+      image: "/images/dashboard-analytics.png",
+      icon: <BarChart className="w-4 h-4" />
+    },
+    vehicles: {
+      title: "Vehicle Management",
+      description: "Easily manage your entire fleet in one place. Add new vehicles, update availability, and set dynamic pricing based on demand.",
+      image: "/images/dashboard-manage-vehicles.png",
+      icon: <Rocket className="w-4 h-4" />
+    },
+    bookings: {
+      title: "Booking Management",
+      description: "Streamline your booking process with an intuitive interface. Track reservations, manage customer details, and optimize your schedule.",
+      image: "/images/dashboard-manage-bookings.png",
+      icon: <Calendar className="w-4 h-4" />
+    },
+    shop: {
+      title: "Shop Management",
+      description: "Customize your shop profile, update operating hours, and manage your business information all in one convenient dashboard.",
+      image: "/images/dashboard-manage-shop-listing.png",
+      icon: <Users className="w-4 h-4" />
+    }
+  }
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        staggerChildren: 0.1,
+        delayChildren: 0.1
+      }
+    }
+  }
+  
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+    }
+  }
+  
+  const imageVariants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: { 
+        duration: 0.6, 
+        ease: [0.22, 1, 0.36, 1]
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.95, 
+      transition: { 
+        duration: 0.3, 
+        ease: [0.22, 1, 0.36, 1]
+      }
+    }
+  }
+
+  return (
+    <motion.div 
+      className="max-w-6xl mx-auto"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      {/* Main display area */}
+      <motion.div 
+        className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md mb-10"
+        variants={itemVariants}
+      >
+        {/* Subtle grain texture overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/png;base64,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")`,
+          }}
+        ></div>
+        
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black/10 to-purple-900/20 opacity-80"></div>
+        
+        {/* Top toolbar design element */}
+        <div className="relative z-10 border-b border-white/10 p-4 flex items-center justify-between bg-white/5">
+          <div className="flex items-center space-x-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-500/70"></div>
+            <div className="w-3 h-3 rounded-full bg-yellow-500/70"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500/70"></div>
+          </div>
+          <div className="flex items-center px-3 py-1 rounded-md bg-white/5 border border-white/10 text-xs text-gray-400">
+            https://siargaorides.ph/dashboard
+          </div>
+          <div className="flex items-center space-x-1.5">
+            <div className="w-3 h-3 rounded-full bg-white/10"></div>
+            <div className="w-3 h-3 rounded-full bg-white/10"></div>
+          </div>
+        </div>
+        
+        {/* Dashboard content area */}
+        <div className="relative aspect-[16/9] md:aspect-[16/8] w-full overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={activeTab}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={imageVariants}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <div className="relative w-full h-full">
+                <Image
+                  src={tabContent[activeTab].image}
+                  alt={tabContent[activeTab].title}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+                
+                {/* Reflection effect */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </motion.div>
+      
+      {/* Content description */}
+      <motion.div
+        className="text-center mb-12 px-4"
+        variants={itemVariants}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="min-h-[6rem]"
+          >
+            <h3 className="text-2xl font-bold text-white mb-3">
+              {tabContent[activeTab].title}
+            </h3>
+            <p className="text-gray-300 max-w-3xl mx-auto">
+              {tabContent[activeTab].description}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+      
+      {/* Tab navigation */}
+      <motion.div
+        className="flex justify-center flex-wrap gap-2 md:gap-6"
+        variants={itemVariants}
+      >
+        {Object.entries(tabContent).map(([key, tab]) => (
+          <motion.button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`relative px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 
+              ${activeTab === key 
+                ? 'text-white bg-blue-600/20 border border-blue-500/40' 
+                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-white/5'
+              }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span className="flex items-center space-x-2">
+              <span>{tab.icon}</span>
+              <span>{tab.title}</span>
+            </span>
+            
+            {activeTab === key && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 rounded-lg border border-blue-500/40 bg-blue-600/10"
+                initial={false}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            )}
+          </motion.button>
+        ))}
+      </motion.div>
+      
+      {/* Call to Action */}
+      <motion.div 
+        className="text-center mt-10"
+        variants={itemVariants}
+      >
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <Link 
+            href="/register/shop-owner" 
+            className="inline-flex items-center bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-600 transition duration-300 shadow-lg hover:shadow-blue-500/20"
+          >
+            Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+          </Link>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  )
 }
 
 export default function RegisterShopPage() {
@@ -934,106 +1153,26 @@ export default function RegisterShopPage() {
         </div>
       </section>
       
-      {/* Dashboard Showcase Section */}
+      {/* Interactive Dashboard Showcase Section */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
-        {/* Background with subtle gradient */}
-        <div className="absolute inset-0 bg-gradient-radial from-blue-500/10 to-transparent opacity-70"></div>
+        {/* Animated background elements */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/10 via-black to-black opacity-70"></div>
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -left-40 top-40 w-80 h-80 bg-blue-500/10 rounded-full filter blur-3xl"></div>
+          <div className="absolute right-0 top-1/3 w-80 h-80 bg-purple-500/10 rounded-full filter blur-3xl"></div>
+        </div>
         
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-5xl mx-auto text-center mb-16">
-            {/* Dashboard Showcase */}
-            <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-8">
-              Powerful Dashboard Included
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-6xl mx-auto text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Powerful Dashboard Experience
             </h2>
-            <p className="text-gray-300 text-lg max-w-3xl mx-auto text-center mb-12">
-              Manage your entire rental business from our intuitive dashboard. Track performance, 
-              manage vehicles and bookings, and optimize your operations in one place.
+            <p className="text-gray-300 text-lg max-w-3xl mx-auto mb-16">
+              Our intuitive interface gives you complete control over your rental business
             </p>
             
-            {/* Dashboard Screenshots Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-              {/* Performance Analytics */}
-              <div className="bg-black/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-500/20 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-                <div className="h-56 md:h-64 bg-black relative">
-                  <Image
-                    src="/images/dashboard-analytics.png"
-                    alt="Performance Analytics Dashboard"
-                    fill
-                    className="object-contain p-2"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-white mb-2">Performance Analytics</h3>
-                  <p className="text-gray-300">
-                    Track your business performance with detailed analytics on bookings, revenue, and customer trends.
-                  </p>
-                </div>
-              </div>
-              
-              {/* Vehicle Management */}
-              <div className="bg-black/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-500/20 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-                <div className="h-56 md:h-64 bg-black relative">
-                  <Image
-                    src="/images/dashboard-manage-vehicles.png"
-                    alt="Vehicle Management Dashboard"
-                    fill
-                    className="object-contain p-2"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-white mb-2">Vehicle Management</h3>
-                  <p className="text-gray-300">
-                    Easily manage your fleet, update availability, and set pricing for each vehicle in your inventory.
-                  </p>
-                </div>
-              </div>
-              
-              {/* Booking Management */}
-              <div className="bg-black/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-500/20 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-                <div className="h-56 md:h-64 bg-black relative">
-                  <Image
-                    src="/images/dashboard-manage-bookings.png"
-                    alt="Booking Management Dashboard"
-                    fill
-                    className="object-contain p-2"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-white mb-2">Booking Management</h3>
-                  <p className="text-gray-300">
-                    Streamline your booking process with an intuitive interface for handling reservations and customer details.
-                  </p>
-                </div>
-              </div>
-              
-              {/* Shop Management */}
-              <div className="bg-black/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-500/20 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-                <div className="h-56 md:h-64 bg-black relative">
-                  <Image
-                    src="/images/dashboard-manage-shop-listing.png"
-                    alt="Shop Management Dashboard"
-                    fill
-                    className="object-contain p-2"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-white mb-2">Shop Management</h3>
-                  <p className="text-gray-300">
-                    Customize your shop profile, update operating hours, and manage your business details all in one place.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Call to Action */}
-            <div className="text-center mt-8">
-              <Link 
-                href="/register/shop-owner" 
-                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-600 transition duration-300 shadow-lg hover:shadow-blue-500/20 inline-flex items-center"
-              >
-                Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </div>
+            {/* Interactive Dashboard Showcase - Using Framer Motion */}
+            <InteractiveDashboardShowcase />
           </div>
         </div>
       </section>
