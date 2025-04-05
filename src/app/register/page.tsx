@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Upload, Info, Check, AlertCircle, ArrowRight, BarChart, Calendar, ShieldCheck, CreditCard, Users, Rocket, MapPin } from "lucide-react"
+import { Upload, Info, Check, AlertCircle, ArrowRight, BarChart, Calendar, ShieldCheck, CreditCard, Users, Rocket, MapPin, Gift, Star } from "lucide-react"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { useAuth } from "@/contexts/AuthContext"
@@ -736,8 +736,11 @@ export default function RegisterShopPage() {
               <p className="text-sm md:text-base text-gray-300">Active Tourists Daily</p>
             </motion.div>
             <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
-              <p className="text-3xl md:text-4xl font-bold text-primary">15%</p>
-              <p className="text-sm md:text-base text-gray-300">Commission Fee</p>
+              <p className="text-3xl md:text-4xl font-bold text-primary">10%</p>
+              <p className="text-sm md:text-base text-gray-300">
+                Commission Fee<br />
+                <span className="text-primary font-semibold text-xs">(First 2 Months: 0%)</span>
+              </p>
             </motion.div>
             <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">10+</p>
@@ -928,6 +931,110 @@ export default function RegisterShopPage() {
               </p>
             </motion.div>
           </motion.div>
+        </div>
+      </section>
+      
+      {/* Dashboard Showcase Section */}
+      <section className="py-16 md:py-24 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
+        {/* Background with subtle gradient */}
+        <div className="absolute inset-0 bg-gradient-radial from-blue-500/10 to-transparent opacity-70"></div>
+        
+        <div className="container mx-auto px-4 relative">
+          <div className="max-w-5xl mx-auto text-center mb-16">
+            {/* Dashboard Showcase */}
+            <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-8">
+              Powerful Dashboard Included
+            </h2>
+            <p className="text-gray-300 text-lg max-w-3xl mx-auto text-center mb-12">
+              Manage your entire rental business from our intuitive dashboard. Track performance, 
+              manage vehicles and bookings, and optimize your operations in one place.
+            </p>
+            
+            {/* Dashboard Screenshots Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+              {/* Performance Analytics */}
+              <div className="bg-black/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-500/20 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <div className="h-56 md:h-64 bg-black relative">
+                  <Image
+                    src="/images/dashboard-analytics.png"
+                    alt="Performance Analytics Dashboard"
+                    fill
+                    className="object-contain p-2"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-white mb-2">Performance Analytics</h3>
+                  <p className="text-gray-300">
+                    Track your business performance with detailed analytics on bookings, revenue, and customer trends.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Vehicle Management */}
+              <div className="bg-black/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-500/20 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <div className="h-56 md:h-64 bg-black relative">
+                  <Image
+                    src="/images/dashboard-manage-vehicles.png"
+                    alt="Vehicle Management Dashboard"
+                    fill
+                    className="object-contain p-2"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-white mb-2">Vehicle Management</h3>
+                  <p className="text-gray-300">
+                    Easily manage your fleet, update availability, and set pricing for each vehicle in your inventory.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Booking Management */}
+              <div className="bg-black/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-500/20 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <div className="h-56 md:h-64 bg-black relative">
+                  <Image
+                    src="/images/dashboard-manage-bookings.png"
+                    alt="Booking Management Dashboard"
+                    fill
+                    className="object-contain p-2"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-white mb-2">Booking Management</h3>
+                  <p className="text-gray-300">
+                    Streamline your booking process with an intuitive interface for handling reservations and customer details.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Shop Management */}
+              <div className="bg-black/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-500/20 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <div className="h-56 md:h-64 bg-black relative">
+                  <Image
+                    src="/images/dashboard-manage-shop-listing.png"
+                    alt="Shop Management Dashboard"
+                    fill
+                    className="object-contain p-2"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-white mb-2">Shop Management</h3>
+                  <p className="text-gray-300">
+                    Customize your shop profile, update operating hours, and manage your business details all in one place.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Call to Action */}
+            <div className="text-center mt-8">
+              <Link 
+                href="/register/shop-owner" 
+                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-600 transition duration-300 shadow-lg hover:shadow-blue-500/20 inline-flex items-center"
+              >
+                Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
       
