@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import VehicleCard from "@/components/VehicleCard"
-import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon } from "lucide-react"
+import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon, CheckCircle, XCircle } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { getShops, getBikes, getVehicles, getVehicleTypes } from "@/lib/api"
@@ -24,8 +24,19 @@ interface VehicleWithMetadata extends Vehicle {
 // Extend Window interface to include our custom properties
 declare global {
   interface Window {
-    handleDateRangeChange?: (start: string, end: string) => void;
+    handleDateRangeChange?: (range: StringDateRange | null) => void;
   }
+}
+
+// At the beginning of the file, let's add a few type definitions
+interface DateRange {
+  from: Date | null;
+  to: Date | null;
+}
+
+interface StringDateRange {
+  from: string;
+  to: string;
 }
 
 const BikeTypeCheckbox = ({ type, checked, onChange }: { type: string, checked: boolean, onChange: () => void }) => {
@@ -123,17 +134,122 @@ export default function BrowsePage() {
   const [endDateObj, setEndDateObj] = useState<Date | null>(null);
 
   // Add refs to store the handlers
-  const handleDateRangeChangeRef = useRef<(start: string, end: string) => void>(() => {});
-  const handleDatePickerChangeRef = useRef<(startDate: Date | null, endDate: Date | null) => void>(() => {});
+  const handleDatePickerChangeRef = useRef<(newValue: DateRange | null) => void>(() => {});
+  const handleDateRangeChangeRef = useRef<(range: StringDateRange | null) => void>(() => {});
 
-  // Fetch vehicles data
+  // Add this somewhere near the other state variables
+  const [selectedDates, setSelectedDates] = useState<DateRange | null>(null);
+
+  // Store functions in refs
   useEffect(() => {
-    const fetchData = async (dateParams?: { startDate: string; endDate: string }) => {
-      setIsLoading(true)
-      setError(null)
+    // Update the local date picker functions to include setSelectedDates
+    const handleLocalDatePickerChange = (newValue: DateRange | null) => {
+      try {
+        console.log("Date picker change:", newValue);
+        
+        if (newValue && newValue.from) {
+          // If both dates are selected
+          if (newValue.to) {
+            // Format dates consistently to YYYY-MM-DD
+            const formattedStartDate = newValue.from.toISOString().split('T')[0];
+            const formattedEndDate = newValue.to.toISOString().split('T')[0];
+            
+            console.log(`Setting date range: ${formattedStartDate} to ${formattedEndDate}`);
+            
+            setStartDate(formattedStartDate);
+            setEndDate(formattedEndDate);
+            setSelectedDates(newValue);
+            setDateRangeSelected(true);
+          } 
+          // If only start date is selected
+          else {
+            const formattedStartDate = newValue.from.toISOString().split('T')[0];
+            console.log(`Setting start date only: ${formattedStartDate}`);
+            
+            setStartDate(formattedStartDate);
+            setEndDate('');
+            setSelectedDates(newValue);
+            setDateRangeSelected(false);
+          }
+        } else {
+          // If newValue is null or undefined (dates cleared)
+          console.log('Clearing dates');
+          setStartDate('');
+          setEndDate('');
+          setSelectedDates(null);
+          setDateRangeSelected(false);
+        }
+      } catch (error) {
+        console.error('Error handling date change:', error);
+        // Reset dates if there's a problem
+        setStartDate('');
+        setEndDate('');
+        setSelectedDates(null);
+        setDateRangeSelected(false);
+      }
+    };
+    
+    const handleLocalDateRangeChange = (range: StringDateRange | null) => {
+      try {
+        console.log("Date range change:", range);
+        
+        if (range && range.from && range.to) {
+          try {
+            // Format dates consistently
+            const formattedStartDate = new Date(range.from).toISOString().split('T')[0];
+            const formattedEndDate = new Date(range.to).toISOString().split('T')[0];
+            
+            console.log(`Setting formatted date range: ${formattedStartDate} to ${formattedEndDate}`);
+            
+            setStartDate(formattedStartDate);
+            setEndDate(formattedEndDate);
+            setDateRangeSelected(true);
+          } catch (error) {
+            console.error('Invalid date format in range:', error);
+            throw new Error('Invalid date format');
+          }
+        } else {
+          // Clear dates if range is null or incomplete
+          console.log('Clearing date range');
+          setStartDate('');
+          setEndDate('');
+          setDateRangeSelected(false);
+        }
+      } catch (error) {
+        console.error('Error in handleLocalDateRangeChange:', error);
+        // Reset on error
+        setStartDate('');
+        setEndDate('');
+        setDateRangeSelected(false);
+      }
+    };
+    
+    // Create a wrapper function that matches the window interface
+    const globalHandleDateRangeChange = (range: StringDateRange | null) => {
+      handleLocalDateRangeChange(range);
+    };
+    
+    // Expose the handler using the wrapper
+    window.handleDateRangeChange = globalHandleDateRangeChange;
+    
+    // Store references to the local handlers
+    handleDateRangeChangeRef.current = handleLocalDateRangeChange;
+    handleDatePickerChangeRef.current = handleLocalDatePickerChange;
+    
+    return () => {
+      delete window.handleDateRangeChange;
+    };
+  }, []);
+
+  // Replace the previous useEffect with a better implementation
+  useEffect(() => {
+    // Initial data load - doesn't check availability with dates
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      setError(null);
       
       try {
-        const supabase = createClientComponentClient()
+        const supabase = createClientComponentClient();
         
         // Fetch all vehicles with joined shop data
         let vehicleQuery = supabase
@@ -144,17 +260,15 @@ export default function BrowsePage() {
             vehicle_types(*),
             rental_shops(id, name, logo_url, location_area)
           `)
-          .order('price_per_day')
+          .order('price_per_day');
         
-        // Add date range parameters if provided
-        if (dateParams?.startDate && dateParams?.endDate) {
-          vehicleQuery = vehicleQuery.eq('is_available', true);
-        }
+        // We always fetch all available vehicles first, then filter by date if needed
+        vehicleQuery = vehicleQuery.eq('is_available', true);
         
         const { data: vehicleData, error: vehicleError } = await vehicleQuery;
         
         if (vehicleError) {
-          throw vehicleError
+          throw vehicleError;
         }
         
         // Also fetch bikes (legacy) with joined shop data
@@ -165,10 +279,10 @@ export default function BrowsePage() {
             bike_images(*),
             rental_shops(id, name, logo_url, location_area)
           `)
-          .order('price_per_day')
+          .order('price_per_day');
         
         if (bikeError) {
-          throw bikeError
+          throw bikeError;
         }
         
         // Process data
@@ -188,53 +302,11 @@ export default function BrowsePage() {
             shopLogo: vehicle.rental_shops?.logo_url,
             shopLocation: vehicle.rental_shops?.location_area,
             vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
-            images: vehicle.vehicle_images || []
+            images: vehicle.vehicle_images || [],
+            is_available_for_dates: true // Default to true, will be updated if dates are selected
           })) as VehicleWithMetadata[];
           
           processedVehicles = formattedVehicles;
-        }
-        
-        // If date range is provided, filter by available dates
-        if (dateParams?.startDate && dateParams?.endDate) {
-          try {
-            // Get all vehicle IDs
-            const vehicleIds = processedVehicles.map(v => v.id);
-            
-            if (vehicleIds.length > 0) {
-              // Check availability for these dates using our batch API
-              const response = await fetch('/api/vehicles/check-availability-batch', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  vehicleIds,
-                  startDate: dateParams.startDate,
-                  endDate: dateParams.endDate
-                }),
-              });
-              
-              if (!response.ok) {
-                throw new Error('Failed to check availability');
-              }
-              
-              const { availableVehicleIds } = await response.json();
-              
-              // Filter vehicles by availability
-              processedVehicles = processedVehicles.filter(vehicle => 
-                availableVehicleIds.includes(vehicle.id)
-              );
-              
-              // Mark these vehicles as available for the selected dates
-              processedVehicles = processedVehicles.map(vehicle => ({
-                ...vehicle,
-                is_available_for_dates: true
-              }));
-            }
-          } catch (error) {
-            console.error('Error checking date availability:', error);
-            // Continue with unfiltered vehicles if availability check fails
-          }
         }
         
         setVehicles(processedVehicles);
@@ -275,70 +347,145 @@ export default function BrowsePage() {
         
         setAvailableCategories(allCategories)
         setLocations(allLocations)
-        setIsLoading(false)
       } catch (err) {
         console.error('Error fetching vehicle data:', err)
         setError('Failed to load vehicles. Please try again later.')
+      } finally {
         setIsLoading(false)
       }
-    }
-    
-    // Define handleDatePickerChange inside the effect where fetchData is available
-    const handleLocalDatePickerChange = (startDate: Date | null, endDate: Date | null) => {
-      setStartDateObj(startDate);
-      setEndDateObj(endDate);
-      
-      if (startDate && endDate) {
-        const formattedStart = startDate.toISOString();
-        const formattedEnd = endDate.toISOString();
-        setStartDate(formattedStart);
-        setEndDate(formattedEnd);
-        setDateRangeSelected(true);
-        
-        // Now fetchData is in scope
-        fetchData({ startDate: formattedStart, endDate: formattedEnd });
-      }
     };
     
-    // Define handleDateRangeChange inside the effect where fetchData is available
-    const handleLocalDateRangeChange = (start: string, end: string) => {
-      setStartDate(start);
-      setEndDate(end);
-      setDateRangeSelected(!!start && !!end);
-      
-      // Also update Date objects for the DateRangePicker
-      setStartDateObj(start ? parseISO(start) : null);
-      setEndDateObj(end ? parseISO(end) : null);
-      
-      // Fetch vehicles with date range filter
-      if (start && end) {
-        fetchData({ startDate: start, endDate: end });
-      }
-    };
-    
-    // Expose the local handlers to the component
-    window.handleDateRangeChange = handleLocalDateRangeChange;
-    
-    // Store references to the local handlers
-    handleDateRangeChangeRef.current = handleLocalDateRangeChange;
-    handleDatePickerChangeRef.current = handleLocalDatePickerChange;
-    
-    // Initial fetch
-    fetchData();
+    loadInitialData();
     
     return () => {
       // Clean up
       delete window.handleDateRangeChange;
     }
-  }, [])
-  
-  // Public handlers that use the refs
-  const handleDateRangeChange = (start: string, end: string) => {
-    handleDateRangeChangeRef.current(start, end);
-  };
-  
-  const handleDatePickerChange = (startDate: Date | null, endDate: Date | null) => {
-    handleDatePickerChangeRef.current(startDate, endDate);
+  }, []); // Empty dependency array - only runs once on mount
+
+  // New useEffect specifically for date range filtering
+  useEffect(() => {
+    // Only check availability if both dates are present and dateRangeSelected is true
+    if (startDate && endDate && dateRangeSelected) {
+      const checkAvailabilityForDates = async () => {
+        try {
+          setIsLoading(true);
+          const supabase = createClientComponentClient();
+          
+          // Reset error
+          setError(null);
+          
+          console.log(`Checking availability between ${startDate} and ${endDate}`);
+          
+          // Get current vehicles to check - capture this locally, don't use it from state in the dependency array
+          const currentVehicles = [...vehicles]; // Create a local copy to avoid dependency issues
+          const vehicleIds = currentVehicles.map(v => v.id);
+          let availableVehicleIds: string[] = [];
+          
+          if (vehicleIds.length === 0) {
+            console.log("No vehicles to check availability for");
+            setIsLoading(false);
+            return;
+          }
+          
+          try {
+            // Format dates for API
+            const startDateFormatted = new Date(startDate).toISOString().split('T')[0];
+            const endDateFormatted = new Date(endDate).toISOString().split('T')[0];
+            
+            // Validate dates
+            const start = new Date(startDateFormatted);
+            const end = new Date(endDateFormatted);
+            
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+              throw new Error("Invalid date format");
+            }
+            
+            if (start >= end) {
+              throw new Error("Start date must be before end date");
+            }
+            
+            // Check availability with API
+            const response = await fetch('/api/vehicles/check-availability-batch', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                vehicleIds,
+                startDate: startDateFormatted,
+                endDate: endDateFormatted
+              }),
+            });
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Failed to check availability: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
+            }
+            
+            const availabilityData = await response.json();
+            
+            if (availabilityData && Array.isArray(availabilityData.availableVehicleIds)) {
+              availableVehicleIds = availabilityData.availableVehicleIds;
+              console.log(`Found ${availableVehicleIds.length} available vehicles for selected dates`);
+            } else {
+              throw new Error('Invalid response format from availability check');
+            }
+          } catch (fetchError) {
+            console.error('Error with availability check:', fetchError);
+            // Fallback - mark all vehicles as available
+            availableVehicleIds = vehicleIds;
+          }
+          
+          // Update availability for all vehicles
+          setVehicles(currentVehicles => {
+            // First update all vehicles with their availability status
+            const updatedVehicles = currentVehicles.map(vehicle => ({
+              ...vehicle,
+              is_available_for_dates: availableVehicleIds.includes(vehicle.id)
+            }));
+            
+            // Return the updated vehicles without filtering
+            return updatedVehicles;
+          });
+        } catch (error) {
+          console.error('Error in date availability check:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      // Prevent rapid sequential checks by adding a small timeout
+      const timeoutId = setTimeout(() => {
+        checkAvailabilityForDates();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [startDate, endDate, dateRangeSelected]); // No vehicles dependency
+
+  // Add a separate effect for when onlyShowAvailable changes
+  useEffect(() => {
+    // Update filtered view when onlyShowAvailable changes without re-fetching data
+    if (startDate && endDate && dateRangeSelected && vehicles.length > 0) {
+      console.log(`Updating vehicle filter based on availability status. Only show available: ${onlyShowAvailable}`);
+    }
+  }, [onlyShowAvailable]);
+
+  // Replace it with a simpler useEffect that triggers fetching when both dates are selected
+  useEffect(() => {
+    // When both dates are selected (as strings), trigger a fetch
+    if (startDate && endDate && dateRangeSelected) {
+      console.log("Complete date range detected, fetching data with filter:", { startDate, endDate });
+      // The main useEffect with [startDate, endDate, onlyShowAvailable] dependencies 
+      // will handle the actual data fetching
+    }
+  }, [startDate, endDate, dateRangeSelected]);
+
+  // Fix type issue with handleDateRangeChange by making a custom type wrapper
+  // Replace the handleDateRangeChange function in the component with this one:
+  type CustomHandleDateRangeChange = (start: string, end: string) => void;
+
+  const handleDateRangeChange: CustomHandleDateRangeChange = (start, end) => {
+    handleDateRangeChangeRef.current?.({ from: start, to: end });
   };
 
   const toggleBikeType = (type: string) => {
@@ -401,8 +548,15 @@ export default function BrowsePage() {
     }
     
     // Availability filter
-    if (onlyShowAvailable && !vehicle.is_available) {
-      return false
+    if (onlyShowAvailable) {
+      if (!vehicle.is_available) {
+        return false;
+      }
+      
+      // If dates are selected, also check date-specific availability
+      if (startDate && endDate && dateRangeSelected && !vehicle.is_available_for_dates) {
+        return false;
+      }
     }
     
     // Vehicle-specific filters
@@ -484,6 +638,34 @@ export default function BrowsePage() {
       }
     }
   }
+
+  // Update clear button click handlers
+  const clearDates = () => {
+    console.log("Clearing all dates");
+    setStartDate('');
+    setEndDate('');
+    setStartDateObj(null);
+    setEndDateObj(null);
+    setSelectedDates(null);
+    setDateRangeSelected(false);
+  };
+
+  // Create a function for resetting all filters
+  const resetAllFilters = () => {
+    // Reset all filters
+    setPriceRange([100, 2000]);
+    setSelectedCategories([]);
+    setMinRating(0);
+    setSelectedLocation("");
+    setOnlyShowAvailable(false);
+    setSortBy("price_asc");
+    setMinSeats(0);
+    setTransmission("any");
+    setEngineSizeRange([0, 1000]);
+    
+    // Also clear dates
+    clearDates();
+  };
 
   return (
     <div className="min-h-screen">
@@ -632,19 +814,78 @@ export default function BrowsePage() {
                     <DateRangePicker
                       startDate={startDateObj}
                       endDate={endDateObj}
-                      onStartDateChange={(date) => handleDatePickerChange(date, endDateObj)}
-                      onEndDateChange={(date) => handleDatePickerChange(startDateObj, date)}
+                      onStartDateChange={(date) => {
+                        console.log("Start date changed:", date);
+                        
+                        // Update the Date object
+                        setStartDateObj(date);
+                        
+                        // Update the formatted string date
+                        if (date) {
+                          const formattedDate = date.toISOString().split('T')[0];
+                          setStartDate(formattedDate);
+                        } else {
+                          setStartDate('');
+                        }
+                        
+                        // If we're clearing the start date, also clear the end date
+                        if (!date) {
+                          setEndDateObj(null);
+                          setEndDate('');
+                          setDateRangeSelected(false);
+                        }
+                      }}
+                      onEndDateChange={(date) => {
+                        console.log("End date changed:", date);
+                        
+                        // Update the Date object
+                        setEndDateObj(date);
+                        
+                        // Update the formatted string date
+                        if (date) {
+                          const formattedDate = date.toISOString().split('T')[0];
+                          setEndDate(formattedDate);
+                          
+                          // If we now have both dates, mark selection as complete
+                          if (startDateObj) {
+                            setDateRangeSelected(true);
+                          }
+                        } else {
+                          setEndDate('');
+                          setDateRangeSelected(false);
+                        }
+                      }}
                     />
                     <p className="text-xs text-white/60 mt-1.5">
-                      Select dates to see available vehicles
+                      {dateRangeSelected 
+                        ? `Found ${vehicles.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
+                        : startDateObj 
+                          ? "Now select the end date (day you'll return the vehicle)"
+                          : "Select the start date (day you'll pick up the vehicle)"}
                     </p>
+                    
+                    {(startDateObj || endDateObj) && (
+                      <button
+                        onClick={clearDates}
+                        className="mt-2 text-xs text-primary/80 hover:text-primary flex items-center"
+                      >
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Clear dates
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2 mt-3">
                     <input 
                       type="checkbox" 
                       id="available-vehicles" 
                       checked={onlyShowAvailable}
-                      onChange={() => setOnlyShowAvailable(!onlyShowAvailable)}
+                      onChange={() => {
+                        setOnlyShowAvailable(!onlyShowAvailable);
+                        // Re-fetch data if dates are selected and we're toggling availability filter
+                        if (dateRangeSelected && startDate && endDate) {
+                          handleDateRangeChange(startDate, endDate);
+                        }
+                      }}
                       className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
                     />
                     <label htmlFor="available-vehicles" className="text-sm text-gray-300">
@@ -785,17 +1026,7 @@ export default function BrowsePage() {
                 {(selectedCategories.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 || selectedLocation || onlyShowAvailable) ? (
                   <div className="mt-4">
                     <button 
-                      onClick={() => {
-                        setPriceRange([100, 2000])
-                        setSelectedCategories([])
-                        setMinRating(0)
-                        setSelectedLocation("")
-                        setOnlyShowAvailable(false)
-                        setSortBy("price_asc")
-                        setMinSeats(0)
-                        setTransmission("any")
-                        setEngineSizeRange([0, 1000])
-                      }}
+                      onClick={resetAllFilters}
                       className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
                     >
                       <span>Reset All Filters</span>
@@ -857,19 +1088,78 @@ export default function BrowsePage() {
                         <DateRangePicker
                           startDate={startDateObj}
                           endDate={endDateObj}
-                          onStartDateChange={(date) => handleDatePickerChange(date, endDateObj)}
-                          onEndDateChange={(date) => handleDatePickerChange(startDateObj, date)}
+                          onStartDateChange={(date) => {
+                            console.log("Start date changed (mobile):", date);
+                            
+                            // Update the Date object
+                            setStartDateObj(date);
+                            
+                            // Update the formatted string date
+                            if (date) {
+                              const formattedDate = date.toISOString().split('T')[0];
+                              setStartDate(formattedDate);
+                            } else {
+                              setStartDate('');
+                            }
+                            
+                            // If we're clearing the start date, also clear the end date
+                            if (!date) {
+                              setEndDateObj(null);
+                              setEndDate('');
+                              setDateRangeSelected(false);
+                            }
+                          }}
+                          onEndDateChange={(date) => {
+                            console.log("End date changed (mobile):", date);
+                            
+                            // Update the Date object
+                            setEndDateObj(date);
+                            
+                            // Update the formatted string date
+                            if (date) {
+                              const formattedDate = date.toISOString().split('T')[0];
+                              setEndDate(formattedDate);
+                              
+                              // If we now have both dates, mark selection as complete
+                              if (startDateObj) {
+                                setDateRangeSelected(true);
+                              }
+                            } else {
+                              setEndDate('');
+                              setDateRangeSelected(false);
+                            }
+                          }}
                         />
                         <p className="text-xs text-white/60 mt-1.5">
-                          Select dates to see available vehicles
+                          {dateRangeSelected 
+                            ? `Found ${vehicles.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
+                            : startDateObj 
+                              ? "Now select the end date (day you'll return the vehicle)"
+                              : "Select the start date (day you'll pick up the vehicle)"}
                         </p>
+                        
+                        {(startDateObj || endDateObj) && (
+                          <button
+                            onClick={clearDates}
+                            className="mt-2 text-xs text-primary/80 hover:text-primary flex items-center"
+                          >
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Clear dates
+                          </button>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2 mt-3">
                         <input 
                           type="checkbox" 
                           id="mobile-available-vehicles" 
                           checked={onlyShowAvailable}
-                          onChange={() => setOnlyShowAvailable(!onlyShowAvailable)}
+                          onChange={() => {
+                            setOnlyShowAvailable(!onlyShowAvailable);
+                            // Re-fetch data if dates are selected and we're toggling availability filter
+                            if (dateRangeSelected && startDate && endDate) {
+                              handleDateRangeChange(startDate, endDate);
+                            }
+                          }}
                           className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
                         />
                         <label htmlFor="mobile-available-vehicles" className="text-sm text-gray-300">
@@ -1008,17 +1298,7 @@ export default function BrowsePage() {
                     {(selectedCategories.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 || selectedLocation || onlyShowAvailable) ? (
                       <div className="mt-4">
                         <button 
-                          onClick={() => {
-                            setPriceRange([100, 2000])
-                            setSelectedCategories([])
-                            setMinRating(0)
-                            setSelectedLocation("")
-                            setOnlyShowAvailable(false)
-                            setSortBy("price_asc")
-                            setMinSeats(0)
-                            setTransmission("any")
-                            setEngineSizeRange([0, 1000])
-                          }}
+                          onClick={resetAllFilters}
                           className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
                         >
                           <span>Reset All Filters</span>
@@ -1052,17 +1332,7 @@ export default function BrowsePage() {
                   <h3 className="text-xl font-semibold mb-2">No vehicles found</h3>
                   <p className="text-gray-400 mb-4">Try adjusting your filters to see more results</p>
                   <button 
-                    onClick={() => {
-                      setPriceRange([100, 2000])
-                      setSelectedCategories([])
-                      setMinRating(0)
-                      setSelectedLocation("")
-                      setOnlyShowAvailable(false)
-                      setSortBy("price_asc")
-                      setMinSeats(0)
-                      setTransmission("any")
-                      setEngineSizeRange([0, 1000])
-                    }}
+                    onClick={resetAllFilters}
                     className="px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded-md text-sm"
                   >
                     Reset Filters
@@ -1087,35 +1357,35 @@ export default function BrowsePage() {
                     animate="show"
                   >
                     {filteredVehicles.map((vehicle) => (
-                      <motion.div key={vehicle.id} variants={itemVariants} className="h-full">
+                      <motion.div 
+                        className="w-full"
+                        key={vehicle.id}
+                        variants={itemVariants}
+                      >
                         <VehicleCard
                           id={vehicle.id}
-                          model={vehicle.name}
-                          vehicleType={vehicle.vehicle_type}
+                          model={vehicle.name || ''}
+                          vehicleType={vehicle.vehicle_type as VehicleType}
                           category={vehicle.category}
-                          images={vehicle.images?.map(img => img.image_url) || []}
+                          images={vehicle.images?.map(img => img.image_url || '') || []}
+                          specifications={vehicle.specifications || {}}
+                          isAvailable={vehicle.is_available}
                           prices={{
                             daily: vehicle.price_per_day,
                             weekly: vehicle.price_per_week,
                             monthly: vehicle.price_per_month
                           }}
-                          specifications={vehicle.specifications}
-                          isAvailable={vehicle.is_available}
                           shop={{
                             id: vehicle.shopId,
                             name: vehicle.shopName,
                             logo: vehicle.shopLogo,
                             location: vehicle.shopLocation
                           }}
-                          availabilityInfo={
-                            dateRangeSelected 
-                              ? {
-                                  isAvailableForDates: !!vehicle.is_available_for_dates,
-                                  startDate: startDate,
-                                  endDate: endDate
-                                }
-                              : undefined
-                          }
+                          availabilityInfo={dateRangeSelected ? {
+                            isAvailableForDates: vehicle.is_available_for_dates || false,
+                            startDate: startDate,
+                            endDate: endDate
+                          } : undefined}
                           onViewShopClick={() => handleViewShopClick(vehicle.shopId)}
                           onBookClick={handleBookClick}
                         />

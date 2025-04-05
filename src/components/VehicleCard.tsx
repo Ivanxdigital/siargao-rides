@@ -168,8 +168,8 @@ const VehicleCard = ({
               className="px-3 py-1 text-xs font-bold shadow-lg"
             >
               {availabilityInfo.isAvailableForDates 
-                ? 'Available for Selected Dates' 
-                : 'Unavailable for Selected Dates'}
+                ? 'Available' 
+                : 'Unavailable'}
             </Badge>
           ) : (
             <Badge 
