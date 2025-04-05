@@ -323,6 +323,7 @@ export default function RegisterShopPage() {
     email: "",
     phone: "",
     address: "",
+    referral: "",
     governmentId: null as File | null,
     businessPermit: null as File | null
   })
@@ -503,7 +504,7 @@ export default function RegisterShopPage() {
         const newShop = await createShop({
           owner_id: user.id,
           name: formData.shopName,
-          description: `Motorbike rental shop in Siargao. Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+          description: `Motorbike rental shop in Siargao. ${formData.referral ? `Referred by: ${formData.referral}. ` : ''}Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
           address: formData.address || "Siargao Island",
           city: "Siargao",
           phone_number: formData.phone,
@@ -537,7 +538,7 @@ export default function RegisterShopPage() {
             const newShop = await createShop({
               owner_id: user.id,
               name: formData.shopName,
-              description: `Motorbike rental shop in Siargao. Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+              description: `Motorbike rental shop in Siargao. ${formData.referral ? `Referred by: ${formData.referral}. ` : ''}Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
               address: formData.address || "Siargao Island",
               city: "Siargao",
               phone_number: formData.phone,
@@ -1360,6 +1361,21 @@ export default function RegisterShopPage() {
                             onChange={handleChange}
                             className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                             required
+                          />
+                        </div>
+                        
+                        <div>
+                          <label htmlFor="referral" className="block text-sm font-medium mb-1">
+                            Referral (optional)
+                          </label>
+                          <input
+                            type="text"
+                            id="referral"
+                            name="referral"
+                            value={formData.referral}
+                            onChange={handleChange}
+                            placeholder="Who referred you to Siargao Rides?"
+                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </div>
                       </div>

@@ -84,6 +84,20 @@ const extractDocuments = (description: string) => {
   return documents;
 };
 
+// Add this helper function to extract referral information
+const extractReferral = (description: string): string | null => {
+  if (!description) return null;
+  
+  const referralPattern = /Referred by: ([^.]+)\./i;
+  const referralMatch = description.match(referralPattern);
+  
+  if (referralMatch && referralMatch[1]) {
+    return referralMatch[1].trim();
+  }
+  
+  return null;
+};
+
 // Add this new component for displaying documents
 const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -480,6 +494,14 @@ export default function ShopVerificationPage() {
                                   <p><span className="font-medium">Phone:</span> {shop.phone_number}</p>
                                   <p><span className="font-medium">Email:</span> {shop.email}</p>
                                   <p><span className="font-medium">WhatsApp:</span> {shop.whatsapp || 'Not provided'}</p>
+                                  
+                                  {/* Add referral information */}
+                                  {shop.description && extractReferral(shop.description) && (
+                                    <p>
+                                      <span className="font-medium">Referred by:</span>{" "}
+                                      <span className="text-primary">{extractReferral(shop.description)}</span>
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                               
