@@ -1,0 +1,60 @@
+/* Custom calendar styles */
+
+/* Style for dates from adjacent months */
+.custom-calendar .rbc-off-range-bg {
+  background: linear-gradient(to bottom, #2d2d2d, #1f1f1f);
+  opacity: 0.9;
+}
+
+/* Style for dates from adjacent months - text color */
+.custom-calendar .rbc-off-range {
+  color: #8e8e8e;
+  font-weight: 500;
+}
+
+/* Improve overall calendar aesthetics */
+.custom-calendar .rbc-month-view {
+  border-radius: 8px;
+  overflow: hidden;
+  border-color: #3a3a3a;
+}
+
+.custom-calendar .rbc-header {
+  padding: 12px 0;
+  font-weight: 600;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.custom-calendar .rbc-day-bg {
+  transition: background-color 0.2s ease;
+}
+
+.custom-calendar .rbc-today {
+  background-color: rgba(139, 92, 246, 0.15);
+}
+
+/* Today's date styling */
+.custom-calendar .rbc-now .rbc-button-link {
+  background-color: rgba(139, 92, 246, 0.8);
+  color: white;
+  border-radius: 50%;
+  padding: 2px;
+  font-weight: bold;
+}
+
+/* Weekend styling */
+.custom-calendar .rbc-day-bg.rbc-off-range-bg.rbc-weekend {
+  background: linear-gradient(to bottom, #2a2836, #1f1f2d);
+}
+
+/* Event styling improvements */
+.custom-calendar .rbc-event {
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-calendar .rbc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+} 

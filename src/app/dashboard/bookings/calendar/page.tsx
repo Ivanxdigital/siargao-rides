@@ -11,6 +11,9 @@ import { ArrowLeft, Calendar as CalendarIcon, List, Grid, Filter, Loader } from 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// Add custom styles for the calendar
+import './calendar-custom.css';
+
 // Create localizer for calendar
 const localizer = momentLocalizer(moment);
 
@@ -21,21 +24,24 @@ const eventStyleGetter = (event: any) => {
     color: 'white',
     border: 'none',
     borderRadius: '4px',
-    opacity: 0.8
+    padding: '2px 4px',
+    fontSize: '0.9em',
+    fontWeight: 'bold',
+    opacity: 0.9
   };
   
   switch(event.status) {
     case 'pending':
-      style.backgroundColor = '#f59e0b'; // amber-500
+      style.backgroundColor = '#fbbf24'; // amber-400, slightly less harsh than the previous color
       break;
     case 'confirmed':
-      style.backgroundColor = '#10b981'; // emerald-500
+      style.backgroundColor = '#34d399'; // emerald-400, more vibrant but not too harsh
       break;
     case 'completed':
-      style.backgroundColor = '#6366f1'; // indigo-500
+      style.backgroundColor = '#818cf8'; // indigo-400, softer than previous color
       break;
     case 'cancelled':
-      style.backgroundColor = '#ef4444'; // red-500
+      style.backgroundColor = '#f87171'; // red-400, slightly less harsh than previous
       break;
     default:
       break;
@@ -564,7 +570,7 @@ export default function BookingsCalendarPage() {
           </div>
           
           <div className="bg-card border border-border rounded-lg overflow-hidden p-4">
-            <div className="h-[600px]">
+            <div className="h-[600px] calendar-container">
               <Calendar
                 localizer={localizer}
                 events={filteredBookings}
@@ -577,27 +583,36 @@ export default function BookingsCalendarPage() {
                 eventPropGetter={eventStyleGetter}
                 onSelectEvent={handleSelectEvent}
                 popup
+                className="custom-calendar"
               />
             </div>
           </div>
           
-          <div className="flex items-center gap-4 justify-center text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#f59e0b]"></div>
-              <span>Pending</span>
+          <div className="mt-6 p-4 bg-white dark:bg-gray-800 border border-border rounded-lg text-sm">
+            <h3 className="font-medium mb-3 text-base">Booking Status Legend</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-sm bg-[#fbbf24]"></div>
+                <span className="font-medium">Pending</span>
+                <span className="text-muted-foreground text-xs ml-1">- Awaiting confirmation</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-sm bg-[#34d399]"></div>
+                <span className="font-medium">Confirmed</span>
+                <span className="text-muted-foreground text-xs ml-1">- Ready for pickup</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-sm bg-[#818cf8]"></div>
+                <span className="font-medium">Completed</span>
+                <span className="text-muted-foreground text-xs ml-1">- Rental finished</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-sm bg-[#f87171]"></div>
+                <span className="font-medium">Cancelled</span>
+                <span className="text-muted-foreground text-xs ml-1">- Booking cancelled</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-              <span>Confirmed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#6366f1]"></div>
-              <span>Completed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-              <span>Cancelled</span>
-            </div>
+            <p className="mt-3 text-xs text-muted-foreground">Click on any booking event to view details and manage the reservation.</p>
           </div>
         </>
       )}
