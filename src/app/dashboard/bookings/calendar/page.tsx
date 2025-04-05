@@ -458,38 +458,42 @@ export default function BookingsCalendarPage() {
   };
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 pb-8 max-w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               asChild
-              className="mr-2"
+              className="group transition-all duration-200 hover:border-primary/50"
             >
               <Link href="/dashboard/bookings">
-                <ArrowLeft size={16} className="mr-1" />
-                Back to Bookings
+                <ArrowLeft size={16} className="mr-1.5 group-hover:-translate-x-0.5 transition-transform" />
+                <span>Back to Bookings</span>
               </Link>
             </Button>
           </div>
-          <h1 className="text-2xl font-bold">Bookings Calendar</h1>
-          <p className="text-muted-foreground">Visualize and manage your bookings</p>
+          <h1 className="text-2xl font-bold tracking-tight mb-1">Bookings Calendar</h1>
+          <p className="text-muted-foreground text-sm">Visualize and manage your bookings across time</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <Button 
             variant="outline" 
             size="sm" 
             asChild
+            className="transition-all duration-200"
           >
             <Link href="/dashboard/bookings">
               <List className="h-4 w-4 mr-2" />
               List View
             </Link>
           </Button>
-          <Button size="sm">
+          <Button 
+            size="sm"
+            className="shadow-sm transition-all duration-200"
+          >
             <CalendarIcon className="h-4 w-4 mr-2" />
             Calendar View
           </Button>
@@ -497,11 +501,14 @@ export default function BookingsCalendarPage() {
       </div>
       
       {isLoading ? (
-        <div className="flex items-center justify-center h-96 bg-card border border-border rounded-lg">
-          <Loader className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center h-96 bg-card border border-border rounded-lg shadow-sm">
+          <div className="flex flex-col items-center gap-2">
+            <Loader className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading calendar data...</p>
+          </div>
         </div>
       ) : error ? (
-        <div className="bg-destructive/10 border border-destructive text-destructive p-4 rounded-md flex flex-col items-center">
+        <div className="bg-destructive/10 border border-destructive text-destructive p-6 rounded-lg shadow-sm flex flex-col items-center">
           <p className="mb-4">{error}</p>
           {hasRateLimitError && (
             <Button 
@@ -522,55 +529,66 @@ export default function BookingsCalendarPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between mb-4">
+          <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-5 bg-card/50 p-4 rounded-lg border border-border/70 shadow-sm">
             <div className="flex flex-wrap gap-2">
+              <p className="text-xs text-muted-foreground font-medium w-full mb-1.5">Filter by vehicle:</p>
               <Button 
                 variant={selectedVehicle === 'all' ? "default" : "outline"} 
                 size="sm"
                 onClick={() => setSelectedVehicle('all')}
+                className="transition-all duration-200"
               >
                 All Vehicles
               </Button>
               
-              {vehicles.map(vehicle => (
-                <Button 
-                  key={vehicle.id} 
-                  variant={selectedVehicle === vehicle.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedVehicle(vehicle.id)}
-                >
-                  {vehicle.name}
-                </Button>
-              ))}
+              <div className="flex flex-wrap gap-2 max-w-full">
+                {vehicles.map(vehicle => (
+                  <Button 
+                    key={vehicle.id} 
+                    variant={selectedVehicle === vehicle.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedVehicle(vehicle.id)}
+                    className="transition-all duration-200"
+                  >
+                    {vehicle.name}
+                  </Button>
+                ))}
+              </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button 
-                variant={view === 'month' ? "default" : "outline"} 
-                size="sm"
-                onClick={() => setView('month')}
-              >
-                Month
-              </Button>
-              <Button 
-                variant={view === 'week' ? "default" : "outline"} 
-                size="sm"
-                onClick={() => setView('week')}
-              >
-                Week
-              </Button>
-              <Button 
-                variant={view === 'day' ? "default" : "outline"} 
-                size="sm"
-                onClick={() => setView('day')}
-              >
-                Day
-              </Button>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-muted-foreground font-medium">View options:</p>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant={view === 'month' ? "default" : "outline"} 
+                  size="sm"
+                  onClick={() => setView('month')}
+                  className="transition-all duration-200"
+                >
+                  Month
+                </Button>
+                <Button 
+                  variant={view === 'week' ? "default" : "outline"} 
+                  size="sm"
+                  onClick={() => setView('week')}
+                  className="transition-all duration-200"
+                >
+                  Week
+                </Button>
+                <Button 
+                  variant={view === 'day' ? "default" : "outline"} 
+                  size="sm"
+                  onClick={() => setView('day')}
+                  className="transition-all duration-200"
+                >
+                  Day
+                </Button>
+              </div>
             </div>
           </div>
           
-          <div className="bg-card border border-border rounded-lg overflow-hidden p-4">
-            <div className="h-[600px] calendar-container">
+          <div className="bg-card border border-border rounded-lg overflow-hidden p-4 sm:p-5 shadow-sm">
+            <div className="h-[400px] sm:h-[500px] md:h-[600px] calendar-container">
               <Calendar
                 localizer={localizer}
                 events={filteredBookings}
@@ -588,31 +606,47 @@ export default function BookingsCalendarPage() {
             </div>
           </div>
           
-          <div className="mt-6 p-4 bg-white dark:bg-gray-800 border border-border rounded-lg text-sm">
-            <h3 className="font-medium mb-3 text-base">Booking Status Legend</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-[#fbbf24]"></div>
-                <span className="font-medium">Pending</span>
-                <span className="text-muted-foreground text-xs ml-1">- Awaiting confirmation</span>
+          <div className="mt-6 p-5 bg-white dark:bg-gray-800 border border-border rounded-lg text-sm shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1 h-5 bg-primary rounded-full"></div>
+              <h3 className="font-medium text-base">Booking Status Legend</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center gap-2 p-2 rounded-md bg-background/50">
+                <div className="w-5 h-5 rounded-sm bg-[#fbbf24]"></div>
+                <div>
+                  <span className="font-medium">Pending</span>
+                  <p className="text-muted-foreground text-xs mt-0.5">Awaiting confirmation</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-[#34d399]"></div>
-                <span className="font-medium">Confirmed</span>
-                <span className="text-muted-foreground text-xs ml-1">- Ready for pickup</span>
+              <div className="flex items-center gap-2 p-2 rounded-md bg-background/50">
+                <div className="w-5 h-5 rounded-sm bg-[#34d399]"></div>
+                <div>
+                  <span className="font-medium">Confirmed</span>
+                  <p className="text-muted-foreground text-xs mt-0.5">Ready for pickup</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-[#818cf8]"></div>
-                <span className="font-medium">Completed</span>
-                <span className="text-muted-foreground text-xs ml-1">- Rental finished</span>
+              <div className="flex items-center gap-2 p-2 rounded-md bg-background/50">
+                <div className="w-5 h-5 rounded-sm bg-[#818cf8]"></div>
+                <div>
+                  <span className="font-medium">Completed</span>
+                  <p className="text-muted-foreground text-xs mt-0.5">Rental finished</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm bg-[#f87171]"></div>
-                <span className="font-medium">Cancelled</span>
-                <span className="text-muted-foreground text-xs ml-1">- Booking cancelled</span>
+              <div className="flex items-center gap-2 p-2 rounded-md bg-background/50">
+                <div className="w-5 h-5 rounded-sm bg-[#f87171]"></div>
+                <div>
+                  <span className="font-medium">Cancelled</span>
+                  <p className="text-muted-foreground text-xs mt-0.5">Booking cancelled</p>
+                </div>
               </div>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">Click on any booking event to view details and manage the reservation.</p>
+            
+            <p className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              Click on any booking event to view its details and manage the reservation
+            </p>
           </div>
         </>
       )}

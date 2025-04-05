@@ -17,6 +17,7 @@
   border-radius: 8px;
   overflow: hidden;
   border-color: #3a3a3a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .custom-calendar .rbc-header {
@@ -33,13 +34,12 @@
   background-color: rgba(139, 92, 246, 0.15);
 }
 
-/* Today's date styling */
+/* Today's date styling - updated to remove circular background */
 .custom-calendar .rbc-now .rbc-button-link {
-  background-color: rgba(139, 92, 246, 0.8);
-  color: white;
-  border-radius: 50%;
-  padding: 2px;
+  color: #c4b5fd; /* Light purple color for today's date */
   font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Weekend styling */
@@ -57,4 +57,93 @@
 .custom-calendar .rbc-event:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .custom-calendar .rbc-toolbar {
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .custom-calendar .rbc-toolbar-label {
+    margin: 8px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  
+  .custom-calendar .rbc-btn-group {
+    margin-bottom: 5px;
+  }
+  
+  .custom-calendar .rbc-btn-group button {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+  }
+  
+  /* Make events more visible on small screens */
+  .custom-calendar .rbc-event {
+    padding: 2px 3px;
+    font-size: 0.8rem;
+  }
+  
+  /* Improve tap targets */
+  .custom-calendar .rbc-date-cell {
+    padding: 2px;
+  }
+  
+  .custom-calendar .rbc-button-link {
+    padding: 2px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Additional modern styling */
+.custom-calendar .rbc-toolbar button {
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.custom-calendar .rbc-toolbar button:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+.custom-calendar .rbc-toolbar button.rbc-active {
+  background-color: #8b5cf6;
+  color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.custom-calendar .rbc-toolbar button.rbc-active:hover,
+.custom-calendar .rbc-toolbar button.rbc-active:focus {
+  background-color: #7c3aed;
+  color: white;
+}
+
+/* Improve row/cell spacing */
+.custom-calendar .rbc-month-row {
+  min-height: 85px;
+}
+
+/* Smoother cell transitions */
+.custom-calendar .rbc-day-bg:hover {
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+/* Fix height responsiveness */
+.calendar-container {
+  width: 100%;
+}
+
+/* Disable certain styles in mobile view */
+@media (max-width: 480px) {
+  .custom-calendar .rbc-toolbar button {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .custom-calendar .rbc-agenda-view table.rbc-agenda-table {
+    font-size: 0.8rem;
+  }
 } 
