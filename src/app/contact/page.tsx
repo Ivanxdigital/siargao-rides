@@ -52,6 +52,7 @@ export default function ContactPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -59,20 +60,38 @@ export default function ContactPage() {
       ...formData,
       [name]: value
     })
+    // Clear error when user starts typing again
+    if (error) setError(null)
   }
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // In a real app, we would send the data to the server
     setIsSubmitting(true)
+    setError(null)
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      const response = await fetch('/api/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message')
+      }
+      
       setIsSubmitted(true)
-      console.log("Contact form submitted:", formData)
-    }, 1000)
+      setFormData({ name: "", email: "", message: "" })
+    } catch (err) {
+      console.error('Error submitting form:', err)
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
   
   return (
@@ -136,8 +155,11 @@ export default function ContactPage() {
                   <p className="text-gray-300 mb-6">
                     Your message has been sent successfully. We'll get back to you as soon as possible.
                   </p>
-                  <Button asChild className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm">
-                    <a href="/">Return to Homepage</a>
+                  <Button 
+                    onClick={() => setIsSubmitted(false)} 
+                    className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
+                  >
+                    Send Another Message
                   </Button>
                 </motion.div>
               ) : (
@@ -145,6 +167,16 @@ export default function ContactPage() {
                   onSubmit={handleSubmit} 
                   className="space-y-4"
                 >
+                  {error && (
+                    <motion.div 
+                      className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-md text-sm"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      {error}
+                    </motion.div>
+                  )}
+                
                   <motion.div variants={fadeInVariants}>
                     <label htmlFor="name" className="block text-sm font-medium mb-1 text-gray-200">
                       Your Name
@@ -240,10 +272,10 @@ export default function ContactPage() {
                     <div>
                       <h3 className="font-medium text-gray-200">Email</h3>
                       <a 
-                        href="mailto:info@siargaorides.com" 
+                        href="mailto:siargaorides@gmail.com" 
                         className="text-gray-300 hover:text-primary transition-colors"
                       >
-                        info@siargaorides.com
+                        siargaorides@gmail.com
                       </a>
                     </div>
                   </motion.div>
