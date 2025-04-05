@@ -477,7 +477,7 @@ export default function ProfilePage() {
                 <Button 
                   variant="default" 
                   className="w-full md:w-auto bg-gradient-to-r from-black/90 to-gray-900 hover:from-primary/70 hover:to-primary/90 text-white font-medium px-6 py-2.5 border border-primary/30 rounded-lg transition-all duration-300 shadow-md group"
-                  onClick={() => router.push("/dashboard/bookings")}
+                  onClick={() => router.push("/dashboard/my-bookings")}
                 >
                   <Calendar className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                   <span className="group-hover:translate-x-0.5 transition-transform duration-300">View My Bookings</span>
