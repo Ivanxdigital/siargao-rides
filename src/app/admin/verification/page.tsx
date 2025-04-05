@@ -98,13 +98,44 @@ const extractReferral = (description: string): string | null => {
   return null;
 };
 
-// Add this new component for displaying documents
+// Add this helper function to detect file type
+const getFileType = (url: string): 'image' | 'pdf' | 'unknown' => {
+  const lowercaseUrl = url.toLowerCase();
+  if (lowercaseUrl.endsWith('.pdf')) {
+    return 'pdf';
+  } else if (
+    lowercaseUrl.endsWith('.jpg') || 
+    lowercaseUrl.endsWith('.jpeg') || 
+    lowercaseUrl.endsWith('.png') || 
+    lowercaseUrl.endsWith('.gif') || 
+    lowercaseUrl.endsWith('.webp')
+  ) {
+    return 'image';
+  }
+  
+  // If no extension, try to guess from URL
+  if (lowercaseUrl.includes('pdf')) {
+    return 'pdf';
+  } else if (
+    lowercaseUrl.includes('image') || 
+    lowercaseUrl.includes('jpg') || 
+    lowercaseUrl.includes('jpeg') || 
+    lowercaseUrl.includes('png')
+  ) {
+    return 'image';
+  }
+  
+  return 'unknown';
+};
+
+// Update the DocumentPreview component
 const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   
   // Clean the URL by removing any trailing punctuation or whitespace
   const cleanUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+  const fileType = getFileType(cleanUrl);
   
   return (
     <>
@@ -112,15 +143,7 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
         <div className="bg-muted/30 border border-border rounded-lg p-4 hover:border-primary/50 transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              {type === 'id' ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="16" rx="2" />
-                  <circle cx="9" cy="10" r="2" />
-                  <path d="M15 8h2" />
-                  <path d="M15 12h2" />
-                  <path d="M7 16h10" />
-                </svg>
-              ) : (
+              {fileType === 'pdf' ? (
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <path d="M14 2v6h6" />
@@ -128,18 +151,40 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
                   <path d="M16 17H8" />
                   <path d="M10 9H8" />
                 </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  {type === 'id' ? (
+                    <>
+                      <rect x="3" y="4" width="18" height="16" rx="2" />
+                      <circle cx="9" cy="10" r="2" />
+                      <path d="M15 8h2" />
+                      <path d="M15 12h2" />
+                      <path d="M7 16h10" />
+                    </>
+                  ) : (
+                    <>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <path d="M14 2v6h6" />
+                      <path d="M16 13H8" />
+                      <path d="M16 17H8" />
+                      <path d="M10 9H8" />
+                    </>
+                  )}
+                </svg>
               )}
             </div>
             <div>
               <h4 className="text-sm font-medium">
                 {type === 'id' ? 'Government ID' : 'Business Permit'}
+                {fileType === 'pdf' && <span className="ml-2 text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">PDF</span>}
+                {fileType === 'image' && <span className="ml-2 text-xs bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">Image</span>}
               </h4>
               <div className="flex items-center gap-2 mt-1">
                 <button 
                   onClick={() => setIsPreviewOpen(true)}
                   className="text-xs text-primary hover:underline flex items-center gap-1 group"
                 >
-                  View Document
+                  {fileType === 'pdf' ? 'View PDF' : 'View Image'}
                   <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
                 </button>
                 <a 
@@ -147,12 +192,13 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-xs text-muted-foreground hover:text-primary hover:underline flex items-center gap-1 group"
+                  download={fileType === 'pdf'}
                 >
-                  Open in New Tab
+                  {fileType === 'pdf' ? 'Download PDF' : 'Open in New Tab'}
                   <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
                 </a>
               </div>
-              {imageError && (
+              {loadError && (
                 <p className="text-xs text-red-500 mt-1">
                   Document preview unavailable. Try opening in new tab.
                 </p>
@@ -165,22 +211,50 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-3xl p-0 overflow-hidden">
-          {imageError ? (
+          {loadError ? (
             <div className="flex flex-col items-center justify-center h-[80vh] p-6 text-center">
               <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
               <h3 className="text-xl font-medium mb-2">Unable to load document</h3>
               <p className="text-muted-foreground mb-4">
-                The document image could not be loaded. This might be due to the file being removed or insufficient permissions.
+                The document could not be loaded. This might be due to the file being removed or insufficient permissions.
               </p>
               <a 
                 href={cleanUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-primary hover:underline flex items-center gap-1"
+                download={fileType === 'pdf'}
               >
-                Try opening directly in browser
+                {fileType === 'pdf' ? 'Download PDF file' : 'Open image in new tab'}
                 <ExternalLink size={16} />
               </a>
+            </div>
+          ) : fileType === 'pdf' ? (
+            <div className="w-full h-[80vh] bg-gray-100">
+              <object
+                data={cleanUrl}
+                type="application/pdf"
+                width="100%"
+                height="100%"
+                onError={() => setLoadError(true)}
+                className="w-full h-full"
+              >
+                <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    Your browser does not support embedded PDF viewing.
+                  </p>
+                  <a 
+                    href={cleanUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline flex items-center gap-1"
+                    download
+                  >
+                    Download PDF file
+                    <ExternalLink size={16} />
+                  </a>
+                </div>
+              </object>
             </div>
           ) : (
             <div className="relative w-full h-[80vh]">
@@ -190,7 +264,7 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
                 fill
                 className="object-contain"
                 unoptimized // Since we're loading from Supabase storage
-                onError={() => setImageError(true)}
+                onError={() => setLoadError(true)}
               />
             </div>
           )}
