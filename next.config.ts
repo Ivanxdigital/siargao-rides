@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'placehold.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
       // Add Supabase storage domain if available
       ...(process.env.NEXT_PUBLIC_SUPABASE_URL ? [{
         protocol: 'https' as const,
