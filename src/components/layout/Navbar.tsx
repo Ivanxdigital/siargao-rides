@@ -122,7 +122,12 @@ const Navbar = () => {
         <div className="container mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="relative group flex items-center">
-            <div className="relative h-8 md:h-9 w-auto flex items-center mt-0.5 md:mt-0">
+            <motion.div 
+              className="relative h-8 md:h-9 w-auto flex items-center mt-0.5 md:mt-0"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
               <Image
                 src="/images/Horizontal Logo.png" 
                 alt="Siargao Rides Logo"
@@ -131,7 +136,7 @@ const Navbar = () => {
                 className="object-contain"
                 priority
               />
-            </div>
+            </motion.div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -279,7 +284,12 @@ const Navbar = () => {
         <div className="md:hidden fixed inset-0 z-[998] bg-black/90 backdrop-blur-md pt-20">
           {/* Add mobile logo at the top of mobile menu for better branding */}
           <div className="flex justify-center mb-8">
-            <div className="relative w-32 h-32">
+            <motion.div 
+              className="relative w-32 h-32"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+            >
               <Image
                 src="/images/Vertical Logo Without Outline.png" 
                 alt="Siargao Rides Logo"
@@ -287,7 +297,7 @@ const Navbar = () => {
                 height={128}
                 className="object-contain"
               />
-            </div>
+            </motion.div>
           </div>
           <div className="pb-8 px-6 overflow-y-auto max-h-screen">
             {isAuthenticated && (
