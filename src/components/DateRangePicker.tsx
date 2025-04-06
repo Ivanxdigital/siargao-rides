@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { format, isWithinInterval, addDays } from "date-fns";
+import { format, isWithinInterval, addDays, isSameDay } from "date-fns";
 import { CalendarIcon, AlertCircle, XCircle } from "lucide-react";
-import { Calendar } from "@/components/ui/Calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
 import { Button } from "@/components/ui/Button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
-import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
+
+// Import the DateRange type
+import type { DateRange } from "react-day-picker";
 
 interface DateRangePickerProps {
   startDate: Date | null;
@@ -25,6 +26,18 @@ interface BookedPeriod {
   endDate: Date;
 }
 
+// Define day object type
+interface CalendarDay {
+  date: Date;
+  isCurrentMonth: boolean;
+  isDisabled: boolean;
+  isToday?: boolean;
+  isSelected?: boolean;
+  isInSelectedRange?: boolean;
+  isSelectionStart?: boolean;
+  isSelectionEnd?: boolean;
+}
+
 export default function DateRangePicker({
   startDate,
   endDate,
@@ -38,25 +51,18 @@ export default function DateRangePicker({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectionInProgress, setSelectionInProgress] = useState(false);
-  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(
-    startDate && endDate 
-      ? { from: startDate, to: endDate } 
-      : startDate 
-        ? { from: startDate, to: undefined } 
-        : undefined
-  );
-
-  // Update selectedRange when the parent component changes startDate or endDate
+  const [month, setMonth] = useState<Date>(new Date());
+  const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
+  
+  // Update selection in progress state when dates change
   useEffect(() => {
-    if (startDate && endDate) {
-      setSelectedRange({ from: startDate, to: endDate });
-    } else if (startDate) {
-      setSelectedRange({ from: startDate, to: undefined });
+    if (startDate && !endDate) {
+      setSelectionInProgress(true);
     } else {
-      setSelectedRange(undefined);
+      setSelectionInProgress(false);
     }
   }, [startDate, endDate]);
-  
+
   // Fetch availability data when the component mounts or vehicleId changes
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -84,21 +90,16 @@ export default function DateRangePicker({
           if (rentalsError) {
             console.error('Error fetching vehicle bookings:', rentalsError);
             setError('Could not load availability data for vehicle');
-            // Continue with empty rentals but don't return early
           } else {
             rentals = vehicleRentals || [];
           }
         } catch (err) {
           console.error('Exception fetching vehicle bookings:', err);
           setError('Could not load availability data for vehicle');
-          // Continue with empty rentals
         }
         
-        // Combine both results (now just vehicle rentals)
-        const allRentals = [...rentals];
-        
         // Transform into booked periods
-        const periods: BookedPeriod[] = allRentals.map(rental => ({
+        const periods: BookedPeriod[] = rentals.map(rental => ({
           startDate: new Date(rental.start_date),
           endDate: new Date(rental.end_date)
         }));
@@ -114,15 +115,6 @@ export default function DateRangePicker({
     
     fetchAvailability();
   }, [vehicleId]);
-
-  // Update selection in progress state when dates change
-  useEffect(() => {
-    if (startDate && !endDate) {
-      setSelectionInProgress(true);
-    } else {
-      setSelectionInProgress(false);
-    }
-  }, [startDate, endDate]);
   
   // Function to check if a date is booked
   const isDateBooked = (date: Date) => {
@@ -145,7 +137,136 @@ export default function DateRangePicker({
     }
     onStartDateChange(null);
     onEndDateChange(null);
-    setSelectedRange(undefined);
+  };
+
+  // Helper function to determine if a date is in the selected range
+  const isInSelectedRange = (date: Date) => {
+    if (!startDate) return false;
+    if (!endDate && !hoveredDate) return isSameDay(date, startDate);
+    
+    const end = endDate || hoveredDate;
+    
+    if (!end) return isSameDay(date, startDate);
+    
+    // Handle when hovering before the start date
+    if (hoveredDate && hoveredDate < startDate) {
+      return isWithinInterval(date, { start: hoveredDate, end: startDate });
+    }
+    
+    return isWithinInterval(date, { start: startDate, end });
+  };
+
+  // Generate calendar days for a given month
+  const generateDaysForMonth = (year: number, month: number): CalendarDay[] => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    
+    // Adjust for Monday as first day of week
+    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+    
+    const days: CalendarDay[] = [];
+    
+    // Add previous month days to fill the first week
+    const lastDayPrevMonth = new Date(year, month, 0).getDate();
+    for (let i = adjustedFirstDay - 1; i >= 0; i--) {
+      days.push({
+        date: new Date(year, month - 1, lastDayPrevMonth - i),
+        isCurrentMonth: false,
+        isDisabled: true,
+      });
+    }
+    
+    // Add current month days
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const isDisabled = date < today || isDateBooked(date);
+      
+      days.push({
+        date,
+        isCurrentMonth: true,
+        isDisabled,
+        isToday: isSameDay(date, today),
+        isSelected: startDate && endDate 
+          ? isWithinInterval(date, { start: startDate, end: endDate })
+          : startDate ? isSameDay(date, startDate) : undefined,
+        isInSelectedRange: isInSelectedRange(date),
+        isSelectionStart: startDate ? isSameDay(date, startDate) : undefined,
+        isSelectionEnd: endDate ? isSameDay(date, endDate) : undefined,
+      });
+    }
+    
+    // Add next month days to complete the grid (always 6 rows of 7 days)
+    const totalDaysNeeded = 42; // 6 rows of 7 days
+    const nextMonthDays = totalDaysNeeded - days.length;
+    
+    for (let day = 1; day <= nextMonthDays; day++) {
+      days.push({
+        date: new Date(year, month + 1, day),
+        isCurrentMonth: false,
+        isDisabled: true,
+      });
+    }
+    
+    return days;
+  };
+
+  // Handle day click
+  const handleDayClick = (date: Date) => {
+    if (!startDate) {
+      // Select start date
+      onStartDateChange(date);
+    } else if (!endDate) {
+      // If clicking on a day before start date, swap them
+      if (date < startDate) {
+        onEndDateChange(startDate);
+        onStartDateChange(date);
+      } else {
+        // Select end date
+        onEndDateChange(date);
+      }
+      
+      // Close calendar after a short delay when both dates are selected
+      setTimeout(() => {
+        setIsCalendarOpen(false);
+      }, 300);
+    } else {
+      // Reset and start new selection
+      onStartDateChange(date);
+      onEndDateChange(null);
+    }
+  };
+
+  // Generate the days for the current month
+  const currentYear = month.getFullYear();
+  const currentMonth = month.getMonth();
+  const currentMonthDays = generateDaysForMonth(currentYear, currentMonth);
+  
+  // Calculate next month
+  const nextMonth = new Date(currentYear, currentMonth + 1, 1);
+  const nextMonthDays = generateDaysForMonth(nextMonth.getFullYear(), nextMonth.getMonth());
+
+  // Day names starting from Monday
+  const dayNames = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  
+  // Month names
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  
+  // Navigate to previous month
+  const goToPreviousMonth = () => {
+    const newMonth = new Date(currentYear, currentMonth - 1, 1);
+    setMonth(newMonth);
+  };
+  
+  // Navigate to next month
+  const goToNextMonth = () => {
+    const newMonth = new Date(currentYear, currentMonth + 1, 1);
+    setMonth(newMonth);
   };
   
   return (
@@ -155,8 +276,6 @@ export default function DateRangePicker({
         onOpenChange={(open) => {
           // Don't close the calendar if we're in the middle of selecting a date range
           if (!open && startDate && !endDate) {
-            // If trying to close while selection in progress, keep it open
-            console.log("Preventing calendar from closing during selection");
             setIsCalendarOpen(true);
             return;
           }
@@ -193,8 +312,9 @@ export default function DateRangePicker({
             )}
           </Button>
         </PopoverTrigger>
+        
         <PopoverContent 
-          className="w-auto p-0" 
+          className="w-auto p-0 md:min-w-[700px]" 
           align="start"
           sideOffset={5}
         >
@@ -212,69 +332,117 @@ export default function DateRangePicker({
             </div>
           )}
           
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={startDate || new Date()}
-            selected={selectedRange}
-            onSelect={(range) => {
-              console.log("Calendar selection changed:", range);
-              setSelectedRange(range);
+          <div className="flex flex-col md:flex-row gap-4 p-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-md">
+            {/* Current Month Calendar */}
+            <div className="w-full md:w-1/2">
+              <div className="flex justify-between items-center mb-2">
+                <button 
+                  onClick={goToPreviousMonth}
+                  className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-full flex items-center justify-center"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                </button>
+                <h2 className="text-sm font-medium">
+                  {monthNames[currentMonth]} {currentYear}
+                </h2>
+                <div className="h-7 w-7"></div> {/* Empty div for spacing */}
+              </div>
               
-              if (range?.from) {
-                // Update start date
-                onStartDateChange(range.from);
-                
-                if (range.to) {
-                  // If both dates are selected, update end date and close after a delay
-                  onEndDateChange(range.to);
-                  setTimeout(() => {
-                    console.log("Both dates selected, closing calendar");
-                    setIsCalendarOpen(false);
-                  }, 300);
-                } else {
-                  // If only start date is selected, clear end date but keep calendar open
-                  onEndDateChange(null);
-                  // Ensure calendar stays open for second date selection
-                  setIsCalendarOpen(true);
-                }
-              } else {
-                // If selection is cleared, clear both dates
-                onStartDateChange(null);
-                onEndDateChange(null);
-              }
-            }}
-            numberOfMonths={2}
-            disabled={(date) => {
-              // Disable past dates and booked dates if vehicleId is provided
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
+              <div className="mb-1 grid grid-cols-7 gap-px">
+                {dayNames.map((day, i) => (
+                  <div key={i} className="text-muted-foreground text-center text-xs h-8 flex items-center justify-center font-medium">
+                    {day}
+                  </div>
+                ))}
+              </div>
               
-              if (date < today) return true;
-              if (vehicleId && isDateBooked(date)) return true;
-              return false;
-            }}
-            modifiers={{
-              booked: (date) => vehicleId ? isDateBooked(date) : false,
-              // Ensure range highlighting works properly
-              range_start: selectedRange?.from,
-              range_end: selectedRange?.to,
-              range_middle: selectedRange?.from && selectedRange?.to 
-                ? { from: selectedRange.from, to: selectedRange.to }
-                : undefined,
-            }}
-            modifiersClassNames={{
-              booked: "bg-red-100 text-red-700 hover:bg-red-200",
-              range_start: "bg-primary text-white hover:bg-primary hover:text-white",
-              range_end: "bg-primary text-white hover:bg-primary hover:text-white",
-              range_middle: "bg-primary/20 text-primary-foreground",
-              selected: "bg-primary text-white",
-              today: "bg-white/10 text-white font-bold",
-            }}
-            className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-md"
-            fromMonth={new Date()}
-            toMonth={addDays(new Date(), 365)}
-          />
+              <div className="grid grid-cols-7 gap-px">
+                {currentMonthDays.map((day, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "relative h-9 w-full flex items-center justify-center",
+                      day.isCurrentMonth ? "" : "opacity-30"
+                    )}
+                  >
+                    <button
+                      onClick={() => !day.isDisabled && handleDayClick(day.date)}
+                      onMouseEnter={() => startDate && !endDate && setHoveredDate(day.date)}
+                      onMouseLeave={() => setHoveredDate(null)}
+                      disabled={day.isDisabled}
+                      className={cn(
+                        "text-sm w-9 h-9 rounded-md flex items-center justify-center",
+                        day.isDisabled && "text-muted-foreground opacity-50 cursor-not-allowed",
+                        !day.isDisabled && "hover:bg-primary/10",
+                        day.isToday && !day.isSelected && "border border-primary",
+                        day.isSelected && "bg-primary text-white font-medium",
+                        day.isInSelectedRange && !day.isSelectionStart && !day.isSelectionEnd && "bg-primary/20",
+                        day.isSelectionStart && "bg-primary text-white font-medium rounded-l-md",
+                        day.isSelectionEnd && "bg-primary text-white font-medium rounded-r-md"
+                      )}
+                    >
+                      {day.date.getDate()}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Next Month Calendar */}
+            <div className="w-full md:w-1/2">
+              <div className="flex justify-between items-center mb-2">
+                <div className="h-7 w-7"></div> {/* Empty div for spacing */}
+                <h2 className="text-sm font-medium">
+                  {monthNames[nextMonth.getMonth()]} {nextMonth.getFullYear()}
+                </h2>
+                <button 
+                  onClick={goToNextMonth}
+                  className="h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-full flex items-center justify-center"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                </button>
+              </div>
+              
+              <div className="mb-1 grid grid-cols-7 gap-px">
+                {dayNames.map((day, i) => (
+                  <div key={i} className="text-muted-foreground text-center text-xs h-8 flex items-center justify-center font-medium">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="grid grid-cols-7 gap-px">
+                {nextMonthDays.map((day, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "relative h-9 w-full flex items-center justify-center",
+                      day.isCurrentMonth ? "" : "opacity-30"
+                    )}
+                  >
+                    <button
+                      onClick={() => !day.isDisabled && handleDayClick(day.date)}
+                      onMouseEnter={() => startDate && !endDate && setHoveredDate(day.date)}
+                      onMouseLeave={() => setHoveredDate(null)}
+                      disabled={day.isDisabled}
+                      className={cn(
+                        "text-sm w-9 h-9 rounded-md flex items-center justify-center",
+                        day.isDisabled && "text-muted-foreground opacity-50 cursor-not-allowed",
+                        !day.isDisabled && "hover:bg-primary/10",
+                        day.isToday && !day.isSelected && "border border-primary",
+                        day.isSelected && "bg-primary text-white font-medium",
+                        day.isInSelectedRange && !day.isSelectionStart && !day.isSelectionEnd && "bg-primary/20",
+                        day.isSelectionStart && "bg-primary text-white font-medium rounded-l-md",
+                        day.isSelectionEnd && "bg-primary text-white font-medium rounded-r-md"
+                      )}
+                    >
+                      {day.date.getDate()}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
           
           <div className="p-2 flex flex-wrap items-center justify-between text-sm border-t border-gray-700/30">
             {vehicleId && showAvailabilityIndicator && (
@@ -290,7 +458,7 @@ export default function DateRangePicker({
               </div>
             )}
             
-            {(selectedRange?.from || selectedRange?.to) && (
+            {(startDate || endDate) && (
               <Button 
                 variant="ghost" 
                 size="sm" 
