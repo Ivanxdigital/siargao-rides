@@ -214,7 +214,7 @@ const Navbar = () => {
                       
                       {isAdmin && (
                         <Link
-                          href="/admin"
+                          href="/dashboard/admin"
                           className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
                           onClick={closeMenus}
                         >
@@ -325,7 +325,7 @@ const Navbar = () => {
                   </MobileNavLink>
                   
                   {isAdmin && (
-                    <MobileNavLink href="/admin" onClick={() => setIsMenuOpen(false)} icon={<ShieldCheck size={16} />}>
+                    <MobileNavLink href="/dashboard/admin" onClick={() => setIsMenuOpen(false)} icon={<ShieldCheck size={16} />}>
                       Admin Panel
                     </MobileNavLink>
                   )}

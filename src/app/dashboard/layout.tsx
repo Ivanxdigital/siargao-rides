@@ -17,7 +17,9 @@ import {
   X,
   Car,
   List,
-  CalendarDays
+  CalendarDays,
+  CheckCircle,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -366,10 +368,21 @@ export default function DashboardLayout({
                     variants={itemVariants}
                   >
                     <SidebarItem
-                      href="/admin"
-                      icon={<UsersRound size={18} />}
-                      title="Admin Panel"
-                      active={pathname.startsWith("/admin")}
+                      href="/dashboard/admin"
+                      icon={<Shield size={18} />}
+                      title="Admin Dashboard"
+                      active={pathname === "/dashboard/admin"}
+                    />
+                  </motion.div>
+                  <motion.div 
+                    onClick={handleLinkClick}
+                    variants={itemVariants}
+                  >
+                    <SidebarItem
+                      href="/dashboard/admin/verification"
+                      icon={<CheckCircle size={18} />}
+                      title="Shop Verification"
+                      active={pathname === "/dashboard/admin/verification"}
                     />
                   </motion.div>
                 </div>
