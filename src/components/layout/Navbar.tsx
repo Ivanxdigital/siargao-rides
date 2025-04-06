@@ -121,11 +121,17 @@ const Navbar = () => {
       >
         <div className="container mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
-          <Link href="/" className="relative group">
-            <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-blue-500 to-sky-400 transition-colors duration-300 drop-shadow-sm">
-              Siargao Rides
-            </span>
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-700 via-blue-500 to-sky-400 group-hover:w-full transition-all duration-300 shadow-lg opacity-0 group-hover:opacity-100" />
+          <Link href="/" className="relative group flex items-center">
+            <div className="relative h-8 md:h-9 w-auto flex items-center mt-0.5 md:mt-0">
+              <Image
+                src="/images/Horizontal Logo.png" 
+                alt="Siargao Rides Logo"
+                width={180}
+                height={45}
+                className="object-contain"
+                priority
+              />
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -271,6 +277,18 @@ const Navbar = () => {
       {/* Mobile Menu - Also update the mobile menu header */}
       {isMenuOpen && (
         <div className="md:hidden fixed inset-0 z-[998] bg-black/90 backdrop-blur-md pt-20">
+          {/* Add mobile logo at the top of mobile menu for better branding */}
+          <div className="flex justify-center mb-8">
+            <div className="relative w-32 h-32">
+              <Image
+                src="/images/Vertical Logo Without Outline.png" 
+                alt="Siargao Rides Logo"
+                width={128}
+                height={128}
+                className="object-contain"
+              />
+            </div>
+          </div>
           <div className="pb-8 px-6 overflow-y-auto max-h-screen">
             {isAuthenticated && (
               <div className="mb-6 p-4 bg-black/40 rounded-lg border border-white/10 flex items-center gap-4">
