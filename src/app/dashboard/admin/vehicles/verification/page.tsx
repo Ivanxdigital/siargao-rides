@@ -289,6 +289,7 @@ export default function VehicleVerificationPage() {
           vehicle_types (id, name),
           categories (id, name),
           vehicle_images (image_url, is_primary),
+          documents,
           rental_shops (
             id,
             name,

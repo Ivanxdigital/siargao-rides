@@ -210,6 +210,15 @@ export default function AddVehiclePage() {
   // Add document handlers
   const handleDocumentChange = (id: string, file: File | null) => {
     if (file) {
+      // Check if file type is allowed
+      const allowedTypes = ['.pdf', '.jpg', '.jpeg', '.png'];
+      const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      if (!allowedTypes.includes(fileExt)) {
+        setError(`File type not allowed. Please upload PDF, JPG, or PNG files only.`);
+        return;
+      }
+      
       setDocuments(
         documents.map((doc) =>
           doc.id === id
@@ -217,6 +226,9 @@ export default function AddVehiclePage() {
             : doc
         )
       );
+      
+      // Clear any previous errors when a valid file is selected
+      if (error) setError("");
     }
   };
 
@@ -350,19 +362,25 @@ export default function AddVehiclePage() {
         
         try {
           // Create a unique file path
-          const fileExt = doc.file.name.split('.').pop();
+          const fileExt = doc.file.name.split('.').pop()?.toLowerCase();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
           const filePath = `vehicle-documents/${doc.type}/${fileName}`;
 
+          // Check if document is a PDF - need to handle PDFs differently from images
+          const isPDF = fileExt === 'pdf';
+          
           // Upload the file
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('vehicles')
-            .upload(filePath, doc.file);
+            .upload(filePath, doc.file, {
+              contentType: isPDF ? 'application/pdf' : undefined,
+              upsert: true
+            });
 
           if (uploadError) {
             console.error("Error uploading document:", uploadError);
             uploadErrorOccurred = true;
-            uploadErrorMessage = uploadError.message;
+            uploadErrorMessage = `Error uploading ${doc.file.name}: ${uploadError.message}`;
             continue;
           }
 
@@ -377,10 +395,12 @@ export default function AddVehiclePage() {
             name: doc.file.name,
             uploaded_at: new Date().toISOString()
           });
+          
+          console.log(`Successfully uploaded document: ${doc.file.name}`);
         } catch (uploadErr: any) {
           console.error("Exception during document upload:", uploadErr);
           uploadErrorOccurred = true;
-          uploadErrorMessage = uploadErr.message || "Unknown upload error";
+          uploadErrorMessage = `Error uploading ${doc.file.name}: ${uploadErr.message || "Unknown upload error"}`;
         }
       }
       
@@ -961,11 +981,16 @@ export default function AddVehiclePage() {
                             accept=".pdf,.jpg,.jpeg,.png"
                             onChange={(e) => handleDocumentChange('reg1', e.target.files ? e.target.files[0] : null)}
                             className="hidden"
+                            id="registration-upload"
                           />
                           <Button 
                             type="button"
                             variant="outline"
                             size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              document.getElementById('registration-upload')?.click();
+                            }}
                           >
                             {documents.find(d => d.type === 'registration')?.name ? 'Replace' : 'Upload'}
                           </Button>
@@ -1020,11 +1045,16 @@ export default function AddVehiclePage() {
                             accept=".pdf,.jpg,.jpeg,.png"
                             onChange={(e) => handleDocumentChange('ins1', e.target.files ? e.target.files[0] : null)}
                             className="hidden"
+                            id="insurance-upload"
                           />
                           <Button 
                             type="button" 
                             variant="outline"
                             size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              document.getElementById('insurance-upload')?.click();
+                            }}
                           >
                             {documents.find(d => d.type === 'insurance')?.name ? 'Replace' : 'Upload'}
                           </Button>
@@ -1080,11 +1110,16 @@ export default function AddVehiclePage() {
                               accept=".pdf,.jpg,.jpeg,.png"
                               onChange={(e) => handleDocumentChange(doc.id, e.target.files ? e.target.files[0] : null)}
                               className="hidden"
+                              id={`other-doc-${doc.id}`}
                             />
                             <Button 
                               type="button" 
                               variant="outline"
                               size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById(`other-doc-${doc.id}`)?.click();
+                              }}
                             >
                               {doc.name ? 'Replace' : 'Upload'}
                             </Button>
