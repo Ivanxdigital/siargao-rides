@@ -274,12 +274,20 @@ export default function DateRangePicker({
       <Popover 
         open={isCalendarOpen} 
         onOpenChange={(open) => {
-          // Don't close the calendar if we're in the middle of selecting a date range
-          if (!open && startDate && !endDate) {
-            setIsCalendarOpen(true);
-            return;
+          // If we're trying to close the calendar
+          if (!open) {
+            // Don't close the calendar if we're in the middle of selecting a date range
+            if (startDate && !endDate) {
+              setIsCalendarOpen(true);
+              return;
+            }
+            
+            // Otherwise, allow it to close
+            setIsCalendarOpen(false);
+          } else {
+            // If we're opening, always allow it
+            setIsCalendarOpen(open);
           }
-          setIsCalendarOpen(open);
         }}
       >
         <PopoverTrigger asChild>
@@ -314,8 +322,10 @@ export default function DateRangePicker({
         </PopoverTrigger>
         
         <PopoverContent 
-          className="w-auto p-0 md:min-w-[700px]" 
+          className="w-auto p-0 md:min-w-[700px] z-[100]" 
           align="start"
+          side="bottom"
+          avoidCollisions={false}
           sideOffset={5}
         >
           {error && (
@@ -332,7 +342,7 @@ export default function DateRangePicker({
             </div>
           )}
           
-          <div className="flex flex-col md:flex-row gap-4 p-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-md">
+          <div className="flex flex-col md:flex-row gap-4 p-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-md max-h-[400px] overflow-auto">
             {/* Current Month Calendar */}
             <div className="w-full md:w-1/2">
               <div className="flex justify-between items-center mb-2">
