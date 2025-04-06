@@ -25,4 +25,24 @@ export interface VerifiableRentalShop {
     avatar_url?: string | null;
     phone_number?: string | null;
   };
+}
+
+// Type for shops with subscription information
+export interface ManageableSubscription {
+  id: string;
+  name: string;
+  logo_url?: string | null;
+  is_verified: boolean;
+  is_active: boolean;
+  subscription_status: string | null;
+  subscription_start_date: string | null;
+  subscription_end_date: string | null;
+  created_at: string;
+  updated_at: string;
+  owner?: {
+    id: string;
+    email: string;
+    first_name?: string | null;
+    last_name?: string | null;
+  };
 } 

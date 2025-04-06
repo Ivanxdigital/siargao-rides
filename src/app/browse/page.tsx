@@ -258,12 +258,15 @@ export default function BrowsePage() {
             *,
             vehicle_images(*),
             vehicle_types(*),
-            rental_shops(id, name, logo_url, location_area)
+            rental_shops!inner(id, name, logo_url, location_area, is_active)
           `)
           .order('price_per_day');
         
         // We always fetch all available vehicles first, then filter by date if needed
         vehicleQuery = vehicleQuery.eq('is_available', true);
+        
+        // Only show vehicles from active shops (with active subscriptions)
+        vehicleQuery = vehicleQuery.eq('rental_shops.is_active', true);
         
         const { data: vehicleData, error: vehicleError } = await vehicleQuery;
         
@@ -277,8 +280,9 @@ export default function BrowsePage() {
           .select(`
             *,
             bike_images(*),
-            rental_shops(id, name, logo_url, location_area)
+            rental_shops!inner(id, name, logo_url, location_area, is_active)
           `)
+          .eq('rental_shops.is_active', true)
           .order('price_per_day');
         
         if (bikeError) {
@@ -335,10 +339,11 @@ export default function BrowsePage() {
           })
         }
         
-        // Get all unique locations from shops
+        // Get all unique locations from active shops
         const { data: shopData } = await supabase
           .from('rental_shops')
           .select('location_area')
+          .eq('is_active', true)
           .order('location_area')
         
         const allLocations = Array.from(

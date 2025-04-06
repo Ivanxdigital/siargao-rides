@@ -82,9 +82,14 @@ export async function PATCH(request: Request) {
     }
     
     // If approving, update is_verified to true
+    // NOTE: We're not setting is_active here - that happens when first vehicle is added
     const { data, error } = await supabaseAdmin
       .from('rental_shops')
-      .update({ is_verified: true })
+      .update({ 
+        is_verified: true,
+        // Subscription will be activated when shop adds first vehicle
+        subscription_status: 'inactive'
+      })
       .eq('id', shopId)
       .select()
       .single();

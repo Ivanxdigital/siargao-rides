@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, SearchIcon, Filter } from "lucide-react";
+import { Plus, SearchIcon, Filter, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import ManageVehicleCard from "@/components/ManageVehicleCard";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useShopAccess } from "@/utils/shopAccess";
 import { 
   Select,
   SelectContent,
@@ -14,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
+import Link from "next/link";
 
 type VehicleType = "motorcycle" | "car" | "tuktuk";
 
@@ -32,6 +34,7 @@ interface Vehicle {
 export default function ManageVehiclesPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const { isLoading: isAccessLoading, hasAccess, subscriptionStatus } = useShopAccess();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<VehicleType | "all">("all");
@@ -45,6 +48,9 @@ export default function ManageVehiclesPage() {
       router.push("/dashboard");
       return;
     }
+
+    // Only fetch vehicles if the user has access
+    if (!hasAccess) return;
 
     // Fetch vehicles from the actual database
     const fetchVehicles = async () => {
@@ -130,10 +136,10 @@ export default function ManageVehiclesPage() {
       }
     };
 
-    if (isAuthenticated) {
+    if (isAuthenticated && !isAccessLoading && hasAccess) {
       fetchVehicles();
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, hasAccess, isAccessLoading]);
 
   const handleAddVehicle = () => {
     router.push("/dashboard/vehicles/add");
@@ -234,6 +240,35 @@ export default function ManageVehiclesPage() {
     
     return matchesSearch && matchesType;
   });
+
+  // Skip the rest of the rendering if still checking access or no access
+  if (isAccessLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+      </div>
+    );
+  }
+  
+  // If subscription is inactive or expired, show appropriate message
+  if (!hasAccess) {
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 text-center mb-8">
+          <AlertCircle size={40} className="text-amber-600 dark:text-amber-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">Subscription Required</h3>
+          <p className="text-muted-foreground mb-6">
+            {subscriptionStatus === 'expired' 
+              ? "Your subscription has expired. Please renew your subscription to manage vehicles."
+              : "You need an active subscription to manage vehicles."}
+          </p>
+          <Button asChild>
+            <Link href="/dashboard/subscription">View Subscription Options</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

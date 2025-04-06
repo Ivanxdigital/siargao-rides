@@ -159,6 +159,31 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Admin Tools */}
+      <div className="mb-12">
+        <h2 className="text-xl font-semibold text-white/90 mb-4">Admin Tools</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-white/90">Subscription Management</h3>
+            </div>
+            <p className="text-sm text-white/60 mb-4">
+              Manage shop subscriptions and trial periods
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/dashboard/admin/subscriptions">Manage Subscriptions</Link>
+            </Button>
+          </div>
+          
+          {/* Add more admin tools here as needed */}
+        </div>
+      </div>
+
       {/* Recent Users */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-4">

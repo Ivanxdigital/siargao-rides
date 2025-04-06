@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/SubscriptionStatus";
 
 // Predefined Siargao locations (same as in SearchBar.tsx)
 const siargaoLocations = [
@@ -46,6 +47,10 @@ interface RentalShop {
   location_area: string | null;
   offers_delivery: boolean;
   delivery_fee: number;
+  subscription_status?: 'active' | 'inactive' | 'expired';
+  subscription_start_date?: string | null;
+  subscription_end_date?: string | null;
+  is_active?: boolean;
 }
 
 // Define form data type
@@ -973,34 +978,41 @@ export default function ManageShopPage() {
                 </div>
               </div>
               
-              {/* Quick Links */}
-              <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm h-fit">
-                <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border flex items-center">
-                  <Clock size={18} className="mr-2" />
-                  Quick Links
-                </h2>
-                <div className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start hover:bg-primary/5 transition-colors" asChild>
-                    <Link href="/dashboard/vehicles">
-                      <span className="bg-primary/10 text-primary w-8 h-8 rounded-full inline-flex items-center justify-center mr-3">1</span>
-                      Manage Vehicles
-                    </Link>
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-start hover:bg-primary/5 transition-colors" asChild>
-                    <Link href="/dashboard/vehicles/add">
-                      <span className="bg-primary/10 text-primary w-8 h-8 rounded-full inline-flex items-center justify-center mr-3">2</span>
-                      Add New Vehicle
-                    </Link>
-                  </Button>
-                  
-                  <div className="mt-6 pt-4 border-t border-border">
-                    <Button variant="default" className="w-full justify-center" asChild>
-                      <Link href={`/shop/${shop.id}`} className="inline-flex items-center gap-2">
-                        <Eye size={16} />
-                        View Public Listing
+              <div>
+                {/* Subscription Status */}
+                <div className="mb-6">
+                  <SubscriptionStatus shop={shop as ShopWithSubscription} />
+                </div>
+                
+                {/* Quick Links */}
+                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm h-fit">
+                  <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border flex items-center">
+                    <Clock size={18} className="mr-2" />
+                    Quick Links
+                  </h2>
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start hover:bg-primary/5 transition-colors" asChild>
+                      <Link href="/dashboard/vehicles">
+                        <span className="bg-primary/10 text-primary w-8 h-8 rounded-full inline-flex items-center justify-center mr-3">1</span>
+                        Manage Vehicles
                       </Link>
                     </Button>
+                    
+                    <Button variant="outline" className="w-full justify-start hover:bg-primary/5 transition-colors" asChild>
+                      <Link href="/dashboard/vehicles/add">
+                        <span className="bg-primary/10 text-primary w-8 h-8 rounded-full inline-flex items-center justify-center mr-3">2</span>
+                        Add New Vehicle
+                      </Link>
+                    </Button>
+                    
+                    <div className="mt-6 pt-4 border-t border-border">
+                      <Button variant="default" className="w-full justify-center" asChild>
+                        <Link href={`/shop/${shop.id}`} className="inline-flex items-center gap-2">
+                          <Eye size={16} />
+                          View Public Listing
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
