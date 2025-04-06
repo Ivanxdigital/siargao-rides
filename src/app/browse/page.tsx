@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import VehicleCard from "@/components/VehicleCard"
-import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon, CheckCircle, XCircle } from "lucide-react"
+import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon, CheckCircle, XCircle, Star, Check, List, LayoutGrid, Bike, Car, Map, Calendar as CalendarIcon, ArrowRight, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { getShops, getBikes, getVehicles, getVehicleTypes } from "@/lib/api"
@@ -11,6 +11,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { parseISO } from "date-fns"
+import { Button } from "@/components/ui/Button"
 
 // Interface for vehicle data with additional calculated fields
 interface VehicleWithMetadata extends Vehicle {
@@ -243,7 +244,7 @@ export default function BrowsePage() {
 
   // Replace the previous useEffect with a better implementation
   useEffect(() => {
-    // Initial data load - doesn't check availability with dates
+    // Define the event handler
     const loadInitialData = async () => {
       setIsLoading(true);
       setError(null);
@@ -268,11 +269,63 @@ export default function BrowsePage() {
         // Only show vehicles from active shops (with active subscriptions)
         vehicleQuery = vehicleQuery.eq('rental_shops.is_active', true);
         
+        // Only show verified vehicles
+        vehicleQuery = vehicleQuery.eq('is_verified', true);
+        vehicleQuery = vehicleQuery.eq('verification_status', 'approved');
+        
+        
         const { data: vehicleData, error: vehicleError } = await vehicleQuery;
+        
+        // Added debugging - if any shops, check their active status
+        if (vehicleData && vehicleData.length > 0) {
+          console.log("All shops:", await supabase
+            .from('rental_shops')
+            .select('id, name, is_active, subscription_status')
+            .in('id', vehicleData.map(v => v.shop_id))
+          );
+        } else {
+          console.log("No vehicles found, checking for shops with is_active=true:", await supabase
+            .from('rental_shops')
+            .select('id, name, is_active, subscription_status')
+            .eq('is_active', true)
+          );
+        }
         
         if (vehicleError) {
           throw vehicleError;
         }
+        
+        // Debug logs
+        console.log("Vehicle query results (raw):", {
+          count: vehicleData?.length || 0,
+          filters: {
+            is_available: true,
+            is_active: true,
+            is_verified: true,
+            verification_status: 'approved'
+          },
+          samples: vehicleData?.slice(0, 2).map(v => ({
+            id: v.id,
+            name: v.name,
+            shop_id: v.shop_id,
+            shop_name: v.rental_shops?.name,
+            shop_is_active: v.rental_shops?.is_active,
+            is_available: v.is_available,
+            is_verified: v.is_verified,
+            verification_status: v.verification_status
+          }))
+        });
+        
+        console.log("Vehicle query results:", {
+          count: vehicleData?.length || 0,
+          filters: {
+            is_available: true,
+            is_active: true,
+            is_verified: true,
+            verification_status: 'approved'
+          },
+          vehicles: vehicleData
+        });
         
         // Also fetch bikes (legacy) with joined shop data
         const { data: bikeData, error: bikeError } = await supabase
@@ -598,7 +651,57 @@ export default function BrowsePage() {
       default:
         return 0
     }
-  })
+  });
+  
+  // Log the filtered results for debugging
+  console.log("After applying UI filters:", {
+    originalCount: vehicles.length,
+    filteredCount: filteredVehicles.length,
+    filters: {
+      priceRange,
+      selectedVehicleType,
+      selectedCategories,
+      selectedLocation,
+      onlyShowAvailable
+    }
+  });
+
+  // After getting query results but before filtering
+  console.log('Vehicle query results:', {
+    vehicleCount: vehicles?.length || 0,
+    filters: {
+      is_available: true,
+      is_verified: true,
+      verification_status: 'approved'
+    },
+    shops: vehicles?.map(v => ({
+      shop_id: v.shop_id,
+      shop_name: v.shopName || 'N/A',
+      shop_location: v.shopLocation || 'N/A',
+      vehicle_id: v.id,
+      vehicle_name: v.name
+    }))
+  });
+
+  // At the end of filter function before returning filtered vehicles
+  console.log('Filtered vehicles:', {
+    originalCount: vehicles?.length || 0,
+    filteredCount: filteredVehicles.length,
+    filters: {
+      priceRange,
+      selectedVehicleType,
+      selectedCategories,
+      selectedLocation,
+      onlyShowAvailable,
+      shops: filteredVehicles.map(v => ({
+        shop_id: v.shop_id,
+        shop_name: v.shopName || 'N/A',
+        shop_location: v.shopLocation || 'N/A',
+        vehicle_id: v.id,
+        vehicle_name: v.name
+      }))
+    }
+  });
 
   // Animation variants for staggered children
   const containerVariants = {
@@ -704,10 +807,21 @@ export default function BrowsePage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.4 }}
+              className="flex justify-between items-center"
             >
               <Badge className="mb-4 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
                 Find Your Ride
               </Badge>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+                className="text-white/80 hover:text-white flex items-center gap-1"
+              >
+                <RefreshCw size={16} />
+                Refresh
+              </Button>
             </motion.div>
             <motion.h1 
               className="text-3xl md:text-4xl font-bold mb-4 text-white"
@@ -731,6 +845,30 @@ export default function BrowsePage() {
       
       <section className="py-8 bg-gradient-to-b from-gray-900 to-black text-white">
         <div className="container mx-auto px-4">
+          {/* Top bar with filters toggle and view options */}
+          <div className="flex justify-between mb-6">
+            <Button
+              onClick={() => setShowFilters(!showFilters)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Filter size={18} />
+              {showFilters ? "Hide Filters" : "Show Filters"}
+            </Button>
+
+            {/* Add refresh button */}
+            <Button
+              onClick={() => window.location.reload()}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 ml-2"
+            >
+              <RefreshCw size={18} />
+              Refresh Results
+            </Button>
+          </div>
+          
           {/* Mobile Filters Toggle */}
           <motion.div 
             className="md:hidden mb-4"

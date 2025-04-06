@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
-import { Star, MapPin, Phone, Mail, MessageCircle, Bike, Car, Truck } from "lucide-react"
+import { Star, MapPin, Phone, Mail, MessageCircle, Bike, Car, Truck, AlertTriangle } from "lucide-react"
 import VehicleCard from "@/components/VehicleCard"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -13,6 +13,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { VehicleAvailabilityCalendar } from "@/components/VehicleAvailabilityCalendar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog"
 import { motion } from 'framer-motion';
+import Link from "next/link"
 
 // --- Animation Variants ---
 const pageVariants = {
@@ -126,6 +127,15 @@ export default function ShopPage() {
           return
         }
         
+        // Check if shop is active
+        if (!shopData.is_active) {
+          console.log('Shop is inactive:', shopData);
+          setError('This shop is currently inactive. Please check back later.')
+          setShop(shopData) // Set shop data anyway so we can show the name
+          setLoading(false)
+          return
+        }
+        
         setShop(shopData)
         
         // For backwards compatibility: Try to get vehicles first, fall back to bikes if needed
@@ -139,7 +149,9 @@ export default function ShopPage() {
               vehicle_types(*)
             `)
             .eq('shop_id', id)
-            .eq('is_available', true);
+            .eq('is_available', true)
+            .eq('is_verified', true)
+            .eq('verification_status', 'approved');
             
           if (vehiclesError) {
             throw vehiclesError;
@@ -229,10 +241,27 @@ export default function ShopPage() {
   if (error || !shop) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-semibold mb-4">Shop Not Found</h1>
-        <p className="text-muted-foreground">
-          {error || "The shop you're looking for doesn't exist or has been removed."}
-        </p>
+        <h1 className="text-2xl font-semibold mb-4">
+          {shop ? shop.name : "Shop Not Found"}
+        </h1>
+        <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 max-w-lg mx-auto border border-white/10">
+          <div className="text-amber-400 mb-4">
+            <AlertTriangle size={48} className="mx-auto" />
+          </div>
+          <p className="text-white mb-4">
+            {error || "The shop you're looking for doesn't exist or has been removed."}
+          </p>
+          {error && error.includes('inactive') && (
+            <div className="mt-2 mb-6 text-sm text-gray-400">
+              <p>This shop may have an expired subscription or may be temporarily unavailable.</p>
+            </div>
+          )}
+          <Button asChild className="mt-4">
+            <Link href="/browse">
+              Browse Available Vehicles
+            </Link>
+          </Button>
+        </div>
       </div>
     )
   }

@@ -57,6 +57,9 @@ export default function Home() {
         
         // Fetch shops and bikes
         const shopsData = await service.getShops()
+        
+        // Only fetch verified vehicles for public display
+        // The API now defaults to only returning verified vehicles
         const bikesData = await service.getBikes()
         
         setBikes(bikesData)
@@ -64,7 +67,7 @@ export default function Home() {
         // Transform shop data for the card component
         const shopCardData = await Promise.all(
           shopsData.map(async (shop) => {
-            // Get bikes for this shop
+            // Get bikes for this shop - only verified bikes will be included
             const shopBikes = bikesData.filter(bike => bike.shop_id === shop.id)
             
             // Calculate starting price (lowest price per day)
@@ -159,6 +162,7 @@ export default function Home() {
       console.log("Searching bikes with filters:", { category, maxPrice: params.budget })
       
       // Filter bikes based on search parameters using Supabase API
+      // Only fetch verified vehicles for public display
       const filteredBikes = await service.getBikes({
         category: category,
         max_price: params.budget

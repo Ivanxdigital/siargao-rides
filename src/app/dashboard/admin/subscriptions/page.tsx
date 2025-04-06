@@ -6,13 +6,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { CheckCircle, XCircle, Clock, Calendar, Calendar as CalendarIcon, Plus, RefreshCw } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Calendar, Calendar as CalendarIcon, Plus, RefreshCw, ExternalLink } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ManageableSubscription } from "../types";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
+import { toast } from "react-hot-toast";
 
 export default function SubscriptionManagementPage() {
   const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -25,6 +26,7 @@ export default function SubscriptionManagementPage() {
   const [extendDays, setExtendDays] = useState<number>(30);
   const [isUpdating, setIsUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusMessage, setStatusMessage] = useState<{type: 'success' | 'error' | 'info', message: string} | null>(null);
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -86,11 +88,27 @@ export default function SubscriptionManagementPage() {
 
   const handleEditClick = (shop: ManageableSubscription) => {
     setSelectedShop(shop);
-    if (shop.subscription_end_date) {
-      setEndDate(new Date(shop.subscription_end_date));
-    } else {
-      setEndDate(undefined);
+    
+    try {
+      if (shop.subscription_end_date) {
+        const endDate = new Date(shop.subscription_end_date);
+        console.log("Setting initial end date:", endDate.toISOString());
+        setEndDate(endDate);
+      } else {
+        // If no end date, set a default 30 days from now
+        const defaultEndDate = new Date();
+        defaultEndDate.setDate(defaultEndDate.getDate() + 30);
+        console.log("Setting default end date:", defaultEndDate.toISOString());
+        setEndDate(defaultEndDate);
+      }
+    } catch (error) {
+      console.error("Error parsing date:", error);
+      // Set a default date if parsing fails
+      const defaultEndDate = new Date();
+      defaultEndDate.setDate(defaultEndDate.getDate() + 30);
+      setEndDate(defaultEndDate);
     }
+    
     setIsEditDialogOpen(true);
   };
 
@@ -107,49 +125,159 @@ export default function SubscriptionManagementPage() {
     if (!selectedShop) return;
     
     setIsUpdating(true);
+    setStatusMessage(null);
+    console.log("Extending subscription with end date:", endDate);
     
     try {
-      // Calculate new end date
-      let newEndDate: Date;
-      
-      if (endDate) {
-        // Use the selected date from DatePicker
-        newEndDate = new Date(endDate);
-      } else if (selectedShop.subscription_end_date) {
-        // Extend from current end date
-        newEndDate = new Date(selectedShop.subscription_end_date);
-        newEndDate.setDate(newEndDate.getDate() + extendDays);
-      } else {
-        // Start new subscription from today
-        newEndDate = new Date();
-        newEndDate.setDate(newEndDate.getDate() + extendDays);
+      // Use the selected date from DatePicker
+      if (!endDate) {
+        throw new Error("No end date selected");
       }
       
+      // Ensure we're using a proper date object
+      const newEndDate = new Date(endDate.getTime());
+      console.log("New end date for subscription:", newEndDate.toISOString());
+      
+      // Create update data
+      const updateData: {
+        subscription_status: string;
+        is_active: boolean;
+        subscription_end_date: string;
+        updated_at: string;
+        subscription_start_date?: string;
+      } = {
+        subscription_status: "active",
+        is_active: true,
+        subscription_end_date: newEndDate.toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Add start date if it doesn't exist
+      if (!selectedShop.subscription_start_date) {
+        updateData.subscription_start_date = new Date().toISOString();
+      }
+      
+      console.log("Updating shop with data:", updateData);
+      
       // Update the subscription in the database
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("rental_shops")
-        .update({
-          subscription_status: "active",
-          is_active: true,
-          subscription_end_date: newEndDate.toISOString(),
-          // If no start date exists, set it to now
-          subscription_start_date: selectedShop.subscription_start_date || new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", selectedShop.id);
+        .update(updateData)
+        .eq("id", selectedShop.id)
+        .select();
 
       if (error) {
         console.error("Error updating subscription:", error.message || error);
-        alert("Failed to update subscription. Please try again.");
+        setStatusMessage({
+          type: 'error',
+          message: 'Failed to update subscription. Please try again.'
+        });
       } else {
-        // Refresh data
-        fetchShops();
-        setIsEditDialogOpen(false);
+        console.log("Subscription updated successfully:", data);
+        
+        // Refresh data and wait for completion before closing dialog
+        await fetchShops();
+        
+        // Call the refresh shop status API to ensure all related data is updated
+        try {
+          console.log("Calling refresh shop status API for shop:", selectedShop.id);
+          const refreshResponse = await fetch('/api/shops/refresh-active-status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ shop_id: selectedShop.id }),
+          });
+          
+          const refreshResult = await refreshResponse.json();
+          console.log("Refresh shop status result:", refreshResult);
+        } catch (refreshError) {
+          console.error("Error refreshing shop status:", refreshError);
+          // Continue anyway, as this is just an extra precaution
+        }
+        
+        // Format the date nicely
+        const formattedDate = newEndDate.toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        // Set success message
+        setStatusMessage({
+          type: 'success',
+          message: `Subscription for ${selectedShop.name} has been updated successfully until ${formattedDate}.`
+        });
+        
+        // Show toast notification
+        toast.success(`Subscription for ${selectedShop.name} updated until ${formattedDate}`);
+        
+        // Close dialog after a short delay to show the success message
+        setTimeout(() => {
+          setIsEditDialogOpen(false);
+          setStatusMessage(null);
+        }, 2000);
+        
+        // Force a router refresh to update any other components
+        router.refresh();
       }
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error("Error updating subscription:", errorMessage);
-      alert("An unexpected error occurred. Please try again.");
+      setStatusMessage({
+        type: 'error',
+        message: `An error occurred: ${errorMessage}`
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Function to manually refresh a shop's status
+  const handleRefreshShopStatus = async () => {
+    if (!selectedShop) return;
+    
+    setIsUpdating(true);
+    setStatusMessage({
+      type: 'info',
+      message: 'Refreshing shop status...'
+    });
+    
+    try {
+      // Call the refresh API endpoint
+      const response = await fetch('/api/shops/refresh-active-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ shop_id: selectedShop.id }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to refresh shop status');
+      }
+      
+      const result = await response.json();
+      console.log("Shop status refresh result:", result);
+      
+      // Refresh the shops data
+      await fetchShops();
+      
+      // Set success message
+      setStatusMessage({
+        type: 'success',
+        message: `Shop status refreshed. Current status: ${result.current_status ? 'Active' : 'Inactive'}`
+      });
+      
+      // Show toast notification
+      toast.success(`Shop status refreshed successfully`);
+    } catch (error) {
+      console.error("Error refreshing shop status:", error);
+      setStatusMessage({
+        type: 'error',
+        message: `Failed to refresh shop status: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -199,6 +327,57 @@ export default function SubscriptionManagementPage() {
     (shop.owner?.last_name && shop.owner.last_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Handler for direct activation button
+  const handleDirectActivation = async (shopId: string, activate: boolean) => {
+    try {
+      setStatusMessage({
+        type: 'info',
+        message: `${activate ? 'Activating' : 'Deactivating'} shop directly...`
+      });
+      
+      const response = await fetch('/api/shops/admin-set-active', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          shop_id: shopId,
+          is_active: activate
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update shop status');
+      }
+      
+      console.log("Direct activation result:", result);
+      
+      // Refresh data
+      await fetchShops();
+      
+      // Show success message
+      toast.success(`Shop ${activate ? 'activated' : 'deactivated'} successfully!`);
+      setStatusMessage({
+        type: 'success',
+        message: `Shop ${activate ? 'activated' : 'deactivated'} successfully!`
+      });
+      
+      // Clear message after delay
+      setTimeout(() => {
+        setStatusMessage(null);
+      }, 3000);
+    } catch (error) {
+      console.error('Error during direct activation:', error);
+      toast.error(`Failed to ${activate ? 'activate' : 'deactivate'} shop: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setStatusMessage({
+        type: 'error',
+        message: `Failed to ${activate ? 'activate' : 'deactivate'} shop: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
+    }
+  };
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -233,19 +412,28 @@ export default function SubscriptionManagementPage() {
     minDate?: Date;
     className?: string;
   }) => {
+    const formattedValue = selected ? new Date(selected.getTime() - (selected.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : '';
+    const formattedMinDate = minDate ? new Date(minDate.getTime() - (minDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0] : undefined;
+
     return (
       <div className={cn("relative", className)}>
-        <input
-          type="date"
-          className="w-full rounded-md border border-white/10 bg-black/50 px-3 py-2 text-sm text-white"
-          value={selected ? selected.toISOString().split('T')[0] : ''}
-          min={minDate ? minDate.toISOString().split('T')[0] : undefined}
-          onChange={(e) => {
-            if (e.target.value) {
-              onSelect(new Date(e.target.value));
-            }
-          }}
-        />
+        <div className="relative">
+          <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="date"
+            className="w-full rounded-md border border-white/10 bg-black/50 pl-10 pr-3 py-2 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary"
+            value={formattedValue}
+            min={formattedMinDate}
+            onChange={(e) => {
+              if (e.target.value) {
+                // Create a date object at midnight in local timezone
+                const selectedDate = new Date(e.target.value);
+                console.log("Date selected:", selectedDate.toISOString());
+                onSelect(selectedDate);
+              }
+            }}
+          />
+        </div>
       </div>
     );
   };
@@ -426,6 +614,51 @@ export default function SubscriptionManagementPage() {
                             <span className="text-gray-500">Inactive</span>
                           </div>
                         )}
+                        
+                        {/* New Force Activation buttons */}
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={shop.is_active ? "outline" : "default"}
+                            className={shop.is_active ? "border-primary/30 text-primary" : ""}
+                            onClick={() => handleDirectActivation(shop.id, true)}
+                            disabled={shop.is_active}
+                          >
+                            Force Activate
+                          </Button>
+                          
+                          <Button
+                            size="sm"
+                            variant={!shop.is_active ? "outline" : "destructive"}
+                            onClick={() => handleDirectActivation(shop.id, false)}
+                            disabled={!shop.is_active}
+                          >
+                            Force Deactivate
+                          </Button>
+                        </div>
+                        
+                        {/* Quick links */}
+                        <div className="mt-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs"
+                              onClick={() => window.open(`/browse?shop=${shop.id}`, '_blank')}
+                            >
+                              View in Browse
+                            </Button>
+                            
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs"
+                              onClick={() => window.open(`/shop/${shop.id}`, '_blank')}
+                            >
+                              View Shop Page
+                            </Button>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {shop.subscription_start_date 
@@ -486,57 +719,76 @@ export default function SubscriptionManagementPage() {
           </DialogHeader>
           
           <div className="py-4">
+            {statusMessage && (
+              <div className={`p-3 mb-4 rounded-md ${
+                statusMessage.type === 'success' ? 'bg-green-500/20 text-green-500 border border-green-500/30' : 
+                statusMessage.type === 'error' ? 'bg-red-500/20 text-red-500 border border-red-500/30' :
+                'bg-blue-500/20 text-blue-500 border border-blue-500/30'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {statusMessage.type === 'success' ? <CheckCircle className="h-5 w-5" /> : 
+                   statusMessage.type === 'error' ? <XCircle className="h-5 w-5" /> :
+                   <RefreshCw className="h-5 w-5 animate-spin" />}
+                  <p>{statusMessage.message}</p>
+                </div>
+              </div>
+            )}
+          
             <div className="space-y-4">
-              <div className="grid gap-2">
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Current Status:</span>
-                  <span className={`text-sm ${
-                    selectedShop?.subscription_status === "active" ? "text-green-500" :
-                    selectedShop?.subscription_status === "expired" ? "text-red-500" :
-                    "text-white/70"
-                  }`}>
-                    {selectedShop?.subscription_status === "active" ? "Active" :
-                     selectedShop?.subscription_status === "expired" ? "Expired" :
-                     "Not Started"}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Current End Date:</span>
-                  <span className="text-sm text-white/70">
-                    {selectedShop?.subscription_end_date 
-                      ? new Date(selectedShop.subscription_end_date).toLocaleDateString() 
-                      : "Not set"}
-                  </span>
-                </div>
-                
-                {selectedShop?.subscription_status === "active" && selectedShop.subscription_end_date && (
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Days Remaining:</span>
-                    <span className={`text-sm ${
-                      calculateDaysRemaining(selectedShop.subscription_end_date) <= 3 ? "text-red-500" :
-                      calculateDaysRemaining(selectedShop.subscription_end_date) <= 7 ? "text-amber-500" :
-                      "text-green-500"
-                    }`}>
-                      {calculateDaysRemaining(selectedShop.subscription_end_date)} days
-                    </span>
-                  </div>
-                )}
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Current Status:</span>
+                <span className={`text-sm ${
+                  selectedShop?.subscription_status === "active" ? "text-green-500" :
+                  selectedShop?.subscription_status === "expired" ? "text-red-500" :
+                  "text-white/70"
+                }`}>
+                  {selectedShop?.subscription_status === "active" ? "Active" :
+                   selectedShop?.subscription_status === "expired" ? "Expired" :
+                   "Not Started"}
+                </span>
               </div>
               
-              <div className="space-y-1.5">
-                <h3 className="text-sm font-medium">Extend Subscription</h3>
-                <div className="flex flex-col space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm whitespace-nowrap">Choose end date:</span>
-                    <SimpleDatePicker
-                      selected={endDate}
-                      onSelect={setEndDate}
-                      minDate={new Date()}
-                      className="flex-grow"
-                    />
-                  </div>
-                  <p className="text-xs text-white/70">Or extend by days:</p>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Current End Date:</span>
+                <span className="text-sm text-white/70">
+                  {selectedShop?.subscription_end_date 
+                    ? new Date(selectedShop.subscription_end_date).toLocaleDateString() 
+                    : "Not set"}
+                </span>
+              </div>
+              
+              {selectedShop?.subscription_status === "active" && selectedShop.subscription_end_date && (
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Days Remaining:</span>
+                  <span className={`text-sm ${
+                    calculateDaysRemaining(selectedShop.subscription_end_date) <= 3 ? "text-red-500" :
+                    calculateDaysRemaining(selectedShop.subscription_end_date) <= 7 ? "text-amber-500" :
+                    "text-green-500"
+                  }`}>
+                    {calculateDaysRemaining(selectedShop.subscription_end_date)} days
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-1.5">
+              <h3 className="text-sm font-medium">Extend Subscription</h3>
+              <div className="flex flex-col space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-white/80 block">Set End Date:</label>
+                  <SimpleDatePicker
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    minDate={new Date()}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This will be the new expiration date for the subscription.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm text-white/80 block">Quick Options:</label>
                   <div className="grid grid-cols-4 gap-2">
                     {[7, 14, 30, 90].map(days => (
                       <Button
@@ -547,48 +799,135 @@ export default function SubscriptionManagementPage() {
                         onClick={() => {
                           setExtendDays(days);
                           
-                          if (selectedShop?.subscription_end_date) {
-                            const newEndDate = new Date(selectedShop.subscription_end_date);
-                            if (newEndDate < new Date()) {
-                              // If already expired, extend from today
-                              newEndDate.setTime(new Date().getTime());
-                            }
-                            newEndDate.setDate(newEndDate.getDate() + days);
-                            setEndDate(newEndDate);
-                          } else {
-                            // No existing end date, extend from today
-                            const newEndDate = new Date();
-                            newEndDate.setDate(newEndDate.getDate() + days);
-                            setEndDate(newEndDate);
+                          // Calculate new end date
+                          const baseDate = new Date();
+                          // If there's a valid subscription that hasn't expired, use that as base
+                          if (selectedShop?.subscription_status === "active" && 
+                              selectedShop.subscription_end_date &&
+                              new Date(selectedShop.subscription_end_date) > new Date()) {
+                            baseDate.setTime(new Date(selectedShop.subscription_end_date).getTime());
                           }
+                          
+                          // Add the selected days
+                          baseDate.setDate(baseDate.getDate() + days);
+                          console.log(`Adding ${days} days, new date:`, baseDate.toISOString());
+                          setEndDate(baseDate);
                         }}
+                        className="flex flex-col items-center justify-center py-2"
                       >
-                        {days} days
+                        <span>+{days}</span>
+                        <span className="text-xs text-muted-foreground">days</span>
                       </Button>
                     ))}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedShop?.subscription_status === "active" && selectedShop.subscription_end_date && new Date(selectedShop.subscription_end_date) > new Date() 
+                      ? "These options add days to the current end date" 
+                      : "These options add days starting from today"}
+                  </p>
                 </div>
+                
+                {endDate && (
+                  <div className="bg-primary/10 border border-primary/20 rounded-md p-3">
+                    <h4 className="text-sm font-medium text-primary flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4" />
+                      Subscription Summary
+                    </h4>
+                    <p className="text-sm mt-2">
+                      The subscription for <strong>{selectedShop?.name}</strong> will be {selectedShop?.subscription_status === "active" ? "extended" : "activated"} until:
+                    </p>
+                    <p className="text-lg font-semibold mt-1">
+                      {endDate.toLocaleDateString(undefined, {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Add a manual refresh button at the top */}
+            <div className="flex justify-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshShopStatus}
+                disabled={isUpdating}
+                className="flex items-center gap-1 text-sm"
+              >
+                <RefreshCw size={14} className={isUpdating ? "animate-spin" : ""} />
+                Refresh Status
+              </Button>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-800">
+              <h3 className="text-sm font-medium mb-2">Quick Links:</h3>
+              <div className="flex flex-col space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="justify-start text-sm"
+                >
+                  <Link href="/browse" target="_blank" className="flex items-center gap-1.5">
+                    <ExternalLink size={14} />
+                    View Browse Page in New Tab
+                  </Link>
+                </Button>
+                
+                {selectedShop && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="justify-start text-sm"
+                  >
+                    <Link href={`/shop/${selectedShop.id}`} target="_blank" className="flex items-center gap-1.5">
+                      <ExternalLink size={14} />
+                      View Shop Detail Page
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
           
-          <DialogFooter className="flex space-x-2 justify-between">
+          <DialogFooter className="mt-4 flex-col sm:flex-row sm:justify-between sm:space-x-2">
             <Button 
               variant="destructive"
               onClick={handleDeactivateSubscription}
               disabled={isUpdating || !selectedShop?.is_active}
+              className="mb-2 sm:mb-0"
+              size="sm"
             >
-              Deactivate
+              <XCircle className="mr-2 h-4 w-4" />
+              Deactivate Shop
             </Button>
-            <div className="space-x-2">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isUpdating}>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isUpdating} size="sm">
                 Cancel
               </Button>
               <Button 
                 onClick={handleExtendSubscription}
                 disabled={isUpdating || !endDate}
+                variant="default"
+                size="sm"
+                className="bg-primary hover:bg-primary/90"
               >
-                {selectedShop?.subscription_status === "active" ? "Update Subscription" : "Activate Subscription"}
+                {isUpdating ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    {selectedShop?.subscription_status === "active" ? "Update Subscription" : "Activate Subscription"}
+                  </>
+                )}
               </Button>
             </div>
           </DialogFooter>

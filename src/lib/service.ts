@@ -89,77 +89,66 @@ export async function getVehicleTypes(): Promise<{id: string, name: VehicleType,
 }
 
 export async function getVehicles(filters?: {
-  vehicle_type?: VehicleType
-  shop_id?: string
-  category?: string
-  min_price?: number
-  max_price?: number
-  is_available?: boolean
-  seats?: number
-  transmission?: string
+  vehicle_type?: VehicleType;
+  shop_id?: string;
+  category?: string;
+  min_price?: number;
+  max_price?: number;
+  is_available?: boolean;
+  seats?: number;
+  transmission?: string;
+  includeUnverified?: boolean;
 }): Promise<Vehicle[]> {
-  if (USE_MOCK_DATA) {
-    // Convert mockBikes to vehicles for mock data
-    let vehicles = mockBikes.map(bike => {
-      // Convert BikeImage to VehicleImage
-      const vehicleImages = bike.images?.map(img => ({
-        ...img,
-        vehicle_id: img.bike_id
-      } as VehicleImage)) || [];
-      
-      return {
-        ...bike,
-        vehicle_type_id: '1',
-        vehicle_type: 'motorcycle' as VehicleType,
-        // Use bike category as vehicle category
-        category: bike.category as VehicleCategory,
-        // For mock data, add car-specific fields to all vehicles with defaults
-        seats: 0,
-        transmission: 'automatic' as const,
-        images: vehicleImages
-      } as Vehicle;
-    });
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+    // If we're using mock data, convert the mock bike data to vehicle format
+    let filteredBikes = mockBikes;
     
-    // Apply filters if provided
     if (filters?.shop_id) {
-      vehicles = vehicles.filter(vehicle => vehicle.shop_id === filters.shop_id);
+      filteredBikes = filteredBikes.filter(bike => bike.shop_id === filters.shop_id);
     }
     
-    if (filters?.vehicle_type) {
-      vehicles = vehicles.filter(vehicle => vehicle.vehicle_type === filters.vehicle_type);
+    if (filters?.vehicle_type === 'motorcycle') {
+      // We only have motorcycle data in our mock data
+      if (filters?.category) {
+        const category = filters.category as BikeCategory;
+        filteredBikes = filteredBikes.filter(bike => bike.category === category);
+      }
+    } else if (filters?.vehicle_type) {
+      // If any other vehicle type is requested, return empty for mock data
+      return [];
     }
     
-    if (filters?.category) {
-      vehicles = vehicles.filter(vehicle => vehicle.category === filters.category);
+    if (filters?.min_price !== undefined) {
+      filteredBikes = filteredBikes.filter(bike => bike.price_per_day >= filters.min_price!);
+    }
+    
+    if (filters?.max_price !== undefined) {
+      filteredBikes = filteredBikes.filter(bike => bike.price_per_day <= filters.max_price!);
     }
     
     if (filters?.is_available !== undefined) {
-      vehicles = vehicles.filter(vehicle => vehicle.is_available === filters.is_available);
+      filteredBikes = filteredBikes.filter(bike => bike.is_available === filters.is_available);
     }
     
-    if (filters?.min_price !== undefined && filters.min_price !== null) {
-      vehicles = vehicles.filter(vehicle => vehicle.price_per_day >= filters.min_price!);
-    }
-    
-    if (filters?.max_price !== undefined && filters.max_price !== null) {
-      vehicles = vehicles.filter(vehicle => vehicle.price_per_day <= filters.max_price!);
-    }
-    
-    // Apply car-specific filters
-    if (filters?.vehicle_type === 'car') {
-      if (filters?.seats !== undefined) {
-        vehicles = vehicles.filter(vehicle => vehicle.seats && vehicle.seats >= filters.seats!);
-      }
+    // Convert bikes to vehicles
+    return filteredBikes.map(bike => {
+      // Convert BikeImage to VehicleImage
+      const vehicleImages = bike.images?.map(img => ({
+        ...img,
+        vehicle_id: img.bike_id,
+      })) as VehicleImage[] | undefined;
       
-      if (filters?.transmission && filters.transmission !== 'any') {
-        vehicles = vehicles.filter(vehicle => vehicle.transmission === filters.transmission);
-      }
-    }
-    
-    return vehicles.sort((a, b) => a.price_per_day - b.price_per_day);
+      return {
+        ...bike,
+        vehicle_type_id: '1', // Assuming 1 is motorcycle
+        vehicle_type: 'motorcycle',
+        images: vehicleImages,
+      } as Vehicle;
+    });
+  } else {
+    // Use the real API
+    return api.getVehicles(filters);
   }
-  
-  return api.getVehicles(filters);
 }
 
 export async function getVehicleById(id: string): Promise<Vehicle | null> {

@@ -7,6 +7,13 @@ interface VehicleSpecifications {
   [key: string]: any; // Allow any additional properties
 }
 
+interface VehicleDocument {
+  type: 'registration' | 'insurance' | 'other';
+  url: string;
+  name: string;
+  uploaded_at: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerComponentClient({ cookies });
@@ -69,6 +76,25 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Validate required documents
+    if (!vehicleData.documents || !Array.isArray(vehicleData.documents) || vehicleData.documents.length < 2) {
+      return NextResponse.json(
+        { error: 'Vehicle registration and insurance documents are required' },
+        { status: 400 }
+      );
+    }
+    
+    // Check if registration and insurance documents are present
+    const hasRegistration = vehicleData.documents.some((doc: VehicleDocument) => doc.type === 'registration');
+    const hasInsurance = vehicleData.documents.some((doc: VehicleDocument) => doc.type === 'insurance');
+    
+    if (!hasRegistration || !hasInsurance) {
+      return NextResponse.json(
+        { error: 'Both vehicle registration and insurance documents are required' },
+        { status: 400 }
+      );
+    }
+    
     // Check if vehicle type exists
     const { data: vehicleTypeData, error: vehicleTypeError } = await supabase
       .from('vehicle_types')
@@ -114,6 +140,9 @@ export async function POST(request: NextRequest) {
       color: string | null;
       year: number | null;
       specifications: VehicleSpecifications;
+      documents: VehicleDocument[];
+      is_verified: boolean;
+      verification_status: string;
     } = {
       name: vehicleData.name,
       description: vehicleData.description || '',
@@ -128,7 +157,11 @@ export async function POST(request: NextRequest) {
       year: vehicleData.year || null,
       specifications: {
         features: vehicleData.features || []
-      }
+      },
+      // Add document data and verification status
+      documents: vehicleData.documents,
+      is_verified: false,
+      verification_status: 'pending'
     };
     
     // Add vehicle-specific data
@@ -212,8 +245,10 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Vehicle added successfully',
-      vehicle
+      message: 'Vehicle added successfully and awaiting verification',
+      vehicle,
+      is_verified: false,
+      verification_status: 'pending'
     });
     
   } catch (error) {

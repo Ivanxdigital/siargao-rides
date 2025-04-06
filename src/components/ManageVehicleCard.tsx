@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Edit, Trash, ToggleLeft, ToggleRight, Bike, Car, Truck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit, Trash, ToggleLeft, ToggleRight, Bike, Car, Truck, AlertCircle, Info } from "lucide-react";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import {
@@ -10,6 +10,14 @@ import {
   CardContent,
   CardFooter,
 } from "./ui/Card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/Tooltip";
+
+type VerificationStatus = 'pending' | 'approved' | 'rejected';
 
 interface ManageVehicleCardProps {
   id: string;
@@ -18,6 +26,8 @@ interface ManageVehicleCardProps {
   images: string[];
   price: number;
   isAvailable: boolean;
+  verificationStatus?: VerificationStatus;
+  verificationNotes?: string;
   onEdit: (vehicleId: string) => void;
   onDelete: (vehicleId: string) => void;
   onToggleAvailability: (vehicleId: string, isAvailable: boolean) => void;
@@ -30,6 +40,8 @@ const ManageVehicleCard = ({
   images,
   price,
   isAvailable,
+  verificationStatus = 'pending',
+  verificationNotes,
   onEdit,
   onDelete,
   onToggleAvailability,
@@ -54,6 +66,44 @@ const ManageVehicleCard = ({
       case 'motorcycle':
       default:
         return <Bike size={16} className="mr-1 text-primary" />;
+    }
+  };
+
+  // Get the verification badge based on status
+  const getVerificationBadge = () => {
+    switch(verificationStatus) {
+      case 'approved':
+        return (
+          <Badge variant="verified" className="flex items-center ml-2">
+            Verified
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="destructive" className="flex items-center ml-2">
+                  <AlertCircle size={12} className="mr-1" />
+                  Rejected
+                </Badge>
+              </TooltipTrigger>
+              {verificationNotes && (
+                <TooltipContent>
+                  <p className="max-w-xs text-xs">{verificationNotes}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        );
+      case 'pending':
+      default:
+        return (
+          <Badge variant="pending" className="flex items-center ml-2">
+            <Info size={12} className="mr-1" />
+            Pending
+          </Badge>
+        );
     }
   };
 
@@ -117,7 +167,10 @@ const ManageVehicleCard = ({
 
       {/* Vehicle Details */}
       <CardContent className="p-4 flex-grow">
-        <h3 className="text-lg font-medium mb-2">{name}</h3>
+        <div className="flex items-center mb-2">
+          <h3 className="text-lg font-medium">{name}</h3>
+          {getVerificationBadge()}
+        </div>
         <p className="text-muted-foreground mb-2">
           ₱{price.toLocaleString()} / day
         </p>

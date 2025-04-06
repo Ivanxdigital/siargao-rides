@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { PlusCircle, XCircle, ArrowLeft } from "lucide-react";
+import { PlusCircle, XCircle, ArrowLeft, Info } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
@@ -21,6 +21,23 @@ type ImageInput = {
   file: File | null;
   preview: string;
   isUploading: boolean;
+};
+
+// Define document input type
+type DocumentInput = {
+  id: string;
+  type: 'registration' | 'insurance' | 'other';
+  file: File | null;
+  name: string;
+  isUploading: boolean;
+};
+
+// Define uploaded document type
+type UploadedDocument = {
+  type: 'registration' | 'insurance' | 'other';
+  url: string;
+  name: string;
+  uploaded_at: string;
 };
 
 // Define an interface for vehicle image
@@ -58,6 +75,12 @@ export default function AddVehiclePage() {
   const [monthlyPrice, setMonthlyPrice] = useState<PriceInput>("");
   const [images, setImages] = useState<ImageInput[]>([
     { id: "1", file: null, preview: "", isUploading: false },
+  ]);
+  
+  // Add document state
+  const [documents, setDocuments] = useState<DocumentInput[]>([
+    { id: "reg1", type: "registration", file: null, name: "", isUploading: false },
+    { id: "ins1", type: "insurance", file: null, name: "", isUploading: false },
   ]);
   
   // Common specifications
@@ -184,6 +207,34 @@ export default function AddVehiclePage() {
     setSpecifications((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Add document handlers
+  const handleDocumentChange = (id: string, file: File | null) => {
+    if (file) {
+      setDocuments(
+        documents.map((doc) =>
+          doc.id === id
+            ? { ...doc, file, name: file.name }
+            : doc
+        )
+      );
+    }
+  };
+
+  const handleAddOtherDocument = () => {
+    const newId = `other${documents.filter(doc => doc.type === 'other').length + 1}`;
+    setDocuments([
+      ...documents,
+      { id: newId, type: "other", file: null, name: "", isUploading: false },
+    ]);
+  };
+
+  const handleRemoveDocument = (id: string) => {
+    // Only allow removing 'other' type documents
+    if (documents.find(doc => doc.type === 'other')?.type === 'other') {
+      setDocuments(documents.filter((doc) => doc.id !== id));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -205,6 +256,18 @@ export default function AddVehiclePage() {
       }
       if (!category) {
         throw new Error("Category is required");
+      }
+
+      // Validate required documents
+      const registrationDoc = documents.find(doc => doc.type === 'registration');
+      const insuranceDoc = documents.find(doc => doc.type === 'insurance');
+      
+      if (!registrationDoc?.file) {
+        throw new Error("Vehicle registration document is required");
+      }
+      
+      if (!insuranceDoc?.file) {
+        throw new Error("Vehicle insurance document is required");
       }
 
       // Validate vehicle-specific fields
@@ -278,7 +341,58 @@ export default function AddVehiclePage() {
         throw new Error(`Failed to upload images: ${uploadErrorMessage}`);
       }
 
-      // Prepare vehicle data
+      // Upload documents to Supabase Storage
+      setDocuments(documents.map(doc => ({ ...doc, isUploading: !!doc.file })));
+      
+      const uploadedDocuments: UploadedDocument[] = [];
+      for (const doc of documents) {
+        if (!doc.file) continue;
+        
+        try {
+          // Create a unique file path
+          const fileExt = doc.file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+          const filePath = `vehicle-documents/${doc.type}/${fileName}`;
+
+          // Upload the file
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('vehicles')
+            .upload(filePath, doc.file);
+
+          if (uploadError) {
+            console.error("Error uploading document:", uploadError);
+            uploadErrorOccurred = true;
+            uploadErrorMessage = uploadError.message;
+            continue;
+          }
+
+          // Get the public URL for the uploaded file
+          const { data: { publicUrl } } = supabase.storage
+            .from('vehicles')
+            .getPublicUrl(filePath);
+
+          uploadedDocuments.push({
+            type: doc.type,
+            url: publicUrl,
+            name: doc.file.name,
+            uploaded_at: new Date().toISOString()
+          });
+        } catch (uploadErr: any) {
+          console.error("Exception during document upload:", uploadErr);
+          uploadErrorOccurred = true;
+          uploadErrorMessage = uploadErr.message || "Unknown upload error";
+        }
+      }
+      
+      // Require at least registration and insurance documents
+      if (
+        !uploadedDocuments.some(doc => doc.type === 'registration') || 
+        !uploadedDocuments.some(doc => doc.type === 'insurance')
+      ) {
+        throw new Error(`Failed to upload required documents: ${uploadErrorMessage}`);
+      }
+
+      // Prepare vehicle data with documents
       const vehicleData: any = {
         name,
         description,
@@ -291,7 +405,10 @@ export default function AddVehiclePage() {
         color: specifications.color,
         year: specifications.year ? parseInt(specifications.year) : null,
         features: specifications.features ? specifications.features.split(',').map(f => f.trim()).filter(f => f) : [],
-        images: uploadedImages
+        images: uploadedImages,
+        documents: uploadedDocuments,
+        is_verified: false,
+        verification_status: 'pending'
       };
 
       // Add vehicle-type specific data
@@ -321,6 +438,7 @@ export default function AddVehiclePage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add vehicle");
       setImages(images.map(img => ({ ...img, isUploading: false })));
+      setDocuments(documents.map(doc => ({ ...doc, isUploading: false })));
     } finally {
       setIsSubmitting(false);
     }
@@ -406,6 +524,19 @@ export default function AddVehiclePage() {
           {error}
         </div>
       )}
+
+      {/* Verification Notice */}
+      <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-4 py-3 rounded-md mb-6 flex items-start gap-3">
+        <Info size={20} className="shrink-0 mt-0.5" />
+        <div>
+          <h3 className="font-medium mb-1">Verification Required</h3>
+          <p className="text-sm">
+            Your vehicle will require verification before it appears in public listings. 
+            Please upload clear images of your vehicle registration and insurance documents.
+            An admin will review your submission and approve it shortly.
+          </p>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl">
         {/* Vehicle Type Selection */}
@@ -769,6 +900,233 @@ export default function AddVehiclePage() {
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 <p>You can upload up to 6 images. The first image will be used as the primary display image.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Documents */}
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h2 className="text-xl font-semibold mb-4">Vehicle Documents</h2>
+          <div className="space-y-5">
+            <div className="bg-background/50 border border-border rounded-md p-4">
+              <div className="text-sm text-muted-foreground mb-4">
+                <p>Please upload the following required documents for vehicle verification. 
+                All vehicles require proper documentation before they can be listed publicly.</p>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Registration Document */}
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Vehicle Registration <span className="text-destructive">*</span></h3>
+                  
+                  <div className="bg-muted/30 border border-border rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <path d="M14 2v6h6" />
+                          <path d="M16 13H8" />
+                          <path d="M16 17H8" />
+                          <path d="M10 9H8" />
+                        </svg>
+                      </div>
+                      
+                      <div className="flex-1">
+                        {documents.find(d => d.type === 'registration')?.name ? (
+                          <div>
+                            <p className="text-sm font-medium mb-1">{documents.find(d => d.type === 'registration')?.name}</p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDocumentChange('reg1', null)}
+                                className="text-xs text-primary hover:underline flex items-center gap-1"
+                              >
+                                Change file
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm font-medium mb-1">Upload Vehicle Registration</p>
+                            <p className="text-xs text-muted-foreground mb-2">PDF, JPG, or PNG (max 5MB)</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label className="flex items-center justify-center cursor-pointer">
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => handleDocumentChange('reg1', e.target.files ? e.target.files[0] : null)}
+                            className="hidden"
+                          />
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                          >
+                            {documents.find(d => d.type === 'registration')?.name ? 'Replace' : 'Upload'}
+                          </Button>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Insurance Document */}
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Vehicle Insurance <span className="text-destructive">*</span></h3>
+                  
+                  <div className="bg-muted/30 border border-border rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <path d="M14 2v6h6" />
+                          <path d="M16 13H8" />
+                          <path d="M16 17H8" />
+                          <path d="M10 9H8" />
+                        </svg>
+                      </div>
+                      
+                      <div className="flex-1">
+                        {documents.find(d => d.type === 'insurance')?.name ? (
+                          <div>
+                            <p className="text-sm font-medium mb-1">{documents.find(d => d.type === 'insurance')?.name}</p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDocumentChange('ins1', null)}
+                                className="text-xs text-primary hover:underline flex items-center gap-1"
+                              >
+                                Change file
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm font-medium mb-1">Upload Vehicle Insurance</p>
+                            <p className="text-xs text-muted-foreground mb-2">PDF, JPG, or PNG (max 5MB)</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label className="flex items-center justify-center cursor-pointer">
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => handleDocumentChange('ins1', e.target.files ? e.target.files[0] : null)}
+                            className="hidden"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline"
+                            size="sm"
+                          >
+                            {documents.find(d => d.type === 'insurance')?.name ? 'Replace' : 'Upload'}
+                          </Button>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Other Documents */}
+                {documents.filter(doc => doc.type === 'other').map((doc) => (
+                  <div key={doc.id}>
+                    <h3 className="text-sm font-medium mb-2">Additional Document</h3>
+                    
+                    <div className="bg-muted/30 border border-border rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6" />
+                            <path d="M16 13H8" />
+                            <path d="M16 17H8" />
+                            <path d="M10 9H8" />
+                          </svg>
+                        </div>
+                        
+                        <div className="flex-1">
+                          {doc.name ? (
+                            <div>
+                              <p className="text-sm font-medium mb-1">{doc.name}</p>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDocumentChange(doc.id, null)}
+                                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                                >
+                                  Change file
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-sm font-medium mb-1">Upload Additional Document</p>
+                              <p className="text-xs text-muted-foreground mb-2">PDF, JPG, or PNG (max 5MB)</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <label className="flex items-center justify-center cursor-pointer">
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              onChange={(e) => handleDocumentChange(doc.id, e.target.files ? e.target.files[0] : null)}
+                              className="hidden"
+                            />
+                            <Button 
+                              type="button" 
+                              variant="outline"
+                              size="sm"
+                            >
+                              {doc.name ? 'Replace' : 'Upload'}
+                            </Button>
+                          </label>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleRemoveDocument(doc.id)}
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                          >
+                            <XCircle size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Add Additional Document Button */}
+                {documents.filter(doc => doc.type === 'other').length < 3 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddOtherDocument}
+                    className="w-full mt-2"
+                  >
+                    <PlusCircle size={16} className="mr-2" />
+                    Add Additional Document
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex items-center justify-between text-sm text-muted-foreground bg-muted/30 rounded-md p-3 border border-border mt-4">
+                <div className="flex items-center space-x-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <p>Vehicle registration and insurance documents are required for verification. Your vehicle will not be publicly visible until an admin has verified these documents.</p>
+                </div>
               </div>
             </div>
           </div>

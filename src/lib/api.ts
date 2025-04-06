@@ -152,6 +152,7 @@ export async function getVehicles(filters?: {
   is_available?: boolean
   seats?: number
   transmission?: string
+  includeUnverified?: boolean
 }): Promise<Vehicle[]> {
   try {
     if (!supabase) {
@@ -196,6 +197,14 @@ export async function getVehicles(filters?: {
 
     if (filters?.transmission && filters.transmission !== 'any') {
       query = query.eq('transmission', filters.transmission)
+    }
+    
+    // By default, only show verified vehicles to the public
+    // Unless specifically requested to include unverified ones
+    if (filters?.includeUnverified !== true) {
+      query = query
+        .eq('is_verified', true)
+        .eq('verification_status', 'approved')
     }
 
     const { data, error } = await query.order('price_per_day')

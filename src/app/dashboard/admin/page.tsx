@@ -6,14 +6,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { Car, Users, Store } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
+  const [pendingShops, setPendingShops] = useState<number>(0);
+  const [pendingVehicles, setPendingVehicles] = useState<number>(0);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isLoadingShops, setIsLoadingShops] = useState(false);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -67,6 +71,10 @@ export default function AdminDashboardPage() {
             console.error("Error fetching shops:", error.message || error);
           } else {
             setShops(data || []);
+            
+            // Count pending shops
+            const pending = data?.filter(shop => !shop.is_verified) || [];
+            setPendingShops(pending.length);
           }
         } catch (error: any) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -77,6 +85,34 @@ export default function AdminDashboardPage() {
       };
 
       fetchShops();
+    }
+  }, [isAuthenticated, isAdmin]);
+  
+  // Fetch pending vehicles count
+  useEffect(() => {
+    if (isAuthenticated && isAdmin) {
+      const fetchPendingVehicles = async () => {
+        setIsLoadingVehicles(true);
+        try {
+          const { data, error } = await supabase
+            .from("vehicles")
+            .select("id")
+            .eq("verification_status", "pending");
+
+          if (error) {
+            console.error("Error fetching pending vehicles:", error.message || error);
+          } else {
+            setPendingVehicles(data?.length || 0);
+          }
+        } catch (error: any) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error("Error fetching pending vehicles:", errorMessage);
+        } finally {
+          setIsLoadingVehicles(false);
+        }
+      };
+
+      fetchPendingVehicles();
     }
   }, [isAuthenticated, isAdmin]);
 
@@ -117,7 +153,12 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {/* Overview Stats */}
         <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
-          <h2 className="text-lg font-semibold mb-4 text-white/90">Total Users</h2>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Users className="h-5 w-5 text-blue-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-white/90">Users</h2>
+          </div>
           <div className="text-4xl font-bold mb-2 text-primary">{users.length}</div>
           <p className="text-sm text-white/60">
             {isLoadingUsers ? "Loading..." : "Registered users on the platform"}
@@ -125,36 +166,45 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
-          <h2 className="text-lg font-semibold mb-4 text-white/90">Rental Shops</h2>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+              <Store className="h-5 w-5 text-green-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-white/90">Shops</h2>
+          </div>
           <div className="text-4xl font-bold mb-2 text-primary">{shops.length}</div>
-          <p className="text-sm text-white/60">
-            {isLoadingShops ? "Loading..." : "Active rental shops"}
-          </p>
+          <div className="flex justify-between">
+            <p className="text-sm text-white/60">
+              {isLoadingShops ? "Loading..." : "Active rental shops"}
+            </p>
+            {pendingShops > 0 && (
+              <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded-full">
+                {pendingShops} pending
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
-          <h2 className="text-lg font-semibold mb-4 text-white/90">Verification</h2>
-          <div className="flex items-center mb-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-10 w-10 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+              <Car className="h-5 w-5 text-purple-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-white/90">Vehicles</h2>
+          </div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-4xl font-bold text-primary">
+              {isLoadingVehicles ? "..." : pendingVehicles}
+            </div>
+            <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded-full">
+              Pending verification
+            </span>
           </div>
           <p className="text-sm text-white/60 mb-4">
-            Review and verify new rental shops
+            Vehicles awaiting approval or rejection
           </p>
           <Button asChild className="w-full">
-            <Link href="/dashboard/admin/verification">Manage Verifications</Link>
+            <Link href="/dashboard/admin/vehicles/verification">Verify Vehicles</Link>
           </Button>
         </div>
       </div>
@@ -180,7 +230,35 @@ export default function AdminDashboardPage() {
             </Button>
           </div>
           
-          {/* Add more admin tools here as needed */}
+          <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <Store className="h-5 w-5 text-green-500" />
+              </div>
+              <h3 className="text-lg font-medium text-white/90">Shop Verification</h3>
+            </div>
+            <p className="text-sm text-white/60 mb-4">
+              Approve or reject new rental shop registrations
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/dashboard/admin/shops/verification">Verify Shops</Link>
+            </Button>
+          </div>
+          
+          <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <Car className="h-5 w-5 text-purple-500" />
+              </div>
+              <h3 className="text-lg font-medium text-white/90">Vehicle Verification</h3>
+            </div>
+            <p className="text-sm text-white/60 mb-4">
+              Review and approve vehicle listings and documents
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/dashboard/admin/vehicles/verification">Verify Vehicles</Link>
+            </Button>
+          </div>
         </div>
       </div>
 

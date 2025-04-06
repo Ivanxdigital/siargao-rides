@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, SearchIcon, Filter, AlertCircle } from "lucide-react";
+import { Plus, SearchIcon, Filter, AlertCircle, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import ManageVehicleCard from "@/components/ManageVehicleCard";
@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 
 type VehicleType = "motorcycle" | "car" | "tuktuk";
+type VerificationStatus = "pending" | "approved" | "rejected";
 
 interface Vehicle {
   id: string;
@@ -26,6 +27,8 @@ interface Vehicle {
   vehicle_type_id: string;
   is_available: boolean;
   price_per_day: number;
+  verification_status?: VerificationStatus;
+  verification_notes?: string;
   vehicle_images?: { id: string; image_url: string; url?: string }[];
   images?: { id: string; image_url: string; url?: string }[];
   vehicle_types?: { id: string; name: string };
@@ -38,6 +41,7 @@ export default function ManageVehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<VehicleType | "all">("all");
+  const [verificationFilter, setVerificationFilter] = useState<VerificationStatus | "all">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [vehicleTypeMap, setVehicleTypeMap] = useState<Record<string, VehicleType>>({});
@@ -123,6 +127,8 @@ export default function ManageVehiclesPage() {
           
           return {
             ...vehicle,
+            // Convert verification_status to our VerificationStatus type
+            verification_status: (vehicle.verification_status || 'pending') as VerificationStatus,
             images: formattedImages
           };
         });
@@ -232,13 +238,14 @@ export default function ManageVehiclesPage() {
     return "motorcycle";
   };
 
-  // Filter vehicles based on search query and vehicle type
+  // Filter vehicles based on search query, vehicle type, and verification status
   const filteredVehicles = vehicles.filter((vehicle) => {
     const matchesSearch = vehicle.name.toLowerCase().includes(searchQuery.toLowerCase());
     const currentVehicleType = getVehicleType(vehicle.vehicle_type_id);
     const matchesType = vehicleTypeFilter === "all" || currentVehicleType === vehicleTypeFilter;
+    const matchesVerification = verificationFilter === "all" || vehicle.verification_status === verificationFilter;
     
-    return matchesSearch && matchesType;
+    return matchesSearch && matchesType && matchesVerification;
   });
 
   // Skip the rest of the rendering if still checking access or no access
@@ -286,8 +293,8 @@ export default function ManageVehiclesPage() {
       </div>
 
       {/* Search and filter */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <input
             type="text"
@@ -298,22 +305,57 @@ export default function ManageVehiclesPage() {
           />
         </div>
         
-        <div className="w-full sm:w-48">
-          <Select 
-            value={vehicleTypeFilter}
-            onValueChange={(value) => setVehicleTypeFilter(value as VehicleType | "all")}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="motorcycle">Motorcycles</SelectItem>
-              <SelectItem value="car">Cars</SelectItem>
-              <SelectItem value="tuktuk">Tuktuks</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Select 
+          value={vehicleTypeFilter}
+          onValueChange={(value) => setVehicleTypeFilter(value as VehicleType | "all")}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="motorcycle">Motorcycles</SelectItem>
+            <SelectItem value="car">Cars</SelectItem>
+            <SelectItem value="tuktuk">Tuktuks</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select 
+          value={verificationFilter}
+          onValueChange={(value) => setVerificationFilter(value as VerificationStatus | "all")}
+        >
+          <SelectTrigger>
+            <div className="flex items-center">
+              <SelectValue placeholder="All Statuses" />
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <div className="flex items-center">
+                <Filter size={16} className="mr-2 text-muted-foreground" />
+                All Statuses
+              </div>
+            </SelectItem>
+            <SelectItem value="pending">
+              <div className="flex items-center">
+                <Clock size={16} className="mr-2 text-yellow-500" />
+                Pending
+              </div>
+            </SelectItem>
+            <SelectItem value="approved">
+              <div className="flex items-center">
+                <CheckCircle2 size={16} className="mr-2 text-green-500" />
+                Verified
+              </div>
+            </SelectItem>
+            <SelectItem value="rejected">
+              <div className="flex items-center">
+                <XCircle size={16} className="mr-2 text-red-500" />
+                Rejected
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Error message */}
@@ -341,6 +383,8 @@ export default function ManageVehiclesPage() {
               images={vehicle.images?.map(img => img.image_url) || []}
               price={vehicle.price_per_day}
               isAvailable={vehicle.is_available}
+              verificationStatus={vehicle.verification_status}
+              verificationNotes={vehicle.verification_notes}
               onEdit={handleEditVehicle}
               onDelete={handleDeleteVehicle}
               onToggleAvailability={handleToggleAvailability}
@@ -351,7 +395,7 @@ export default function ManageVehiclesPage() {
         <div className="text-center py-12 border border-border rounded-lg bg-card">
           <h3 className="text-xl font-medium mb-2">No vehicles found</h3>
           <p className="text-muted-foreground mb-6">
-            {searchQuery || vehicleTypeFilter !== "all"
+            {searchQuery || vehicleTypeFilter !== "all" || verificationFilter !== "all"
               ? "No vehicles match your search criteria."
               : "You haven't added any vehicles yet."}
           </p>
