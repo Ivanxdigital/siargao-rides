@@ -31,6 +31,11 @@ export async function getShops(): Promise<RentalShop[]> {
   return api.getShops();
 }
 
+export async function getVerifiedShops(): Promise<RentalShop[]> {
+  const shops = await api.getShops();
+  return shops.filter(shop => shop.is_verified);
+}
+
 export async function getShopById(id: string): Promise<RentalShop | null> {
   if (USE_MOCK_DATA) {
     return mockShops.find(shop => shop.id === id) || null;

@@ -56,7 +56,7 @@ export default function Home() {
         setError(null)
         
         // Fetch shops and bikes
-        const shopsData = await service.getShops()
+        const shopsData = await service.getVerifiedShops()
         
         // Only fetch verified vehicles for public display
         // The API now defaults to only returning verified vehicles
@@ -181,8 +181,8 @@ export default function Home() {
         shopIds.map(async (shopId) => {
           const shop = await service.getShopById(shopId)
           
-          // Skip if shop not found
-          if (!shop) return null
+          // Skip if shop not found or not verified
+          if (!shop || !shop.is_verified) return null
           
           // Check location match if a location is specified
           if (params.location) {
