@@ -9,7 +9,7 @@ import { getShops, getBikes, getVehicles, getVehicleTypes } from "@/lib/api"
 import { RentalShop, Vehicle, VehicleType, VehicleCategory, BikeCategory, CarCategory, TuktukCategory } from "@/lib/types"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
-import { DateRangePicker } from "@/components/DateRangePicker"
+import DateRangePicker from "@/components/DateRangePicker"
 import { parseISO } from "date-fns"
 import { Button } from "@/components/ui/Button"
 
@@ -855,17 +855,6 @@ export default function BrowsePage() {
             >
               <Filter size={18} />
               {showFilters ? "Hide Filters" : "Show Filters"}
-            </Button>
-
-            {/* Add refresh button */}
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1 ml-2"
-            >
-              <RefreshCw size={18} />
-              Refresh Results
             </Button>
           </div>
           

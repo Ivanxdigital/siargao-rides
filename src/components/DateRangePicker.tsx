@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 
 interface DateRangePickerProps {
   startDate: Date | null;
@@ -24,7 +25,7 @@ interface BookedPeriod {
   endDate: Date;
 }
 
-export function DateRangePicker({
+export default function DateRangePicker({
   startDate,
   endDate,
   onStartDateChange,
@@ -148,7 +149,7 @@ export function DateRangePicker({
   };
   
   return (
-    <div>
+    <div className="grid gap-2">
       <Popover 
         open={isCalendarOpen} 
         onOpenChange={(open) => {
@@ -165,13 +166,10 @@ export function DateRangePicker({
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className={`w-full justify-start text-left font-normal ${
-              startDate && endDate 
-                ? "bg-primary/10 border-primary/30 text-primary" 
-                : selectionInProgress 
-                  ? "bg-amber-900/20 border-amber-700/30 text-amber-200" 
-                  : "bg-black/50 border-white/20"
-            }`}
+            className={cn(
+              "w-full justify-start text-left font-normal focus-visible:ring-0 focus-visible:ring-offset-0 active:scale-100",
+              !startDate && !endDate && "text-muted-foreground"
+            )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {startDate && endDate ? (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DateRangePicker } from "@/components/DateRangePicker";
+import DateRangePicker from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/Button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Bike, RentalShop, Vehicle } from "@/lib/types";
