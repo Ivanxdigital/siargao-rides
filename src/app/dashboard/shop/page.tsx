@@ -10,6 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/SubscriptionStatus";
+import { Badge } from "@/components/ui/Badge";
 
 // Predefined Siargao locations (same as in SearchBar.tsx)
 const siargaoLocations = [
@@ -464,203 +465,79 @@ export default function ManageShopPage() {
   // Show shop management interface
   return (
     <div className="container mx-auto px-4 py-8 md:py-12 max-w-7xl">
-      <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text">My Shop</h1>
-        
-        <div className="flex items-center gap-3">
-          {shop && (
-            <Button variant="outline" size="sm" asChild className="transition-all hover:shadow-md">
-              <Link href={`/shop/${shop.id}`} className="inline-flex items-center gap-2">
-                <Eye size={16} />
-                <span>View Public Listing</span>
-              </Link>
-            </Button>
-          )}
-          
-          <Button
-            variant={isEditing ? "outline" : "default"}
-            size="sm"
-            onClick={handleEditToggle}
-            className={isEditing ? "" : "bg-primary hover:bg-primary/90"}
-          >
-            {isEditing ? "Cancel" : (
-              <>
-                <Edit size={16} className="mr-2" />
-                Edit Shop
-              </>
-            )}
-          </Button>
+      <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Manage Shop</h1>
+          <p className="text-muted-foreground">
+            Update your shop information and settings
+          </p>
         </div>
+        {shop && !shop.is_verified && (
+          <div className="shrink-0">
+            <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 flex items-center gap-2 py-1.5 px-3">
+              <Clock className="h-4 w-4" />
+              Pending Verification
+            </Badge>
+          </div>
+        )}
       </div>
 
-      {shop && (
-        <>
-          <div className="relative w-full h-60 md:h-72 rounded-xl overflow-hidden mb-8 bg-card shadow-md group">
-            {/* Banner image with edit option when in edit mode */}
-            {(bannerPreview || shop.banner_url) && !isEditing ? (
-              <>
-                <Image
-                  src={bannerPreview || shop.banner_url || '/placeholder-banner.jpg'}
-                  alt={shop.name}
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  fill
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-              </>
-            ) : !isEditing ? (
-              <div className="h-full bg-gradient-to-r from-primary/20 to-primary/5 flex items-center justify-center">
-                <p className="text-muted-foreground">No banner image</p>
-              </div>
-            ) : (
-              <div className="h-full relative">
-                {bannerPreview ? (
-                  <>
-                    <Image
-                      src={bannerPreview || '/placeholder-banner.jpg'}
-                      alt="Banner preview"
-                      className="object-cover"
-                      fill
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <button 
-                      className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-md"
-                      onClick={handleBannerRemove}
-                    >
-                      <X size={20} />
-                    </button>
-                  </>
-                ) : (
-                  <div className="h-full bg-gradient-to-r from-primary/20 to-primary/5 flex flex-col items-center justify-center">
-                    <ImageIcon size={50} className="text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground mb-4 text-lg">No banner image</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => bannerInputRef.current?.click()}
-                      className="flex items-center border-primary/30 hover:border-primary hover:shadow-md transition-all"
-                    >
-                      <Upload size={16} className="mr-2" />
-                      Upload Banner
-                    </Button>
-                    <input
-                      type="file"
-                      ref={bannerInputRef}
-                      onChange={handleBannerChange}
-                      className="hidden"
-                      accept="image/*"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 flex items-end">
-              <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden border-4 border-card bg-card shadow-lg">
-                {/* Logo image with edit option when in edit mode */}
-                {(logoPreview || shop.logo_url) && !isEditing ? (
+      {/* Display subscription status */}
+      <div className="mb-6">
+        {shop && <SubscriptionStatus shop={shop as ShopWithSubscription} />}
+      </div>
+      
+      {/* Form/Content section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {shop && (
+          <>
+            <div className="relative w-full h-60 md:h-72 rounded-xl overflow-hidden mb-8 bg-card shadow-md group">
+              {/* Banner image with edit option when in edit mode */}
+              {(bannerPreview || shop.banner_url) && !isEditing ? (
+                <>
                   <Image
-                    src={logoPreview || shop.logo_url || '/placeholder-logo.jpg'}
-                    alt={`${shop.name} logo`}
-                    className="object-cover"
+                    src={bannerPreview || shop.banner_url || '/placeholder-banner.jpg'}
+                    alt={shop.name}
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                     fill
+                    priority
                   />
-                ) : !isEditing ? (
-                  <div className="h-full bg-primary/10 flex items-center justify-center">
-                    <p className="text-xs text-center text-muted-foreground">
-                      No logo
-                    </p>
-                  </div>
-                ) : (
-                  <div className="h-full relative">
-                    {logoPreview ? (
-                      <>
-                        <Image
-                          src={logoPreview || '/placeholder-logo.jpg'}
-                          alt="Logo preview"
-                          className="object-cover"
-                          fill
-                        />
-                        <button 
-                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"
-                          onClick={handleLogoRemove}
-                        >
-                          <X size={14} />
-                        </button>
-                      </>
-                    ) : (
-                      <div 
-                        className="h-full bg-primary/10 flex items-center justify-center cursor-pointer"
-                        onClick={() => logoInputRef.current?.click()}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                </>
+              ) : !isEditing ? (
+                <div className="h-full bg-gradient-to-r from-primary/20 to-primary/5 flex items-center justify-center">
+                  <p className="text-muted-foreground">No banner image</p>
+                </div>
+              ) : (
+                <div className="h-full relative">
+                  {bannerPreview ? (
+                    <>
+                      <Image
+                        src={bannerPreview || '/placeholder-banner.jpg'}
+                        alt="Banner preview"
+                        className="object-cover"
+                        fill
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                      <button 
+                        className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-md"
+                        onClick={handleBannerRemove}
                       >
-                        <p className="text-xs text-center text-muted-foreground">
-                          Add Logo
-                        </p>
-                        <input
-                          type="file"
-                          ref={logoInputRef}
-                          onChange={handleLogoChange}
-                          className="hidden"
-                          accept="image/*"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="ml-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg">
-                <h2 className="text-white font-semibold text-xl">{shop.name}</h2>
-                {shop.is_verified && (
-                  <span className="bg-primary/30 text-white text-xs px-2 py-0.5 rounded-full">
-                    Verified
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {isEditing ? (
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Image upload section */}
-              <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
-                <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border">Shop Images</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Banner Image
-                    </label>
-                    <div className="border border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
-                      {bannerPreview ? (
-                        <div className="relative h-40 mb-3 rounded-md overflow-hidden">
-                          <Image
-                            src={bannerPreview || '/placeholder-banner.jpg'}
-                            alt="Banner preview"
-                            className="object-cover"
-                            fill
-                          />
-                          <button 
-                            type="button"
-                            className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
-                            onClick={handleBannerRemove}
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-40 bg-muted rounded-md">
-                          <ImageIcon size={30} className="text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground text-sm mb-2">No banner selected</p>
-                        </div>
-                      )}
+                        <X size={20} />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="h-full bg-gradient-to-r from-primary/20 to-primary/5 flex flex-col items-center justify-center">
+                      <ImageIcon size={50} className="text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground mb-4 text-lg">No banner image</p>
                       <Button 
-                        type="button"
                         variant="outline" 
                         size="sm" 
                         onClick={() => bannerInputRef.current?.click()}
-                        className="w-full hover:bg-primary/5"
+                        className="flex items-center border-primary/30 hover:border-primary hover:shadow-md transition-all"
                       >
                         <Upload size={16} className="mr-2" />
-                        {bannerPreview ? "Change Banner" : "Upload Banner"}
+                        Upload Banner
                       </Button>
                       <input
                         type="file"
@@ -669,252 +546,370 @@ export default function ManageShopPage() {
                         className="hidden"
                         accept="image/*"
                       />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Recommended size: 1200×400 pixels. Max 5MB.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 flex items-end">
+                <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden border-4 border-card bg-card shadow-lg">
+                  {/* Logo image with edit option when in edit mode */}
+                  {(logoPreview || shop.logo_url) && !isEditing ? (
+                    <Image
+                      src={logoPreview || shop.logo_url || '/placeholder-logo.jpg'}
+                      alt={`${shop.name} logo`}
+                      className="object-cover"
+                      fill
+                    />
+                  ) : !isEditing ? (
+                    <div className="h-full bg-primary/10 flex items-center justify-center">
+                      <p className="text-xs text-center text-muted-foreground">
+                        No logo
                       </p>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Shop Logo
-                    </label>
-                    <div className="border border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
+                  ) : (
+                    <div className="h-full relative">
                       {logoPreview ? (
-                        <div className="relative h-40 mb-3 rounded-md">
-                          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-lg overflow-hidden shadow-md">
+                        <>
+                          <Image
+                            src={logoPreview || '/placeholder-logo.jpg'}
+                            alt="Logo preview"
+                            className="object-cover"
+                            fill
+                          />
+                          <button 
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"
+                            onClick={handleLogoRemove}
+                          >
+                            <X size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <div 
+                          className="h-full bg-primary/10 flex items-center justify-center cursor-pointer"
+                          onClick={() => logoInputRef.current?.click()}
+                        >
+                          <p className="text-xs text-center text-muted-foreground">
+                            Add Logo
+                          </p>
+                          <input
+                            type="file"
+                            ref={logoInputRef}
+                            onChange={handleLogoChange}
+                            className="hidden"
+                            accept="image/*"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="ml-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg">
+                  <h2 className="text-white font-semibold text-xl">{shop.name}</h2>
+                  {shop.is_verified && (
+                    <span className="bg-primary/30 text-white text-xs px-2 py-0.5 rounded-full">
+                      Verified
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {isEditing ? (
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Image upload section */}
+                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
+                  <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border">Shop Images</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Banner Image
+                      </label>
+                      <div className="border border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
+                        {bannerPreview ? (
+                          <div className="relative h-40 mb-3 rounded-md overflow-hidden">
                             <Image
-                              src={logoPreview || '/placeholder-logo.jpg'}
-                              alt="Logo preview"
+                              src={bannerPreview || '/placeholder-banner.jpg'}
+                              alt="Banner preview"
                               className="object-cover"
                               fill
                             />
+                            <button 
+                              type="button"
+                              className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                              onClick={handleBannerRemove}
+                            >
+                              <X size={16} />
+                            </button>
                           </div>
-                          <button 
-                            type="button"
-                            className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
-                            onClick={handleLogoRemove}
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-40 bg-muted rounded-md">
-                          <ImageIcon size={30} className="text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground text-sm mb-2">No logo selected</p>
-                        </div>
-                      )}
-                      <Button 
-                        type="button"
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => logoInputRef.current?.click()}
-                        className="w-full hover:bg-primary/5"
-                      >
-                        <Upload size={16} className="mr-2" />
-                        {logoPreview ? "Change Logo" : "Upload Logo"}
-                      </Button>
-                      <input
-                        type="file"
-                        ref={logoInputRef}
-                        onChange={handleLogoChange}
-                        className="hidden"
-                        accept="image/*"
-                      />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Recommended size: 200×200 pixels. Max 2MB.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
-                <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border">Shop Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium mb-2">
-                      Shop Name
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="phone_number" className="block text-sm font-medium mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="text"
-                      id="phone_number"
-                      name="phone_number"
-                      value={formData.phone_number}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="whatsapp" className="block text-sm font-medium mb-2">
-                      WhatsApp (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      id="whatsapp"
-                      name="whatsapp"
-                      value={formData.whatsapp}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="address" className="block text-sm font-medium mb-2">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="location_area" className="block text-sm font-medium mb-2">
-                      Location Area
-                    </label>
-                    <select
-                      id="location_area"
-                      name="location_area"
-                      value={formData.location_area}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                    >
-                      <option value="">Select an area</option>
-                      {siargaoLocations.map((location) => (
-                        <option key={location} value={location}>
-                          {location}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      This helps customers find your shop when searching by location.
-                    </p>
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <label htmlFor="description" className="block text-sm font-medium mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                      rows={5}
-                    />
-                  </div>
-                  
-                  {/* Add delivery options section */}
-                  <div className="md:col-span-2 mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                    <h3 className="text-lg font-medium mb-4">Delivery Options</h3>
-                    
-                    <div className="flex items-center space-x-2 mb-4">
-                      <input
-                        type="checkbox"
-                        id="offers_delivery"
-                        name="offers_delivery"
-                        checked={formData.offers_delivery}
-                        onChange={handleInputChange}
-                        className="h-4 w-4"
-                      />
-                      <label htmlFor="offers_delivery" className="text-sm font-medium">
-                        Offer delivery service to customers
-                      </label>
-                    </div>
-                    
-                    {formData.offers_delivery && (
-                      <div>
-                        <label htmlFor="delivery_fee" className="block text-sm font-medium mb-2">
-                          Delivery Fee (₱)
-                        </label>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-40 bg-muted rounded-md">
+                            <ImageIcon size={30} className="text-muted-foreground mb-2" />
+                            <p className="text-muted-foreground text-sm mb-2">No banner selected</p>
+                          </div>
+                        )}
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => bannerInputRef.current?.click()}
+                          className="w-full hover:bg-primary/5"
+                        >
+                          <Upload size={16} className="mr-2" />
+                          {bannerPreview ? "Change Banner" : "Upload Banner"}
+                        </Button>
                         <input
-                          type="number"
-                          id="delivery_fee"
-                          name="delivery_fee"
-                          value={formData.delivery_fee}
-                          onChange={handleInputChange}
-                          min="0"
-                          step="10"
-                          className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                          type="file"
+                          ref={bannerInputRef}
+                          onChange={handleBannerChange}
+                          className="hidden"
+                          accept="image/*"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          This is the fee you charge for delivering vehicles to the customer's accommodation.
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Recommended size: 1200×400 pixels. Max 5MB.
                         </p>
                       </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Upload progress indicator with animation */}
-                {isUploading && (
-                  <div className="mt-6 bg-primary/5 rounded-lg p-4 border border-primary/20">
-                    <label className="block text-sm font-medium mb-2">Upload Progress</label>
-                    <div className="w-full bg-muted rounded-full h-3">
-                      <div 
-                        className="bg-primary h-3 rounded-full transition-all duration-300" 
-                        style={{ width: `${uploadProgress}%` }}
-                      ></div>
                     </div>
-                    <p className="text-xs text-primary mt-2">{uploadProgress}% complete</p>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Shop Logo
+                      </label>
+                      <div className="border border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
+                        {logoPreview ? (
+                          <div className="relative h-40 mb-3 rounded-md">
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-lg overflow-hidden shadow-md">
+                              <Image
+                                src={logoPreview || '/placeholder-logo.jpg'}
+                                alt="Logo preview"
+                                className="object-cover"
+                                fill
+                              />
+                            </div>
+                            <button 
+                              type="button"
+                              className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                              onClick={handleLogoRemove}
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-40 bg-muted rounded-md">
+                            <ImageIcon size={30} className="text-muted-foreground mb-2" />
+                            <p className="text-muted-foreground text-sm mb-2">No logo selected</p>
+                          </div>
+                        )}
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => logoInputRef.current?.click()}
+                          className="w-full hover:bg-primary/5"
+                        >
+                          <Upload size={16} className="mr-2" />
+                          {logoPreview ? "Change Logo" : "Upload Logo"}
+                        </Button>
+                        <input
+                          type="file"
+                          ref={logoInputRef}
+                          onChange={handleLogoChange}
+                          className="hidden"
+                          accept="image/*"
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Recommended size: 200×200 pixels. Max 2MB.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                )}
-                
-                <div className="mt-8 flex justify-end">
-                  <Button
-                    type="submit"
-                    disabled={isSaving}
-                    className="flex items-center shadow-md hover:shadow-lg transition-all"
-                  >
-                    {isSaving ? "Saving..." : (
-                      <>
-                        <Save size={16} className="mr-2" />
-                        Save Changes
-                      </>
-                    )}
-                  </Button>
                 </div>
-              </div>
-            </form>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
+                  <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border">Shop Information</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium mb-2">
+                        Shop Name
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="phone_number" className="block text-sm font-medium mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="text"
+                        id="phone_number"
+                        name="phone_number"
+                        value={formData.phone_number}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="whatsapp" className="block text-sm font-medium mb-2">
+                        WhatsApp (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        id="whatsapp"
+                        name="whatsapp"
+                        value={formData.whatsapp}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="address" className="block text-sm font-medium mb-2">
+                        Address
+                      </label>
+                      <input
+                        type="text"
+                        id="address"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="location_area" className="block text-sm font-medium mb-2">
+                        Location Area
+                      </label>
+                      <select
+                        id="location_area"
+                        name="location_area"
+                        value={formData.location_area}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      >
+                        <option value="">Select an area</option>
+                        {siargaoLocations.map((location) => (
+                          <option key={location} value={location}>
+                            {location}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        This helps customers find your shop when searching by location.
+                      </p>
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <label htmlFor="description" className="block text-sm font-medium mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        rows={5}
+                      />
+                    </div>
+                    
+                    {/* Add delivery options section */}
+                    <div className="md:col-span-2 mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                      <h3 className="text-lg font-medium mb-4">Delivery Options</h3>
+                      
+                      <div className="flex items-center space-x-2 mb-4">
+                        <input
+                          type="checkbox"
+                          id="offers_delivery"
+                          name="offers_delivery"
+                          checked={formData.offers_delivery}
+                          onChange={handleInputChange}
+                          className="h-4 w-4"
+                        />
+                        <label htmlFor="offers_delivery" className="text-sm font-medium">
+                          Offer delivery service to customers
+                        </label>
+                      </div>
+                      
+                      {formData.offers_delivery && (
+                        <div>
+                          <label htmlFor="delivery_fee" className="block text-sm font-medium mb-2">
+                            Delivery Fee (₱)
+                          </label>
+                          <input
+                            type="number"
+                            id="delivery_fee"
+                            name="delivery_fee"
+                            value={formData.delivery_fee}
+                            onChange={handleInputChange}
+                            min="0"
+                            step="10"
+                            className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            This is the fee you charge for delivering vehicles to the customer's accommodation.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Upload progress indicator with animation */}
+                  {isUploading && (
+                    <div className="mt-6 bg-primary/5 rounded-lg p-4 border border-primary/20">
+                      <label className="block text-sm font-medium mb-2">Upload Progress</label>
+                      <div className="w-full bg-muted rounded-full h-3">
+                        <div 
+                          className="bg-primary h-3 rounded-full transition-all duration-300" 
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-primary mt-2">{uploadProgress}% complete</p>
+                    </div>
+                  )}
+                  
+                  <div className="mt-8 flex justify-end">
+                    <Button
+                      type="submit"
+                      disabled={isSaving}
+                      className="flex items-center shadow-md hover:shadow-lg transition-all"
+                    >
+                      {isSaving ? "Saving..." : (
+                        <>
+                          <Save size={16} className="mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            ) : (
               <div className="md:col-span-2 space-y-6">
                 {/* Shop Info */}
                 <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm hover:shadow-md transition-shadow">
@@ -977,49 +972,10 @@ export default function ManageShopPage() {
                   </div>
                 </div>
               </div>
-              
-              <div>
-                {/* Subscription Status */}
-                <div className="mb-6">
-                  <SubscriptionStatus shop={shop as ShopWithSubscription} />
-                </div>
-                
-                {/* Quick Links */}
-                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm h-fit">
-                  <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border flex items-center">
-                    <Clock size={18} className="mr-2" />
-                    Quick Links
-                  </h2>
-                  <div className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start hover:bg-primary/5 transition-colors" asChild>
-                      <Link href="/dashboard/vehicles">
-                        <span className="bg-primary/10 text-primary w-8 h-8 rounded-full inline-flex items-center justify-center mr-3">1</span>
-                        Manage Vehicles
-                      </Link>
-                    </Button>
-                    
-                    <Button variant="outline" className="w-full justify-start hover:bg-primary/5 transition-colors" asChild>
-                      <Link href="/dashboard/vehicles/add">
-                        <span className="bg-primary/10 text-primary w-8 h-8 rounded-full inline-flex items-center justify-center mr-3">2</span>
-                        Add New Vehicle
-                      </Link>
-                    </Button>
-                    
-                    <div className="mt-6 pt-4 border-t border-border">
-                      <Button variant="default" className="w-full justify-center" asChild>
-                        <Link href={`/shop/${shop.id}`} className="inline-flex items-center gap-2">
-                          <Eye size={16} />
-                          View Public Listing
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 } 

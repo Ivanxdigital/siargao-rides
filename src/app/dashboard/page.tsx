@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { motion } from "framer-motion";
+import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/SubscriptionStatus";
 
 // Types for our dashboard data
 interface ShopStats {
@@ -124,6 +125,7 @@ export default function DashboardPage() {
   const [recentBookings, setRecentBookings] = useState<BookingData[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shopData, setShopData] = useState<ShopWithSubscription | null>(null);
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
@@ -165,15 +167,15 @@ export default function DashboardPage() {
   // Fetch data specific to shop owners
   const fetchShopOwnerData = async (supabase: any) => {
     try {
-      // 1. Get the user's shop
-      const { data: shops, error: shopError } = await supabase
+      // 1. Get the user's shop with subscription data
+      const { data: shopWithSubscription, error: shopError } = await supabase
         .from("rental_shops")
-        .select("id")
+        .select("id, name, logo_url, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
         .eq("owner_id", user!.id)
         .single();
       
       console.log("User ID:", user!.id); // Debug log
-      console.log("Shop data:", shops); // Debug log
+      console.log("Shop data:", shopWithSubscription); // Debug log
       
       if (shopError) {
         console.error("Error fetching shop:", shopError);
@@ -181,7 +183,10 @@ export default function DashboardPage() {
         return;
       }
       
-      const shopId = shops.id;
+      // Save shop data with subscription info for component
+      setShopData(shopWithSubscription as ShopWithSubscription);
+      
+      const shopId = shopWithSubscription.id;
       
       // 2. Get vehicle statistics
       const { data: vehicles, error: vehiclesError } = await supabase
@@ -412,122 +417,145 @@ export default function DashboardPage() {
         
         {/* Stats Overview */}
         {isShopOwner ? (
-          <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
-            variants={containerVariants}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <motion.div 
-              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
-              variants={cardVariants}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Vehicles</h2>
-                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
-                    {isDataLoading ? (
-                      <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
-                    ) : (
-                      shopStats.totalVehicles
-                    )}
-                  </div>
-                </div>
-                <div className="bg-primary/20 p-2 md:p-3 rounded-full group-hover:bg-primary/30 transition-all duration-300">
-                  <Bike size={18} className="text-primary" />
-                </div>
+            {/* Subscription Status for Shop Owners */}
+            {shopData && (
+              <div className="mb-6">
+                <SubscriptionStatus shop={shopData} />
               </div>
-              <Link 
-                href="/dashboard/vehicles" 
-                className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+            )}
+            
+            <motion.h2 
+              className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              Shop Overview
+            </motion.h2>
+            <motion.div 
+              className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
+              variants={containerVariants}
+            >
+              <motion.div 
+                className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
+                variants={cardVariants}
               >
-                View all vehicles
-                <ChevronRight size={12} />
-              </Link>
-            </motion.div>
-
-            <motion.div 
-              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-green-500/30 group"
-              variants={cardVariants}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Available</h2>
-                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
-                    {isDataLoading ? (
-                      <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
-                    ) : (
-                      shopStats.availableVehicles
-                    )}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Vehicles</h2>
+                    <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                      {isDataLoading ? (
+                        <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
+                      ) : (
+                        shopStats.totalVehicles
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-primary/20 p-2 md:p-3 rounded-full group-hover:bg-primary/30 transition-all duration-300">
+                    <Bike size={18} className="text-primary" />
                   </div>
                 </div>
-                <div className="bg-green-500/20 p-2 md:p-3 rounded-full group-hover:bg-green-500/30 transition-all duration-300">
-                  <Clock size={18} className="text-green-400" />
-                </div>
-              </div>
-              <p className="text-xs text-white/60 mt-1">
-                {Math.round((shopStats.availableVehicles / (shopStats.totalVehicles || 1)) * 100) || 0}% of your fleet
-              </p>
-            </motion.div>
+                <Link 
+                  href="/dashboard/vehicles" 
+                  className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+                >
+                  View all vehicles
+                  <ChevronRight size={12} />
+                </Link>
+              </motion.div>
 
-            <motion.div 
-              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group"
-              variants={cardVariants}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Active Bookings</h2>
-                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
-                    {isDataLoading ? (
-                      <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
-                    ) : (
-                      shopStats.activeBookings
-                    )}
-                  </div>
-                </div>
-                <div className="bg-blue-500/20 p-2 md:p-3 rounded-full group-hover:bg-blue-500/30 transition-all duration-300">
-                  <CalendarRange size={18} className="text-blue-400" />
-                </div>
-              </div>
-              <Link 
-                href="/dashboard/bookings" 
-                className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+              <motion.div 
+                className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-green-500/30 group"
+                variants={cardVariants}
               >
-                View all bookings
-                <ChevronRight size={12} />
-              </Link>
-            </motion.div>
-
-            <motion.div 
-              className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
-              variants={cardVariants}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Revenue</h2>
-                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
-                    {isDataLoading ? (
-                      <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
-                    ) : (
-                      `₱${shopStats.totalRevenue.toLocaleString()}`
-                    )}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Available</h2>
+                    <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                      {isDataLoading ? (
+                        <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
+                      ) : (
+                        shopStats.availableVehicles
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-green-500/20 p-2 md:p-3 rounded-full group-hover:bg-green-500/30 transition-all duration-300">
+                    <Clock size={18} className="text-green-400" />
                   </div>
                 </div>
-                <div className="bg-primary/20 p-2 md:p-3 rounded-full group-hover:bg-primary/30 transition-all duration-300">
-                  <TrendingUp size={18} className="text-primary" />
-                </div>
-              </div>
-              <Link 
-                href="/dashboard/analytics" 
-                className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+                <p className="text-xs text-white/60 mt-1">
+                  {Math.round((shopStats.availableVehicles / (shopStats.totalVehicles || 1)) * 100) || 0}% of your fleet
+                </p>
+              </motion.div>
+
+              <motion.div 
+                className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group"
+                variants={cardVariants}
               >
-                View analytics
-                <ChevronRight size={12} />
-              </Link>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Active Bookings</h2>
+                    <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                      {isDataLoading ? (
+                        <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
+                      ) : (
+                        shopStats.activeBookings
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-blue-500/20 p-2 md:p-3 rounded-full group-hover:bg-blue-500/30 transition-all duration-300">
+                    <CalendarRange size={18} className="text-blue-400" />
+                  </div>
+                </div>
+                <Link 
+                  href="/dashboard/bookings" 
+                  className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+                >
+                  View all bookings
+                  <ChevronRight size={12} />
+                </Link>
+              </motion.div>
+
+              <motion.div 
+                className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
+                variants={cardVariants}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Revenue</h2>
+                    <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                      {isDataLoading ? (
+                        <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
+                      ) : (
+                        `₱${shopStats.totalRevenue.toLocaleString()}`
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-primary/20 p-2 md:p-3 rounded-full group-hover:bg-primary/30 transition-all duration-300">
+                    <TrendingUp size={18} className="text-primary" />
+                  </div>
+                </div>
+                <Link 
+                  href="/dashboard/analytics" 
+                  className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+                >
+                  View analytics
+                  <ChevronRight size={12} />
+                </Link>
+              </motion.div>
             </motion.div>
           </motion.div>
         ) : (
           <motion.div 
             className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4"
             variants={containerVariants}
+            initial="hidden"
+            animate="visible"
           >
             <motion.div 
               className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group"
