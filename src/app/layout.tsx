@@ -17,6 +17,16 @@ export const metadata: Metadata = {
   authors: [{ name: "Siargao Rides Team" }],
   keywords: ["motorbike rental", "Siargao", "Philippines", "tourism", "bike rental"],
   creator: "Siargao Rides",
+  icons: {
+    icon: [
+      {
+        url: '/favicon/favicon.svg',
+        type: 'image/svg+xml',
+      }
+    ],
+    shortcut: '/favicon/favicon.svg',
+    apple: '/favicon/favicon.svg',
+  },
   formatDetection: {
     telephone: true,
     email: true,
