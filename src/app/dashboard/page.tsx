@@ -16,10 +16,12 @@ import {
   TrendingUp,
   Clock,
   Users,
-  ChevronRight
+  ChevronRight,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/SubscriptionStatus";
 
 // Types for our dashboard data
@@ -126,6 +128,7 @@ export default function DashboardPage() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shopData, setShopData] = useState<ShopWithSubscription | null>(null);
+  const [isSubscriptionCollapsed, setIsSubscriptionCollapsed] = useState(false);
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
@@ -369,6 +372,11 @@ export default function DashboardPage() {
     }
   };
 
+  // Toggle subscription collapse state
+  const toggleSubscriptionCollapse = () => {
+    setIsSubscriptionCollapsed(!isSubscriptionCollapsed);
+  };
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -424,9 +432,74 @@ export default function DashboardPage() {
           >
             {/* Subscription Status for Shop Owners */}
             {shopData && (
-              <div className="mb-6">
-                <SubscriptionStatus shop={shopData} />
-              </div>
+              <motion.div 
+                className="mb-6 relative"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg md:text-xl font-semibold text-white/90">Subscription Status</h2>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
+                    onClick={toggleSubscriptionCollapse}
+                    aria-label={isSubscriptionCollapsed ? "Expand subscription details" : "Collapse subscription details"}
+                  >
+                    <motion.div
+                      initial={false}
+                      animate={{ rotate: isSubscriptionCollapsed ? 0 : 180 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <ChevronDown className="h-5 w-5 text-primary" />
+                    </motion.div>
+                  </Button>
+                </div>
+                <AnimatePresence mode="wait">
+                  {!isSubscriptionCollapsed ? (
+                    <motion.div
+                      key="expanded"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ 
+                        duration: 0.3, 
+                        ease: "easeOut"
+                      }}
+                    >
+                      <SubscriptionStatus shop={shopData} />
+                    </motion.div>
+                  ) : (
+                    <motion.div 
+                      key="collapsed"
+                      className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-lg flex items-center justify-between"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ 
+                        duration: 0.3, 
+                        ease: "easeOut"
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`h-3 w-3 rounded-full ${
+                          shopData?.subscription_status === "active" ? "bg-green-500" :
+                          shopData?.is_verified === false ? "bg-yellow-500" :
+                          shopData?.subscription_status === "expired" ? "bg-red-500" :
+                          "bg-yellow-500"
+                        }`}></div>
+                        <span className="text-sm text-white/80">
+                          {shopData?.subscription_status 
+                            ? shopData.subscription_status.charAt(0).toUpperCase() + shopData.subscription_status.slice(1)
+                            : "Unknown"} Subscription
+                        </span>
+                      </div>
+                      <span className="text-xs text-primary/80 hover:text-primary cursor-pointer" onClick={toggleSubscriptionCollapse}>View Details</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             )}
             
             <motion.h2 
