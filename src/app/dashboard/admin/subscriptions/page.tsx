@@ -12,7 +12,7 @@ import { ManageableSubscription } from "../types";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
-import { DatePicker } from "@/components/ui/DatePicker";
+import { cn } from "@/lib/utils";
 
 export default function SubscriptionManagementPage() {
   const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -220,6 +220,35 @@ export default function SubscriptionManagementPage() {
       </div>
     );
   }
+
+  // Simple date picker component to avoid dependencies
+  const SimpleDatePicker = ({ 
+    selected, 
+    onSelect, 
+    minDate, 
+    className 
+  }: { 
+    selected?: Date; 
+    onSelect: (date: Date) => void; 
+    minDate?: Date;
+    className?: string;
+  }) => {
+    return (
+      <div className={cn("relative", className)}>
+        <input
+          type="date"
+          className="w-full rounded-md border border-white/10 bg-black/50 px-3 py-2 text-sm text-white"
+          value={selected ? selected.toISOString().split('T')[0] : ''}
+          min={minDate ? minDate.toISOString().split('T')[0] : undefined}
+          onChange={(e) => {
+            if (e.target.value) {
+              onSelect(new Date(e.target.value));
+            }
+          }}
+        />
+      </div>
+    );
+  };
 
   // Show subscription management interface
   return (
@@ -464,7 +493,7 @@ export default function SubscriptionManagementPage() {
                   <span className={`text-sm ${
                     selectedShop?.subscription_status === "active" ? "text-green-500" :
                     selectedShop?.subscription_status === "expired" ? "text-red-500" :
-                    "text-muted-foreground"
+                    "text-white/70"
                   }`}>
                     {selectedShop?.subscription_status === "active" ? "Active" :
                      selectedShop?.subscription_status === "expired" ? "Expired" :
@@ -474,7 +503,7 @@ export default function SubscriptionManagementPage() {
                 
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Current End Date:</span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-white/70">
                     {selectedShop?.subscription_end_date 
                       ? new Date(selectedShop.subscription_end_date).toLocaleDateString() 
                       : "Not set"}
@@ -500,14 +529,14 @@ export default function SubscriptionManagementPage() {
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm whitespace-nowrap">Choose end date:</span>
-                    <DatePicker
+                    <SimpleDatePicker
                       selected={endDate}
                       onSelect={setEndDate}
                       minDate={new Date()}
                       className="flex-grow"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Or extend by days:</p>
+                  <p className="text-xs text-white/70">Or extend by days:</p>
                   <div className="grid grid-cols-4 gap-2">
                     {[7, 14, 30, 90].map(days => (
                       <Button
