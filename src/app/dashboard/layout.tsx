@@ -186,6 +186,40 @@ export default function DashboardLayout({
           variants={itemVariants}
         >
           <div className="sticky top-24 space-y-8">
+            {/* User Profile Card */}
+            <motion.div 
+              className="mb-6 pb-5 border-b border-white/10"
+              variants={itemVariants}
+            >
+              <div className="flex items-center gap-3 px-2 py-2">
+                {user?.user_metadata?.profile_picture ? (
+                  <div className="h-11 w-11 rounded-full border-2 border-primary/50 overflow-hidden shadow-md shadow-primary/20">
+                    <img 
+                      src={user.user_metadata.profile_picture} 
+                      alt="Profile" 
+                      className="object-cover w-full h-full"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${user?.user_metadata?.first_name || "User"}&background=6d28d9&color=fff`;
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-11 w-11 rounded-full bg-primary/20 border-2 border-primary/30 flex items-center justify-center text-lg font-bold text-primary shadow-md shadow-primary/20">
+                    {user?.user_metadata?.first_name ? user.user_metadata.first_name[0].toUpperCase() : "U"}
+                  </div>
+                )}
+                <div className="flex-1 overflow-hidden">
+                  <h3 className="font-medium text-white truncate">
+                    {user?.user_metadata?.first_name} {user?.user_metadata?.last_name || ""}
+                  </h3>
+                  <p className="text-xs text-white/60 truncate">
+                    {user?.user_metadata?.role === "shop_owner" ? "Shop Owner" : 
+                     user?.user_metadata?.role === "admin" ? "Administrator" : "Rider"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+            
             <div className="pb-4">
               <motion.h2 
                 className="text-lg font-medium mb-4 ml-3 text-white/80"
