@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { CheckCircle, XCircle, Clock, Calendar, Calendar as CalendarIcon, Plus, RefreshCw, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Calendar, Calendar as CalendarIcon, Plus, RefreshCw, ExternalLink, MoreVertical, ArrowUpRight } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ManageableSubscription } from "../types";
 import Image from "next/image";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
+import { createPortal } from "react-dom";
 
 export default function SubscriptionManagementPage() {
   const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -438,6 +439,159 @@ export default function SubscriptionManagementPage() {
     );
   };
 
+  // Simple Dropdown Menu Component
+  const SimpleDropdown = ({ 
+    trigger, 
+    children 
+  }: { 
+    trigger: React.ReactNode, 
+    children: React.ReactNode 
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [position, setPosition] = useState<'bottom' | 'top'>('bottom');
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
+
+    // Calculate position when dropdown opens
+    const updatePosition = () => {
+      if (!triggerRef.current) return;
+      
+      const rect = triggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const dropdownHeight = 200; // Approximate max height for dropdown
+      
+      // Set position based on available space
+      const newPosition = spaceBelow < dropdownHeight ? 'top' : 'bottom';
+      setPosition(newPosition);
+      
+      // Set coordinates for the dropdown portal
+      // Align dropdown to the right edge of the trigger
+      setCoords({
+        left: rect.right - 192, // 192px is the width of the dropdown (w-48)
+        top: newPosition === 'top' ? rect.top : rect.bottom,
+        width: rect.width
+      });
+    };
+
+    // Handle position calculation when dropdown opens
+    useEffect(() => {
+      if (isOpen) {
+        updatePosition();
+        // Recalculate on resize
+        window.addEventListener('resize', updatePosition);
+        // Recalculate on scroll
+        window.addEventListener('scroll', updatePosition, true);
+      }
+      
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
+      };
+    }, [isOpen]);
+
+    // Handle clicks outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          triggerRef.current && 
+          !triggerRef.current.contains(event.target as Node) &&
+          dropdownRef.current && 
+          !dropdownRef.current.contains(event.target as Node)
+        ) {
+          setIsOpen(false);
+        }
+      };
+
+      if (isOpen) {
+        document.addEventListener("mousedown", handleClickOutside);
+      }
+      
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [isOpen]);
+
+    return (
+      <>
+        <div ref={triggerRef} onClick={() => setIsOpen(!isOpen)}>
+          {trigger}
+        </div>
+        
+        {isOpen && typeof window !== 'undefined' && createPortal(
+          <div 
+            ref={dropdownRef}
+            className="fixed z-[9999] shadow-lg"
+            style={{
+              top: position === 'top' ? coords.top - 8 - 200 : coords.top + 8, // Offset for spacing
+              left: coords.left,
+              width: 192, // Fixed dropdown width (w-48 = 12rem = 192px)
+              maxHeight: 'calc(100vh - 20px)',
+              overflow: 'auto'
+            }}
+          >
+            <div className="rounded-md bg-black border border-gray-700 py-1 overflow-hidden" onClick={() => setIsOpen(false)}>
+              {children}
+            </div>
+          </div>,
+          document.body
+        )}
+      </>
+    );
+  };
+
+  // Dropdown Item
+  const DropdownItem = ({ 
+    onClick, 
+    children,
+    className
+  }: { 
+    onClick?: () => void, 
+    children: React.ReactNode,
+    className?: string
+  }) => {
+    return (
+      <button
+        onClick={(e) => {
+          if (onClick) {
+            onClick();
+          }
+        }}
+        className={cn("w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-800 flex items-center gap-2", className)}
+      >
+        {children}
+      </button>
+    );
+  };
+
+  // Add this StatusBadge component
+  const StatusBadge = ({ 
+    status, 
+    isActive 
+  }: { 
+    status: string | null; 
+    isActive: boolean;
+  }) => {
+    const color = status === "active" && isActive
+      ? "bg-green-500/20 text-green-500 border-green-500/30"
+      : status === "expired"
+      ? "bg-red-500/20 text-red-500 border-red-500/30"
+      : "bg-gray-500/20 text-gray-500 border-gray-700/30";
+
+    const label = status === "active" && isActive
+      ? "Active"
+      : status === "expired"
+      ? "Expired"
+      : "Inactive";
+
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${color}`}>
+        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${status === "active" && isActive ? "bg-green-500" : status === "expired" ? "bg-red-500" : "bg-gray-500"}`}></span>
+        {label}
+      </span>
+    );
+  };
+
   // Show subscription management interface
   return (
     <div>
@@ -533,20 +687,19 @@ export default function SubscriptionManagementPage() {
       <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 text-sm font-medium">Shop</th>
-                <th className="text-left px-4 py-3 text-sm font-medium">Status</th>
-                <th className="text-left px-4 py-3 text-sm font-medium">Start Date</th>
-                <th className="text-left px-4 py-3 text-sm font-medium">End Date</th>
-                <th className="text-left px-4 py-3 text-sm font-medium">Remaining</th>
-                <th className="text-left px-4 py-3 text-sm font-medium">Actions</th>
+            <thead className="bg-gray-900">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Shop</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Start Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">End Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Remaining</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {isLoadingShops ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                     <div className="flex justify-center">
                       <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
                     </div>
@@ -555,7 +708,7 @@ export default function SubscriptionManagementPage() {
                 </tr>
               ) : filteredShops.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                     {searchTerm ? "No shops match your search." : "No shops found."}
                   </td>
                 </tr>
@@ -593,71 +746,55 @@ export default function SubscriptionManagementPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {shop.subscription_status === "active" && shop.is_active ? (
-                          <div className="flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                            <span className="text-green-500">Active</span>
-                          </div>
-                        ) : shop.subscription_status === "expired" ? (
-                          <div className="flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                            <span className="text-red-500">Expired</span>
-                          </div>
-                        ) : shop.is_verified && !shop.subscription_status ? (
-                          <div className="flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                            <span className="text-amber-500">No Trial</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-full bg-gray-500"></span>
-                            <span className="text-gray-500">Inactive</span>
-                          </div>
-                        )}
+                        <StatusBadge status={shop.subscription_status} isActive={shop.is_active} />
                         
-                        {/* New Force Activation buttons */}
-                        <div className="mt-2 flex gap-2">
-                          <Button
-                            size="sm"
-                            variant={shop.is_active ? "outline" : "default"}
-                            className={shop.is_active ? "border-primary/30 text-primary" : ""}
-                            onClick={() => handleDirectActivation(shop.id, true)}
-                            disabled={shop.is_active}
+                        <div className="mt-3 flex items-center space-x-2">
+                          <SimpleDropdown 
+                            trigger={
+                              <Button size="sm" variant="outline" className="flex items-center gap-1">
+                                <span>Actions</span>
+                                <MoreVertical size={14} />
+                              </Button>
+                            }
                           >
-                            Force Activate
-                          </Button>
+                            {!shop.is_active && (
+                              <DropdownItem 
+                                onClick={() => handleDirectActivation(shop.id, true)}
+                                className="text-green-400"
+                              >
+                                <CheckCircle size={14} className="mr-1.5" />
+                                Force Activate
+                              </DropdownItem>
+                            )}
+                            
+                            {shop.is_active && (
+                              <DropdownItem 
+                                onClick={() => handleDirectActivation(shop.id, false)}
+                                className="text-red-400"
+                              >
+                                <XCircle size={14} className="mr-1.5" />
+                                Force Deactivate
+                              </DropdownItem>
+                            )}
+                            
+                            <DropdownItem onClick={() => window.open(`/browse?shop=${shop.id}`, '_blank')}>
+                              <ArrowUpRight size={14} className="mr-1.5" />
+                              View in Browse
+                            </DropdownItem>
+                            
+                            <DropdownItem onClick={() => window.open(`/shop/${shop.id}`, '_blank')}>
+                              <ArrowUpRight size={14} className="mr-1.5" />
+                              View Shop Page
+                            </DropdownItem>
+                          </SimpleDropdown>
                           
                           <Button
                             size="sm"
-                            variant={!shop.is_active ? "outline" : "destructive"}
-                            onClick={() => handleDirectActivation(shop.id, false)}
-                            disabled={!shop.is_active}
+                            variant="default"
+                            onClick={() => handleEditClick(shop)}
                           >
-                            Force Deactivate
+                            Manage
                           </Button>
-                        </div>
-                        
-                        {/* Quick links */}
-                        <div className="mt-2">
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-xs"
-                              onClick={() => window.open(`/browse?shop=${shop.id}`, '_blank')}
-                            >
-                              View in Browse
-                            </Button>
-                            
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-xs"
-                              onClick={() => window.open(`/shop/${shop.id}`, '_blank')}
-                            >
-                              View Shop Page
-                            </Button>
-                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
@@ -690,15 +827,6 @@ export default function SubscriptionManagementPage() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditClick(shop)}
-                        >
-                          Manage
-                        </Button>
-                      </td>
                     </tr>
                   );
                 })
@@ -710,9 +838,9 @@ export default function SubscriptionManagementPage() {
       
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Manage Subscription</DialogTitle>
+            <DialogTitle className="text-xl">Manage Subscription</DialogTitle>
             <DialogDescription>
               Update subscription details for {selectedShop?.name}
             </DialogDescription>
@@ -735,45 +863,49 @@ export default function SubscriptionManagementPage() {
             )}
           
             <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Current Status:</span>
-                <span className={`text-sm ${
-                  selectedShop?.subscription_status === "active" ? "text-green-500" :
-                  selectedShop?.subscription_status === "expired" ? "text-red-500" :
-                  "text-white/70"
-                }`}>
-                  {selectedShop?.subscription_status === "active" ? "Active" :
-                   selectedShop?.subscription_status === "expired" ? "Expired" :
-                   "Not Started"}
-                </span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Current End Date:</span>
-                <span className="text-sm text-white/70">
-                  {selectedShop?.subscription_end_date 
-                    ? new Date(selectedShop.subscription_end_date).toLocaleDateString() 
-                    : "Not set"}
-                </span>
-              </div>
-              
-              {selectedShop?.subscription_status === "active" && selectedShop.subscription_end_date && (
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Days Remaining:</span>
-                  <span className={`text-sm ${
-                    calculateDaysRemaining(selectedShop.subscription_end_date) <= 3 ? "text-red-500" :
-                    calculateDaysRemaining(selectedShop.subscription_end_date) <= 7 ? "text-amber-500" :
-                    "text-green-500"
-                  }`}>
-                    {calculateDaysRemaining(selectedShop.subscription_end_date)} days
-                  </span>
+              <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
+                <h3 className="font-medium text-sm mb-3 text-gray-400">Current Status</h3>
+                <div className="grid grid-cols-2 gap-y-2">
+                  <div className="text-sm">Status:</div>
+                  <div className="text-sm font-medium text-right">
+                    <StatusBadge 
+                      status={selectedShop?.subscription_status || null} 
+                      isActive={selectedShop?.is_active || false} 
+                    />
+                  </div>
+                  
+                  <div className="text-sm">Start Date:</div>
+                  <div className="text-sm text-right">
+                    {selectedShop?.subscription_start_date 
+                      ? new Date(selectedShop.subscription_start_date).toLocaleDateString() 
+                      : "Not set"}
+                  </div>
+                  
+                  <div className="text-sm">End Date:</div>
+                  <div className="text-sm text-right">
+                    {selectedShop?.subscription_end_date 
+                      ? new Date(selectedShop.subscription_end_date).toLocaleDateString() 
+                      : "Not set"}
+                  </div>
+                  
+                  {selectedShop?.subscription_status === "active" && selectedShop.subscription_end_date && (
+                    <>
+                      <div className="text-sm">Days Remaining:</div>
+                      <div className={`text-sm font-medium text-right ${
+                        calculateDaysRemaining(selectedShop.subscription_end_date) <= 3 ? "text-red-500" :
+                        calculateDaysRemaining(selectedShop.subscription_end_date) <= 7 ? "text-amber-500" :
+                        "text-green-500"
+                      }`}>
+                        {calculateDaysRemaining(selectedShop.subscription_end_date)} days
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
-            
-            <div className="space-y-1.5">
-              <h3 className="text-sm font-medium">Extend Subscription</h3>
-              <div className="flex flex-col space-y-4">
+              </div>
+              
+              <div className="space-y-3 pt-2">
+                <h3 className="text-sm font-medium">Extend Subscription</h3>
+                
                 <div className="space-y-2">
                   <label className="text-sm text-white/80 block">Set End Date:</label>
                   <SimpleDatePicker
@@ -820,37 +952,31 @@ export default function SubscriptionManagementPage() {
                       </Button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {selectedShop?.subscription_status === "active" && selectedShop.subscription_end_date && new Date(selectedShop.subscription_end_date) > new Date() 
-                      ? "These options add days to the current end date" 
-                      : "These options add days starting from today"}
+                </div>
+              </div>
+              
+              {endDate && (
+                <div className="bg-primary/10 border border-primary/20 rounded-md p-3">
+                  <h4 className="text-sm font-medium text-primary flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4" />
+                    Subscription Summary
+                  </h4>
+                  <p className="text-sm mt-2">
+                    The subscription for <strong>{selectedShop?.name}</strong> will be {selectedShop?.subscription_status === "active" ? "extended" : "activated"} until:
+                  </p>
+                  <p className="text-lg font-semibold mt-1">
+                    {endDate.toLocaleDateString(undefined, {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
                   </p>
                 </div>
-                
-                {endDate && (
-                  <div className="bg-primary/10 border border-primary/20 rounded-md p-3">
-                    <h4 className="text-sm font-medium text-primary flex items-center gap-1.5">
-                      <Calendar className="h-4 w-4" />
-                      Subscription Summary
-                    </h4>
-                    <p className="text-sm mt-2">
-                      The subscription for <strong>{selectedShop?.name}</strong> will be {selectedShop?.subscription_status === "active" ? "extended" : "activated"} until:
-                    </p>
-                    <p className="text-lg font-semibold mt-1">
-                      {endDate.toLocaleDateString(undefined, {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
 
-            {/* Add a manual refresh button at the top */}
-            <div className="flex justify-end">
+            <div className="flex justify-end mt-4">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -865,7 +991,7 @@ export default function SubscriptionManagementPage() {
 
             <div className="mt-6 pt-4 border-t border-gray-800">
               <h3 className="text-sm font-medium mb-2">Quick Links:</h3>
-              <div className="flex flex-col space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -874,7 +1000,7 @@ export default function SubscriptionManagementPage() {
                 >
                   <Link href="/browse" target="_blank" className="flex items-center gap-1.5">
                     <ExternalLink size={14} />
-                    View Browse Page in New Tab
+                    Browse Page
                   </Link>
                 </Button>
                 
@@ -887,7 +1013,7 @@ export default function SubscriptionManagementPage() {
                   >
                     <Link href={`/shop/${selectedShop.id}`} target="_blank" className="flex items-center gap-1.5">
                       <ExternalLink size={14} />
-                      View Shop Detail Page
+                      Shop Detail
                     </Link>
                   </Button>
                 )}
