@@ -291,8 +291,8 @@ export default function Home() {
         {/* Hero Content - improved padding and spacing for mobile */}
         <div className="container mx-auto relative z-20 h-full flex flex-col justify-center py-8 pb-16 sm:py-12 sm:pb-24 px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 drop-shadow-sm">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-primary animate-gradient-x leading-relaxed drop-shadow-lg filter-shadow">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 hero-heading-animate">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-400 to-blue-500 animate-gradient-x leading-relaxed drop-shadow-xl filter-shadow-strong tracking-wide">
                 Because Walking in Flip-Flops Only Gets You So Far
               </span>
             </h1>
@@ -381,6 +381,12 @@ export default function Home() {
           animation: gradient-x 15s ease infinite;
         }
         
+        /* For the enhanced hero heading */
+        h1 span.animate-gradient-x {
+          background-size: 300% 100%;
+          animation: gradient-x 8s ease-in-out infinite;
+        }
+        
         /* Animation for the Safety Tips section */
         @keyframes fadeIn {
           from {
@@ -404,6 +410,20 @@ export default function Home() {
           [class*='animate-[fadeInUp'] {
             will-change: opacity, transform;
           }
+        }
+        
+        /* Add hero heading animation */
+        @keyframes heroScale {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.02);
+          }
+        }
+        
+        .hero-heading-animate {
+          animation: heroScale 4s ease-in-out infinite;
         }
       `}</style>
 
@@ -554,6 +574,12 @@ export default function Home() {
       <style jsx>{`
         .filter-shadow {
           filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.25));
+        }
+        
+        .filter-shadow-strong {
+          filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.4)) 
+                 drop-shadow(0 0 20px rgba(139, 92, 246, 0.2));
+          text-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
         }
       `}</style>
     </div>
