@@ -34,8 +34,8 @@ export default function BookingSummary({
   // Calculate rental duration and costs
   useEffect(() => {
     if (startDate && endDate && rentalVehicle) {
-      // Calculate days between dates (inclusive)
-      const dayCount = differenceInDays(endDate, startDate) + 1;
+      // Calculate days between dates (without the +1)
+      const dayCount = differenceInDays(endDate, startDate);
       setTotalDays(dayCount);
       
       // Calculate price based on duration
