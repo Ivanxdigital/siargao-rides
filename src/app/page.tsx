@@ -29,6 +29,7 @@ export default function Home() {
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const videoContainerRef = useRef<HTMLDivElement>(null)
+  const searchResultsRef = useRef<HTMLDivElement>(null)
 
   // Check if device is mobile
   useEffect(() => {
@@ -242,6 +243,14 @@ export default function Home() {
       console.log(`Final search results: ${filteredShops.length} shops with matching bikes`)
       
       setSearchResults(filteredShops)
+      
+      // Scroll to search results after a short delay to allow rendering
+      setTimeout(() => {
+        searchResultsRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        })
+      }, 500)
     } catch (error: any) {
       console.error("Error searching bikes:", error)
       setError("Failed to search bikes. Please try again.")
@@ -428,7 +437,7 @@ export default function Home() {
       `}</style>
 
       {/* Featured Shops Section - improved for mobile */}
-      <section className="py-10 sm:py-16 bg-gradient-to-b from-gray-900 to-black text-white">
+      <section ref={searchResultsRef} className="py-10 sm:py-16 bg-gradient-to-b from-gray-900 to-black text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 sm:mb-8 text-center">
             {searchResults ? "Search Results" : "Featured Rental Shops"}
