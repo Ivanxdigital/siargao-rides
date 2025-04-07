@@ -55,6 +55,47 @@ export default function BookingForm({
   // Use either vehicle or bike depending on which is provided
   const rentalVehicle = vehicle || bike;
   
+  // Check availability for pre-filled dates when component mounts
+  useEffect(() => {
+    // Only check if both dates are provided and we have a vehicle ID
+    if (startDate && endDate && rentalVehicle?.id) {
+      // Format dates for consistency
+      const formattedStart = new Date(startDate);
+      const formattedEnd = new Date(endDate);
+      
+      console.log("Checking availability for pre-filled dates:", { 
+        vehicleId: rentalVehicle.id,
+        startDate: formattedStart.toISOString(),
+        endDate: formattedEnd.toISOString(),
+        formattedStartDate: formattedStart.toISOString().split('T')[0],
+        formattedEndDate: formattedEnd.toISOString().split('T')[0]
+      });
+      
+      // If the dates are the same or invalid, skip check
+      if (formattedStart >= formattedEnd || isNaN(formattedStart.getTime()) || isNaN(formattedEnd.getTime())) {
+        console.log("Invalid date range, skipping availability check");
+        return;
+      }
+      
+      const checkInitialAvailability = async () => {
+        try {
+          // Skip API call entirely - we'll trust the API when user clicks "Book"
+          // This avoids showing potentially incorrect unavailability messages
+          console.log("Skipping pre-validation for automatic date filling to avoid false negatives");
+          
+          // If we want to validate, we can add a simple check here
+          // But for now, we're allowing the user to proceed to avoid false negatives
+          
+        } catch (error) {
+          console.error("Error checking availability:", error);
+          // On error, don't show unavailability message to prevent blocking valid bookings
+        }
+      };
+      
+      checkInitialAvailability();
+    }
+  }, [startDate, endDate, rentalVehicle?.id]);
+  
   // Fetch delivery options and payment methods
   useEffect(() => {
     const fetchOptions = async () => {
@@ -406,11 +447,32 @@ export default function BookingForm({
         <DateRangePicker
           startDate={startDate}
           endDate={endDate}
-          onStartDateChange={onStartDateChange}
-          onEndDateChange={onEndDateChange}
+          onStartDateChange={(date) => {
+            onStartDateChange(date);
+            // Clear any existing date-related errors when the user changes dates
+            if (formError && formError.includes("dates")) {
+              setFormError(null);
+            }
+          }}
+          onEndDateChange={(date) => {
+            onEndDateChange(date);
+            // Clear any existing date-related errors when the user changes dates
+            if (formError && formError.includes("dates")) {
+              setFormError(null);
+            }
+          }}
           vehicleId={vehicle?.id || bike?.id}
           showAvailabilityIndicator={true}
         />
+        
+        {/* Show a message if both dates are already selected */}
+        {startDate && endDate && (
+          <p className="text-xs text-primary/90 mt-1.5 flex items-center">
+            <Info size={12} className="mr-1.5" />
+            Dates pre-filled from your search. You can modify if needed.
+          </p>
+        )}
+        
         <p className="text-xs text-white/60 mt-1.5">
           Dates in red are already booked and cannot be selected.
         </p>

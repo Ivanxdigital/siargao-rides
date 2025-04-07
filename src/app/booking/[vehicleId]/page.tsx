@@ -40,6 +40,30 @@ export default function BookingPage() {
         setLoading(true);
         const supabase = createClientComponentClient();
         
+        // Check if there are date parameters in the URL
+        const startDateParam = searchParams.get("startDate");
+        const endDateParam = searchParams.get("endDate");
+        
+        // If date parameters exist, set the dates
+        if (startDateParam && endDateParam) {
+          try {
+            const parsedStartDate = new Date(startDateParam);
+            const parsedEndDate = new Date(endDateParam);
+            
+            // Validate dates before setting them
+            if (!isNaN(parsedStartDate.getTime()) && !isNaN(parsedEndDate.getTime())) {
+              setStartDate(parsedStartDate);
+              setEndDate(parsedEndDate);
+              console.log("Setting dates from URL parameters:", {
+                startDate: parsedStartDate,
+                endDate: parsedEndDate
+              });
+            }
+          } catch (error) {
+            console.error("Error parsing date parameters:", error);
+          }
+        }
+        
         try {
           // Try to get vehicle from vehicles table first
           const { data: vehicleData, error: vehicleError } = await supabase
@@ -121,7 +145,7 @@ export default function BookingPage() {
     };
     
     fetchData();
-  }, [vehicleId, shopId]);
+  }, [vehicleId, shopId, searchParams]);
 
   const goBack = () => {
     router.back();

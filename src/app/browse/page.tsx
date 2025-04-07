@@ -572,8 +572,17 @@ export default function BrowsePage() {
     // Find the vehicle to get its shop ID
     const vehicle = vehicles.find(v => v.id === vehicleId)
     if (vehicle && vehicle.shopId) {
-      // Navigate to the booking page with vehicle ID and shop ID
-      router.push(`/booking/${vehicleId}?shop=${vehicle.shopId}`)
+      // Navigate to the booking page with vehicle ID, shop ID, and dates
+      const queryParams = new URLSearchParams();
+      queryParams.append('shop', vehicle.shopId);
+      
+      // Add date parameters if dates are selected
+      if (startDate && endDate && dateRangeSelected) {
+        queryParams.append('startDate', startDate);
+        queryParams.append('endDate', endDate);
+      }
+      
+      router.push(`/booking/${vehicleId}?${queryParams.toString()}`);
     } else {
       console.error("Could not find shop ID for vehicle:", vehicleId)
       // Fallback to just the vehicle ID
