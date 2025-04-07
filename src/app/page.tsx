@@ -306,7 +306,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
-              Discover the island's hidden gems with our premium motorbike rentals. Convenient pickup locations, competitive rates, and the freedom to explore at your own pace.
+            Explore Siargao with Ease – Rent Motorbikes, Cars, or TukTuks with Flexible Pickup, Local Rates, and Total Freedom.
             </p>
           </div>
 
