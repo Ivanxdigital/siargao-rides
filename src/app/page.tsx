@@ -446,25 +446,123 @@ export default function Home() {
         .hero-heading-animate {
           animation: heroScale 4s ease-in-out infinite;
         }
+
+        /* Add shimmer effect for shop cards */
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        .bg-shimmer {
+          background: linear-gradient(90deg, 
+            rgba(255,255,255,0) 0%, 
+            rgba(255,255,255,0.05) 50%, 
+            rgba(255,255,255,0) 100%);
+          background-size: 200% 100%;
+          animation: shimmer 2.5s infinite;
+        }
+
+        /* Add subtle pulse animation for interactive elements */
+        @keyframes subtle-pulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.03);
+          }
+        }
+
+        .hover-pulse:hover {
+          animation: subtle-pulse 2s ease-in-out infinite;
+        }
+
+        /* Add background movement animation */
+        @keyframes bg-slide {
+          0% {
+            background-position: 0% 0%;
+          }
+          100% {
+            background-position: 100% 100%;
+          }
+        }
+
+        .animate-bg-slide {
+          animation: bg-slide 15s linear infinite alternate;
+          background-size: 200% 200%;
+        }
       `}</style>
 
       {/* Featured Shops Section - improved for mobile */}
-      <section ref={searchResultsRef} className="py-10 sm:py-16 bg-gradient-to-b from-gray-900 to-black text-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 sm:mb-8 text-center">
-            {searchResults ? "Search Results" : "Featured Rental Shops"}
-          </h2>
+      <section ref={searchResultsRef} className="py-14 sm:py-20 bg-gradient-to-b from-gray-900 via-gray-900 to-black text-white relative overflow-hidden">
+        {/* Background Elements - reduced animations */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(29,78,216,0.08),transparent_70%)] opacity-70"></div>
+          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,rgba(124,58,237,0.08),transparent_70%)] opacity-60"></div>
+          <div className="absolute inset-0 bg-noise-pattern opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          {/* Section Header with enhanced styling */}
+          <div className="text-center mb-10 sm:mb-14">
+            <h2 className="inline-block text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 relative">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white">
+                {searchResults ? "Search Results" : "Featured Rental Shops"}
+              </span>
+            </h2>
+            {!searchResults && (
+              <p className="text-gray-400 max-w-md mx-auto text-sm sm:text-base">
+                Discover top-rated rental shops with quality vehicles and exceptional service
+              </p>
+            )}
+          </div>
 
           {loading ? (
-            <div className="text-center py-8 sm:py-12">
-              <p className="text-gray-300">Loading shops...</p>
+            <div className="text-center py-12 sm:py-16">
+              <div className="inline-block animate-[spin_2s_linear_infinite] rounded-full h-8 w-8 border-b-2 border-white mb-4 opacity-70"></div>
+              <p className="text-gray-300">
+                Finding the perfect ride for you...
+              </p>
+              
+              {/* Loading skeleton cards - reduced animations */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mt-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="rounded-xl overflow-hidden border border-white/5 h-full flex flex-col">
+                    {/* Skeleton image */}
+                    <div className="relative aspect-[16/9] bg-gray-800/50 overflow-hidden">
+                      {/* Removed shimmer animation */}
+                    </div>
+                    
+                    {/* Skeleton content */}
+                    <div className="p-4 sm:p-5 flex flex-col flex-grow space-y-3">
+                      <div className="h-5 bg-gray-800/80 rounded-md w-2/3 relative overflow-hidden">
+                        {/* Removed shimmer animation */}
+                      </div>
+                      <div className="h-4 bg-gray-800/80 rounded-md w-1/2 relative overflow-hidden">
+                        {/* Removed shimmer animation */}
+                      </div>
+                      <div className="h-4 bg-gray-800/80 rounded-md w-full mt-auto relative overflow-hidden">
+                        {/* Removed shimmer animation */}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : error ? (
-            <div className="text-center py-8 sm:py-12">
-              <p className="text-red-500">{error}</p>
+            <div className="text-center py-12 sm:py-16 max-w-md mx-auto">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-500/10 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6 text-red-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <p className="text-red-400 mb-3">{error}</p>
               <button 
                 onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm rounded-lg hover:border-primary/50 transition-colors"
+                className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
               >
                 Try Again
               </button>
@@ -472,35 +570,145 @@ export default function Home() {
           ) : (
             <>
               {(searchResults || shops).length === 0 ? (
-                <div className="text-center py-8 sm:py-12">
-                  <p className="text-gray-300">No shops found. Please try a different search.</p>
+                <div className="text-center py-12 sm:py-16 max-w-md mx-auto">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/50 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6 text-gray-400">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-300 mb-3">No shops found matching your criteria.</p>
+                  <button 
+                    onClick={() => setSearchResults(null)}
+                    className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
+                  >
+                    View Featured Shops
+                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-                  {(searchResults || shops).map((shop) => (
-                    <RentalShopCard
-                      key={shop.id}
-                      id={shop.id}
-                      name={shop.name}
-                      images={shop.images}
-                      startingPrice={shop.startingPrice}
-                      rating={shop.rating}
-                      reviewCount={shop.reviewCount}
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                  {(searchResults || shops).map((shop, index) => (
+                    <div key={shop.id} className="group animate-[fadeInUp_0.6s_ease-out_forwards] opacity-0" style={{ animationDelay: `${index * 0.1}s` }}>
+                      <Link href={`/shop/${shop.id}`}>
+                        <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-xl hover:shadow-black/40 hover:border-gray-700 transition-all duration-300 h-full flex flex-col">
+                          {/* Image Gallery with better layout */}
+                          <div className="relative aspect-[16/9] overflow-hidden">
+                            <div className="flex h-full">
+                              {/* Main image */}
+                              <div className="w-2/3 h-full relative border-r border-white/5">
+                                {shop.images && shop.images[0] && (
+                                  <Image 
+                                    src={shop.images[0]} 
+                                    fill 
+                                    alt={`${shop.name} vehicle`}
+                                    className="object-cover transition-transform duration-700"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                  />
+                                )}
+                              </div>
+                              {/* Side thumbnails */}
+                              <div className="w-1/3 h-full flex flex-col">
+                                {shop.images && shop.images.slice(1, 3).map((image, i) => (
+                                  <div key={i} className="h-1/2 relative border-b last:border-b-0 border-white/5">
+                                    <Image 
+                                      src={image} 
+                                      fill 
+                                      alt={`${shop.name} vehicle ${i+1}`}
+                                      className="object-cover transition-transform duration-700"
+                                      sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
+                                    />
+                                  </div>
+                                ))}
+                                {/* If not enough images, show placeholder */}
+                                {(!shop.images || shop.images.length < 3) && Array.from({ length: 3 - (shop.images?.length || 0) }).map((_, i) => (
+                                  <div key={i + (shop.images?.length || 0)} className="h-1/2 relative bg-gray-800/50 border-b last:border-b-0 border-white/5 flex items-center justify-center">
+                                    <span className="text-xs text-gray-500">No image</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Price badge - simpler hover */}
+                            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 text-white font-medium shadow-lg text-sm">
+                              From ₱{shop.startingPrice}/day
+                            </div>
+                          </div>
+                          
+                          {/* Content Area - removed hover effects */}
+                          <div className="p-4 sm:p-5 flex flex-col flex-grow">
+                            <h3 className="text-lg sm:text-xl font-medium text-white mb-2 truncate">
+                              {shop.name}
+                            </h3>
+                            
+                            {/* Rating */}
+                            <div className="flex items-center mt-auto pt-3">
+                              <div className="flex items-center">
+                                {shop.reviewCount > 0 ? (
+                                  <>
+                                    <div className="flex">
+                                      {[1, 2, 3, 4, 5].map((star) => (
+                                        <svg 
+                                          key={star} 
+                                          className={`w-4 h-4 ${star <= Math.round(shop.rating) ? 'text-yellow-400' : 'text-gray-600'}`} 
+                                          fill="currentColor" 
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                      ))}
+                                    </div>
+                                    <span className="ml-2 text-sm text-gray-400">
+                                      {shop.rating.toFixed(1)} 
+                                      <span className="ml-1 text-gray-500">
+                                        ({shop.reviewCount} {shop.reviewCount === 1 ? 'review' : 'reviews'})
+                                      </span>
+                                    </span>
+                                  </>
+                                ) : (
+                                  <div className="flex items-center">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-300 border border-blue-800/50">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                      </svg>
+                                      New Shop
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* View button - simplified */}
+                              <div className="ml-auto">
+                                <span className="inline-flex items-center text-xs text-blue-400">
+                                  View shop
+                                  <svg 
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    className="h-3.5 w-3.5 ml-1" 
+                                    fill="none" 
+                                    viewBox="0 0 24 24" 
+                                    stroke="currentColor"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
                   ))}
                 </div>
               )}
             </>
           )}
 
-          {/* View All Button - improved touch target */}
+          {/* View All Button - simplified design */}
           {!searchResults && !loading && shops.length > 0 && (
-            <div className="text-center mt-8 sm:mt-12">
+            <div className="text-center mt-12 sm:mt-14">
               <Link 
                 href="/browse" 
-                className="px-4 py-3 sm:py-2 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm rounded-lg hover:border-primary/50 transition-colors inline-flex items-center justify-center"
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg shadow-lg border border-gray-700 transition-colors duration-300 inline-flex items-center justify-center"
               >
-                View all rental shops <ArrowRight className="ml-2 h-4 w-4" />
+                View all rental shops 
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
           )}
