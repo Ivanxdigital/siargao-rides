@@ -285,7 +285,7 @@ const Navbar = () => {
           {/* Add mobile logo at the top of mobile menu for better branding */}
           <div className="flex justify-center mb-8">
             <motion.div 
-              className="relative w-32 h-32"
+              className="relative w-24 h-24"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
@@ -293,8 +293,8 @@ const Navbar = () => {
               <Image
                 src="/images/Vertical Logo Without Outline.png" 
                 alt="Siargao Rides Logo"
-                width={128}
-                height={128}
+                width={96}
+                height={96}
                 className="object-contain"
               />
             </motion.div>
