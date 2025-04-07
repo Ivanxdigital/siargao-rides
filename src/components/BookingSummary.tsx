@@ -199,7 +199,25 @@ export default function BookingSummary({
       {/* ID deposit info */}
       <div className="mt-6 p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-md text-xs">
         <p className="text-yellow-400 font-medium mb-1">Deposit Required</p>
-        <p className="text-white/80">A valid ID will be required as a deposit when picking up the {vehicle ? vehicle.vehicle_type : 'bike'}.</p>
+        <p className="text-white/80">
+          {shop.requires_id_deposit && shop.requires_cash_deposit ? (
+            <>
+              A valid ID and a cash deposit of ₱{shop.cash_deposit_amount} will be required when picking up the {vehicle ? vehicle.vehicle_type : 'bike'}.
+            </>
+          ) : shop.requires_id_deposit ? (
+            <>
+              A valid ID will be required as a deposit when picking up the {vehicle ? vehicle.vehicle_type : 'bike'}.
+            </>
+          ) : shop.requires_cash_deposit ? (
+            <>
+              A cash deposit of ₱{shop.cash_deposit_amount} will be required when picking up the {vehicle ? vehicle.vehicle_type : 'bike'}.
+            </>
+          ) : (
+            <>
+              No deposit required for this rental.
+            </>
+          )}
+        </p>
       </div>
       
       {/* Cancellation policy */}

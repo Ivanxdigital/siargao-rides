@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
-import { Star, MapPin, Phone, Mail, MessageCircle, Bike, Car, Truck, AlertTriangle } from "lucide-react"
+import { Star, MapPin, Phone, Mail, MessageCircle, Bike, Car, Truck, AlertTriangle, Edit } from "lucide-react"
 import VehicleCard from "@/components/VehicleCard"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -14,6 +14,7 @@ import { VehicleAvailabilityCalendar } from "@/components/VehicleAvailabilityCal
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog"
 import { motion } from 'framer-motion';
 import Link from "next/link"
+import { useAuth } from "@/contexts/AuthContext"
 
 // --- Animation Variants ---
 const pageVariants = {
@@ -90,6 +91,10 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType | 'all'>('all')
+  const { user } = useAuth()
+  
+  // Check if current user is the shop owner
+  const isShopOwner = user && shop && user.id === shop.owner_id
   
   // Group vehicles by type
   const motorcycles = vehicles.filter(v => v.vehicle_type === 'motorcycle')
@@ -318,7 +323,24 @@ export default function ShopPage() {
             className="flex-1 bg-black/60 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/10"
             variants={slideUpFadeIn}
           >
-            <h1 className="text-2xl md:text-4xl font-bold">{shop.name}</h1>
+            <div className="flex justify-between items-start">
+              <h1 className="text-2xl md:text-4xl font-bold">{shop.name}</h1>
+              
+              {/* Add Edit Shop button for shop owners */}
+              {isShopOwner && (
+                <Button 
+                  asChild
+                  variant="outline" 
+                  size="sm"
+                  className="border-primary/30 hover:bg-primary/10 hover:text-primary transition-all"
+                >
+                  <Link href="/dashboard/shop">
+                    <Edit size={16} className="mr-2" />
+                    Edit Shop
+                  </Link>
+                </Button>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <div className="flex items-center bg-yellow-900/20 px-2 py-1 rounded-md">
                 <Star size={18} className="text-tropical-yellow fill-tropical-yellow" />
@@ -438,7 +460,27 @@ export default function ShopPage() {
             <div>
               <h3 className="text-yellow-400 font-medium text-sm md:text-base">Important Rental Information</h3>
               <p className="text-white/90 text-xs md:text-sm mt-1">
-                Most rental shops in Siargao will request a valid ID as a deposit. These IDs are safely returned to you when you bring back the vehicle. Please be prepared to provide identification when renting.
+                {shop.requires_id_deposit && shop.requires_cash_deposit ? (
+                  <>
+                    This shop requires a valid ID and a cash deposit of ₱{shop.cash_deposit_amount} when renting vehicles. 
+                    Both will be safely returned to you when you bring back the vehicle in good condition.
+                  </>
+                ) : shop.requires_id_deposit ? (
+                  <>
+                    This shop requires a valid ID as a deposit when renting vehicles. 
+                    Your ID will be safely returned to you when you bring back the vehicle in good condition.
+                  </>
+                ) : shop.requires_cash_deposit ? (
+                  <>
+                    This shop requires a cash deposit of ₱{shop.cash_deposit_amount} when renting vehicles. 
+                    The deposit will be fully refunded when you bring back the vehicle in good condition.
+                  </>
+                ) : (
+                  <>
+                    Most rental shops in Siargao will request some form of deposit. Please check with this shop 
+                    directly about their specific requirements.
+                  </>
+                )}
               </p>
             </div>
           </div>

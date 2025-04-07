@@ -85,6 +85,9 @@ export type RentalShop = {
   location_area?: string
   offers_delivery?: boolean
   delivery_fee?: number
+  requires_id_deposit?: boolean
+  requires_cash_deposit?: boolean
+  cash_deposit_amount?: number
   created_at: string
   updated_at: string
 }

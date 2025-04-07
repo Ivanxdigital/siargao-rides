@@ -52,6 +52,9 @@ interface RentalShop {
   subscription_start_date?: string | null;
   subscription_end_date?: string | null;
   is_active?: boolean;
+  requires_id_deposit?: boolean;
+  requires_cash_deposit?: boolean;
+  cash_deposit_amount?: number;
 }
 
 // Define form data type
@@ -65,6 +68,9 @@ interface ShopFormData {
   location_area: string;
   offers_delivery: boolean;
   delivery_fee: number;
+  requires_id_deposit: boolean;
+  requires_cash_deposit: boolean;
+  cash_deposit_amount: number;
 }
 
 export default function ManageShopPage() {
@@ -82,7 +88,10 @@ export default function ManageShopPage() {
     email: "",
     location_area: "",
     offers_delivery: false,
-    delivery_fee: 0
+    delivery_fee: 0,
+    requires_id_deposit: true,
+    requires_cash_deposit: false,
+    cash_deposit_amount: 0
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -149,7 +158,10 @@ export default function ManageShopPage() {
           email: shopData.email || "",
           location_area: shopData.location_area || "",
           offers_delivery: shopData.offers_delivery || false,
-          delivery_fee: shopData.delivery_fee || 0
+          delivery_fee: shopData.delivery_fee || 0,
+          requires_id_deposit: shopData.requires_id_deposit !== false,
+          requires_cash_deposit: shopData.requires_cash_deposit || false,
+          cash_deposit_amount: shopData.cash_deposit_amount || 0
         });
         
         // Set banner and logo preview if they exist
@@ -328,6 +340,9 @@ export default function ManageShopPage() {
         location_area: formData.location_area,
         offers_delivery: formData.offers_delivery,
         delivery_fee: formData.delivery_fee,
+        requires_id_deposit: formData.requires_id_deposit,
+        requires_cash_deposit: formData.requires_cash_deposit,
+        cash_deposit_amount: formData.requires_cash_deposit ? formData.cash_deposit_amount : 0,
         updated_at: new Date().toISOString()
       };
       
@@ -465,33 +480,39 @@ export default function ManageShopPage() {
   // Show shop management interface
   return (
     <div className="container mx-auto px-4 py-8 md:py-12 max-w-7xl">
-      <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-bold">Manage Shop</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Update your shop information and settings
           </p>
         </div>
-        {shop && !shop.is_verified && (
-          <div className="shrink-0">
+        <div className="shrink-0 flex items-center gap-3">
+          {shop && !shop.is_verified && (
             <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 flex items-center gap-2 py-1.5 px-3">
               <Clock className="h-4 w-4" />
               Pending Verification
             </Badge>
-          </div>
-        )}
+          )}
+          
+          {!isEditing && (
+            <Button
+              onClick={handleEditToggle}
+              variant="outline"
+              className="flex items-center gap-2 hover:bg-primary/5"
+            >
+              <Edit size={16} />
+              Edit Shop
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Display subscription status */}
-      <div className="mb-6">
-        {shop && <SubscriptionStatus shop={shop as ShopWithSubscription} />}
-      </div>
-      
       {/* Form/Content section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {shop && (
           <>
-            <div className="relative w-full h-60 md:h-72 rounded-xl overflow-hidden mb-8 bg-card shadow-md group">
+            <div className="relative w-full h-60 md:h-80 rounded-xl overflow-hidden mb-10 bg-card shadow-md group lg:col-span-3">
               {/* Banner image with edit option when in edit mode */}
               {(bannerPreview || shop.banner_url) && !isEditing ? (
                 <>
@@ -551,8 +572,8 @@ export default function ManageShopPage() {
                 </div>
               )}
 
-              <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 flex items-end">
-                <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden border-4 border-card bg-card shadow-lg">
+              <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 flex items-end">
+                <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden border-4 border-card bg-card shadow-lg">
                   {/* Logo image with edit option when in edit mode */}
                   {(logoPreview || shop.logo_url) && !isEditing ? (
                     <Image
@@ -604,8 +625,8 @@ export default function ManageShopPage() {
                     </div>
                   )}
                 </div>
-                <div className="ml-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg">
-                  <h2 className="text-white font-semibold text-xl">{shop.name}</h2>
+                <div className="ml-4 bg-black/50 backdrop-blur-sm p-4 rounded-lg">
+                  <h2 className="text-white font-semibold text-xl md:text-2xl">{shop.name}</h2>
                   {shop.is_verified && (
                     <span className="bg-primary/30 text-white text-xs px-2 py-0.5 rounded-full">
                       Verified
@@ -616,18 +637,20 @@ export default function ManageShopPage() {
             </div>
 
             {isEditing ? (
-              <form onSubmit={handleSubmit} className="space-y-8">
+              <form onSubmit={handleSubmit} className="space-y-10 lg:col-span-3">
                 {/* Image upload section */}
-                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
-                  <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border">Shop Images</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
+                <div className="bg-card rounded-xl border border-border p-8 shadow-sm">
+                  <h2 className="text-xl font-semibold mb-8 pb-3 border-b border-border">Shop Images</h2>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    {/* Banner Image */}
+                    <div className="space-y-4">
+                      <label className="block text-base font-medium mb-2">
                         Banner Image
                       </label>
-                      <div className="border border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
+                      <div className="border border-dashed border-border rounded-lg p-6 hover:border-primary/50 transition-colors">
                         {bannerPreview ? (
-                          <div className="relative h-40 mb-3 rounded-md overflow-hidden">
+                          <div className="relative w-full h-52 mb-4 rounded-md overflow-hidden">
                             <Image
                               src={bannerPreview || '/placeholder-banner.jpg'}
                               alt="Banner preview"
@@ -636,16 +659,16 @@ export default function ManageShopPage() {
                             />
                             <button 
                               type="button"
-                              className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                              className="absolute top-3 right-3 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-md"
                               onClick={handleBannerRemove}
                             >
-                              <X size={16} />
+                              <X size={18} />
                             </button>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center h-40 bg-muted rounded-md">
-                            <ImageIcon size={30} className="text-muted-foreground mb-2" />
-                            <p className="text-muted-foreground text-sm mb-2">No banner selected</p>
+                          <div className="flex flex-col items-center justify-center h-52 bg-muted rounded-md">
+                            <ImageIcon size={36} className="text-muted-foreground mb-3" />
+                            <p className="text-muted-foreground text-sm mb-3">No banner selected</p>
                           </div>
                         )}
                         <Button 
@@ -653,7 +676,7 @@ export default function ManageShopPage() {
                           variant="outline" 
                           size="sm" 
                           onClick={() => bannerInputRef.current?.click()}
-                          className="w-full hover:bg-primary/5"
+                          className="w-full py-2 hover:bg-primary/5"
                         >
                           <Upload size={16} className="mr-2" />
                           {bannerPreview ? "Change Banner" : "Upload Banner"}
@@ -665,20 +688,21 @@ export default function ManageShopPage() {
                           className="hidden"
                           accept="image/*"
                         />
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-muted-foreground mt-3">
                           Recommended size: 1200×400 pixels. Max 5MB.
                         </p>
                       </div>
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
+                    {/* Shop Logo */}
+                    <div className="space-y-4">
+                      <label className="block text-base font-medium mb-2">
                         Shop Logo
                       </label>
-                      <div className="border border-dashed border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
+                      <div className="border border-dashed border-border rounded-lg p-6 hover:border-primary/50 transition-colors">
                         {logoPreview ? (
-                          <div className="relative h-40 mb-3 rounded-md">
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-lg overflow-hidden shadow-md">
+                          <div className="relative h-52 mb-4 rounded-md flex items-center justify-center bg-muted/30">
+                            <div className="relative w-36 h-36 rounded-lg overflow-hidden shadow-md">
                               <Image
                                 src={logoPreview || '/placeholder-logo.jpg'}
                                 alt="Logo preview"
@@ -688,16 +712,16 @@ export default function ManageShopPage() {
                             </div>
                             <button 
                               type="button"
-                              className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                              className="absolute top-3 right-3 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-md"
                               onClick={handleLogoRemove}
                             >
-                              <X size={16} />
+                              <X size={18} />
                             </button>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center h-40 bg-muted rounded-md">
-                            <ImageIcon size={30} className="text-muted-foreground mb-2" />
-                            <p className="text-muted-foreground text-sm mb-2">No logo selected</p>
+                          <div className="flex flex-col items-center justify-center h-52 bg-muted rounded-md">
+                            <ImageIcon size={36} className="text-muted-foreground mb-3" />
+                            <p className="text-muted-foreground text-sm mb-3">No logo selected</p>
                           </div>
                         )}
                         <Button 
@@ -705,7 +729,7 @@ export default function ManageShopPage() {
                           variant="outline" 
                           size="sm" 
                           onClick={() => logoInputRef.current?.click()}
-                          className="w-full hover:bg-primary/5"
+                          className="w-full py-2 hover:bg-primary/5"
                         >
                           <Upload size={16} className="mr-2" />
                           {logoPreview ? "Change Logo" : "Upload Logo"}
@@ -717,7 +741,7 @@ export default function ManageShopPage() {
                           className="hidden"
                           accept="image/*"
                         />
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-muted-foreground mt-3">
                           Recommended size: 200×200 pixels. Max 2MB.
                         </p>
                       </div>
@@ -725,11 +749,11 @@ export default function ManageShopPage() {
                   </div>
                 </div>
                 
-                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
-                  <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border">Shop Information</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium mb-2">
+                <div className="bg-card rounded-xl border border-border p-8 shadow-sm">
+                  <h2 className="text-xl font-semibold mb-8 pb-3 border-b border-border">Shop Information</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
+                    <div className="space-y-2">
+                      <label htmlFor="name" className="block text-sm font-medium mb-1">
                         Shop Name
                       </label>
                       <input
@@ -738,13 +762,13 @@ export default function ManageShopPage() {
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         required
                       />
                     </div>
                     
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium mb-2">
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="block text-sm font-medium mb-1">
                         Email
                       </label>
                       <input
@@ -753,13 +777,13 @@ export default function ManageShopPage() {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         required
                       />
                     </div>
                     
-                    <div>
-                      <label htmlFor="phone_number" className="block text-sm font-medium mb-2">
+                    <div className="space-y-2">
+                      <label htmlFor="phone_number" className="block text-sm font-medium mb-1">
                         Phone Number
                       </label>
                       <input
@@ -768,12 +792,12 @@ export default function ManageShopPage() {
                         name="phone_number"
                         value={formData.phone_number}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                       />
                     </div>
                     
-                    <div>
-                      <label htmlFor="whatsapp" className="block text-sm font-medium mb-2">
+                    <div className="space-y-2">
+                      <label htmlFor="whatsapp" className="block text-sm font-medium mb-1">
                         WhatsApp (Optional)
                       </label>
                       <input
@@ -782,12 +806,12 @@ export default function ManageShopPage() {
                         name="whatsapp"
                         value={formData.whatsapp}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                       />
                     </div>
                     
-                    <div>
-                      <label htmlFor="address" className="block text-sm font-medium mb-2">
+                    <div className="space-y-2">
+                      <label htmlFor="address" className="block text-sm font-medium mb-1">
                         Address
                       </label>
                       <input
@@ -796,13 +820,13 @@ export default function ManageShopPage() {
                         name="address"
                         value={formData.address}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         required
                       />
                     </div>
                     
-                    <div>
-                      <label htmlFor="location_area" className="block text-sm font-medium mb-2">
+                    <div className="space-y-2">
+                      <label htmlFor="location_area" className="block text-sm font-medium mb-1">
                         Location Area
                       </label>
                       <select
@@ -810,7 +834,7 @@ export default function ManageShopPage() {
                         name="location_area"
                         value={formData.location_area}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                       >
                         <option value="">Select an area</option>
                         {siargaoLocations.map((location) => (
@@ -824,8 +848,8 @@ export default function ManageShopPage() {
                       </p>
                     </div>
                     
-                    <div className="md:col-span-2">
-                      <label htmlFor="description" className="block text-sm font-medium mb-2">
+                    <div className="md:col-span-2 space-y-2 mt-2">
+                      <label htmlFor="description" className="block text-sm font-medium mb-1">
                         Description
                       </label>
                       <textarea
@@ -833,16 +857,16 @@ export default function ManageShopPage() {
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         rows={5}
                       />
                     </div>
                     
                     {/* Add delivery options section */}
-                    <div className="md:col-span-2 mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                      <h3 className="text-lg font-medium mb-4">Delivery Options</h3>
+                    <div className="md:col-span-2 mt-8 p-8 bg-primary/5 rounded-lg border border-primary/20">
+                      <h3 className="text-lg font-medium mb-5">Delivery Options</h3>
                       
-                      <div className="flex items-center space-x-2 mb-4">
+                      <div className="flex items-center space-x-2 mb-5">
                         <input
                           type="checkbox"
                           id="offers_delivery"
@@ -857,7 +881,7 @@ export default function ManageShopPage() {
                       </div>
                       
                       {formData.offers_delivery && (
-                        <div>
+                        <div className="ml-6 mt-3">
                           <label htmlFor="delivery_fee" className="block text-sm font-medium mb-2">
                             Delivery Fee (₱)
                           </label>
@@ -869,37 +893,128 @@ export default function ManageShopPage() {
                             onChange={handleInputChange}
                             min="0"
                             step="10"
-                            className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                            className="w-full max-w-xs px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                           />
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground mt-2">
                             This is the fee you charge for delivering vehicles to the customer's accommodation.
                           </p>
                         </div>
                       )}
                     </div>
+
+                    {/* Add deposit requirement options section */}
+                    <div className="md:col-span-2 mt-2 p-8 bg-primary/5 rounded-lg border border-primary/20">
+                      <h3 className="text-lg font-medium mb-5">Deposit Requirements</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2 p-4 border border-white/10 rounded-md hover:bg-white/5">
+                            <input
+                              type="checkbox"
+                              id="requires_id_deposit"
+                              name="requires_id_deposit"
+                              checked={formData.requires_id_deposit}
+                              onChange={handleInputChange}
+                              className="h-4 w-4"
+                            />
+                            <label htmlFor="requires_id_deposit" className="text-sm font-medium">
+                              Require ID deposit
+                            </label>
+                          </div>
+                          
+                          <p className="text-xs text-muted-foreground px-3">
+                            Customers will need to provide a valid ID which is returned after the rental period.
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2 p-4 border border-white/10 rounded-md hover:bg-white/5">
+                            <input
+                              type="checkbox"
+                              id="requires_cash_deposit"
+                              name="requires_cash_deposit"
+                              checked={formData.requires_cash_deposit}
+                              onChange={handleInputChange}
+                              className="h-4 w-4"
+                            />
+                            <label htmlFor="requires_cash_deposit" className="text-sm font-medium">
+                              Require cash deposit
+                            </label>
+                          </div>
+                          
+                          {formData.requires_cash_deposit && (
+                            <div className="px-3">
+                              <label htmlFor="cash_deposit_amount" className="block text-sm font-medium mb-2">
+                                Cash Deposit Amount (₱)
+                              </label>
+                              <input
+                                type="number"
+                                id="cash_deposit_amount"
+                                name="cash_deposit_amount"
+                                value={formData.cash_deposit_amount}
+                                onChange={handleInputChange}
+                                min="0"
+                                step="100"
+                                className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                              />
+                              <p className="text-xs text-muted-foreground mt-2">
+                                This is the amount of cash deposit required for renting your vehicles.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-6 p-5 bg-white/5 rounded-md border border-white/10">
+                        <p className="text-sm text-muted-foreground">
+                          The deposit requirements will be clearly displayed to customers on your shop page and 
+                          during the booking process.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  
+
                   {/* Upload progress indicator with animation */}
                   {isUploading && (
-                    <div className="mt-6 bg-primary/5 rounded-lg p-4 border border-primary/20">
-                      <label className="block text-sm font-medium mb-2">Upload Progress</label>
-                      <div className="w-full bg-muted rounded-full h-3">
+                    <div className="mt-8 bg-primary/5 rounded-lg p-5 border border-primary/20">
+                      <label className="block text-sm font-medium mb-3">Upload Progress</label>
+                      <div className="w-full bg-muted rounded-full h-4">
                         <div 
-                          className="bg-primary h-3 rounded-full transition-all duration-300" 
+                          className="bg-primary h-4 rounded-full transition-all duration-300" 
                           style={{ width: `${uploadProgress}%` }}
                         ></div>
                       </div>
-                      <p className="text-xs text-primary mt-2">{uploadProgress}% complete</p>
+                      <p className="text-sm text-primary mt-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="17 8 12 3 7 8"></polyline>
+                          <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        {uploadProgress}% complete
+                      </p>
                     </div>
                   )}
                   
-                  <div className="mt-8 flex justify-end">
+                  <div className="mt-10 flex justify-end space-x-4 border-t border-border pt-6">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleEditToggle}
+                      className="px-5"
+                    >
+                      Cancel
+                    </Button>
                     <Button
                       type="submit"
                       disabled={isSaving}
-                      className="flex items-center shadow-md hover:shadow-lg transition-all"
+                      className="flex items-center shadow-md hover:shadow-lg transition-all px-6"
                     >
-                      {isSaving ? "Saving..." : (
+                      {isSaving ? (
+                        <>
+                          <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
                         <>
                           <Save size={16} className="mr-2" />
                           Save Changes
@@ -910,21 +1025,32 @@ export default function ManageShopPage() {
                 </div>
               </form>
             ) : (
-              <div className="md:col-span-2 space-y-6">
+              <div className="lg:col-span-3 space-y-10">
                 {/* Shop Info */}
-                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm hover:shadow-md transition-shadow">
-                  <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border flex items-center">
-                    <MapPin size={18} className="mr-2" />
-                    Shop Information
-                  </h2>
+                <div className="bg-card rounded-xl border border-border p-8 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-center mb-6 pb-2 border-b border-border">
+                    <h2 className="text-xl font-semibold flex items-center">
+                      <MapPin size={18} className="mr-2" />
+                      Shop Information
+                    </h2>
+                    <Button
+                      onClick={handleEditToggle}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 hover:bg-primary/5"
+                    >
+                      <Edit size={14} />
+                      Edit
+                    </Button>
+                  </div>
                   
                   {shop.description && (
-                    <div className="mb-6 bg-muted/30 p-4 rounded-lg border-l-4 border-primary/30">
+                    <div className="mb-8 bg-muted/30 p-5 rounded-lg border-l-4 border-primary/30">
                       <p className="text-foreground italic">{shop.description}</p>
                     </div>
                   )}
                   
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div className="flex items-start">
                       <MapPin size={20} className="mr-3 mt-0.5 text-primary shrink-0" />
                       <div>
@@ -954,20 +1080,100 @@ export default function ManageShopPage() {
                 </div>
                 
                 {/* Vehicle Stats */}
-                <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-card rounded-xl border border-border p-8 shadow-sm hover:shadow-md transition-shadow">
                   <h2 className="text-xl font-semibold mb-6 pb-2 border-b border-border">Inventory Summary</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-primary/5 rounded-lg p-5 text-center hover:shadow-md transition-shadow">
-                      <div className="text-3xl font-bold mb-1 text-primary">{vehicleStats.totalVehicles}</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="bg-primary/5 rounded-lg p-6 text-center hover:shadow-md transition-shadow">
+                      <div className="text-3xl font-bold mb-2 text-primary">{vehicleStats.totalVehicles}</div>
                       <div className="text-sm text-muted-foreground">Total Vehicles</div>
                     </div>
-                    <div className="bg-green-500/5 rounded-lg p-5 text-center hover:shadow-md transition-shadow">
-                      <div className="text-3xl font-bold mb-1 text-green-500">{vehicleStats.availableVehicles}</div>
+                    <div className="bg-green-500/5 rounded-lg p-6 text-center hover:shadow-md transition-shadow">
+                      <div className="text-3xl font-bold mb-2 text-green-500">{vehicleStats.availableVehicles}</div>
                       <div className="text-sm text-muted-foreground">Available</div>
                     </div>
-                    <div className="bg-red-500/5 rounded-lg p-5 text-center hover:shadow-md transition-shadow">
-                      <div className="text-3xl font-bold mb-1 text-red-500">{vehicleStats.rentedVehicles}</div>
+                    <div className="bg-red-500/5 rounded-lg p-6 text-center hover:shadow-md transition-shadow">
+                      <div className="text-3xl font-bold mb-2 text-red-500">{vehicleStats.rentedVehicles}</div>
                       <div className="text-sm text-muted-foreground">Rented</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Deposit Requirements */}
+                <div className="bg-card rounded-xl border border-border p-8 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-center mb-6 pb-2 border-b border-border">
+                    <h2 className="text-xl font-semibold flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      Deposit Requirements
+                    </h2>
+                    <Button
+                      onClick={handleEditToggle}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 hover:bg-primary/5"
+                    >
+                      <Edit size={14} />
+                      Edit
+                    </Button>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* ID Deposit */}
+                    <div className="flex items-start space-x-3">
+                      <div className={`w-5 h-5 flex-shrink-0 rounded-full ${shop.requires_id_deposit ? 'bg-green-500' : 'bg-red-500'} flex items-center justify-center mt-0.5`}>
+                        {shop.requires_id_deposit ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-foreground">ID Deposit</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {shop.requires_id_deposit 
+                            ? "Customers must provide a valid ID as deposit." 
+                            : "ID deposit is not required."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Cash Deposit */}
+                    <div className="flex items-start space-x-3">
+                      <div className={`w-5 h-5 flex-shrink-0 rounded-full ${shop.requires_cash_deposit ? 'bg-green-500' : 'bg-red-500'} flex items-center justify-center mt-0.5`}>
+                        {shop.requires_cash_deposit ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-foreground">Cash Deposit</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {shop.requires_cash_deposit 
+                            ? `Customers must provide a cash deposit of ₱${shop.cash_deposit_amount}.` 
+                            : "Cash deposit is not required."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Additional Info */}
+                    <div className="mt-6 p-5 bg-muted/30 rounded-lg border border-primary/10">
+                      <p className="text-sm text-muted-foreground">
+                        These deposit requirements will be shown to customers when booking or viewing your shop page.
+                      </p>
                     </div>
                   </div>
                 </div>

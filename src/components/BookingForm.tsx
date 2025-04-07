@@ -542,7 +542,16 @@ export default function BookingForm({
             className="mt-1"
           />
           <span className="text-sm text-white/70">
-            I agree to the <TermsAndConditions><span className="text-primary hover:underline cursor-pointer">terms and conditions</span></TermsAndConditions> and understand that I will need to provide a valid ID as deposit when collecting the vehicle.
+            I agree to the <TermsAndConditions><span className="text-primary hover:underline cursor-pointer">terms and conditions</span></TermsAndConditions> and understand that 
+            {shop.requires_id_deposit && shop.requires_cash_deposit ? (
+              ` I will need to provide a valid ID and a cash deposit of ₱${shop.cash_deposit_amount} when collecting the vehicle.`
+            ) : shop.requires_id_deposit ? (
+              " I will need to provide a valid ID as deposit when collecting the vehicle."
+            ) : shop.requires_cash_deposit ? (
+              ` I will need to provide a cash deposit of ₱${shop.cash_deposit_amount} when collecting the vehicle.`
+            ) : (
+              " no deposit is required for this rental."
+            )}
           </span>
         </label>
       </div>
