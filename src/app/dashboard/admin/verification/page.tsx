@@ -10,7 +10,7 @@ import { CheckCircle, XCircle, ExternalLink, AlertCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { VerifiableRentalShop } from "../types";
 import Image from "next/image";
-import { Dialog, DialogContent } from "@/components/ui/Dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/Dialog";
 
 // Add this type definition before the component function
 type RentalShopWithUser = {
@@ -48,36 +48,59 @@ const extractDocuments = (description: string) => {
   
   console.log('Extracting documents from:', description);
   
-  // Extract ID URL - more robust pattern with lookahead to handle URLs that might have spaces or end with quotes
-  const idPattern = /ID:(https:\/\/[^\s"]+)(?:\s|"|$)/;
-  const idMatch = description.match(idPattern);
-  if (idMatch) {
-    const url = idMatch[1].trim();
-    // Only add if it looks like a valid URL
-    if (url.startsWith('https://')) {
-      documents.push({ type: 'id', url });
-      console.log('Found ID document:', url);
+  try {
+    // Extract the Documents section for easier processing
+    const documentsSection = description.split('Documents:')[1] || '';
+    console.log('Documents section:', documentsSection);
+    
+    // Extract ID URL with improved pattern matching
+    // Look for ID: followed by a URL until space, end of string, or other marker
+    const idPattern = /ID:(https:\/\/[^\s"]+)(?:\s|"|$)/;
+    const idMatch = documentsSection.match(idPattern);
+    
+    if (idMatch) {
+      const url = idMatch[1].trim();
+      console.log('Raw ID URL found:', url);
+      
+      // Clean the URL by removing any trailing punctuation or whitespace
+      const cleanedUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]$/g, "").trim();
+      console.log('Cleaned ID URL:', cleanedUrl);
+      
+      // Only add if it looks like a valid URL
+      if (cleanedUrl.startsWith('https://')) {
+        documents.push({ type: 'id', url: cleanedUrl });
+        console.log('Added ID document:', cleanedUrl);
+      } else {
+        console.log('Found ID match but URL is invalid:', cleanedUrl);
+      }
     } else {
-      console.log('Found ID match but URL is invalid:', url);
+      console.log('No ID document found with pattern:', idPattern);
     }
-  } else {
-    console.log('No ID document found with pattern:', idPattern);
-  }
-  
-  // Extract Permit URL - similar robust pattern for business permits
-  const permitPattern = /Permit:(https:\/\/[^\s"]+)(?:\s|"|$)/;
-  const permitMatch = description.match(permitPattern);
-  if (permitMatch) {
-    const url = permitMatch[1].trim();
-    // Only add if it looks like a valid URL
-    if (url.startsWith('https://')) {
-      documents.push({ type: 'permit', url });
-      console.log('Found Permit document:', url);
+    
+    // Extract Permit URL with improved pattern matching
+    const permitPattern = /Permit:(https:\/\/[^\s"]+)(?:\s|"|$)/;
+    const permitMatch = documentsSection.match(permitPattern);
+    
+    if (permitMatch) {
+      const url = permitMatch[1].trim();
+      console.log('Raw Permit URL found:', url);
+      
+      // Clean the URL by removing any trailing punctuation or whitespace
+      const cleanedUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]$/g, "").trim();
+      console.log('Cleaned Permit URL:', cleanedUrl);
+      
+      // Only add if it looks like a valid URL
+      if (cleanedUrl.startsWith('https://')) {
+        documents.push({ type: 'permit', url: cleanedUrl });
+        console.log('Added Permit document:', cleanedUrl);
+      } else {
+        console.log('Found Permit match but URL is invalid:', cleanedUrl);
+      }
     } else {
-      console.log('Found Permit match but URL is invalid:', url);
+      console.log('No Permit document found with pattern:', permitPattern);
     }
-  } else {
-    console.log('No Permit document found with pattern:', permitPattern);
+  } catch (error) {
+    console.error('Error extracting documents:', error);
   }
   
   console.log('Extracted documents:', documents);
@@ -100,8 +123,16 @@ const extractReferral = (description: string): string | null => {
 
 // Add this helper function to detect file type
 const getFileType = (url: string): 'image' | 'pdf' | 'unknown' => {
+  if (!url) return 'unknown';
+  
+  // Log the URL to help with debugging
+  console.log('Detecting file type for URL:', url);
+  
   const lowercaseUrl = url.toLowerCase();
+  
+  // Check file extension first
   if (lowercaseUrl.endsWith('.pdf')) {
+    console.log('Detected PDF by extension');
     return 'pdf';
   } else if (
     lowercaseUrl.endsWith('.jpg') || 
@@ -110,32 +141,123 @@ const getFileType = (url: string): 'image' | 'pdf' | 'unknown' => {
     lowercaseUrl.endsWith('.gif') || 
     lowercaseUrl.endsWith('.webp')
   ) {
+    console.log('Detected image by extension');
     return 'image';
   }
   
-  // If no extension, try to guess from URL
-  if (lowercaseUrl.includes('pdf')) {
+  // If no extension, try to guess from URL content
+  if (lowercaseUrl.includes('/pdf') || lowercaseUrl.includes('application/pdf')) {
+    console.log('Detected PDF by URL content');
     return 'pdf';
   } else if (
-    lowercaseUrl.includes('image') || 
+    lowercaseUrl.includes('/image') || 
     lowercaseUrl.includes('jpg') || 
     lowercaseUrl.includes('jpeg') || 
-    lowercaseUrl.includes('png')
+    lowercaseUrl.includes('png') ||
+    lowercaseUrl.includes('.supabase.co') // Most Supabase storage URLs are images in this app
   ) {
+    console.log('Detected image by URL content');
     return 'image';
   }
   
-  return 'unknown';
+  // Default to image since that's most common in this application
+  console.log('Could not detect file type, defaulting to image');
+  return 'image';
 };
 
 // Update the DocumentPreview component
 const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Make sure we have a valid URL before proceeding
+  if (!url || !url.startsWith('http')) {
+    console.error('Invalid URL provided to DocumentPreview:', url);
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+        <p className="text-sm text-red-500">Invalid document URL</p>
+      </div>
+    );
+  }
   
   // Clean the URL by removing any trailing punctuation or whitespace
-  const cleanUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+  const cleanUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()"]$/g, "").trim();
+  console.log('DocumentPreview using URL:', cleanUrl);
+  
   const fileType = getFileType(cleanUrl);
+  
+  // Extract file path and name from URL
+  const getFilePath = (url: string) => {
+    const match = url.match(/\/storage\/v1\/object\/public\/shop-documents\/(.+)/);
+    if (!match || !match[1]) return null;
+    return match[1];
+  };
+  
+  const filePath = getFilePath(cleanUrl);
+  const fileName = filePath ? filePath.split('/').pop() || 'document' : 'document';
+  
+  // Function to open document in a new window
+  const downloadAndOpenFile = async () => {
+    setIsLoading(true);
+    
+    try {
+      if (!filePath) {
+        throw new Error('Could not extract file path from URL');
+      }
+      
+      console.log('Downloading file:', filePath);
+      
+      // Try to get the file from Supabase
+      const { data, error } = await supabase
+        .storage
+        .from('shop-documents')
+        .download(filePath);
+      
+      if (error) {
+        console.error('Error downloading file from Supabase:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('No data received from Supabase');
+      }
+      
+      // Create a blob URL and trigger download
+      const blobUrl = URL.createObjectURL(data);
+      
+      // Create a link and trigger the download
+      const downloadLink = document.createElement('a');
+      downloadLink.href = blobUrl;
+      downloadLink.download = fileName;
+      downloadLink.target = '_blank';
+      
+      // Append to the body, click it, and remove it
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Clean up
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    } catch (error) {
+      console.error('Error accessing document:', error);
+      setLoadError(true);
+      
+      // Fallback to direct URL as a last resort
+      window.open(url, '_blank');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Function to view document in dialog
+  const handleOpenPreview = () => {
+    console.log('Opening preview for:', type, cleanUrl);
+    setIsPreviewOpen(true);
+    
+    // Reset error state when opening
+    setLoadError(false);
+  };
   
   return (
     <>
@@ -173,7 +295,7 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
                 </svg>
               )}
             </div>
-            <div>
+            <div className="flex-1">
               <h4 className="text-sm font-medium">
                 {type === 'id' ? 'Government ID' : 'Business Permit'}
                 {fileType === 'pdf' && <span className="ml-2 text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">PDF</span>}
@@ -181,36 +303,47 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
               </h4>
               <div className="flex items-center gap-2 mt-1">
                 <button 
-                  onClick={() => setIsPreviewOpen(true)}
-                  className="text-xs text-primary hover:underline flex items-center gap-1 group"
+                  onClick={handleOpenPreview}
+                  className="text-xs text-primary hover:underline flex items-center gap-1 group px-2 py-1 rounded hover:bg-primary/10 relative z-10"
                 >
                   {fileType === 'pdf' ? 'View PDF' : 'View Image'}
                   <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
                 </button>
-                <a 
-                  href={cleanUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-xs text-muted-foreground hover:text-primary hover:underline flex items-center gap-1 group"
-                  download={fileType === 'pdf'}
+                <button 
+                  onClick={downloadAndOpenFile}
+                  className="text-xs text-muted-foreground hover:text-primary hover:underline flex items-center gap-1 group px-2 py-1 rounded hover:bg-primary/10 relative z-10"
+                  disabled={isLoading}
                 >
-                  {fileType === 'pdf' ? 'Download PDF' : 'Open in New Tab'}
-                  <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
-                </a>
+                  {isLoading ? (
+                    <>
+                      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></span>
+                      <span className="ml-1">Loading...</span>
+                    </>
+                  ) : (
+                    <>
+                      {fileType === 'pdf' ? 'Download PDF' : 'Open in New Tab'}
+                      <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
+                    </>
+                  )}
+                </button>
               </div>
               {loadError && (
                 <p className="text-xs text-red-500 mt-1">
-                  Document preview unavailable. Try opening in new tab.
+                  Could not access document. This may be due to insufficient permissions.
                 </p>
               )}
             </div>
           </div>
         </div>
-        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300" />
       </div>
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
+          {/* Adding a DialogTitle for accessibility - visually hidden */}
+          <DialogTitle className="sr-only">
+            {type === 'id' ? 'Government ID' : 'Business Permit'} Document Preview
+          </DialogTitle>
+          
           {loadError ? (
             <div className="flex flex-col items-center justify-center h-[80vh] p-6 text-center">
               <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
@@ -218,54 +351,42 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
               <p className="text-muted-foreground mb-4">
                 The document could not be loaded. This might be due to the file being removed or insufficient permissions.
               </p>
-              <a 
-                href={cleanUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-primary hover:underline flex items-center gap-1"
-                download={fileType === 'pdf'}
+              <button 
+                onClick={downloadAndOpenFile}
+                className="text-primary hover:underline flex items-center gap-1 px-4 py-2 rounded-md border border-primary/20 hover:bg-primary/5"
               >
-                {fileType === 'pdf' ? 'Download PDF file' : 'Open image in new tab'}
+                Open in New Tab
                 <ExternalLink size={16} />
-              </a>
+              </button>
             </div>
           ) : fileType === 'pdf' ? (
             <div className="w-full h-[80vh] bg-gray-100">
-              <object
-                data={cleanUrl}
-                type="application/pdf"
-                width="100%"
-                height="100%"
-                onError={() => setLoadError(true)}
-                className="w-full h-full"
-              >
-                <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                  <p className="text-muted-foreground mb-4">
-                    Your browser does not support embedded PDF viewing.
-                  </p>
-                  <a 
-                    href={cleanUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline flex items-center gap-1"
-                    download
-                  >
-                    Download PDF file
-                    <ExternalLink size={16} />
-                  </a>
-                </div>
-              </object>
+              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                <p className="text-muted-foreground mb-4">
+                  PDF preview is currently unavailable.
+                </p>
+                <button
+                  onClick={downloadAndOpenFile}
+                  className="text-primary hover:underline flex items-center gap-1 px-4 py-2 rounded-md border border-primary/20 hover:bg-primary/5"
+                >
+                  Open PDF in New Tab
+                  <ExternalLink size={16} />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="relative w-full h-[80vh]">
-              <Image
-                src={cleanUrl}
-                alt={`${type === 'id' ? 'Government ID' : 'Business Permit'} Document`}
-                fill
-                className="object-contain"
-                unoptimized // Since we're loading from Supabase storage
-                onError={() => setLoadError(true)}
-              />
+              {/* Display image with direct download approach */}
+              <div className="flex items-center justify-center h-full bg-black/50">
+                {/* Using the download approach to display image */}
+                <button
+                  onClick={downloadAndOpenFile}
+                  className="flex flex-col items-center justify-center p-6 rounded-lg bg-black/20 hover:bg-black/30 transition-colors"
+                >
+                  <ExternalLink className="h-10 w-10 text-white/70 mb-3" />
+                  <span className="text-white/80">Click to view/download document</span>
+                </button>
+              </div>
             </div>
           )}
         </DialogContent>

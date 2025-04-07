@@ -370,26 +370,6 @@ export default function RegisterShopPage() {
     if (showRegistrationForm && !authLoading) {
       if (!isAuthenticated) {
         router.push("/sign-in?callback=/register")
-      } else if (!user?.email_confirmed_at) {
-        console.log("Email verification status:", {
-          email: user?.email,
-          email_confirmed_at: user?.email_confirmed_at,
-          userMetadata: user?.user_metadata,
-          appMetadata: user?.app_metadata,
-          userObject: user
-        });
-        
-        // Check for email verification in various places it might be stored
-        const isEmailVerified = !!user?.email_confirmed_at || 
-                               !!user?.app_metadata?.email_confirmed_at ||
-                               !!user?.user_metadata?.email_confirmed_at ||
-                               user?.app_metadata?.provider !== 'email' || // OAuth providers are pre-verified
-                               // @ts-ignore - property might exist in the runtime object but not in TypeScript type
-                               user?.email_verified === true;
-        
-        if (!isEmailVerified) {
-          setError("Please verify your email address before registering a shop. Check your inbox for the verification link.")
-        }
       }
     }
   }, [showRegistrationForm, authLoading, isAuthenticated, router, user])
@@ -420,11 +400,6 @@ export default function RegisterShopPage() {
       return
     }
 
-    if (!user.email_confirmed_at) {
-      setError("Please verify your email address before registering a shop")
-      return
-    }
-    
     // Check if user already has a shop
     if (existingShop) {
       setError("You already have a registered shop. Only one shop is allowed per account.")
