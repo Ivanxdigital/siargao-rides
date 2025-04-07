@@ -593,7 +593,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             >
               <button
                 type="submit"
-                className="w-full py-3 font-medium bg-primary hover:bg-primary/90 active:bg-primary/80 text-white rounded-lg transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full py-3 font-medium bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white rounded-lg transition-all duration-300 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed border border-white/10 shadow-lg hover:shadow-primary/10 group"
                 disabled={isSearching || !location || !startDate || !endDate}
               >
                 {isSearching ? (
@@ -603,8 +603,8 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   </>
                 ) : (
                   <>
-                    <Search size={16} className="mr-2" />
-                    <span>Find Your Ride</span>
+                    <Search size={16} className="mr-2 group-hover:scale-110 transition-transform duration-300" />
+                    <span className="group-hover:translate-x-0.5 transition-transform duration-300">Find Your Ride</span>
                   </>
                 )}
               </button>
