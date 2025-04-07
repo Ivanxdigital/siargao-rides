@@ -292,7 +292,7 @@ export default function Home() {
         <div className="container mx-auto relative z-20 h-full flex flex-col justify-center py-8 pb-16 sm:py-12 sm:pb-24 px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 hero-heading-animate">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-400 to-blue-500 animate-gradient-x leading-relaxed drop-shadow-xl filter-shadow-strong tracking-wide">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-blue-200 to-white animate-gradient-x leading-relaxed drop-shadow-xl filter-shadow-strong tracking-wide">
                 Because Walking in Flip-Flops Only Gets You So Far
               </span>
             </h1>
@@ -577,9 +577,9 @@ export default function Home() {
         }
         
         .filter-shadow-strong {
-          filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.4)) 
-                 drop-shadow(0 0 20px rgba(139, 92, 246, 0.2));
-          text-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+          filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4)) 
+                 drop-shadow(0 0 20px rgba(56, 189, 248, 0.2));
+          text-shadow: 0 0 20px rgba(186, 230, 253, 0.3);
         }
       `}</style>
     </div>
