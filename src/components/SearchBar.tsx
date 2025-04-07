@@ -58,25 +58,52 @@ const budgetOptions = [
   { label: "Premium (₱1000+)", value: 1500 }
 ]
 
-// Animation variants - simplified
+// Animation variants - enhanced for smoother transitions
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } }
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.3,
+      ease: [0.4, 0, 0.2, 1] // Improved easing curve
+    } 
+  }
 }
 
 const dropdownVariants = {
-  hidden: { opacity: 0, scaleY: 0, transformOrigin: 'top' },
+  hidden: { 
+    opacity: 0, 
+    scaleY: 0.95,
+    y: -5,
+    transformOrigin: 'top',
+    transition: {
+      duration: 0.2,
+      ease: [0.4, 0, 1, 1]
+    }
+  },
   visible: { 
     opacity: 1, 
-    scaleY: 1, 
+    scaleY: 1,
+    y: 0,
     transformOrigin: 'top',
-    transition: { duration: 0.15 }
+    transition: { 
+      type: "spring",
+      stiffness: 300,
+      damping: 30,
+      mass: 0.8,
+      duration: 0.3
+    }
   },
   exit: { 
     opacity: 0, 
-    scaleY: 0, 
+    scaleY: 0.95,
+    y: -5,
     transformOrigin: 'top',
-    transition: { duration: 0.1 } 
+    transition: { 
+      duration: 0.2,
+      ease: [0.4, 0, 1, 1]
+    } 
   }
 }
 
@@ -299,19 +326,22 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   </button>
                 )}
                 
-                {/* Locations Dropdown */}
+                {/* Locations Dropdown - Enhanced animations */}
                 <AnimatePresence>
                   {showLocations && (
                     <motion.div 
                       ref={locationsDropdownRef}
-                      className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-[9999] shadow-xl overflow-auto"
+                      className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-[9999] shadow-xl overflow-auto transition-[backdrop-filter] duration-200"
                       style={{ 
-                        maxHeight: '60vh', 
+                        maxHeight: '60vh',
+                        willChange: 'transform, opacity',
+                        touchAction: 'pan-y' // Improved touch handling
                       }}
                       variants={dropdownVariants}
                       initial="hidden"
                       animate="visible"
                       exit="exit"
+                      layout // Smooth layout transitions
                     >
                       {filteredLocations.length > 0 ? (
                         filteredLocations.map((loc) => (
@@ -386,15 +416,20 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   <ChevronDown size={16} className={`text-white/60 transition-transform duration-200 ${showVehicleOptions ? 'rotate-180' : ''}`} />
                 </button>
                 
-                {/* Vehicle Options Dropdown */}
+                {/* Vehicle Options Dropdown - Enhanced animations */}
                 <AnimatePresence>
                   {showVehicleOptions && (
                     <motion.div 
-                      className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-50 overflow-hidden"
+                      className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-50 overflow-hidden transition-[backdrop-filter] duration-200"
+                      style={{
+                        willChange: 'transform, opacity',
+                        touchAction: 'pan-y'
+                      }}
                       variants={dropdownVariants}
                       initial="hidden"
                       animate="visible"
                       exit="exit"
+                      layout
                     >
                       {vehicleOptions.map((option) => (
                         <div 
@@ -549,15 +584,20 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     <ChevronDown size={16} className={`text-white/60 transition-transform duration-200 ${showBudgetOptions ? 'rotate-180' : ''}`} />
                   </button>
                   
-                  {/* Budget Options Dropdown */}
+                  {/* Budget Options Dropdown - Enhanced animations */}
                   <AnimatePresence>
                     {showBudgetOptions && (
                       <motion.div 
-                        className="absolute top-full left-0 right-0 mt-1 bg-black/90 border border-white/10 rounded-lg z-50 overflow-hidden"
+                        className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-lg z-50 overflow-hidden transition-[backdrop-filter] duration-200"
+                        style={{
+                          willChange: 'transform, opacity',
+                          touchAction: 'pan-y'
+                        }}
                         variants={dropdownVariants}
                         initial="hidden"
                         animate="visible"
                         exit="exit"
+                        layout
                       >
                         {budgetOptions.map((option) => (
                           <div 

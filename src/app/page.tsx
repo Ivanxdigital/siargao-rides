@@ -308,6 +308,18 @@ export default function Home() {
             <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
             Explore Siargao with Ease – Rent Motorbikes, Cars, or TukTuks with Flexible Pickup, Local Rates, and Total Freedom.
             </p>
+            {/* Credits - Only visible on desktop */}
+            <p className="hidden md:block text-xs sm:text-sm text-white/50 mt-2 font-light">
+              Video by{' '}
+              <a 
+                href="https://www.youtube.com/@ourawesomeplanet" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-white/70 transition-colors underline underline-offset-2 decoration-white/30"
+              >
+                Our Awesome Planet
+              </a>
+            </p>
           </div>
 
           {/* Search Bar Container - better mobile spacing */}
