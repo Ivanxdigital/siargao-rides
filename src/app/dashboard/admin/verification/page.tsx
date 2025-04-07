@@ -503,11 +503,21 @@ export default function ShopVerificationPage() {
         if (shop) {
           setPendingShops(pendingShops.filter(s => s.id !== shopId));
           setVerifiedShops([{ ...shop, is_verified: true }, ...verifiedShops]);
+          
+          // Update status message to include information about the email
+          let successMessage = `Shop "${shop.name}" has been approved.`;
+          
+          if (responseData.user_role_updated) {
+            successMessage += " Owner now has shop_owner role.";
+          }
+          
+          if (responseData.email_sent) {
+            successMessage += " A verification email has been sent to the shop owner.";
+          }
+          
           setStatusMessage({ 
             type: 'success', 
-            text: responseData.user_role_updated 
-              ? `Shop "${shop.name}" has been approved and owner now has shop_owner role.` 
-              : `Shop "${shop.name}" has been approved.`
+            text: successMessage
           });
         }
       }

@@ -145,10 +145,33 @@ export async function PATCH(request: Request) {
       // We'll continue despite this error since the shop is already approved
     }
 
+    // Send verification email to shop owner
+    try {
+      const emailResponse = await fetch(new URL('/api/shops/send-verification-email', request.url).toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          shopId
+        })
+      });
+      
+      if (!emailResponse.ok) {
+        console.error('Error sending verification email:', await emailResponse.text());
+      } else {
+        console.log('Verification email sent successfully to shop owner');
+      }
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      // Continue execution even if email fails - the shop is still approved
+    }
+
     return NextResponse.json({
       ...data,
       user_role_updated: !userUpdateError && !authUpdateError,
-      message: 'Shop approved and owner role updated to shop_owner'
+      message: 'Shop approved and owner role updated to shop_owner',
+      email_sent: true
     });
   } catch (error) {
     console.error('Unexpected error in PATCH:', error);
