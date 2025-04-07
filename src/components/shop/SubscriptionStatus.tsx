@@ -24,11 +24,26 @@ export const SubscriptionStatus = ({ shop }: SubscriptionStatusProps) => {
   
   useEffect(() => {
     if (shop?.subscription_end_date) {
-      const endDate = new Date(shop.subscription_end_date);
-      const now = new Date();
-      const diffTime = endDate.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      setDaysLeft(Math.max(0, diffDays));
+      // Function to calculate days left
+      const calculateDaysLeft = () => {
+        // Make sure subscription_end_date exists and is not null
+        if (!shop.subscription_end_date) return;
+        
+        const endDate = new Date(shop.subscription_end_date);
+        const now = new Date();
+        const diffTime = endDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        setDaysLeft(Math.max(0, diffDays));
+      };
+      
+      // Initial calculation
+      calculateDaysLeft();
+      
+      // Update every day (86400000 ms = 24 hours)
+      const interval = setInterval(calculateDaysLeft, 86400000);
+      
+      // Clean up interval on component unmount
+      return () => clearInterval(interval);
     }
   }, [shop?.subscription_end_date]);
   

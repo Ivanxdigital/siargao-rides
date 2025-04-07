@@ -128,7 +128,7 @@ export default function DashboardPage() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shopData, setShopData] = useState<ShopWithSubscription | null>(null);
-  const [isSubscriptionCollapsed, setIsSubscriptionCollapsed] = useState(false);
+  const [isSubscriptionCollapsed, setIsSubscriptionCollapsed] = useState(true);
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {

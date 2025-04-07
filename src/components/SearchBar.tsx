@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Search, Calendar, Bike, Car, Truck, Sparkles, MapPin, X } from "lucide-react"
+import { Search, Calendar, MapPin, X, ChevronDown, Check } from "lucide-react"
 import { Button } from "./ui/Button"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { motion, AnimatePresence } from "framer-motion"
@@ -20,15 +20,22 @@ export interface SearchParams {
   category: string
 }
 
-// Vehicle types
-const vehicleTypes: VehicleType[] = ['motorcycle', 'car', 'tuktuk'];
-
-// Categories for each vehicle type
-const vehicleCategories = {
-  motorcycle: ["Any Type", "Scooter", "Semi-automatic", "Manual", "Dirt Bike", "Electric"],
-  car: ["Any Type", "Sedan", "SUV", "Van", "Pickup", "Compact"],
-  tuktuk: ["Any Type", "Standard", "Premium", "Electric"]
-};
+// Vehicle combinations for smart selection
+const vehicleOptions = [
+  { vehicleType: 'motorcycle', category: 'scooter', label: 'Scooter', icon: 'bike' },
+  { vehicleType: 'motorcycle', category: 'semi_auto', label: 'Semi-automatic Bike', icon: 'bike' },
+  { vehicleType: 'motorcycle', category: 'dirt_bike', label: 'Dirt Bike', icon: 'bike' },
+  { vehicleType: 'motorcycle', category: 'sport_bike', label: 'Sport Bike', icon: 'bike' },
+  { vehicleType: 'motorcycle', category: 'other', label: 'Other Bike', icon: 'bike' },
+  { vehicleType: 'car', category: 'sedan', label: 'Car - Sedan', icon: 'car' },
+  { vehicleType: 'car', category: 'suv', label: 'Car - SUV', icon: 'car' },
+  { vehicleType: 'car', category: 'van', label: 'Car - Van', icon: 'car' },
+  { vehicleType: 'car', category: 'pickup', label: 'Car - Pickup', icon: 'car' },
+  { vehicleType: 'car', category: 'compact', label: 'Car - Compact', icon: 'car' },
+  { vehicleType: 'tuktuk', category: 'standard', label: 'Tuktuk - Standard', icon: 'truck' },
+  { vehicleType: 'tuktuk', category: 'premium', label: 'Tuktuk - Premium', icon: 'truck' },
+  { vehicleType: 'tuktuk', category: 'electric', label: 'Tuktuk - Electric', icon: 'truck' },
+]
 
 // Predefined Siargao locations
 const siargaoLocations = [
@@ -47,122 +54,82 @@ const siargaoLocations = [
   "Magpupungko Rock Pools"
 ]
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      when: "beforeChildren",
-      staggerChildren: 0.07,
-      delayChildren: 0.1,
-      duration: 0.3
-    }
-  }
-}
+// Budget options as presets
+const budgetOptions = [
+  { label: "Budget (< ₱500)", value: 500 },
+  { label: "Mid-range (₱500-1000)", value: 1000 },
+  { label: "Premium (₱1000+)", value: 1500 }
+]
 
-const itemVariants = {
+// Animation variants - simplified
+const fadeIn = {
   hidden: { opacity: 0, y: 10 },
-  visible: {
-    opacity: 1, 
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 300,
-      damping: 24
-    }
-  }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } }
 }
 
 const dropdownVariants = {
-  hidden: { opacity: 0, y: -5, height: 0 },
+  hidden: { opacity: 0, scaleY: 0, transformOrigin: 'top' },
   visible: { 
     opacity: 1, 
-    y: 0, 
-    height: "auto",
-    transition: { 
-      duration: 0.2,
-      ease: "easeOut"
-    }
+    scaleY: 1, 
+    transformOrigin: 'top',
+    transition: { duration: 0.15 }
   },
-  exit: {
-    opacity: 0,
-    y: -5,
-    height: 0,
-    transition: {
-      duration: 0.2,
-      ease: "easeIn"
-    }
-  }
-}
-
-const buttonVariants = {
-  hover: { 
-    scale: 1.02,
-    boxShadow: "0 5px 15px rgba(0, 0, 0, 0.2)",
-    transition: { 
-      type: "spring", 
-      stiffness: 400, 
-      damping: 10 
-    }
-  },
-  tap: { 
-    scale: 0.98,
-    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-    transition: { 
-      type: "spring", 
-      stiffness: 500, 
-      damping: 10 
-    }
+  exit: { 
+    opacity: 0, 
+    scaleY: 0, 
+    transformOrigin: 'top',
+    transition: { duration: 0.1 } 
   }
 }
 
 const SearchBar = ({ onSearch }: SearchBarProps) => {
+  // Search state
   const [location, setLocation] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
-  const [budget, setBudget] = useState(500) // Default budget in PHP
+  const [budget, setBudget] = useState(500)
   const [vehicleType, setVehicleType] = useState<VehicleType>('motorcycle')
-  const [category, setCategory] = useState("Any Type")
-  const [activeField, setActiveField] = useState<string | null>(null)
-  const [currentDate, setCurrentDate] = useState("")
+  const [category, setCategory] = useState("scooter")
+  const [selectedVehicleOption, setSelectedVehicleOption] = useState(vehicleOptions[0])
+  
+  // UI state
+  const [step, setStep] = useState(1) // Progressive disclosure steps
   const [isSearching, setIsSearching] = useState(false)
-  
-  // Location dropdown states
-  const [filteredLocations, setFilteredLocations] = useState<string[]>([])
   const [showLocations, setShowLocations] = useState(false)
-  const [keyboardIndex, setKeyboardIndex] = useState(-1)
+  const [showVehicleOptions, setShowVehicleOptions] = useState(false)
+  const [showBudgetOptions, setShowBudgetOptions] = useState(false)
+  const [filteredLocations, setFilteredLocations] = useState<string[]>(siargaoLocations)
+  const [currentDate, setCurrentDate] = useState("")
+  const [isMounted, setIsMounted] = useState(false)
   
-  // Refs for handling clicks outside the dropdown
+  // Refs for handling clicks outside dropdowns
   const locationInputRef = useRef<HTMLDivElement>(null)
   const locationsDropdownRef = useRef<HTMLDivElement>(null)
+  const vehicleDropdownRef = useRef<HTMLDivElement>(null)
+  const budgetDropdownRef = useRef<HTMLDivElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   
   // Detect if device is mobile
   const isMobile = useMediaQuery("(max-width: 640px)")
-
-  // State to track if the component is mounted (for client-side rendering)
-  const [isMounted, setIsMounted] = useState(false)
   
-  // Mount effect for client-side rendering
+  // Set initial dates when component mounts
   useEffect(() => {
     setIsMounted(true)
-  }, [])
-  
-  // Set current date in YYYY-MM-DD format on each render
-  useEffect(() => {
+    
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const formattedDate = today.toISOString().split('T')[0]
     setCurrentDate(formattedDate)
+    setStartDate(formattedDate)
     
-    // If startDate is in the past, update it to today
-    if (startDate && new Date(startDate) < today) {
-      setStartDate(formattedDate)
-    }
+    // Set end date to tomorrow by default
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    setEndDate(tomorrow.toISOString().split('T')[0])
   }, [])
   
-  // Update filtered locations when input changes
+  // Update filtered locations when typing
   useEffect(() => {
     if (location.trim() === '') {
       setFilteredLocations(siargaoLocations)
@@ -172,116 +139,64 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
       )
       setFilteredLocations(filtered)
     }
-    setKeyboardIndex(-1)
   }, [location])
-
-  // Handle outside clicks for location dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        locationInputRef.current && 
-        !locationInputRef.current.contains(event.target as Node) &&
-        locationsDropdownRef.current && 
-        !locationsDropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowLocations(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
+  
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartDate = e.target.value
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const selectedDate = new Date(newStartDate)
+    setStartDate(newStartDate)
     
-    // Prevent selection of past dates
-    if (selectedDate < today) {
-      const formattedToday = today.toISOString().split('T')[0]
-      setStartDate(formattedToday)
-    } else {
-      setStartDate(newStartDate)
-    }
-    
-    // If end date is before the new start date, update end date to match start date
-    if (endDate && endDate < (selectedDate < today ? today.toISOString().split('T')[0] : newStartDate)) {
-      setEndDate(selectedDate < today ? today.toISOString().split('T')[0] : newStartDate)
+    // If end date is before new start date, update end date
+    if (endDate && new Date(endDate) < new Date(newStartDate)) {
+      setEndDate(newStartDate)
     }
   }
-  
-  const handleLocationFocus = () => {
-    setActiveField('location');
-    setShowLocations(true);
-    setFilteredLocations(siargaoLocations);
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEndDate(e.target.value)
   }
   
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation)
     setShowLocations(false)
-    setActiveField(null)
-  }
-  
-  const handleLocationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocation(e.target.value)
-    if (!showLocations) {
-      setShowLocations(true)
-    }
-  }
-  
-  const handleClearLocation = () => {
-    setLocation('')
-    if (locationInputRef.current) {
-      locationInputRef.current.querySelector('input')?.focus()
-    }
-  }
-  
-  const handleLocationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Handle arrow keys for navigation
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setKeyboardIndex(prev => 
-        prev < filteredLocations.length - 1 ? prev + 1 : prev
-      )
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setKeyboardIndex(prev => (prev > 0 ? prev - 1 : prev))
-    } else if (e.key === 'Enter' && keyboardIndex >= 0) {
-      e.preventDefault()
-      handleLocationSelect(filteredLocations[keyboardIndex])
-    } else if (e.key === 'Escape') {
-      setShowLocations(false)
-    }
-  }
-
-  // Handle vehicle type change
-  const handleVehicleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newVehicleType = e.target.value as VehicleType;
-    setVehicleType(newVehicleType);
-    // Reset category when changing vehicle type
-    setCategory("Any Type");
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
     
-    // Final validation before submitting
+    // If we're on step 1, move to step 2 after location selection
+    if (step === 1) {
+      setTimeout(() => setStep(2), 300)
+    }
+  }
+  
+  const handleVehicleSelect = (option: typeof vehicleOptions[0]) => {
+    setSelectedVehicleOption(option)
+    setVehicleType(option.vehicleType as VehicleType)
+    setCategory(option.category)
+    setShowVehicleOptions(false)
+    
+    // If we're on step 2, move to step 3 after vehicle selection
+    if (step === 2) {
+      setTimeout(() => setStep(3), 300)
+    }
+  }
+  
+  const handleBudgetSelect = (value: number) => {
+    setBudget(value)
+    setShowBudgetOptions(false)
+  }
+  
+  const handleDateShortcut = (days: number) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
-    // If start date is empty or invalid, set it to today
-    if (!startDate || new Date(startDate) < today) {
-      setStartDate(today.toISOString().split('T')[0])
-    }
+    // Set start date
+    setStartDate(today.toISOString().split('T')[0])
     
-    // If end date is empty, set it to start date
-    if (!endDate) {
-      setEndDate(startDate)
-    }
+    // Set end date based on days
+    const endDay = new Date(today)
+    endDay.setDate(endDay.getDate() + days)
+    setEndDate(endDay.toISOString().split('T')[0])
+  }
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
     
     setIsSearching(true)
     
@@ -296,472 +211,446 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
         category
       })
       setIsSearching(false)
-    }, 800)
+    }, 500)
   }
 
-  // Get the appropriate icon for the current vehicle type
-  const VehicleIcon = () => {
-    switch(vehicleType) {
-      case 'car':
-        return <Car size={18} className="text-white/40" />;
-      case 'tuktuk':
-        return <Truck size={18} className="text-white/40" />;
-      default:
-        return <Bike size={18} className="text-white/40" />;
+  // Add back the missing click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Location dropdown
+      if (
+        locationInputRef.current && 
+        !locationInputRef.current.contains(event.target as Node) &&
+        locationsDropdownRef.current && 
+        !locationsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowLocations(false)
+      }
+      
+      // Vehicle dropdown
+      if (
+        vehicleDropdownRef.current &&
+        !vehicleDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowVehicleOptions(false)
+      }
+      
+      // Budget dropdown
+      if (
+        budgetDropdownRef.current &&
+        !budgetDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowBudgetOptions(false)
+      }
     }
-  };
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   return (
     <motion.div 
-      className="bg-black/40 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10 p-3 sm:p-4 transition-all duration-300 relative overflow-hidden group"
-      initial={{ opacity: 0, y: 20 }}
+      className="bg-black/40 backdrop-blur-md rounded-xl shadow-sm border border-white/10 p-4 transition-all duration-200 relative overflow-visible w-full max-w-md mx-auto"
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Animated gradient accent */}
-      <motion.div 
-        className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-purple-500/20 to-blue-500/30 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-500 animate-gradient-x"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.2 }}
-        transition={{ duration: 0.8 }}
-      ></motion.div>
-      
-      {/* AI glow effect */}
-      <motion.div 
-        className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.05 }}
-        transition={{ duration: 1.2, delay: 0.3 }}
-      ></motion.div>
-      
       <motion.form 
         ref={formRef} 
         onSubmit={handleSubmit} 
-        className="relative space-y-3 sm:space-y-4 z-10"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        className="relative space-y-4 z-10"
       >
-        <motion.div 
-          className="flex items-center mb-2 sm:mb-3"
-          variants={itemVariants}
-        >
-          <Sparkles size={16} className="text-primary mr-2 animate-pulse" />
-          <h3 className="text-xs sm:text-sm font-medium text-white/90">AI-Powered Search</h3>
-        </motion.div>
-        
-        {/* Location */}
-        <motion.div 
-          className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'location' ? 'scale-[1.01]' : ''} relative`}
-          variants={itemVariants}
-        >
-          <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
-            <MapPin size={14} className="text-primary" />
-            Location
-          </label>
-          <div className="relative" ref={locationInputRef}>
-            <motion.input
-              type="text"
-              placeholder="Where in Siargao are you staying?"
-              value={location}
-              onChange={handleLocationInputChange}
-              onFocus={handleLocationFocus}
-              onKeyDown={handleLocationKeyDown}
-              className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 pl-10 pr-8 text-white placeholder:text-white/40"
-              whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
-            />
-            <MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-            
-            {/* Clear button */}
-            {location && (
-              <motion.button
-                type="button"
-                onClick={handleClearLocation}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                whileHover={{ rotate: 90, transition: { duration: 0.2 } }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <X size={16} />
-              </motion.button>
-            )}
-            
-            {/* Animated Dropdown */}
-            <AnimatePresence>
-              {showLocations && (
-                <motion.div 
-                  ref={locationsDropdownRef}
-                  className="absolute top-full left-0 right-0 mt-1 bg-black border border-gray-700 rounded-lg shadow-2xl z-[9999] overflow-hidden"
-                  style={{
-                    maxHeight: "15rem",
-                    overflowY: "auto",
-                    position: "absolute",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.9)"
+        {/* Step 1: Location */}
+        <AnimatePresence>
+          {(step >= 1) && (
+            <motion.div 
+              className="space-y-1.5"
+              initial={fadeIn.hidden}
+              animate={fadeIn.visible}
+              exit={fadeIn.hidden}
+            >
+              <label className="text-xs font-medium text-white/80">Where are you staying?</label>
+              <div className="relative z-50" ref={locationInputRef}>
+                <input
+                  type="text"
+                  placeholder="Enter your location in Siargao"
+                  value={location}
+                  onChange={(e) => {
+                    setLocation(e.target.value)
+                    setShowLocations(true)
                   }}
-                  variants={dropdownVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  {filteredLocations.length > 0 ? (
-                    filteredLocations.map((loc, index) => (
-                      <motion.div 
-                        key={loc}
-                        className={`p-3 cursor-pointer text-base hover:bg-gray-800 ${
-                          index === keyboardIndex ? "bg-gray-800" : ""
-                        }`}
-                        onClick={() => handleLocationSelect(loc)}
-                        onMouseEnter={() => setKeyboardIndex(index)}
-                        whileHover={{ backgroundColor: "rgba(75, 85, 99, 0.5)" }}
-                        initial={{ opacity: 0, x: -5 }}
-                        animate={{ 
-                          opacity: 1, 
-                          x: 0,
-                          transition: { delay: index * 0.03, duration: 0.15 }
-                        }}
-                      >
-                        <div className="flex items-center">
-                          <MapPin size={16} className="text-primary mr-2" />
-                          <span className="font-medium text-white">{loc}</span>
-                        </div>
-                      </motion.div>
-                    ))
-                  ) : (
+                  onClick={() => setShowLocations(true)}
+                  onFocus={() => setShowLocations(true)}
+                  className="w-full p-3 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50 text-white placeholder:text-white/40 pl-9"
+                />
+                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                
+                {/* Clear button */}
+                {location && (
+                  <button
+                    type="button"
+                    onClick={() => setLocation('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+                
+                {/* Locations Dropdown */}
+                <AnimatePresence>
+                  {showLocations && (
                     <motion.div 
-                      className="p-3 text-gray-300"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
+                      ref={locationsDropdownRef}
+                      className="absolute top-full left-0 right-0 mt-1 bg-black/95 border border-white/10 rounded-lg z-[9999] shadow-xl overflow-auto"
+                      style={{ 
+                        maxHeight: '60vh', 
+                      }}
+                      variants={dropdownVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
                     >
-                      No locations found
+                      {filteredLocations.length > 0 ? (
+                        filteredLocations.map((loc) => (
+                          <div 
+                            key={loc}
+                            className="p-2.5 cursor-pointer hover:bg-white/5 flex items-center"
+                            onClick={() => handleLocationSelect(loc)}
+                          >
+                            <MapPin size={14} className="text-primary/70 mr-2" />
+                            <span className="text-sm text-white">{loc}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-3 text-sm text-white/60">
+                          No locations found
+                        </div>
+                      )}
                     </motion.div>
                   )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-
-        {/* Date Range */}
-        <motion.div 
-          className={`grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 ${showLocations ? 'mt-64 sm:mt-72' : ''} transition-all duration-200`}
-          variants={itemVariants}
-        >
-          <motion.div 
-            className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'startDate' ? 'scale-[1.01]' : ''}`}
-            whileHover={{ scale: 1.005 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          >
-            <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
-              <Calendar size={14} className="text-primary" />
-              Start Date
-            </label>
-            <div className="relative">
-              <motion.input
-                type="date"
-                value={startDate}
-                min={currentDate}
-                onChange={handleStartDateChange}
-                onFocus={() => {
-                  setActiveField('startDate')
-                  setShowLocations(false)
-                }}
-                onBlur={() => setActiveField(null)}
-                className={`w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 text-white touch-manipulation ${isMobile ? 'pl-10' : 'pl-12'} appearance-none`}
-                inputMode="none"
-                style={{
-                  colorScheme: 'dark'
-                }}
-                required
-                whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
-              />
-              <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-              
-              {/* Custom date display for mobile */}
-              {isMobile && (
-                <div className="absolute right-3 left-10 top-1/2 -translate-y-1/2 text-white text-sm pointer-events-none flex items-center">
-                  {startDate ? (
-                    <span className="font-medium truncate">
-                      {new Date(startDate).toLocaleDateString('en-US', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
-                      })}
-                    </span>
-                  ) : (
-                    <span className="text-white/40">Select start date</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </motion.div>
-          
-          <motion.div 
-            className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'endDate' ? 'scale-[1.01]' : ''}`}
-            whileHover={{ scale: 1.005 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          >
-            <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
-              <Calendar size={14} className="text-primary" />
-              End Date
-            </label>
-            <div className="relative">
-              <motion.input
-                type="date"
-                value={endDate}
-                min={startDate || currentDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                onFocus={() => {
-                  setActiveField('endDate')
-                  setShowLocations(false)
-                }}
-                onBlur={() => setActiveField(null)}
-                className={`w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 text-white touch-manipulation ${isMobile ? 'pl-10' : 'pl-12'} appearance-none`}
-                inputMode="none"
-                style={{
-                  colorScheme: 'dark'
-                }}
-                required
-                whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
-              />
-              <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-              
-              {/* Custom date display for mobile */}
-              {isMobile && (
-                <div className="absolute right-3 left-10 top-1/2 -translate-y-1/2 text-white text-sm pointer-events-none flex items-center">
-                  {endDate ? (
-                    <span className="font-medium truncate">
-                      {new Date(endDate).toLocaleDateString('en-US', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
-                      })}
-                    </span>
-                  ) : (
-                    <span className="text-white/40">Select end date</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Budget and Vehicle Type in a grid */}
-        <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
-          variants={itemVariants}
-        >
-          {/* Budget Slider */}
-          <motion.div 
-            className={`space-y-1 sm:space-y-2 transition-all duration-300 ${activeField === 'budget' ? 'scale-[1.01]' : ''}`}
-            whileHover={{ scale: 1.005 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          >
-            <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
-              <span>Daily Budget:</span>
-              <motion.span 
-                className="ml-1 text-xs font-semibold bg-primary/20 text-primary px-2 py-0.5 rounded-md"
-                animate={{ 
-                  scale: [1, 1.05, 1],
-                  backgroundColor: budget > 1500 ? ["rgba(139, 92, 246, 0.2)", "rgba(236, 72, 153, 0.2)", "rgba(139, 92, 246, 0.2)"] : ["rgba(139, 92, 246, 0.2)"]
-                }}
-                transition={{ duration: 0.3 }}
-                key={budget}
-              >
-                ₱{budget}
-              </motion.span>
-            </label>
-            <div className="px-1.5 py-0 sm:py-1">
-              <motion.input
-                type="range"
-                min="100"
-                max="2000"
-                step="50"
-                value={budget}
-                onChange={(e) => setBudget(parseInt(e.target.value))}
-                onFocus={() => {
-                  setActiveField('budget')
-                  setShowLocations(false)
-                }}
-                onBlur={() => setActiveField(null)}
-                className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(139,92,246,0.5)] sm:[&::-webkit-slider-thumb]:w-5 sm:[&::-webkit-slider-thumb]:h-5 touch-manipulation"
-                whileTap={{ scale: 1.02 }}
-                whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.15)" }}
-              />
-              <div className="flex justify-between text-[10px] text-white/40 mt-1 sm:mt-1.5 px-1">
-                <span>₱100</span>
-                <span>₱2000</span>
+                </AnimatePresence>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Vehicle Type Selector */}
-          <motion.div 
-            className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'vehicleType' ? 'scale-[1.01]' : ''}`}
-            whileHover={{ scale: 1.005 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          >
-            <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
-              {vehicleType === 'motorcycle' && <Bike size={14} className="text-primary" />}
-              {vehicleType === 'car' && <Car size={14} className="text-primary" />}
-              {vehicleType === 'tuktuk' && <Truck size={14} className="text-primary" />}
-              Vehicle Type
-            </label>
-            <div className="relative">
-              <motion.select
-                value={vehicleType}
-                onChange={handleVehicleTypeChange}
-                onFocus={() => {
-                  setActiveField('vehicleType')
-                  setShowLocations(false)
-                }}
-                onBlur={() => setActiveField(null)}
-                className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 appearance-none text-white pl-10"
-                style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ffffff' viewBox='0 0 24 24' stroke='%23ffffff' opacity='0.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                  backgroundPosition: 'right 0.75rem center',
-                  backgroundSize: '1rem',
-                  backgroundRepeat: 'no-repeat',
-                  paddingRight: '2.5rem'
-                }}
-                whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
-              >
-                {vehicleTypes.map((type) => (
-                  <option key={type} value={type} className="bg-gray-900 text-white">
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </motion.select>
-              {vehicleType === 'motorcycle' && <Bike size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />}
-              {vehicleType === 'car' && <Car size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />}
-              {vehicleType === 'tuktuk' && <Truck size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />}
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Vehicle Category */}
-        <motion.div
-          className={`space-y-1 sm:space-y-1.5 transition-all duration-300 ${activeField === 'category' ? 'scale-[1.01]' : ''}`}
-          whileHover={{ scale: 1.005 }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          variants={itemVariants}
-        >
-          <label className="text-xs font-medium flex items-center gap-1.5 text-primary/90">
-            <Sparkles size={14} className="text-primary" />
-            {vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1)} Category
-          </label>
-          <div className="relative">
-            <motion.select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              onFocus={() => {
-                setActiveField('category')
-                setShowLocations(false)
-              }}
-              onBlur={() => setActiveField(null)}
-              className="w-full px-3 py-2 sm:py-2.5 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-300 appearance-none text-white pl-10"
-              style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ffffff' viewBox='0 0 24 24' stroke='%23ffffff' opacity='0.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                backgroundPosition: 'right 0.75rem center',
-                backgroundSize: '1rem',
-                backgroundRepeat: 'no-repeat',
-                paddingRight: '2.5rem'
-              }}
-              whileFocus={{ boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)" }}
-            >
-              {vehicleCategories[vehicleType].map((cat) => (
-                <option key={cat} value={cat} className="bg-gray-900 text-white">
-                  {cat}
-                </option>
-              ))}
-            </motion.select>
-          </div>
-        </motion.div>
-
-        {/* Submit Button */}
-        <motion.div
-          variants={itemVariants}
-        >
-          <motion.button
-            type="submit"
-            className="w-full py-2 sm:py-2.5 text-sm font-medium bg-gradient-to-r from-primary/90 to-purple-600/90 transition-all duration-300 rounded-lg shadow-md relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
-            disabled={isSearching}
-            variants={buttonVariants}
-            whileHover="hover"
-            whileTap="tap"
-          >
-            <motion.div 
-              className="absolute inset-0 bg-black opacity-0 hover:opacity-10 transition-opacity duration-300"
-              whileHover={{ opacity: 0.1 }}
-            ></motion.div>
-            <div className="relative flex items-center justify-center">
-              {isSearching ? (
-                <>
-                  <motion.div 
-                    className="w-4 h-4 rounded-full border-2 border-white border-t-transparent mr-2"
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
-                  ></motion.div>
-                  <span>Finding {vehicleType}s...</span>
-                </>
-              ) : (
-                <>
-                  <motion.div
-                    animate={{ x: [0, 3, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5, repeatType: "reverse" }}
-                  >
-                    <Search size={16} className="mr-2" />
-                  </motion.div>
-                  <span>Find Your Perfect {vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1)}</span>
-                </>
-              )}
-            </div>
-          </motion.button>
-        </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
-        {/* Add animated styles */}
-        <style jsx global>{`
-          @keyframes gradient-x {
-            0% {
-              background-position: 0% 50%;
-            }
-            50% {
-              background-position: 100% 50%;
-            }
-            100% {
-              background-position: 0% 50%;
-            }
-          }
-          .animate-gradient-x {
-            animation: gradient-x 15s ease infinite;
-            background-size: 400% 400%;
-          }
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @media (max-width: 640px) {
-            input[type="date"]::-webkit-calendar-picker-indicator {
-              opacity: 0;
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              height: 100%;
-              cursor: pointer;
-            }
-            
-            input[type="date"] {
-              color: transparent;
-              position: relative;
-            }
-            
-            /* Create a fake disabled appearance when empty */
-            input[type="date"]:not(:valid):not(:focus) {
-              color: transparent;
-            }
-          }
-        `}</style>
+        {/* Step 2: Vehicle Type */}
+        <AnimatePresence>
+          {(step >= 2) && (
+            <motion.div 
+              className="space-y-1.5"
+              initial={fadeIn.hidden}
+              animate={fadeIn.visible}
+              exit={fadeIn.hidden}
+            >
+              <label className="text-xs font-medium text-white/80">What would you like to ride?</label>
+              <div className="relative" ref={vehicleDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowVehicleOptions(!showVehicleOptions)}
+                  className="w-full p-3 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50 text-white text-left flex items-center justify-between"
+                >
+                  <span className="flex items-center">
+                    <span className="w-6 flex justify-center mr-2">
+                      {selectedVehicleOption.icon === 'bike' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                          <path d="M5 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"></path>
+                          <path d="M15 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"></path>
+                          <path d="M12 19v-5l-3-3 2-4h5l2 4"></path>
+                          <path d="M17 7h2l3 4"></path>
+                          <path d="M2 15h3"></path>
+                        </svg>
+                      )}
+                      {selectedVehicleOption.icon === 'car' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.6-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"></path>
+                          <circle cx="7" cy="17" r="2"></circle>
+                          <path d="M9 17h6"></path>
+                          <circle cx="17" cy="17" r="2"></circle>
+                        </svg>
+                      )}
+                      {selectedVehicleOption.icon === 'truck' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                          <path d="M10 17h4V5H2v12h3"></path>
+                          <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"></path>
+                          <circle cx="7.5" cy="17.5" r="2.5"></circle>
+                          <circle cx="17.5" cy="17.5" r="2.5"></circle>
+                        </svg>
+                      )}
+                    </span>
+                    {selectedVehicleOption.label}
+                  </span>
+                  <ChevronDown size={16} className={`text-white/60 transition-transform duration-200 ${showVehicleOptions ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {/* Vehicle Options Dropdown */}
+                <AnimatePresence>
+                  {showVehicleOptions && (
+                    <motion.div 
+                      className="absolute top-full left-0 right-0 mt-1 bg-black/90 border border-white/10 rounded-lg z-50 overflow-hidden max-h-48 overflow-y-auto"
+                      variants={dropdownVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                    >
+                      {vehicleOptions.map((option) => (
+                        <div 
+                          key={`${option.vehicleType}-${option.category}`}
+                          className={`p-2.5 cursor-pointer hover:bg-white/5 flex items-center justify-between ${
+                            selectedVehicleOption.vehicleType === option.vehicleType && 
+                            selectedVehicleOption.category === option.category 
+                              ? 'bg-primary/10' 
+                              : ''
+                          }`}
+                          onClick={() => handleVehicleSelect(option)}
+                        >
+                          <span className="flex items-center">
+                            <span className="w-6 flex justify-center mr-2">
+                              {option.icon === 'bike' && (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                                  <path d="M5 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"></path>
+                                  <path d="M15 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"></path>
+                                  <path d="M12 19v-5l-3-3 2-4h5l2 4"></path>
+                                  <path d="M17 7h2l3 4"></path>
+                                  <path d="M2 15h3"></path>
+                                </svg>
+                              )}
+                              {option.icon === 'car' && (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                                  <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.6-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"></path>
+                                  <circle cx="7" cy="17" r="2"></circle>
+                                  <path d="M9 17h6"></path>
+                                  <circle cx="17" cy="17" r="2"></circle>
+                                </svg>
+                              )}
+                              {option.icon === 'truck' && (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                                  <path d="M10 17h4V5H2v12h3"></path>
+                                  <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"></path>
+                                  <circle cx="7.5" cy="17.5" r="2.5"></circle>
+                                  <circle cx="17.5" cy="17.5" r="2.5"></circle>
+                                </svg>
+                              )}
+                            </span>
+                            <span className="text-sm text-white">{option.label}</span>
+                          </span>
+                          
+                          {selectedVehicleOption.vehicleType === option.vehicleType && 
+                           selectedVehicleOption.category === option.category && (
+                            <Check size={14} className="text-primary" />
+                          )}
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Step 3: Date & Budget */}
+        <AnimatePresence>
+          {(step >= 3) && (
+            <motion.div 
+              className="space-y-1.5"
+              initial={fadeIn.hidden}
+              animate={fadeIn.visible}
+              exit={fadeIn.hidden}
+            >
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-white/80">When do you need it?</label>
+                <div className="flex space-x-1">
+                  <button
+                    type="button"
+                    onClick={() => handleDateShortcut(1)}
+                    className="text-xs bg-white/5 hover:bg-white/10 text-white/70 px-2 py-1 rounded transition-colors"
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDateShortcut(2)}
+                    className="text-xs bg-white/5 hover:bg-white/10 text-white/70 px-2 py-1 rounded transition-colors"
+                  >
+                    2 Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDateShortcut(7)}
+                    className="text-xs bg-white/5 hover:bg-white/10 text-white/70 px-2 py-1 rounded transition-colors"
+                  >
+                    Week
+                  </button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                {/* Start Date */}
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={startDate}
+                    min={currentDate}
+                    onChange={handleStartDateChange}
+                    className="w-full p-3 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50 text-white appearance-none"
+                    style={{ colorScheme: 'dark' }}
+                    required
+                  />
+                  {isMobile && (
+                    <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                      <Calendar size={14} className="text-white/40 mr-2" />
+                      <span className="text-sm text-white/80">
+                        {startDate ? new Date(startDate).toLocaleDateString('en-US', { 
+                          day: 'numeric', 
+                          month: 'short'
+                        }) : 'Start'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* End Date */}
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={startDate || currentDate}
+                    onChange={handleEndDateChange}
+                    className="w-full p-3 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50 text-white appearance-none"
+                    style={{ colorScheme: 'dark' }}
+                    required
+                  />
+                  {isMobile && (
+                    <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                      <Calendar size={14} className="text-white/40 mr-2" />
+                      <span className="text-sm text-white/80">
+                        {endDate ? new Date(endDate).toLocaleDateString('en-US', { 
+                          day: 'numeric', 
+                          month: 'short'
+                        }) : 'End'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Budget Selection */}
+              <div className="mt-3">
+                <label className="text-xs font-medium text-white/80 mb-1.5 block">Daily budget</label>
+                <div className="relative" ref={budgetDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowBudgetOptions(!showBudgetOptions)}
+                    className="w-full p-3 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50 text-white text-left flex items-center justify-between"
+                  >
+                    <span>
+                      {budgetOptions.find(option => option.value === budget)?.label || `₱${budget}`}
+                    </span>
+                    <ChevronDown size={16} className={`text-white/60 transition-transform duration-200 ${showBudgetOptions ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {/* Budget Options Dropdown */}
+                  <AnimatePresence>
+                    {showBudgetOptions && (
+                      <motion.div 
+                        className="absolute top-full left-0 right-0 mt-1 bg-black/90 border border-white/10 rounded-lg z-50 overflow-hidden"
+                        variants={dropdownVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                      >
+                        {budgetOptions.map((option) => (
+                          <div 
+                            key={option.value}
+                            className={`p-2.5 cursor-pointer hover:bg-white/5 flex items-center justify-between ${
+                              budget === option.value ? 'bg-primary/10' : ''
+                            }`}
+                            onClick={() => handleBudgetSelect(option.value)}
+                          >
+                            <span className="text-sm text-white">{option.label}</span>
+                            {budget === option.value && (
+                              <Check size={14} className="text-primary" />
+                            )}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Search Button - only shown when all required fields are completed */}
+        <AnimatePresence>
+          {((step === 3 && location && startDate && endDate) || step > 3) && (
+            <motion.div
+              initial={fadeIn.hidden}
+              animate={fadeIn.visible}
+              exit={fadeIn.hidden}
+              className="pt-2"
+            >
+              <button
+                type="submit"
+                className="w-full py-3 font-medium bg-primary hover:bg-primary/90 active:bg-primary/80 text-white rounded-lg transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                disabled={isSearching || !location || !startDate || !endDate}
+              >
+                {isSearching ? (
+                  <>
+                    <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent mr-2 animate-spin"></div>
+                    <span>Searching...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search size={16} className="mr-2" />
+                    <span>Find Your Ride</span>
+                  </>
+                )}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Step Indicators */}
+        <div className="flex items-center justify-center space-x-1 pt-1">
+          {[1, 2, 3].map((stepNumber) => (
+            <motion.div
+              key={stepNumber}
+              className={`h-1 rounded-full ${
+                stepNumber <= step ? 'bg-primary/70' : 'bg-white/10'
+              } transition-all duration-300`}
+              style={{ width: stepNumber <= step ? '24px' : '12px' }}
+              animate={{ 
+                width: stepNumber <= step ? '24px' : '12px',
+                backgroundColor: stepNumber <= step ? 'rgb(139 92 246 / 0.7)' : 'rgb(255 255 255 / 0.1)'
+              }}
+            />
+          ))}
+        </div>
       </motion.form>
+      
+      {/* Custom date input styling for mobile */}
+      <style jsx global>{`
+        @media (max-width: 640px) {
+          input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+          }
+          
+          input[type="date"] {
+            color: transparent;
+          }
+        }
+      `}</style>
     </motion.div>
   )
 }
