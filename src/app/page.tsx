@@ -302,7 +302,7 @@ export default function Home() {
           </div>
 
           {/* Search Bar Container - better mobile spacing */}
-          <div className="w-full max-w-4xl mx-auto relative mb-8 sm:mb-12 lg:mb-16 shadow-2xl px-2 sm:px-0">
+          <div className="w-full max-w-md mx-auto relative mb-8 sm:mb-12 lg:mb-16 px-2 sm:px-0">
             <SearchBar onSearch={handleSearch} />
           </div>
         </div>

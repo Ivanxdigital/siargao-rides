@@ -250,26 +250,29 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
 
   return (
     <motion.div 
-      className="bg-black/40 backdrop-blur-md rounded-xl shadow-sm border border-white/10 p-4 transition-all duration-200 relative overflow-visible w-full max-w-md mx-auto"
+      className="bg-black/30 backdrop-blur-xl rounded-2xl shadow-lg border border-white/10 p-5 transition-all duration-300 relative overflow-visible w-full max-w-md mx-auto"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
     >
+      {/* Subtle gradient accent */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-30 pointer-events-none" />
+
       <motion.form 
         ref={formRef} 
         onSubmit={handleSubmit} 
-        className="relative space-y-4 z-10"
+        className="relative space-y-5 z-10"
       >
         {/* Step 1: Location */}
         <AnimatePresence>
           {(step >= 1) && (
             <motion.div 
-              className="space-y-1.5"
+              className="space-y-2"
               initial={fadeIn.hidden}
               animate={fadeIn.visible}
               exit={fadeIn.hidden}
             >
-              <label className="text-xs font-medium text-white/80">Where are you staying?</label>
+              <label className="text-xs font-medium text-white/80 ml-1">Where are you staying?</label>
               <div className="relative z-50" ref={locationInputRef}>
                 <input
                   type="text"
@@ -281,18 +284,18 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   }}
                   onClick={() => setShowLocations(true)}
                   onFocus={() => setShowLocations(true)}
-                  className="w-full p-3 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50 text-white placeholder:text-white/40 pl-9"
+                  className="w-full p-3 px-10 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 text-white placeholder:text-white/40 transition-all duration-200"
                 />
-                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary/60" />
                 
                 {/* Clear button */}
                 {location && (
                   <button
                     type="button"
                     onClick={() => setLocation('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
                   >
-                    <X size={14} />
+                    <X size={14} className="hover:rotate-90 transition-transform duration-200" />
                   </button>
                 )}
                 
@@ -301,7 +304,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   {showLocations && (
                     <motion.div 
                       ref={locationsDropdownRef}
-                      className="absolute top-full left-0 right-0 mt-1 bg-black/95 border border-white/10 rounded-lg z-[9999] shadow-xl overflow-auto"
+                      className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-[9999] shadow-xl overflow-auto"
                       style={{ 
                         maxHeight: '60vh', 
                       }}
@@ -314,10 +317,10 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                         filteredLocations.map((loc) => (
                           <div 
                             key={loc}
-                            className="p-2.5 cursor-pointer hover:bg-white/5 flex items-center"
+                            className="p-2.5 cursor-pointer hover:bg-white/5 flex items-center transition-colors duration-150"
                             onClick={() => handleLocationSelect(loc)}
                           >
-                            <MapPin size={14} className="text-primary/70 mr-2" />
+                            <MapPin size={14} className="text-primary/70 mr-2.5" />
                             <span className="text-sm text-white">{loc}</span>
                           </div>
                         ))
@@ -338,22 +341,22 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
         <AnimatePresence>
           {(step >= 2) && (
             <motion.div 
-              className="space-y-1.5"
+              className="space-y-2"
               initial={fadeIn.hidden}
               animate={fadeIn.visible}
               exit={fadeIn.hidden}
             >
-              <label className="text-xs font-medium text-white/80">What would you like to ride?</label>
+              <label className="text-xs font-medium text-white/80 ml-1">What would you like to ride?</label>
               <div className="relative" ref={vehicleDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setShowVehicleOptions(!showVehicleOptions)}
-                  className="w-full p-3 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/50 text-white text-left flex items-center justify-between"
+                  className="w-full p-3 px-10 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 text-white text-left flex items-center justify-between transition-all duration-200"
                 >
                   <span className="flex items-center">
                     <span className="w-6 flex justify-center mr-2">
                       {selectedVehicleOption.icon === 'bike' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary/70">
                           <path d="M5 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"></path>
                           <path d="M15 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"></path>
                           <path d="M12 19v-5l-3-3 2-4h5l2 4"></path>
@@ -362,7 +365,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                         </svg>
                       )}
                       {selectedVehicleOption.icon === 'car' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary/70">
                           <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.6-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"></path>
                           <circle cx="7" cy="17" r="2"></circle>
                           <path d="M9 17h6"></path>
@@ -370,7 +373,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                         </svg>
                       )}
                       {selectedVehicleOption.icon === 'truck' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary/70">
                           <path d="M10 17h4V5H2v12h3"></path>
                           <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"></path>
                           <circle cx="7.5" cy="17.5" r="2.5"></circle>
@@ -378,7 +381,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                         </svg>
                       )}
                     </span>
-                    {selectedVehicleOption.label}
+                    <span className="text-sm">{selectedVehicleOption.label}</span>
                   </span>
                   <ChevronDown size={16} className={`text-white/60 transition-transform duration-200 ${showVehicleOptions ? 'rotate-180' : ''}`} />
                 </button>
@@ -387,7 +390,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 <AnimatePresence>
                   {showVehicleOptions && (
                     <motion.div 
-                      className="absolute top-full left-0 right-0 mt-1 bg-black/90 border border-white/10 rounded-lg z-50 overflow-hidden max-h-48 overflow-y-auto"
+                      className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-50 overflow-hidden"
                       variants={dropdownVariants}
                       initial="hidden"
                       animate="visible"
