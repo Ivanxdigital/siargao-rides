@@ -20,22 +20,19 @@ export interface SearchParams {
   category: string
 }
 
-// Vehicle combinations for smart selection
+// Replace the vehicle combinations with simplified options
 const vehicleOptions = [
-  { vehicleType: 'motorcycle', category: 'scooter', label: 'Scooter', icon: 'bike' },
-  { vehicleType: 'motorcycle', category: 'semi_auto', label: 'Semi-automatic Bike', icon: 'bike' },
-  { vehicleType: 'motorcycle', category: 'dirt_bike', label: 'Dirt Bike', icon: 'bike' },
-  { vehicleType: 'motorcycle', category: 'sport_bike', label: 'Sport Bike', icon: 'bike' },
-  { vehicleType: 'motorcycle', category: 'other', label: 'Other Bike', icon: 'bike' },
-  { vehicleType: 'car', category: 'sedan', label: 'Car - Sedan', icon: 'car' },
-  { vehicleType: 'car', category: 'suv', label: 'Car - SUV', icon: 'car' },
-  { vehicleType: 'car', category: 'van', label: 'Car - Van', icon: 'car' },
-  { vehicleType: 'car', category: 'pickup', label: 'Car - Pickup', icon: 'car' },
-  { vehicleType: 'car', category: 'compact', label: 'Car - Compact', icon: 'car' },
-  { vehicleType: 'tuktuk', category: 'standard', label: 'Tuktuk - Standard', icon: 'truck' },
-  { vehicleType: 'tuktuk', category: 'premium', label: 'Tuktuk - Premium', icon: 'truck' },
-  { vehicleType: 'tuktuk', category: 'electric', label: 'Tuktuk - Electric', icon: 'truck' },
-]
+  { vehicleType: 'motorcycle', label: 'Motorbike', icon: 'bike' },
+  { vehicleType: 'car', label: 'Car', icon: 'car' },
+  { vehicleType: 'tuktuk', label: 'TukTuk', icon: 'truck' }
+];
+
+// Default categories for each vehicle type
+const defaultCategories = {
+  motorcycle: 'scooter',
+  car: 'sedan',
+  tuktuk: 'standard'
+};
 
 // Predefined Siargao locations
 const siargaoLocations = [
@@ -166,16 +163,17 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   }
   
   const handleVehicleSelect = (option: typeof vehicleOptions[0]) => {
-    setSelectedVehicleOption(option)
-    setVehicleType(option.vehicleType as VehicleType)
-    setCategory(option.category)
-    setShowVehicleOptions(false)
+    setSelectedVehicleOption(option);
+    setVehicleType(option.vehicleType as VehicleType);
+    // Set the default category based on vehicle type
+    setCategory(defaultCategories[option.vehicleType as VehicleType]);
+    setShowVehicleOptions(false);
     
     // If we're on step 2, move to step 3 after vehicle selection
     if (step === 2) {
-      setTimeout(() => setStep(3), 300)
+      setTimeout(() => setStep(3), 300);
     }
-  }
+  };
   
   const handleBudgetSelect = (value: number) => {
     setBudget(value)
@@ -397,12 +395,9 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     >
                       {vehicleOptions.map((option) => (
                         <div 
-                          key={`${option.vehicleType}-${option.category}`}
+                          key={`${option.vehicleType}-${option.label}`}
                           className={`p-2.5 cursor-pointer hover:bg-white/5 flex items-center justify-between ${
-                            selectedVehicleOption.vehicleType === option.vehicleType && 
-                            selectedVehicleOption.category === option.category 
-                              ? 'bg-primary/10' 
-                              : ''
+                            selectedVehicleOption.vehicleType === option.vehicleType ? 'bg-primary/10' : ''
                           }`}
                           onClick={() => handleVehicleSelect(option)}
                         >
@@ -437,8 +432,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                             <span className="text-sm text-white">{option.label}</span>
                           </span>
                           
-                          {selectedVehicleOption.vehicleType === option.vehicleType && 
-                           selectedVehicleOption.category === option.category && (
+                          {selectedVehicleOption.vehicleType === option.vehicleType && (
                             <Check size={14} className="text-primary" />
                           )}
                         </div>
