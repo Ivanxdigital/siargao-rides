@@ -11,11 +11,11 @@ import { cn } from '@/lib/utils';
 const inter = Inter({ subsets: ["latin"], display: 'swap' });
 
 export const metadata: Metadata = {
-  title: "Siargao Rides - Motorbike Rental Directory",
-  description: "Find and book motorbikes from local rental shops in Siargao Island.",
+  title: "Siargao Rides - Vehicle Rental Directory",
+  description: "Find and book motorcycles, cars, and tuktuks from local rental shops in Siargao Island.",
   applicationName: "Siargao Rides",
   authors: [{ name: "Siargao Rides Team" }],
-  keywords: ["motorbike rental", "Siargao", "Philippines", "tourism", "bike rental"],
+  keywords: ["vehicle rental", "motorbike rental", "car rental", "tuktuk rental", "Siargao", "Philippines", "tourism"],
   creator: "Siargao Rides",
   icons: {
     icon: [

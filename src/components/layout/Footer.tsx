@@ -12,7 +12,7 @@ const Footer = () => {
           <div className="flex flex-col">
             <h3 className="text-xl font-bold text-primary mb-4">Siargao Rides</h3>
             <p className="text-muted-foreground mb-4">
-              Find and book motorbikes from local rental shops in Siargao Island.
+              Find and book motorcycles, cars, and tuktuks from local rental shops in Siargao Island.
             </p>
           </div>
 

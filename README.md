@@ -1,13 +1,13 @@
-# Siargao Rides - Motorbike Rental Directory
+# Siargao Rides - Vehicle Rental Directory
 
-A modern web application that connects local motorbike rental shops in Siargao Island, Philippines, with tourists looking to rent motorbikes.
+A modern web application that connects local vehicle rental shops in Siargao Island, Philippines, with tourists looking to rent motorcycles, cars, and tuktuks.
 
 ![GitHub repo](https://github.com/Ivanxdigital/siargao-rides)
 
 ## 🏝️ Project Overview
 
 Siargao Rides is a platform that allows tourists to:
-- Search and filter motorbike rentals based on location, dates, budget, and bike type
+- Search and filter vehicle rentals based on location, dates, budget, and vehicle type
 - Browse local rental shops with detailed information
 - See real photos, pricing (daily/weekly/monthly), and reviews
 - Make reservations directly through the platform
@@ -55,7 +55,7 @@ siargao-rides/
 │   ├── components/      # Reusable components
 │   │   ├── layout/      # Layout components (Navbar, Footer)
 │   │   ├── ui/          # UI components (Button, Badge, etc.)
-│   │   ├── BikeCard.tsx # Bike listing card
+│   │   ├── VehicleCard.tsx # Vehicle listing card
 │   │   ├── SearchBar.tsx # Search component
 │   │   └── RentalShopCard.tsx # Shop listing card
 │   └── lib/             # Utility functions
