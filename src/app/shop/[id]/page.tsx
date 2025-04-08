@@ -8,7 +8,7 @@ import VehicleCard from "@/components/VehicleCard"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import * as service from "@/lib/service"
-import { Vehicle, VehicleType, RentalShop, Review } from "@/lib/types"
+import { Vehicle, VehicleType, Review } from "@/lib/types"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { VehicleAvailabilityCalendar } from "@/components/VehicleAvailabilityCalendar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog"
@@ -80,6 +80,32 @@ const VehicleAvailabilitySection = ({ vehicleId, vehicleName, vehicleType }: { v
     </div>
   );
 };
+
+// Update the RentalShop type to include new fields
+interface RentalShop {
+  id: string;
+  name: string;
+  description: string | null;
+  address: string;
+  city: string;
+  phone_number: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
+  is_verified: boolean;
+  owner_id: string;
+  location_area: string | null;
+  offers_delivery: boolean;
+  delivery_fee: number;
+  is_active?: boolean;
+  requires_id_deposit?: boolean;
+  requires_cash_deposit?: boolean;
+  cash_deposit_amount?: number;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  sms_number?: string | null;
+}
 
 export default function ShopPage() {
   const { id } = useParams()
@@ -425,6 +451,91 @@ export default function ShopPage() {
                   </a>
                 </div>
               )}
+              
+              {/* Facebook link */}
+              {shop.facebook_url && (
+                <div className="flex items-center gap-3 group">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="text-blue-400 shrink-0"
+                  >
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                  </svg>
+                  <a 
+                    href={shop.facebook_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    Facebook Page
+                  </a>
+                </div>
+              )}
+              
+              {/* Instagram link */}
+              {shop.instagram_url && (
+                <div className="flex items-center gap-3 group">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="text-pink-400 shrink-0"
+                  >
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
+                  <a 
+                    href={shop.instagram_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-sm text-pink-400 hover:text-pink-300 transition-colors"
+                  >
+                    Instagram Profile
+                  </a>
+                </div>
+              )}
+              
+              {/* SMS Number */}
+              {shop.sms_number && (
+                <div className="flex items-center gap-3 group">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="text-green-400 shrink-0"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <a 
+                    href={`sms:${shop.sms_number}`} 
+                    className="text-sm text-green-400 hover:text-green-300 transition-colors"
+                  >
+                    Send SMS
+                  </a>
+                </div>
+              )}
+              
               {shop.whatsapp && (
                 <Button 
                   className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white border-green-700" 

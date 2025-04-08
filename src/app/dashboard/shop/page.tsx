@@ -55,6 +55,9 @@ interface RentalShop {
   requires_id_deposit?: boolean;
   requires_cash_deposit?: boolean;
   cash_deposit_amount?: number;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  sms_number?: string | null;
 }
 
 // Define form data type
@@ -71,6 +74,9 @@ interface ShopFormData {
   requires_id_deposit: boolean;
   requires_cash_deposit: boolean;
   cash_deposit_amount: number;
+  facebook_url: string;
+  instagram_url: string;
+  sms_number: string;
 }
 
 export default function ManageShopPage() {
@@ -91,7 +97,10 @@ export default function ManageShopPage() {
     delivery_fee: 0,
     requires_id_deposit: true,
     requires_cash_deposit: false,
-    cash_deposit_amount: 0
+    cash_deposit_amount: 0,
+    facebook_url: "",
+    instagram_url: "",
+    sms_number: ""
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -161,7 +170,10 @@ export default function ManageShopPage() {
           delivery_fee: shopData.delivery_fee || 0,
           requires_id_deposit: shopData.requires_id_deposit !== false,
           requires_cash_deposit: shopData.requires_cash_deposit || false,
-          cash_deposit_amount: shopData.cash_deposit_amount || 0
+          cash_deposit_amount: shopData.cash_deposit_amount || 0,
+          facebook_url: shopData.facebook_url || "",
+          instagram_url: shopData.instagram_url || "",
+          sms_number: shopData.sms_number || ""
         });
         
         // Set banner and logo preview if they exist
@@ -343,6 +355,9 @@ export default function ManageShopPage() {
         requires_id_deposit: formData.requires_id_deposit,
         requires_cash_deposit: formData.requires_cash_deposit,
         cash_deposit_amount: formData.requires_cash_deposit ? formData.cash_deposit_amount : 0,
+        facebook_url: formData.facebook_url,
+        instagram_url: formData.instagram_url,
+        sms_number: formData.sms_number,
         updated_at: new Date().toISOString()
       };
       
@@ -496,14 +511,26 @@ export default function ManageShopPage() {
           )}
           
           {!isEditing && (
-            <Button
-              onClick={handleEditToggle}
-              variant="outline"
-              className="flex items-center gap-2 hover:bg-primary/5"
-            >
-              <Edit size={16} />
-              Edit Shop
-            </Button>
+            <>
+              <Button
+                asChild
+                variant="outline"
+                className="flex items-center gap-2 hover:bg-primary/5 border-primary/30"
+              >
+                <Link href={`/shop/${shop?.id}`}>
+                  <Eye size={16} className="text-primary" />
+                  View Public Listing
+                </Link>
+              </Button>
+              <Button
+                onClick={handleEditToggle}
+                variant="outline"
+                className="flex items-center gap-2 hover:bg-primary/5"
+              >
+                <Edit size={16} />
+                Edit Shop
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -810,6 +837,54 @@ export default function ManageShopPage() {
                       />
                     </div>
                     
+                    {/* Facebook URL */}
+                    <div className="space-y-2">
+                      <label htmlFor="facebook_url" className="block text-sm font-medium mb-1">
+                        Facebook Page URL (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        id="facebook_url"
+                        name="facebook_url"
+                        value={formData.facebook_url}
+                        onChange={handleInputChange}
+                        placeholder="https://facebook.com/your-page"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
+                    </div>
+                    
+                    {/* Instagram URL */}
+                    <div className="space-y-2">
+                      <label htmlFor="instagram_url" className="block text-sm font-medium mb-1">
+                        Instagram Page URL (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        id="instagram_url"
+                        name="instagram_url"
+                        value={formData.instagram_url}
+                        onChange={handleInputChange}
+                        placeholder="https://instagram.com/your-account"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
+                    </div>
+                    
+                    {/* SMS Number */}
+                    <div className="space-y-2">
+                      <label htmlFor="sms_number" className="block text-sm font-medium mb-1">
+                        SMS Number (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        id="sms_number"
+                        name="sms_number"
+                        value={formData.sms_number}
+                        onChange={handleInputChange}
+                        placeholder="+63 XXX XXX XXXX"
+                        className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
+                    </div>
+                    
                     <div className="space-y-2">
                       <label htmlFor="address" className="block text-sm font-medium mb-1">
                         Address
@@ -1076,6 +1151,62 @@ export default function ManageShopPage() {
                         <p>{shop.email}</p>
                       </div>
                     )}
+                    
+                    {/* Facebook URL in view mode */}
+                    {shop.facebook_url && (
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3 text-blue-500 shrink-0">
+                          <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                        </svg>
+                        <a href={shop.facebook_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                          Facebook Page
+                        </a>
+                      </div>
+                    )}
+                    
+                    {/* Instagram URL in view mode */}
+                    {shop.instagram_url && (
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3 text-pink-500 shrink-0">
+                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                        <a href={shop.instagram_url} target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:underline">
+                          Instagram Profile
+                        </a>
+                      </div>
+                    )}
+                    
+                    {/* SMS Number in view mode */}
+                    {shop.sms_number && (
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3 text-green-500 shrink-0">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <a href={`sms:${shop.sms_number}`} className="text-green-400 hover:underline">
+                          {shop.sms_number}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Add View Public Listing button */}
+                  <div className="mt-8 pt-4 border-t border-border">
+                    <Button
+                      asChild
+                      variant="default"
+                      size="sm"
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/90"
+                    >
+                      <Link href={`/shop/${shop?.id}`}>
+                        <Eye size={16} className="mr-1" />
+                        View Your Public Shop Listing
+                      </Link>
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center mt-3">
+                      See how your shop appears to customers
+                    </p>
                   </div>
                 </div>
                 
