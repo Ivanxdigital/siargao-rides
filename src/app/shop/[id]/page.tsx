@@ -26,7 +26,7 @@ const pageVariants = {
 
 const bannerVariants = {
   hidden: { opacity: 0, scale: 1.02 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.7, ease: "easeOut" } }
 };
 
 const slideUpFadeIn = {
@@ -52,6 +52,11 @@ const staggerContainer = {
 const itemVariants = {
   hidden: { opacity: 0, y: 15 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+};
+
+const hoverScale = {
+  initial: { scale: 1 },
+  hover: { scale: 1.02, transition: { duration: 0.2 } }
 };
 // --- End Animation Variants ---
 
@@ -403,21 +408,21 @@ export default function ShopPage() {
 
   return (
     <motion.div
-      className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative"
+      className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-950 text-white relative"
       variants={pageVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Background with enhanced overlay gradient */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/30 via-purple-900/25 to-blue-900/20"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-blue-900/5 to-transparent"></div>
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10"></div>
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-purple-900/15 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-blue-900/5 to-transparent"></div>
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5"></div>
       </div>
       
       {/* Banner with enhanced height and overlay */}
       <motion.div
-        className="relative h-60 md:h-80 w-full z-10"
+        className="relative h-[35vh] md:h-[40vh] w-full z-10 overflow-hidden"
         variants={bannerVariants}
       >
         <Image
@@ -425,31 +430,35 @@ export default function ShopPage() {
           alt={`${shop.name} banner`}
           fill
           priority
-          className="object-cover"
+          className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/10 backdrop-blur-[2px]"></div>
       </motion.div>
       
       {/* Shop Info with better positioning and card styling */}
-      <div className="container mx-auto px-4 -mt-24 md:-mt-28 relative z-10">
+      <div className="container mx-auto px-4 -mt-32 md:-mt-36 relative z-10">
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
           {/* Profile Image with improved styling */}
-          <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-black/40 shadow-lg relative bg-black/60 backdrop-blur-sm">
+          <motion.div 
+            className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-black shadow-xl bg-gradient-to-br from-gray-900 to-black relative group"
+            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+          >
             <Image
               src={shop.logo_url || 'https://placehold.co/400x400/1e3b8a/white?text=Logo'}
               alt={shop.name}
               fill
               className="object-cover"
             />
-          </div>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
+          </motion.div>
           
           {/* Shop Details with better typography */}
           <motion.div
-            className="flex-1 bg-black/60 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/10"
+            className="flex-1 backdrop-blur-md bg-white/5 rounded-2xl p-5 md:p-7 border border-white/10 shadow-lg"
             variants={slideUpFadeIn}
           >
-            <div className="flex justify-between items-start">
-              <h1 className="text-2xl md:text-4xl font-bold">{shop.name}</h1>
+            <div className="flex justify-between items-start flex-wrap gap-3">
+              <h1 className="text-2xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80">{shop.name}</h1>
               
               {/* Add Edit Shop button for shop owners */}
               {isShopOwner && (
@@ -466,48 +475,48 @@ export default function ShopPage() {
                 </Button>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <div className="flex items-center bg-yellow-900/20 px-2 py-1 rounded-md">
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <div className="flex items-center bg-amber-400/10 px-3 py-1.5 rounded-full">
                 <Star
-                  size={18}
+                  size={16}
                   className="text-amber-400 fill-amber-400"
                 />
-                <span className="ml-1 font-medium">{averageRating.toFixed(1)}</span>
+                <span className="ml-1.5 font-medium">{averageRating.toFixed(1)}</span>
               </div>
               <span className="text-sm text-white/70">({reviews.length} reviews)</span>
               {shop.is_verified && 
-                <Badge variant="verified" className="ml-2 animate-pulse">
+                <Badge variant="verified" className="ml-2">
                   Verified Shop
                 </Badge>
               }
             </div>
-            <p className="text-white/70 mt-4 max-w-2xl">{shop.description || "No description available."}</p>
+            <p className="text-white/80 mt-5 max-w-2xl text-sm md:text-base leading-relaxed">{shop.description || "No description available."}</p>
             
             {/* Vehicle type badges */}
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-wrap gap-2 mt-5">
               {hasMotorcycles && (
-                <Badge className="bg-primary/20 text-primary border-primary/30">
-                  <Bike size={14} className="mr-1" /> Motorcycles
+                <Badge className="bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 px-3 py-1.5 transition-colors">
+                  <Bike size={14} className="mr-1.5" /> Motorcycles
                 </Badge>
               )}
               {hasCars && (
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                  <Car size={14} className="mr-1" /> Cars
+                <Badge className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/30 px-3 py-1.5 transition-colors">
+                  <Car size={14} className="mr-1.5" /> Cars
                 </Badge>
               )}
               {hasTuktuks && (
-                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                  <Truck size={14} className="mr-1" /> Tuktuks
+                <Badge className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border-amber-500/30 px-3 py-1.5 transition-colors">
+                  <Truck size={14} className="mr-1.5" /> Tuktuks
                 </Badge>
               )}
             </div>
 
-            {/* In the shop details section, add delivery information */}
+            {/* Delivery information with improved styling */}
             {shop.offers_delivery && (
-              <div className="bg-primary/20 border border-primary/30 rounded-lg p-4 mt-6">
-                <div className="flex items-center gap-2">
-                  <div className="text-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-xl p-4 mt-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="text-primary bg-primary/20 p-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="8 12 12 16 16 12"></polyline>
                       <line x1="12" y1="8" x2="12" y2="16"></line>
@@ -515,7 +524,7 @@ export default function ShopPage() {
                   </div>
                   <div>
                     <h3 className="text-primary font-medium text-sm">Delivery Available</h3>
-                    <p className="text-white/90 text-xs">
+                    <p className="text-white/90 text-xs mt-0.5">
                       This shop offers delivery to your accommodation for ₱{shop.delivery_fee}
                     </p>
                   </div>
@@ -526,121 +535,153 @@ export default function ShopPage() {
           
           {/* Contact Info Card with improved styling */}
           <motion.div
-            className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-5 shadow-sm w-full md:w-auto md:min-w-72 mt-4 md:mt-0"
+            className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg w-full md:w-auto md:min-w-80 mt-4 md:mt-0"
             variants={slideUpFadeIn}
           >
-            <h3 className="font-semibold mb-4 text-lg pb-2 border-b border-white/10">Contact Information</h3>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 group">
-                <MapPin size={20} className="text-primary mt-0.5 shrink-0" />
-                <span className="text-sm group-hover:text-primary transition-colors">
+            <h3 className="font-semibold mb-5 text-lg text-white/90">Contact Information</h3>
+            <div className="space-y-5">
+              <motion.div 
+                className="flex items-start gap-3 group"
+                whileHover={{ x: 3, transition: { duration: 0.2 } }}
+              >
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <MapPin size={18} className="text-primary" />
+                </div>
+                <span className="text-sm text-white/80 group-hover:text-white transition-colors pt-1.5">
                   {shop.address}, <br/>{shop.city}
                 </span>
-              </div>
+              </motion.div>
+              
               {shop.phone_number && (
-                <div className="flex items-center gap-3 group">
-                  <Phone size={20} className="text-primary shrink-0" />
-                  <a href={`tel:${shop.phone_number}`} className="text-sm hover:text-primary transition-colors">
+                <motion.div 
+                  className="flex items-center gap-3 group"
+                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                >
+                  <div className="bg-blue-500/10 p-2 rounded-full">
+                    <Phone size={18} className="text-blue-400" />
+                  </div>
+                  <a href={`tel:${shop.phone_number}`} className="text-sm text-white/80 hover:text-white transition-colors pt-1.5">
                     {shop.phone_number}
                   </a>
-                </div>
+                </motion.div>
               )}
+              
               {shop.email && (
-                <div className="flex items-center gap-3 group">
-                  <Mail size={20} className="text-primary shrink-0" />
-                  <a href={`mailto:${shop.email}`} className="text-sm hover:text-primary transition-colors">
+                <motion.div 
+                  className="flex items-center gap-3 group"
+                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                >
+                  <div className="bg-amber-500/10 p-2 rounded-full">
+                    <Mail size={18} className="text-amber-400" />
+                  </div>
+                  <a href={`mailto:${shop.email}`} className="text-sm text-white/80 hover:text-white transition-colors pt-1.5">
                     {shop.email}
                   </a>
-                </div>
+                </motion.div>
               )}
               
               {/* Facebook link */}
               {shop.facebook_url && (
-                <div className="flex items-center gap-3 group">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="text-blue-400 shrink-0"
-                  >
-                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                  </svg>
+                <motion.div 
+                  className="flex items-center gap-3 group"
+                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                >
+                  <div className="bg-blue-600/10 p-2 rounded-full">
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="18" 
+                      height="18" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      className="text-blue-400"
+                    >
+                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                    </svg>
+                  </div>
                   <a 
                     href={shop.facebook_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors pt-1.5"
                   >
                     Facebook Page
                   </a>
-                </div>
+                </motion.div>
               )}
               
               {/* Instagram link */}
               {shop.instagram_url && (
-                <div className="flex items-center gap-3 group">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="text-pink-400 shrink-0"
-                  >
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                  </svg>
+                <motion.div 
+                  className="flex items-center gap-3 group"
+                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                >
+                  <div className="bg-pink-600/10 p-2 rounded-full">
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="18" 
+                      height="18" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      className="text-pink-400"
+                    >
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                  </div>
                   <a 
                     href={shop.instagram_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-sm text-pink-400 hover:text-pink-300 transition-colors"
+                    className="text-sm text-pink-400 hover:text-pink-300 transition-colors pt-1.5"
                   >
                     Instagram Profile
                   </a>
-                </div>
+                </motion.div>
               )}
               
               {/* SMS Number */}
               {shop.sms_number && (
-                <div className="flex items-center gap-3 group">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="text-green-400 shrink-0"
-                  >
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
+                <motion.div 
+                  className="flex items-center gap-3 group"
+                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                >
+                  <div className="bg-green-600/10 p-2 rounded-full">
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="18" 
+                      height="18" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      className="text-green-400"
+                    >
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </div>
                   <a 
                     href={`sms:${shop.sms_number}`} 
-                    className="text-sm text-green-400 hover:text-green-300 transition-colors"
+                    className="text-sm text-green-400 hover:text-green-300 transition-colors pt-1.5"
                   >
                     Send SMS
                   </a>
-                </div>
+                </motion.div>
               )}
               
               {shop.whatsapp && (
                 <Button 
-                  className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white border-green-700" 
+                  className="w-full mt-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-none shadow-md" 
                   onClick={() => window.open(`https://wa.me/${shop.whatsapp?.replace(/\+/g, '').replace(/\s/g, '')}`, '_blank')}
                 >
                   <MessageCircle size={18} className="mr-2" />
@@ -652,40 +693,40 @@ export default function ShopPage() {
         </div>
       </div>
       
-      {/* Notice about ID requirements - moved here for better visibility */}
+      {/* Notice about ID requirements with improved glass morphism */}
       <motion.div 
-        className="container mx-auto px-4 mt-8 mb-2 relative z-10"
+        className="container mx-auto px-4 mt-10 mb-4 relative z-10"
         variants={fadeIn}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
         transition={{ delay: 0.2 }}
       >
-        <div className="bg-yellow-900/40 backdrop-blur-md border border-yellow-500/30 rounded-lg p-4 shadow-md">
-          <div className="flex items-start gap-3">
-            <div className="text-yellow-400 mt-0.5 shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="backdrop-blur-md bg-gradient-to-r from-yellow-900/20 to-yellow-900/10 border border-yellow-500/20 rounded-xl p-5 shadow-md">
+          <div className="flex items-start gap-4">
+            <div className="text-yellow-400 bg-yellow-500/10 p-3 rounded-full shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </div>
             <div>
-              <h3 className="text-yellow-400 font-medium text-sm md:text-base">Important Rental Information</h3>
-              <p className="text-white/90 text-xs md:text-sm mt-1">
+              <h3 className="text-yellow-400 font-medium text-base md:text-lg">Important Rental Information</h3>
+              <p className="text-white/90 text-xs md:text-sm mt-2 leading-relaxed">
                 {shop.requires_id_deposit && shop.requires_cash_deposit ? (
                   <>
-                    This shop requires a valid ID and a cash deposit of ₱{shop.cash_deposit_amount} when renting vehicles. 
+                    This shop requires a valid ID and a cash deposit of <span className="font-medium text-yellow-300">₱{shop.cash_deposit_amount}</span> when renting vehicles. 
                     Both will be safely returned to you when you bring back the vehicle in good condition.
                   </>
                 ) : shop.requires_id_deposit ? (
                   <>
-                    This shop requires a valid ID as a deposit when renting vehicles. 
+                    This shop requires a <span className="font-medium text-yellow-300">valid ID</span> as a deposit when renting vehicles. 
                     Your ID will be safely returned to you when you bring back the vehicle in good condition.
                   </>
                 ) : shop.requires_cash_deposit ? (
                   <>
-                    This shop requires a cash deposit of ₱{shop.cash_deposit_amount} when renting vehicles. 
+                    This shop requires a cash deposit of <span className="font-medium text-yellow-300">₱{shop.cash_deposit_amount}</span> when renting vehicles. 
                     The deposit will be fully refunded when you bring back the vehicle in good condition.
                   </>
                 ) : (
@@ -700,56 +741,56 @@ export default function ShopPage() {
         </div>
       </motion.div>
       
-      {/* Vehicle Type Tabs */}
+      {/* Vehicle Type Tabs with improved styling */}
       {vehicles.length > 0 && (
         <motion.div 
-          className="container mx-auto px-4 mt-8 relative z-10"
+          className="container mx-auto px-4 mt-10 relative z-10"
           variants={fadeIn}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
         >
-          <div className="flex flex-wrap gap-2">
+          <div className="bg-white/5 backdrop-blur-md p-1.5 rounded-full inline-flex flex-wrap gap-2 border border-white/10 shadow-md">
             <Button 
-              variant={selectedVehicleType === 'all' ? 'default' : 'outline'}
+              variant={selectedVehicleType === 'all' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setSelectedVehicleType('all')}
-              className="rounded-full"
+              className={`rounded-full px-4 ${selectedVehicleType === 'all' ? 'bg-white/10 shadow-sm' : 'hover:bg-white/5'}`}
             >
               All Vehicles
             </Button>
             
             {hasMotorcycles && (
               <Button 
-                variant={selectedVehicleType === 'motorcycle' ? 'default' : 'outline'}
+                variant={selectedVehicleType === 'motorcycle' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('motorcycle')}
-                className="rounded-full"
+                className={`rounded-full px-4 ${selectedVehicleType === 'motorcycle' ? 'bg-primary/20 text-primary shadow-sm' : 'hover:bg-white/5'}`}
               >
-                <Bike size={14} className="mr-1" /> Motorcycles
+                <Bike size={14} className="mr-1.5" /> Motorcycles
               </Button>
             )}
             
             {hasCars && (
               <Button 
-                variant={selectedVehicleType === 'car' ? 'default' : 'outline'}
+                variant={selectedVehicleType === 'car' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('car')}
-                className="rounded-full"
+                className={`rounded-full px-4 ${selectedVehicleType === 'car' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'hover:bg-white/5'}`}
               >
-                <Car size={14} className="mr-1" /> Cars
+                <Car size={14} className="mr-1.5" /> Cars
               </Button>
             )}
             
             {hasTuktuks && (
               <Button 
-                variant={selectedVehicleType === 'tuktuk' ? 'default' : 'outline'}
+                variant={selectedVehicleType === 'tuktuk' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('tuktuk')}
-                className="rounded-full"
+                className={`rounded-full px-4 ${selectedVehicleType === 'tuktuk' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'hover:bg-white/5'}`}
               >
-                <Truck size={14} className="mr-1" /> Tuktuks
+                <Truck size={14} className="mr-1.5" /> Tuktuks
               </Button>
             )}
           </div>
@@ -758,33 +799,40 @@ export default function ShopPage() {
       
       {/* Vehicle Listings with improved styling */}
       <div className="container mx-auto px-4 py-12 relative z-10">
-        <motion.h2 
-          className="text-2xl font-semibold mb-6 flex items-center after:content-[''] after:ml-4 after:flex-1 after:border-t after:border-white/10"
+        <motion.div 
+          className="flex items-center gap-3 mb-8"
           variants={fadeIn} 
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
         >
-          {selectedVehicleType === 'all' ? 'Available Vehicles' : 
-           selectedVehicleType === 'motorcycle' ? 'Available Motorcycles' :
-           selectedVehicleType === 'car' ? 'Available Cars' : 'Available Tuktuks'}
-        </motion.h2>
+          <h2 className="text-xl md:text-2xl font-semibold text-white">
+            {selectedVehicleType === 'all' ? 'Available Vehicles' : 
+            selectedVehicleType === 'motorcycle' ? 'Available Motorcycles' :
+            selectedVehicleType === 'car' ? 'Available Cars' : 'Available Tuktuks'}
+          </h2>
+          <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
+        </motion.div>
         
         {vehicles.length === 0 ? (
           <motion.div 
-            className="text-center py-12 bg-black/40 backdrop-blur-sm rounded-lg border border-dashed border-white/10"
+            className="text-center py-16 backdrop-blur-md bg-black/20 rounded-xl border border-dashed border-white/10"
             variants={fadeIn}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             transition={{ delay: 0.5 }}
           >
-            <p className="text-white/50">No vehicles available from this shop at the moment.</p>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
+              <AlertTriangle size={24} className="text-yellow-400" />
+            </div>
+            <p className="text-white/70 font-medium">No vehicles available from this shop at the moment.</p>
+            <p className="text-white/50 text-sm mt-2">Check back later or browse other shops.</p>
           </motion.div>
         ) : (
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
@@ -794,7 +842,12 @@ export default function ShopPage() {
             {vehicles
               .filter(v => selectedVehicleType === 'all' || v.vehicle_type === selectedVehicleType)
               .map(vehicle => (
-                <motion.div key={vehicle.id} variants={itemVariants}>
+                <motion.div 
+                  key={vehicle.id} 
+                  variants={itemVariants}
+                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                  className="transform transition-all duration-300"
+                >
                   <VehicleCard
                     id={vehicle.id}
                     model={vehicle.name}
