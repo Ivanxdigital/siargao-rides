@@ -91,7 +91,7 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
             <Star 
               key={i} 
               size={16} 
-              className={i < review.rating ? "text-tropical-yellow fill-tropical-yellow" : "text-white/30"} 
+              className={i < review.rating ? "text-amber-400 fill-amber-400" : "text-white/30"} 
             />
           ))}
         </div>

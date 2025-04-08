@@ -468,7 +468,10 @@ export default function ShopPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <div className="flex items-center bg-yellow-900/20 px-2 py-1 rounded-md">
-                <Star size={18} className="text-tropical-yellow fill-tropical-yellow" />
+                <Star
+                  size={18}
+                  className="text-amber-400 fill-amber-400"
+                />
                 <span className="ml-1 font-medium">{averageRating.toFixed(1)}</span>
               </div>
               <span className="text-sm text-white/70">({reviews.length} reviews)</span>
@@ -858,7 +861,10 @@ export default function ShopPage() {
             >
               <div className="p-8 flex flex-col items-center">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                  <Star size={24} className="text-primary" />
+                  <Star
+                    size={18}
+                    className="text-amber-400 fill-amber-400"
+                  />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">No Reviews Yet</h3>
                 <p className="text-white/70 text-center mb-6">

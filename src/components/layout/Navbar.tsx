@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
-import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar } from "lucide-react"
+import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar, ShoppingBag } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
 import Image from "next/image"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 const styles = {
   shadowGlow: `
@@ -36,6 +37,29 @@ const Navbar = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const { user, isAuthenticated, signOut, isAdmin } = useAuth()
   const scrollPosition = useRef(0)
+  const [shopData, setShopData] = useState<{ id: string; name: string } | null>(null)
+
+  // Fetch shop data if user is a shop owner
+  useEffect(() => {
+    const fetchShopData = async () => {
+      if (user?.user_metadata?.role === 'shop_owner') {
+        const supabase = createClientComponentClient()
+        const { data, error } = await supabase
+          .from('rental_shops')
+          .select('id, name')
+          .eq('owner_id', user.id)
+          .single()
+
+        if (!error && data) {
+          setShopData(data)
+        }
+      }
+    }
+
+    if (isAuthenticated) {
+      fetchShopData()
+    }
+  }, [isAuthenticated, user])
 
   // Change navbar style on scroll
   useEffect(() => {
@@ -214,6 +238,17 @@ const Navbar = () => {
                         <span className="group-hover:translate-x-1 transition-transform duration-200">Dashboard</span>
                       </Link>
                       
+                      {shopData && (
+                        <Link
+                          href={`/shop/${shopData.id}`}
+                          className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
+                          onClick={closeMenus}
+                        >
+                          <ShoppingBag className="h-4 w-4 group-hover:text-primary transition-colors duration-200" />
+                          <span className="group-hover:translate-x-1 transition-transform duration-200">My Shop</span>
+                        </Link>
+                      )}
+                      
                       <Link
                         href="/dashboard/my-bookings"
                         className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
@@ -347,6 +382,12 @@ const Navbar = () => {
                   <MobileNavLink href="/dashboard" onClick={() => setIsMenuOpen(false)} icon={<User size={16} />}>
                     Dashboard
                   </MobileNavLink>
+                  
+                  {shopData && (
+                    <MobileNavLink href={`/shop/${shopData.id}`} onClick={() => setIsMenuOpen(false)} icon={<ShoppingBag size={16} />}>
+                      My Shop
+                    </MobileNavLink>
+                  )}
                   
                   <MobileNavLink href="/dashboard/my-bookings" onClick={() => setIsMenuOpen(false)} icon={<Calendar size={16} />}>
                     My Bookings
