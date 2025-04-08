@@ -20,51 +20,73 @@ const localizer = momentLocalizer(moment);
 
 // Event styling based on booking status
 const eventStyleGetter = (event: any) => {
+  // Base styles
   let style = {
     backgroundColor: '#8b5cf6', // primary color for default
     color: 'white',
     border: 'none',
     borderRadius: '4px',
     padding: '2px 4px',
-    fontSize: '0.9em',
+    fontSize: '0.8rem',
     fontWeight: 'bold',
     opacity: 0.9
   };
   
-  // Special style for blocked dates - make them more visible
+  // Define className to add for extra styling
+  let className = '';
+  
+  // Special style for blocked dates
   if (event.isBlocked) {
-    return { 
-      style: {
-        backgroundColor: '#ef4444', // red-500
-        color: 'white',
-        border: '2px solid #b91c1c', // red-700
-        borderRadius: '4px',
-        padding: '2px 4px',
-        fontSize: '0.9em',
-        fontWeight: 'bold',
-        opacity: 0.9
-      }
+    style = {
+      ...style,
+      backgroundColor: '#ef4444', // red-500
+      color: 'white',
+      border: '1px solid #b91c1c', // red-700
+      borderRadius: '4px',
+      padding: '2px 4px',
+      fontSize: '0.75rem',
+      fontWeight: 'bold',
+      opacity: 0.9
     };
+    className = 'rbc-event-blocked'; // Add this class for CSS targeting
+    
+    // Make the title more concise for better display in month view
+    if (event.title && event.title.length > 25) {
+      // Remove "BLOCKED: " prefix and truncate
+      const shortTitle = event.title.replace('BLOCKED: ', '');
+      event.title = shortTitle.length > 22 ? shortTitle.substring(0, 22) + '...' : shortTitle;
+    }
+    
+    return { style, className };
   }
   
   switch(event.status) {
     case 'pending':
       style.backgroundColor = '#fbbf24'; // amber-400
+      className = 'rbc-event-pending';
       break;
     case 'confirmed':
       style.backgroundColor = '#34d399'; // emerald-400
+      className = 'rbc-event-confirmed';
       break;
     case 'completed':
       style.backgroundColor = '#818cf8'; // indigo-400
+      className = 'rbc-event-completed';
       break;
     case 'cancelled':
       style.backgroundColor = '#f87171'; // red-400
+      className = 'rbc-event-cancelled';
       break;
     default:
       break;
   }
   
-  return { style };
+  // Truncate long titles for better display
+  if (event.title && event.title.length > 25) {
+    event.title = event.title.substring(0, 22) + '...';
+  }
+  
+  return { style, className };
 };
 
 interface BookingEvent {
@@ -951,7 +973,20 @@ export default function BookingsCalendarPage() {
                   }
                 }}
                 popup
+                popupOffset={10}
+                tooltipAccessor={null} // Disable default tooltips
+                showMultiDayTimes
+                components={{
+                  event: ({ event }) => (
+                    <div className="event-content" title={event.title}>
+                      {event.title}
+                    </div>
+                  )
+                }}
                 className="custom-calendar"
+                messages={{
+                  showMore: (total) => `+${total} more`
+                }}
               />
             </div>
           </div>

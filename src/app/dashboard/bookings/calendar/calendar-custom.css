@@ -146,4 +146,443 @@
   .custom-calendar .rbc-agenda-view table.rbc-agenda-table {
     font-size: 0.8rem;
   }
+}
+
+/* Custom styles for the react-big-calendar */
+
+/* Make the calendar look more modern */
+.custom-calendar {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Header styling */
+.custom-calendar .rbc-toolbar {
+  padding: 12px;
+  font-size: 14px;
+  background-color: var(--background, #f5f5f5);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.custom-calendar .rbc-toolbar button {
+  border-radius: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  background-color: var(--card, white);
+  color: var(--foreground, black);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.custom-calendar .rbc-toolbar button.rbc-active {
+  background-color: var(--primary, #8b5cf6);
+  color: white;
+  border-color: var(--primary, #8b5cf6);
+}
+
+.custom-calendar .rbc-toolbar button:hover:not(.rbc-active) {
+  background-color: var(--muted, #f1f5f9);
+}
+
+/* Date cells styling */
+.custom-calendar .rbc-month-view {
+  border-radius: 0;
+  border: none;
+}
+
+.custom-calendar .rbc-day-bg {
+  background-color: var(--card, white);
+  transition: background-color 0.2s ease;
+}
+
+.custom-calendar .rbc-day-bg:hover {
+  background-color: var(--muted, #f1f5f9);
+}
+
+.custom-calendar .rbc-off-range-bg {
+  background-color: var(--muted, #f1f5f9);
+  opacity: 0.6;
+}
+
+.custom-calendar .rbc-off-range {
+  color: var(--muted-foreground, #64748b);
+}
+
+.custom-calendar .rbc-today {
+  background-color: var(--accent, #f9f5ff);
+}
+
+/* Event styling */
+.custom-calendar .rbc-event {
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+/* Improved multi-event display for month view */
+.custom-calendar .rbc-month-view .rbc-date-cell {
+  padding-right: 6px;
+  text-align: right;
+}
+
+.custom-calendar .rbc-row-segment {
+  padding: 0 2px;
+}
+
+.custom-calendar .rbc-event {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  min-height: 20px;
+}
+
+.event-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+/* Style the +more link */
+.custom-calendar .rbc-show-more {
+  font-size: 0.8rem;
+  font-weight: 500;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin: 2px;
+  color: var(--foreground, black);
+}
+
+.custom-calendar .rbc-show-more:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Popup overlay styling */
+.custom-calendar .rbc-overlay {
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  width: 300px;
+}
+
+.custom-calendar .rbc-overlay-header {
+  padding: 10px 15px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  background-color: var(--card, white);
+}
+
+/* Individual event in popup */
+.custom-calendar .rbc-event.rbc-selected {
+  background-color: inherit; /* Keep the event's original color */
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom color for the popup */
+.rbc-popup {
+  z-index: 100;
+  background-color: var(--card, white);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid var(--border, #e2e8f0);
+  max-width: 300px;
+}
+
+/* Hover effect for events */
+.custom-calendar .rbc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  z-index: 5;
+}
+
+/* Custom classes for event types to apply in eventPropGetter */
+.event-blocked {
+  border-left: 3px solid #b91c1c !important;
+}
+
+.event-pending {
+  border-left: 3px solid #b45309 !important;
+}
+
+.event-confirmed {
+  border-left: 3px solid #047857 !important;
+}
+
+.event-completed {
+  border-left: 3px solid #4338ca !important;
+}
+
+.event-cancelled {
+  border-left: 3px solid #b91c1c !important;
+}
+
+/* Add styles for custom components */
+
+/* Custom event styling */
+.custom-event {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* Custom event wrapper styling for different event types */
+.custom-event-wrapper {
+  position: relative;
+  border-radius: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-event-wrapper:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.custom-event-wrapper.rbc-event-blocked {
+  border-left: 3px solid #b91c1c !important;
+}
+
+.custom-event-wrapper.rbc-event-pending {
+  border-left: 3px solid #b45309 !important;
+}
+
+.custom-event-wrapper.rbc-event-confirmed {
+  border-left: 3px solid #047857 !important;
+}
+
+.custom-event-wrapper.rbc-event-completed {
+  border-left: 3px solid #4338ca !important;
+}
+
+.custom-event-wrapper.rbc-event-cancelled {
+  border-left: 3px solid #b91c1c !important;
+}
+
+/* Custom date cell styling */
+.custom-date-cell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-date-cell .date-header {
+  text-align: right;
+  padding: 2px 5px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.custom-date-cell .events-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Custom month header */
+.custom-month-header {
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-align: center;
+  padding: 10px 0;
+}
+
+/* Custom toolbar styling */
+.custom-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: var(--background, #f5f5f5);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.custom-toolbar .toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-toolbar button {
+  background-color: var(--card, white);
+  border: 1px solid var(--border, #e2e8f0);
+  color: var(--foreground, black);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.custom-toolbar button:hover {
+  background-color: var(--muted, #f1f5f9);
+}
+
+.custom-toolbar button.active {
+  background-color: var(--primary, #8b5cf6);
+  color: white;
+  border-color: var(--primary, #8b5cf6);
+}
+
+.custom-toolbar .today-button {
+  font-weight: 500;
+}
+
+.custom-toolbar .navigate-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.custom-toolbar .toolbar-date {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.custom-toolbar .view-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .custom-toolbar {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  .custom-toolbar .toolbar-section {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .custom-toolbar .toolbar-date {
+    margin: 8px 0;
+  }
+  
+  .custom-toolbar .view-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .custom-toolbar button {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Improve how multiple events display on same day */
+.custom-calendar .rbc-row-segment {
+  padding: 0 2px;
+}
+
+/* Allow the week view to better display multiple events */
+.custom-calendar .rbc-time-view .rbc-event {
+  border: none !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  padding: 3px 6px;
+}
+
+/* Make overlapping events in month view more distinguishable */
+.custom-calendar .rbc-event {
+  z-index: 2;
+}
+
+.custom-calendar .rbc-event:hover {
+  z-index: 10;
+}
+
+/* Condensed view for month view when many events */
+.custom-calendar .rbc-month-view .rbc-event {
+  padding: 1px 4px;
+  min-height: 18px;
+}
+
+/* Override specific colors for blocked dates */
+.custom-calendar .rbc-event.rbc-event-blocked {
+  background-color: #ef4444 !important;
+  border-left: 3px solid #b91c1c !important;
+}
+
+/* Customize the day view */
+.custom-calendar .rbc-time-view {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.custom-calendar .rbc-time-content {
+  border-top: 1px solid #e5e7eb; 
+}
+
+.custom-calendar .rbc-timeslot-group {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* Make the popup appear smoother */
+.custom-calendar .rbc-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Additional styles for different event types */
+.rbc-event.rbc-event-blocked {
+  border-left: 3px solid #b91c1c !important;
+  background-color: #ef4444 !important;
+}
+
+.rbc-event.rbc-event-pending {
+  border-left: 3px solid #d97706 !important;
+  background-color: #fbbf24 !important;
+}
+
+.rbc-event.rbc-event-confirmed {
+  border-left: 3px solid #059669 !important;
+  background-color: #34d399 !important;
+}
+
+.rbc-event.rbc-event-completed {
+  border-left: 3px solid #4f46e5 !important;
+  background-color: #818cf8 !important;
+}
+
+.rbc-event.rbc-event-cancelled {
+  border-left: 3px solid #b91c1c !important;
+  background-color: #f87171 !important;
+}
+
+/* Better multi-day event rendering */
+.rbc-day-slot .rbc-events-container {
+  margin-right: 1px;
+}
+
+/* Add a shadow to the event on hover for better interaction */
+.rbc-event:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Improve the +more popup styling */
+.rbc-show-more {
+  background-color: rgba(0, 0, 0, 0.07);
+  color: var(--foreground);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 6px !important;
+  font-size: 0.75rem !important;
+  margin-right: 2px !important;
+  transition: background-color 0.2s ease;
+}
+
+.rbc-show-more:hover {
+  background-color: rgba(0, 0, 0, 0.12);
 } 
