@@ -485,7 +485,22 @@ export default function ShopPage() {
               </div>
               <span className="text-sm text-white/70">({reviews.length} reviews)</span>
               {shop.is_verified && 
-                <Badge variant="verified" className="ml-2">
+                <Badge variant="verified" className="ml-2 bg-emerald-700/60 text-emerald-100 border border-emerald-500/30 px-2.5 py-1">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="14" 
+                    height="14" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="mr-1"
+                  >
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
                   Verified Shop
                 </Badge>
               }
@@ -756,7 +771,7 @@ export default function ShopPage() {
               variant={selectedVehicleType === 'all' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setSelectedVehicleType('all')}
-              className={`rounded-full px-4 ${selectedVehicleType === 'all' ? 'bg-white/10 shadow-sm' : 'hover:bg-white/5'}`}
+              className={`rounded-full px-4 ${selectedVehicleType === 'all' ? 'bg-white/10 text-white shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
             >
               All Vehicles
             </Button>
@@ -766,7 +781,7 @@ export default function ShopPage() {
                 variant={selectedVehicleType === 'motorcycle' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('motorcycle')}
-                className={`rounded-full px-4 ${selectedVehicleType === 'motorcycle' ? 'bg-primary/20 text-primary shadow-sm' : 'hover:bg-white/5'}`}
+                className={`rounded-full px-4 ${selectedVehicleType === 'motorcycle' ? 'bg-primary/20 text-primary shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
               >
                 <Bike size={14} className="mr-1.5" /> Motorcycles
               </Button>
@@ -777,7 +792,7 @@ export default function ShopPage() {
                 variant={selectedVehicleType === 'car' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('car')}
-                className={`rounded-full px-4 ${selectedVehicleType === 'car' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'hover:bg-white/5'}`}
+                className={`rounded-full px-4 ${selectedVehicleType === 'car' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
               >
                 <Car size={14} className="mr-1.5" /> Cars
               </Button>
@@ -788,7 +803,7 @@ export default function ShopPage() {
                 variant={selectedVehicleType === 'tuktuk' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('tuktuk')}
-                className={`rounded-full px-4 ${selectedVehicleType === 'tuktuk' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'hover:bg-white/5'}`}
+                className={`rounded-full px-4 ${selectedVehicleType === 'tuktuk' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
               >
                 <Truck size={14} className="mr-1.5" /> Tuktuks
               </Button>
