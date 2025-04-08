@@ -7,7 +7,7 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { 
+import {
   User,
   Session,
   createClientComponentClient
@@ -75,12 +75,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user || null);
-        
+
         // Check if user is admin
         if (session?.user) {
           const role = session.user.user_metadata?.role;
           setIsAdmin(role === 'admin');
-          
+
           // Subscribe to booking notifications
           if (!notificationSubscription && session.user.id) {
             const subscription = subscribeToBookingNotifications(session.user.id);
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } else {
           setIsAdmin(false);
-          
+
           // Unsubscribe from notifications if user is no longer authenticated
           if (notificationSubscription) {
             notificationSubscription.unsubscribe();
@@ -108,19 +108,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       async (_event, session) => {
         setSession(session);
         setUser(session?.user || null);
-        
+
         // Check if this is a new user from Google sign-in (or other OAuth)
         if (session?.user) {
           const user = session.user;
-          
+
           // If we have a Google user who doesn't have a role set
           if (
-            user.app_metadata.provider === 'google' && 
+            user.app_metadata.provider === 'google' &&
             (!user.user_metadata?.role || user.user_metadata.role === '')
           ) {
             console.log("New Google user detected, setting up profile with 'tourist' role");
             setIsSettingUp(true);
-            
+
             try {
               // First, update user metadata with tourist role and name info
               const { error: updateError } = await supabase.auth.updateUser({
@@ -130,12 +130,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   last_name: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
                 }
               });
-              
+
               if (updateError) {
                 console.error("Error updating Google user metadata:", updateError);
                 throw updateError;
               }
-              
+
               // Create a record in our users table via API route
               const apiUrl = '/api/auth/register';
               console.log(`Calling API route ${apiUrl} for new Google user:`, {
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 lastName: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
                 role: 'tourist',
               });
-              
+
               const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
@@ -159,7 +159,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   role: 'tourist',
                 }),
               });
-              
+
               if (!response.ok) {
                 let responseData;
                 try {
@@ -167,7 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 } catch (jsonError) {
                   responseData = { error: 'Invalid JSON response' };
                 }
-                
+
                 // If the record already exists, this isn't necessarily an error
                 if (response.status === 409 && responseData.error === 'Duplicate user') {
                   console.log('User record already exists, continuing...');
@@ -204,7 +204,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setIsLoading(false);
             // Removed automatic redirect here to allow users to browse the homepage
           }
-          
+
           // Subscribe to booking notifications if not already subscribed
           if (!notificationSubscription && session.user.id) {
             const subscription = subscribeToBookingNotifications(session.user.id);
@@ -213,7 +213,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } else {
           setIsAdmin(false);
           setIsLoading(false);
-          
+
           // Unsubscribe from notifications if user is no longer authenticated
           if (notificationSubscription) {
             notificationSubscription.unsubscribe();
@@ -225,7 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       subscription.unsubscribe();
-      
+
       // Cleanup notification subscription on unmount
       if (notificationSubscription) {
         notificationSubscription.unsubscribe();
@@ -237,80 +237,73 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     try {
       console.log(`Attempting to sign in with email: ${email}`);
-      
-      // Track retry attempts with exponential backoff
+
+      // Significantly reduce retry attempts to avoid hitting rate limits
       let attempts = 0;
-      const maxRetries = 1; // Reduce to only 1 retry to avoid excessive attempts
+      const maxRetries = 0; // No retries - if we hit a rate limit, we should back off completely
       let lastError: any = null;
-      
-      // Try up to maxRetries times with exponential backoff
+
+      // Try only once, with no retries if we hit a rate limit
       while (attempts <= maxRetries) {
         try {
-          // Add a longer initial delay that increases with each previous failure
-          const initialDelay = attempts === 0 ? 300 : 2000;
+          // Add a small initial delay to prevent rapid successive requests
+          const initialDelay = 500;
           await new Promise(resolve => setTimeout(resolve, initialDelay));
-          
+
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
           });
-          
-          console.log("Auth response:", { 
-            session: data?.session ? "exists" : "null", 
+
+          console.log("Auth response:", {
+            session: data?.session ? "exists" : "null",
             user: data?.user ? "exists" : "null",
-            error: error ? { 
-              message: error.message, 
-              status: error.status, 
-              name: error.name 
-            } : "none" 
+            error: error ? {
+              message: error.message,
+              status: error.status,
+              name: error.name
+            } : "none"
           });
-          
+
           // If successful or non-retriable error, break out of the retry loop
           if (!error || error.status !== 429) {
             lastError = error;
             break;
           }
-          
-          // If we hit rate limit and have retries left, wait with exponential backoff
+
+          // If we hit a rate limit, don't retry - just return the error
           lastError = error;
-          attempts++;
-          
-          if (attempts <= maxRetries) {
-            // More aggressive exponential backoff: 5s for the first retry
-            const backoffTime = 5000;
-            console.log(`Rate limit hit, retrying in ${backoffTime}ms (attempt ${attempts}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, backoffTime));
-          }
+          break; // Exit the retry loop immediately on rate limit errors
         } catch (retryError) {
           // For unexpected errors, stop retrying
           lastError = retryError;
           break;
         }
       }
-      
+
       // Process the final result after all retries
       if (lastError) {
         console.error("Sign in error after retries:", lastError);
-        
+
         // Handle rate limit errors specifically
         if (
           (typeof lastError.message === 'string' && (
-            lastError.message.toLowerCase().includes("rate limit") || 
+            lastError.message.toLowerCase().includes("rate limit") ||
             lastError.message.toLowerCase().includes("request rate limit reached") ||
             lastError.message.toLowerCase().includes("too many requests")
-          )) || 
+          )) ||
           lastError.status === 429
         ) {
           console.warn("Rate limit reached during sign-in attempt");
-          return { 
+          return {
             error: {
               message: "Too many sign-in attempts. Please wait before trying again.",
               code: "over_request_rate_limit",
               status: 429
-            } 
+            }
           };
         }
-        
+
         // Handle invalid credentials
         if (lastError.message?.includes("Invalid login credentials")) {
           console.warn("Invalid login credentials");
@@ -322,17 +315,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
           };
         }
-        
+
         // General error handling
-        return { 
+        return {
           error: {
             message: lastError.message || "Authentication failed",
             code: lastError.name || "auth_error",
             status: lastError.status || 400
-          } 
+          }
         };
       }
-      
+
       // Check if we have a valid session
       const { data } = await supabase.auth.getSession();
       if (data?.session) {
@@ -341,11 +334,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Let the page that called signIn handle any redirections
         router.refresh();
         return { error: null };
-      } 
-      
+      }
+
       // No session but also no error
       console.warn("Sign in response had no session and no error");
-      return { 
+      return {
         error: {
           message: "Unable to sign in. Please try again.",
           code: "no_session",
@@ -354,13 +347,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
     } catch (err) {
       console.error("Unexpected sign in error:", err);
-      return { 
+      return {
         error: {
           message: err instanceof Error ? err.message : "An unexpected error occurred during sign in",
           code: "unexpected_error",
           status: 500,
           details: err instanceof Error ? err.stack : String(err)
-        } 
+        }
       };
     } finally {
       setIsLoading(false);
@@ -368,17 +361,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const register = async (
-    email: string, 
-    password: string, 
-    firstName: string, 
+    email: string,
+    password: string,
+    firstName: string,
     lastName: string,
     role: string
   ) => {
     setIsLoading(true);
-    
+
     try {
       console.log(`Attempting to register user with email: ${email}, role: ${role}`);
-      
+
       // Sign up the user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -392,19 +385,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      
+
       if (authError) {
         console.error('Supabase Auth signup error:', authError);
-        
+
         // Handle specific error cases with better user messages
         if (authError.message?.includes('User already registered')) {
           return { error: { message: 'This email is already registered. Please sign in instead.' } };
         }
-        
+
         if (authError.message?.includes('rate limit')) {
           return { error: { message: 'Too many signup attempts. Please try again later.' } };
         }
-        
+
         // Generic error handling
         throw authError;
       }
@@ -427,7 +420,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             lastName,
             role
           });
-          
+
           const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
@@ -449,14 +442,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
             console.error('Error parsing API response:', jsonError);
             responseData = { error: 'Invalid JSON response' };
           }
-          
+
           if (!response.ok) {
             console.error('API register route error:', {
               status: response.status,
               statusText: response.statusText,
               data: responseData
             });
-            
+
             // If the record already exists, this isn't necessarily an error
             if (response.status === 409 && responseData.error === 'Duplicate user') {
               console.log('User record already exists, continuing...');
@@ -468,13 +461,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } catch (apiError) {
           console.error('Error creating user record via API:', apiError);
-          
+
           // Only throw if this isn't a duplicate user error (which we can ignore)
           if (!(apiError instanceof Error && apiError.message.includes('Duplicate user'))) {
             throw new Error('Your account was created but profile setup failed. Please contact support.');
           }
         }
-        
+
         setIsLoading(false);
         router.push("/verify-email");
         return { error: null };
@@ -482,18 +475,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.error('Auth signup succeeded but no user object returned');
         throw new Error('Signup process incomplete. Please try again.');
       }
-      
+
     } catch (error: any) {
       console.error('Registration error:', error);
       setIsLoading(false);
-      
+
       // Improve error messaging based on error type/content
       if (error.message?.includes('500')) {
         return { error: { message: 'Server error during registration. Please try again later.' } };
       }
-      
-      return { error: { 
-        message: error.message || 'An error occurred during registration. Please try again.' 
+
+      return { error: {
+        message: error.message || 'An error occurred during registration. Please try again.'
       }};
     }
   };
@@ -526,32 +519,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const resendVerificationEmail = async (email: string) => {
     try {
       console.log(`Attempting to send verification email to: ${email}`);
-      
+
       // First check if the email exists in our system
       const { data: userExists, error: checkError } = await supabase
         .from('users')
         .select('id')
         .eq('email', email)
         .maybeSingle();
-      
+
       if (checkError) {
         console.error('Error checking if user exists:', checkError);
-        return { 
-          error: { message: `Error verifying email address: ${checkError.message}` }, 
+        return {
+          error: { message: `Error verifying email address: ${checkError.message}` },
           success: false,
           details: null
         };
       }
-      
+
       if (!userExists) {
         console.warn(`Email address ${email} not found in our system`);
-        return { 
-          error: { message: 'Email address not found in our system' }, 
-          success: false, 
+        return {
+          error: { message: 'Email address not found in our system' },
+          success: false,
           details: null
         };
       }
-      
+
       // Attempt to resend the verification email
       const { error, data } = await supabase.auth.resend({
         type: 'signup',
@@ -560,35 +553,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      
+
       if (error) {
         console.error('Supabase auth.resend error:', error);
-        return { 
-          error, 
+        return {
+          error,
           success: false,
           details: {
             message: error.message,
             status: error.status || 'unknown',
             requestTime: new Date().toISOString()
-          } 
+          }
         };
       }
-      
+
       console.log('Verification email resend successful:', data);
-      return { 
-        error: null, 
+      return {
+        error: null,
         success: true,
         details: {
           email,
           timestamp: new Date().toISOString(),
           provider: 'supabase',
-        } 
+        }
       };
     } catch (error) {
       console.error('Unexpected error in resendVerificationEmail:', error);
-      return { 
-        error, 
-        success: false, 
+      return {
+        error,
+        success: false,
         details: {
           timestamp: new Date().toISOString(),
           errorType: error instanceof Error ? error.name : 'Unknown',
@@ -602,7 +595,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     try {
       console.log("Initiating Google sign-in");
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -613,23 +606,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
           redirectTo: `${window.location.origin}/auth/callback`,
         }
       });
-      
+
       if (error) {
         console.error("Google sign-in error:", error);
         return { error };
       }
-      
+
       // No error handling needed here since the user will be redirected to Google
       return { error: null };
     } catch (err) {
       console.error("Unexpected Google sign-in error:", err);
-      return { 
+      return {
         error: {
           message: err instanceof Error ? err.message : "An unexpected error occurred during Google sign-in",
           code: "unexpected_error",
           status: 500,
           details: err instanceof Error ? err.stack : String(err)
-        } 
+        }
       };
     } finally {
       setIsLoading(false);
@@ -657,4 +650,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
-} 
+}

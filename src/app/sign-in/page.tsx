@@ -12,9 +12,9 @@ import { useRouter } from "next/navigation";
 
 // Rate limit tracking
 const RATE_LIMIT_KEY = "siargao_auth_rate_limit";
-const RATE_LIMIT_DURATION = 300; // Increase to 5 minutes (300 seconds)
-const MAX_ATTEMPTS = 2; // Reduce to 2 attempts before cooling down
-const DEBOUNCE_TIMEOUT = 2000; // Increase to 2 seconds
+const RATE_LIMIT_DURATION = 600; // Increase to 10 minutes (600 seconds) to avoid hitting Supabase rate limits
+const MAX_ATTEMPTS = 1; // Reduce to 1 attempt before cooling down to avoid rate limits
+const DEBOUNCE_TIMEOUT = 3000; // Increase to 3 seconds to reduce rate limit issues
 
 interface RateLimitState {
   attempts: number;
@@ -51,7 +51,7 @@ export default function SignInPage() {
         const storedState = localStorage.getItem(RATE_LIMIT_KEY);
         if (storedState) {
           const parsedState: RateLimitState = JSON.parse(storedState);
-          
+
           // Check if we're still in a blocked state
           if (parsedState.blocked && parsedState.blockedUntil > Date.now()) {
             setIsRateLimited(true);
@@ -70,7 +70,7 @@ export default function SignInPage() {
       }
     }
   }, []);
-  
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -90,7 +90,7 @@ export default function SignInPage() {
   // Handle the cooldown timer when rate limited
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
+
     if (isRateLimited && cooldownTimer > 0) {
       interval = setInterval(() => {
         setCooldownTimer((prev) => {
@@ -103,7 +103,7 @@ export default function SignInPage() {
         });
       }, 1000);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -128,7 +128,7 @@ export default function SignInPage() {
 
   const updateRateLimitState = (isError: boolean, isRateLimitError: boolean) => {
     const now = Date.now();
-    
+
     // If this is a rate limit error, block immediately with a longer cooldown
     if (isRateLimitError) {
       const blockedUntil = now + (RATE_LIMIT_DURATION * 1000 * 3); // Triple the cooldown time for rate limit errors (15 minutes)
@@ -138,27 +138,27 @@ export default function SignInPage() {
         blocked: true,
         blockedUntil
       };
-      
+
       setRateLimitState(newState);
       setIsRateLimited(true);
       setCooldownTimer(RATE_LIMIT_DURATION * 3);
-      
+
       return;
     }
-    
+
     // If it's another error, increment attempts
     if (isError) {
       // Check if we need to reset attempts (if last attempt was long ago)
       const attemptAge = now - rateLimitState.lastAttempt;
       const resetThreshold = RATE_LIMIT_DURATION * 1000 * 2; // 2x the rate limit period
-      
+
       let newAttempts = 0;
       if (attemptAge < resetThreshold) {
         newAttempts = rateLimitState.attempts + 1;
       } else {
         newAttempts = 1; // Reset counter if it's been a while
       }
-      
+
       // Check if we've reached max attempts
       if (newAttempts >= MAX_ATTEMPTS) {
         const blockedUntil = now + (RATE_LIMIT_DURATION * 1000);
@@ -187,10 +187,10 @@ export default function SignInPage() {
   const isRateLimitError = (error: any): boolean => {
     // More comprehensive check for rate limit errors
     if (!error) return false;
-    
+
     const errorMsg = typeof error.message === 'string' ? error.message.toLowerCase() : '';
     return (
-      errorMsg.includes("rate limit") || 
+      errorMsg.includes("rate limit") ||
       errorMsg.includes("request rate limit reached") ||
       errorMsg.includes("too many requests") ||
       errorMsg.includes("too many login attempts") ||
@@ -202,43 +202,46 @@ export default function SignInPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Prevent submission if already submitting or rate limited
     if (isSubmittingRef.current || isRateLimited) {
       setError("Please wait before trying again.");
       return;
     }
-    
+
     if (!email || !password) {
       setError("Please enter both email and password.");
       return;
     }
-    
+
     // Clear any previous timeout
     if (submitTimeoutRef.current) {
       clearTimeout(submitTimeoutRef.current);
     }
-    
+
     // Set loading state but use debounce to prevent multiple submissions
     setIsLoading(true);
     setError(null);
     isSubmittingRef.current = true;
-    
+
     // Use a debounce timeout for the actual submission
     submitTimeoutRef.current = setTimeout(async () => {
       try {
         console.log("Submitting sign-in form after debounce...");
         const { error: signInError } = await signIn(email, password);
-        
+
         if (signInError) {
           console.log("Sign-in error:", signInError);
-          
+
           // Enhanced rate limit detection
           const isRateLimitErr = isRateLimitError(signInError);
           updateRateLimitState(true, isRateLimitErr);
-          
+
           if (isRateLimitErr) {
-            setError("Too many sign-in attempts. Please wait before trying again.");
+            setError(
+              "Rate limit reached. This happens when there are too many sign-in attempts " +
+              "from your location or for this account. Please wait a few minutes before trying again."
+            );
           } else {
             setError(signInError.message || "Failed to sign in. Please check your credentials.");
           }
@@ -250,13 +253,16 @@ export default function SignInPage() {
         }
       } catch (err) {
         console.error("Unexpected error during sign-in:", err);
-        
+
         // Check if the error is a rate limit error
         const isRateLimitErr = err instanceof Error && isRateLimitError(err);
         updateRateLimitState(true, isRateLimitErr);
-        
+
         if (isRateLimitErr) {
-          setError("Too many sign-in attempts. Please wait before trying again.");
+          setError(
+            "Rate limit reached. This happens when there are too many sign-in attempts " +
+            "from your location or for this account. Please wait a few minutes before trying again."
+          );
         } else {
           setError("An unexpected error occurred. Please try again.");
         }
@@ -272,17 +278,17 @@ export default function SignInPage() {
       setError("Please wait before trying again.");
       return;
     }
-    
+
     try {
       setGoogleLoading(true);
       setError(null);
-      
+
       const { error } = await signInWithGoogle();
-      
+
       if (error) {
         console.error("Google sign-in error:", error);
         setError(error.message || "Failed to sign in with Google.");
-        
+
         // Check if this is a rate limit error
         const isRateLimitErr = isRateLimitError(error);
         updateRateLimitState(true, isRateLimitErr);
@@ -303,10 +309,18 @@ export default function SignInPage() {
         <div className="flex flex-col space-y-2">
           <div className="flex items-start gap-2">
             <Clock className="h-5 w-5 flex-shrink-0 mt-0.5" />
-            <p>Too many sign-in attempts. Please wait before trying again.</p>
+            <div>
+              <p className="font-semibold">Rate limit detected</p>
+              <p className="text-sm mt-1">Supabase enforces rate limits to prevent abuse. This happens when:</p>
+              <ul className="text-sm list-disc pl-5 mt-1 space-y-1">
+                <li>Too many sign-in attempts from your location</li>
+                <li>Too many attempts for this specific account</li>
+                <li>The authentication service is experiencing high traffic</li>
+              </ul>
+            </div>
           </div>
-          <div className="text-sm font-medium text-center">
-            You can try again in {cooldownTimer} seconds
+          <div className="text-sm font-medium text-center mt-2 bg-amber-900/30 py-2 rounded-md border border-amber-800/50">
+            Cooldown: <span className="font-mono">{cooldownTimer}</span> seconds remaining
           </div>
         </div>
       );
@@ -315,7 +329,7 @@ export default function SignInPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen pt-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -323,7 +337,7 @@ export default function SignInPage() {
     >
       <section className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden min-h-screen">
         {/* Background with overlay gradient */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 z-0 opacity-20"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.2 }}
@@ -331,32 +345,32 @@ export default function SignInPage() {
         >
           <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
         </motion.div>
-        
+
         <div className="container mx-auto px-4 py-12 relative z-10">
-          <motion.div 
+          <motion.div
             className="max-w-md mx-auto"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ 
-              duration: 0.7, 
-              ease: [0.22, 1, 0.36, 1] 
+            transition={{
+              duration: 0.7,
+              ease: [0.22, 1, 0.36, 1]
             }}
           >
-            <motion.div 
+            <motion.div
               className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ 
-                duration: 0.5, 
+              transition={{
+                duration: 0.5,
                 delay: 0.3,
-                ease: [0.22, 1, 0.36, 1] 
+                ease: [0.22, 1, 0.36, 1]
               }}
-              whileHover={{ 
+              whileHover={{
                 boxShadow: "0 10px 25px -5px rgba(79, 70, 229, 0.1)",
                 borderColor: "rgba(79, 70, 229, 0.5)"
               }}
             >
-              <motion.div 
+              <motion.div
                 className="text-center mb-6"
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -365,7 +379,7 @@ export default function SignInPage() {
                 <Badge className="mb-4 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
                   Welcome Back
                 </Badge>
-                <motion.h1 
+                <motion.h1
                   className="text-3xl font-bold"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -373,7 +387,7 @@ export default function SignInPage() {
                 >
                   Sign In
                 </motion.h1>
-                <motion.p 
+                <motion.p
                   className="text-gray-300 mt-2"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -384,7 +398,7 @@ export default function SignInPage() {
               </motion.div>
 
               {(error || isRateLimited) && (
-                <motion.div 
+                <motion.div
                   className={`${isRateLimited ? "bg-amber-900/20 border-amber-800 text-amber-300" : "bg-red-900/20 border-red-800 text-red-300"} border px-4 py-3 rounded-md mb-6`}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -394,8 +408,8 @@ export default function SignInPage() {
                 </motion.div>
               )}
 
-              <motion.form 
-                className="space-y-6" 
+              <motion.form
+                className="space-y-6"
                 onSubmit={handleSubmit}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -445,7 +459,7 @@ export default function SignInPage() {
                   </motion.div>
                 </div>
 
-                <motion.div 
+                <motion.div
                   className="flex items-center justify-between"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -477,12 +491,12 @@ export default function SignInPage() {
                   transition={{ duration: 0.5, delay: 1.2 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center" 
+                  <Button
+                    type="submit"
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center"
                     disabled={isLoading || isRateLimited}
                   >
-                    {isLoading ? "Signing in..." : isRateLimited ? `Wait ${cooldownTimer}s` : "Sign in"} 
+                    {isLoading ? "Signing in..." : isRateLimited ? `Wait ${cooldownTimer}s` : "Sign in"}
                     {!isLoading && !isRateLimited && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
                 </motion.div>
@@ -537,7 +551,7 @@ export default function SignInPage() {
                 </motion.div>
               </motion.form>
 
-              <motion.div 
+              <motion.div
                 className="mt-6 text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -556,4 +570,4 @@ export default function SignInPage() {
       </section>
     </motion.div>
   );
-} 
+}
