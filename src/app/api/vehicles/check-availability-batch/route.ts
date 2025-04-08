@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
         // If the function doesn't exist or there's an error, log it but continue with a fallback
         console.error('Error calling check_vehicle_availability function, will use fallback:', functionCheckError);
         
-        // Fallback: check for bookings directly in the rentals table
+        // Fallback: check for bookings directly in the rentals table and also check for blocked dates
         const availableVehicleIds: string[] = [];
         
         for (const vehicle of availableVehicles) {
@@ -173,8 +173,21 @@ export async function POST(request: NextRequest) {
             continue;
           }
           
-          // If no overlapping bookings, the vehicle is available
-          if (!bookings || bookings.length === 0) {
+          // Check if there are any blocked dates for this vehicle in the date range
+          const { data: blockedDates, error: blockedError } = await supabase
+            .from('vehicle_blocked_dates')
+            .select('id')
+            .eq('vehicle_id', vehicle.id)
+            .gte('date', formattedStartDate)
+            .lte('date', formattedEndDate);
+            
+          if (blockedError) {
+            console.error(`Error checking blocked dates for vehicle ${vehicle.id}:`, blockedError);
+            continue;
+          }
+          
+          // If no overlapping bookings and no blocked dates, the vehicle is available
+          if ((!bookings || bookings.length === 0) && (!blockedDates || blockedDates.length === 0)) {
             availableVehicleIds.push(vehicle.id);
           }
         }

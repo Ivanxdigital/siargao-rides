@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Button } from "@/components/ui/Button";
-import { ArrowLeft, Calendar as CalendarIcon, List, Grid, Filter, Loader } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, List, Grid, Filter, Loader, Clock, Ban } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import BlockDatesModal from "./BlockDatesModal";
 
 // Add custom styles for the calendar
 import './calendar-custom.css';
@@ -30,18 +31,34 @@ const eventStyleGetter = (event: any) => {
     opacity: 0.9
   };
   
+  // Special style for blocked dates - make them more visible
+  if (event.isBlocked) {
+    return { 
+      style: {
+        backgroundColor: '#ef4444', // red-500
+        color: 'white',
+        border: '2px solid #b91c1c', // red-700
+        borderRadius: '4px',
+        padding: '2px 4px',
+        fontSize: '0.9em',
+        fontWeight: 'bold',
+        opacity: 0.9
+      }
+    };
+  }
+  
   switch(event.status) {
     case 'pending':
-      style.backgroundColor = '#fbbf24'; // amber-400, slightly less harsh than the previous color
+      style.backgroundColor = '#fbbf24'; // amber-400
       break;
     case 'confirmed':
-      style.backgroundColor = '#34d399'; // emerald-400, more vibrant but not too harsh
+      style.backgroundColor = '#34d399'; // emerald-400
       break;
     case 'completed':
-      style.backgroundColor = '#818cf8'; // indigo-400, softer than previous color
+      style.backgroundColor = '#818cf8'; // indigo-400
       break;
     case 'cancelled':
-      style.backgroundColor = '#f87171'; // red-400, slightly less harsh than previous
+      style.backgroundColor = '#f87171'; // red-400
       break;
     default:
       break;
@@ -56,6 +73,7 @@ interface BookingEvent {
   start: Date;
   end: Date;
   status: string;
+  isBlocked?: boolean;
   resource: any;
 }
 
@@ -70,17 +88,64 @@ const MIN_AUTH_REFRESH_INTERVAL = 60000; // 1 minute minimum between refreshes
 // Add a timeout reference for debouncing
 let fetchDataTimeoutRef: NodeJS.Timeout | null = null;
 
+// Add a debugging function to help troubleshoot
+const debugEventDisplay = (message: string, blockedDates: BookingEvent[]) => {
+  console.log(`DEBUG ${message}: `, {
+    blockedDatesCount: blockedDates.length,
+    firstFewBlockedDates: blockedDates.slice(0, 3).map(date => ({
+      id: date.id,
+      title: date.title,
+      start: date.start.toISOString(),
+      vehicleId: date.resource?.vehicle_id || "unknown"
+    }))
+  });
+};
+
 export default function BookingsCalendarPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [bookings, setBookings] = useState<BookingEvent[]>([]);
-  const [vehicles, setVehicles] = useState<{id: string, name: string}[]>([]);
+  const [blockedDates, setBlockedDates] = useState<BookingEvent[]>([]);
+  const [vehicles, setVehicles] = useState<{id: string, name: string, shop_id?: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState('all');
   const [view, setView] = useState('month');
   // Add state to track rate limit errors
   const [hasRateLimitError, setHasRateLimitError] = useState(false);
+  // Add state for the block dates modal
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [selectedVehicleForBlocking, setSelectedVehicleForBlocking] = useState<{id: string, name: string} | null>(null);
+  
+  // Add a reference to the current time to force Calendar rerenders
+  const [calendarKey, setCalendarKey] = useState(Date.now());
+  
+  // Add the animation CSS useEffect here
+  useEffect(() => {
+    // Add animations for toast notifications
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(20px); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+      .animate-fade-out {
+        animation: fadeOut 0.3s ease-out forwards;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   
   // Add effect to handle auth rate limit errors
   useEffect(() => {
@@ -245,7 +310,7 @@ export default function BookingsCalendarPage() {
           try {
             const { data: vehiclesData, error: vehiclesError } = await supabase
               .from('vehicles')
-              .select('id, name')
+              .select('id, name, shop_id')
               .eq('shop_id', shop.id)
               .order('name', { ascending: true });
               
@@ -258,6 +323,11 @@ export default function BookingsCalendarPage() {
               });
             } else {
               console.log(`Found ${vehiclesData?.length || 0} vehicles`);
+              console.log("Vehicle data details:", vehiclesData?.map(v => ({
+                id: v.id,
+                name: v.name,
+                shop_id: v.shop_id
+              })));
               setVehicles(vehiclesData || []);
             }
           } catch (vehiclesErr) {
@@ -447,15 +517,264 @@ export default function BookingsCalendarPage() {
     };
   }, [user, router]); // Only re-run when user or router changes
   
-  // Filter bookings by selected vehicle
-  const filteredBookings = selectedVehicle === 'all' 
-    ? bookings 
-    : bookings.filter(booking => booking.resource.vehicle_id === selectedVehicle);
+  // Now let's update the fetchBlockedDates function to be more robust
+  const fetchBlockedDates = async (shopId: string) => {
+    if (!shopId) {
+      console.log("No shop ID provided to fetchBlockedDates");
+      return;
+    }
+    
+    console.log(`fetchBlockedDates called with shopId: ${shopId}, selectedVehicle: ${selectedVehicle}, vehicleCount: ${vehicles.length}`);
+    console.log("Vehicle shop_ids:", vehicles.map(v => v.shop_id));
+    
+    try {
+      console.log("Fetching blocked dates for shop:", shopId);
+      const supabase = createClientComponentClient();
+      
+      // Get all vehicles for this shop
+      const vehicleIds = vehicles.map(v => v.id);
+      
+      if (vehicleIds.length === 0) {
+        console.log("No vehicles to check blocked dates for");
+        setBlockedDates([]);
+        return;
+      }
+      
+      console.log("Checking blocked dates for vehicles:", vehicleIds);
+      
+      // Get all blocked dates for these vehicles
+      const { data, error } = await supabase
+        .from("vehicle_blocked_dates")
+        .select("id, vehicle_id, date, reason")
+        .in("vehicle_id", vehicleIds);
+        
+      if (error) {
+        console.error("Error fetching blocked dates:", error);
+        return;
+      }
+      
+      if (!data || data.length === 0) {
+        console.log("No blocked dates found for any vehicles");
+        setBlockedDates([]);
+        return;
+      }
+      
+      console.log(`Found ${data.length} blocked dates:`, data);
+      
+      // Group blocked dates by vehicle
+      const blockedDateEvents = data.map(block => {
+        // Find the vehicle name
+        const vehicle = vehicles.find(v => v.id === block.vehicle_id);
+        const vehicleName = vehicle ? vehicle.name : "Unknown Vehicle";
+        
+        // Create a calendar event for the blocked date
+        const blockDate = new Date(block.date);
+        const endDate = new Date(block.date);
+        endDate.setDate(endDate.getDate() + 1); // Make it a full day event
+        
+        return {
+          id: block.id,
+          title: `BLOCKED: ${vehicleName} - ${block.reason || 'Not available'}`,
+          start: blockDate,
+          end: endDate,
+          status: 'blocked',
+          isBlocked: true,
+          resource: {
+            vehicle_id: block.vehicle_id,
+            reason: block.reason
+          }
+        };
+      });
+      
+      console.log("Created blocked date events:", blockedDateEvents);
+      debugEventDisplay("Before setting state", blockedDateEvents);
+      
+      // Set state with the blocked dates
+      setBlockedDates(blockedDateEvents);
+      
+      // Verify that blocked dates are in state
+      setTimeout(() => {
+        debugEventDisplay("After setting state", blockedDates);
+      }, 100);
+      
+      // If the user has a specific vehicle selected, check if any blocked dates apply to it
+      if (selectedVehicle !== 'all') {
+        const hasBlockedDatesForSelectedVehicle = blockedDateEvents.some(
+          event => event.resource.vehicle_id === selectedVehicle
+        );
+        
+        if (!hasBlockedDatesForSelectedVehicle) {
+          console.log(`No blocked dates found for selected vehicle ${selectedVehicle}`);
+        } else {
+          console.log(`Found blocked dates for selected vehicle ${selectedVehicle}`);
+        }
+      }
+    } catch (err) {
+      console.error("Error in fetchBlockedDates:", err);
+    }
+  };
+  
+  // Modify the existing fetchData function to also call fetchBlockedDates
+  // In the fetchData function, after setting vehicles, add:
+  useEffect(() => {
+    // After vehicles are loaded, fetch blocked dates
+    if (vehicles.length > 0) {
+      // Find the shop ID from a vehicle (they should all have the same shop_id)
+      const shopId = vehicles[0]?.shop_id;
+      if (shopId) {
+        fetchBlockedDates(shopId);
+      }
+    }
+  }, [vehicles]);
+  
+  // Open the block dates modal
+  const handleBlockDates = (vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (vehicle) {
+      setSelectedVehicleForBlocking(vehicle);
+      setIsBlockModalOpen(true);
+    }
+  };
+  
+  // Handle block dates success
+  const handleBlockDatesSuccess = async () => {
+    // Find the shop ID from a vehicle
+    const shopId = vehicles[0]?.shop_id;
+    console.log("handleBlockDatesSuccess called, shopId:", shopId);
+    
+    if (shopId) {
+      try {
+        // Refresh the blocked dates immediately 
+        console.log("Fetching blocked dates after successful block...");
+        await fetchBlockedDates(shopId);
+        
+        // Force a complete refresh of the state to make sure the UI updates
+        console.log("Updating calendar key to force refresh...");
+        setCalendarKey(Date.now());
+        
+        // Wait a moment and then refresh again to ensure updates are visible
+        setTimeout(() => {
+          console.log("Delayed refresh - updating calendar key again...");
+          setCalendarKey(prev => prev + 1);
+          
+          // Force UI refresh
+          if (typeof window !== 'undefined') {
+            console.log("Forcing UI update...");
+          }
+        }, 500);
+        
+        // Show feedback to the user
+        const toast = document.createElement("div");
+        toast.className = "fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-fade-in";
+        toast.innerHTML = `<div class="flex items-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Dates blocked successfully</div>`;
+        document.body.appendChild(toast);
+        
+        // Remove the toast after 3 seconds
+        setTimeout(() => {
+          toast.classList.add("animate-fade-out");
+          setTimeout(() => document.body.removeChild(toast), 300); // 300ms for fade out
+        }, 3000);
+        
+        console.log("Block dates success handler completed, calendar should update now.");
+      } catch (error) {
+        console.error("Error in handleBlockDatesSuccess:", error);
+      }
+    } else {
+      console.error("No shop ID found in vehicles");
+    }
+  };
+  
+  // Combine bookings and blocked dates for the calendar
+  const combinedEvents = [...bookings, ...blockedDates];
+  
+  // Filter events by selected vehicle
+  const filteredEvents = selectedVehicle === 'all' 
+    ? combinedEvents 
+    : combinedEvents.filter(event => {
+        // For regular bookings
+        if (!event.isBlocked && event.resource.vehicle_id === selectedVehicle) {
+          return true;
+        }
+        
+        // For blocked dates - check both the vehicle_id and if it's marked as a blocked event
+        if (event.isBlocked && event.resource.vehicle_id === selectedVehicle) {
+          console.log(`Including blocked date for vehicle ${selectedVehicle}:`, {
+            id: event.id,
+            title: event.title,
+            date: event.start.toISOString().split('T')[0]
+          });
+          return true;
+        }
+        
+        return false;
+      });
   
   // Handle booking click
   const handleSelectEvent = (event: BookingEvent) => {
     router.push(`/dashboard/bookings/${event.id}`);
   };
+  
+  // Add debugging for the filtered events
+  console.log("Rendering calendar with events:", {
+    totalEvents: combinedEvents.length,
+    bookings: bookings.length,
+    blockedDates: blockedDates.length,
+    selectedVehicle,
+    filteredEvents: filteredEvents
+  });
+  
+  // Add a useEffect to log filtered events when they change
+  useEffect(() => {
+    console.log("⭐ Events updated:", {
+      totalEvents: combinedEvents.length,
+      bookings: bookings.length,
+      blockedDates: blockedDates.length,
+      filteredEvents: filteredEvents.length,
+      selectedVehicle
+    });
+  }, [combinedEvents.length, bookings.length, blockedDates.length, filteredEvents.length, selectedVehicle]);
+  
+  // Add more debugging for filtered events and refresh logic
+  // Place this just before the return statement
+  useEffect(() => {
+    // Get a breakdown of event types
+    const blockedEvents = filteredEvents.filter(event => event.isBlocked);
+    const regularEvents = filteredEvents.filter(event => !event.isBlocked);
+    
+    console.log("🔍 DETAILED FILTERED EVENTS:", {
+      selectedVehicle,
+      filteredEventsTotal: filteredEvents.length,
+      blockedEventsCount: blockedEvents.length, 
+      regularEventsCount: regularEvents.length,
+      blockedEvents: blockedEvents.map(e => ({
+        id: e.id,
+        title: e.title,
+        vehicleId: e.resource.vehicle_id,
+        date: e.start.toISOString().split('T')[0]
+      }))
+    });
+  }, [filteredEvents, selectedVehicle]);
+
+  // Add a useEffect to refresh blocked dates when selectedVehicle changes
+  useEffect(() => {
+    console.log("Selected vehicle changed to:", selectedVehicle);
+    
+    // Only refresh if we have vehicles loaded
+    if (vehicles.length > 0) {
+      const shopId = vehicles[0]?.shop_id;
+      if (shopId) {
+        console.log("Refreshing blocked dates due to vehicle selection change");
+        
+        // Force calendar rerender after fetching
+        const fetchAndRerender = async () => {
+          await fetchBlockedDates(shopId);
+          setCalendarKey(Date.now());
+        };
+        
+        fetchAndRerender();
+      }
+    }
+  }, [selectedVehicle, vehicles]);
   
   return (
     <div className="space-y-6 pb-8 max-w-full overflow-hidden">
@@ -557,32 +876,57 @@ export default function BookingsCalendarPage() {
             </div>
             
             <div className="flex flex-col gap-2">
-              <p className="text-xs text-muted-foreground font-medium">View options:</p>
               <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground font-medium">Actions:</p>
                 <Button 
-                  variant={view === 'month' ? "default" : "outline"} 
+                  variant="outline"
                   size="sm"
-                  onClick={() => setView('month')}
-                  className="transition-all duration-200"
+                  className="flex items-center gap-1.5 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => {
+                    // If a specific vehicle is selected, use that, otherwise prompt to select
+                    if (selectedVehicle !== 'all') {
+                      const vehicle = vehicles.find(v => v.id === selectedVehicle);
+                      if (vehicle) {
+                        handleBlockDates(vehicle.id);
+                      }
+                    } else {
+                      alert("Please select a specific vehicle first");
+                    }
+                  }}
                 >
-                  Month
+                  <Ban size={14} />
+                  Block Dates
                 </Button>
-                <Button 
-                  variant={view === 'week' ? "default" : "outline"} 
-                  size="sm"
-                  onClick={() => setView('week')}
-                  className="transition-all duration-200"
-                >
-                  Week
-                </Button>
-                <Button 
-                  variant={view === 'day' ? "default" : "outline"} 
-                  size="sm"
-                  onClick={() => setView('day')}
-                  className="transition-all duration-200"
-                >
-                  Day
-                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground font-medium">View options:</p>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant={view === 'month' ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setView('month')}
+                    className="transition-all duration-200"
+                  >
+                    Month
+                  </Button>
+                  <Button 
+                    variant={view === 'week' ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setView('week')}
+                    className="transition-all duration-200"
+                  >
+                    Week
+                  </Button>
+                  <Button 
+                    variant={view === 'day' ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setView('day')}
+                    className="transition-all duration-200"
+                  >
+                    Day
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -590,8 +934,9 @@ export default function BookingsCalendarPage() {
           <div className="bg-card border border-border rounded-lg overflow-hidden p-4 sm:p-5 shadow-sm">
             <div className="h-[400px] sm:h-[500px] md:h-[600px] calendar-container">
               <Calendar
+                key={calendarKey}
                 localizer={localizer}
-                events={filteredBookings}
+                events={filteredEvents}
                 startAccessor="start"
                 endAccessor="end"
                 style={{ height: '100%' }}
@@ -599,7 +944,12 @@ export default function BookingsCalendarPage() {
                 view={view as any}
                 onView={(view) => setView(view)}
                 eventPropGetter={eventStyleGetter}
-                onSelectEvent={handleSelectEvent}
+                onSelectEvent={(event: BookingEvent) => {
+                  // Only navigate to booking details for actual bookings, not blocked dates
+                  if (!event.isBlocked) {
+                    router.push(`/dashboard/bookings/${event.id}`);
+                  }
+                }}
                 popup
                 className="custom-calendar"
               />
@@ -609,10 +959,10 @@ export default function BookingsCalendarPage() {
           <div className="mt-6 p-5 bg-white dark:bg-gray-800 border border-border rounded-lg text-sm shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-1 h-5 bg-primary rounded-full"></div>
-              <h3 className="font-medium text-base">Booking Status Legend</h3>
+              <h3 className="font-medium text-base">Legend</h3>
             </div>
             
-            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-4">
               <div className="flex items-center gap-2 p-2 rounded-md bg-background/50">
                 <div className="w-5 h-5 rounded-sm bg-[#fbbf24]"></div>
                 <div>
@@ -641,6 +991,13 @@ export default function BookingsCalendarPage() {
                   <p className="text-muted-foreground text-xs mt-0.5">Booking cancelled</p>
                 </div>
               </div>
+              <div className="flex items-center gap-2 p-2 rounded-md bg-background/50">
+                <div className="w-5 h-5 rounded-sm bg-[#ef4444]"></div>
+                <div>
+                  <span className="font-medium">Blocked</span>
+                  <p className="text-muted-foreground text-xs mt-0.5">Dates manually blocked</p>
+                </div>
+              </div>
             </div>
             
             <p className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5">
@@ -649,6 +1006,16 @@ export default function BookingsCalendarPage() {
             </p>
           </div>
         </>
+      )}
+      
+      {/* Block Dates Modal */}
+      {selectedVehicleForBlocking && (
+        <BlockDatesModal
+          isOpen={isBlockModalOpen}
+          onClose={() => setIsBlockModalOpen(false)}
+          vehicle={selectedVehicleForBlocking}
+          onSuccess={handleBlockDatesSuccess}
+        />
       )}
     </div>
   );
