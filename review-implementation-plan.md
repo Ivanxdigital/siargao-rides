@@ -23,6 +23,15 @@ All tasks for implementing the review system have been completed. The system now
 4. Users can edit their existing reviews
 5. Proper validation to ensure only eligible users can review
 
+## User Profile Enhancement: COMPLETED ✅
+
+Additional enhancements have been implemented to display user information with reviews:
+
+1. Reviews now display the user's first name instead of just "Customer"
+2. User profile pictures are now displayed with reviews
+3. The shop page now fetches user details along with reviews for better performance
+4. The ReviewItem component can handle both direct user data and separately fetched user data
+
 ## Implementation Steps
 
 ### 1. Create the New Components (Frontend)
@@ -47,7 +56,14 @@ All tasks for implementing the review system have been completed. The system now
 - [x] Add edit functionality for user's existing reviews
 - [x] Implement response UI for shop owners
 
-### 4. Testing
+### 4. Enhance User Profile Integration
+
+- [x] Modify ReviewItem to display user's first name
+- [x] Add support for user profile pictures in reviews
+- [x] Update shop page to fetch reviews with user details
+- [x] Ensure proper handling of null/undefined values for type safety
+
+### 5. Testing
 
 To properly test the review system, please verify these scenarios:
 
@@ -75,10 +91,11 @@ A dialog component for shop owners to respond to reviews. It:
 
 ### 3. ReviewItem.tsx
 A component to display individual reviews with consistent styling. It:
-- Shows user info and rating with stars
-- Displays the review comment
+- Shows user's first name and profile picture
+- Displays the review comment with rating stars
 - Shows shop owner response if available
 - Provides response button for shop owners
+- Handles both immediate user data and fetched user data
 
 ## Shop Page Updates
 
@@ -88,6 +105,7 @@ The shop page now includes:
 - Ability to edit existing reviews
 - Ability for shop owners to respond to reviews
 - Sorted display of reviews (prioritizing those with responses)
+- Fetching of user details along with reviews for better performance
 
 ## How to Test
 
@@ -96,7 +114,7 @@ The shop page now includes:
 
 2. Log in as a user with completed rentals
    - Verify that you can submit a review
-   - Check that the review appears in the list
+   - Check that the review appears in the list with your name and profile picture
 
 3. Log in as a user with an existing review
    - Verify that you can edit your review

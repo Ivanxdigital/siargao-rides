@@ -8,7 +8,7 @@ import { toast } from "sonner"
 
 interface ReviewResponseDialogProps {
   reviewId: string
-  existingReply?: string
+  existingReply?: string | null
   onResponseSubmitted: () => void
 }
 

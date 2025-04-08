@@ -8,7 +8,7 @@ import VehicleCard from "@/components/VehicleCard"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import * as service from "@/lib/service"
-import { Vehicle, VehicleType, Review } from "@/lib/types"
+import { Vehicle, VehicleType, Review, ReviewWithDetails } from "@/lib/types"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { VehicleAvailabilityCalendar } from "@/components/VehicleAvailabilityCalendar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog"
@@ -115,7 +115,7 @@ export default function ShopPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null)
   const [shop, setShop] = useState<RentalShop | null>(null)
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviews, setReviews] = useState<ReviewWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType | 'all'>('all')
@@ -123,7 +123,7 @@ export default function ShopPage() {
   
   // Add these new state variables for review functionality
   const [userCanReview, setUserCanReview] = useState(false)
-  const [userReview, setUserReview] = useState<Review | null>(null)
+  const [userReview, setUserReview] = useState<ReviewWithDetails | null>(null)
   
   // Check if current user is the shop owner
   const isShopOwner = user && shop && user.id === shop.owner_id
@@ -159,7 +159,10 @@ export default function ShopPage() {
       // Check if user already has a review for this shop
       const { data: reviewData, error: reviewError } = await supabase
         .from('reviews')
-        .select('*')
+        .select(`
+          *,
+          user:users(*)
+        `)
         .eq('shop_id', id)
         .eq('user_id', user.id)
         .limit(1)
@@ -183,10 +186,13 @@ export default function ShopPage() {
     try {
       const supabase = createClientComponentClient()
       
-      // Get reviews for this shop
+      // Get reviews for this shop with user details
       const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
-        .select('*')
+        .select(`
+          *,
+          user:users(*)
+        `)
         .eq('shop_id', id);
         
       if (reviewsError) {
@@ -297,10 +303,13 @@ export default function ShopPage() {
           setVehicles(formattedBikes)
         }
         
-        // Get reviews for this shop
+        // Get reviews for this shop with user details
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('reviews')
-          .select('*')
+          .select(`
+            *,
+            user:users(*)
+          `)
           .eq('shop_id', id);
           
         if (reviewsError) {

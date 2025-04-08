@@ -1,9 +1,12 @@
-import { Star, MessageCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import { Star, MessageCircle, User } from "lucide-react"
 import { ReviewResponseDialog } from "./ReviewResponseDialog"
-import { Review } from "@/lib/types"
+import { Review, ReviewWithDetails, User as UserType } from "@/lib/types"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 interface ReviewItemProps {
-  review: Review
+  review: Review | ReviewWithDetails
   isShopOwner: boolean | null | undefined
   onResponseSubmitted: () => void
 }
@@ -11,16 +14,69 @@ interface ReviewItemProps {
 export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewItemProps) {
   // Add a boolean check to safely use isShopOwner
   const canRespond = !!isShopOwner;
+  const [reviewUser, setReviewUser] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    async function fetchUserData() {
+      // If review already includes user data (ReviewWithDetails type), use that
+      if ('user' in review && review.user) {
+        setReviewUser(review.user as UserType);
+        setLoading(false);
+        return;
+      }
+      
+      // Otherwise fetch the user data
+      try {
+        const supabase = createClientComponentClient();
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', review.user_id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user data:', error);
+        } else if (data) {
+          setReviewUser(data as UserType);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchUserData();
+  }, [review]);
+  
+  // Function to get user's first name or a fallback
+  const getUserName = () => {
+    if (reviewUser?.first_name) {
+      return reviewUser.first_name;
+    }
+    return "Customer";
+  };
   
   return (
     <div className="bg-black/60 backdrop-blur-sm border border-white/10 hover:border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-            {review.user_id.substring(0, 2).toUpperCase()}
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center text-primary font-semibold">
+            {reviewUser?.avatar_url ? (
+              <Image 
+                src={reviewUser.avatar_url} 
+                alt={getUserName()} 
+                width={40} 
+                height={40} 
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <User size={20} className="text-primary" />
+            )}
           </div>
           <div>
-            <div className="font-medium">Customer</div>
+            <div className="font-medium">{getUserName()}</div>
             <div className="text-xs text-white/50">
               {new Date(review.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
