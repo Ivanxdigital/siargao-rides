@@ -15,6 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { motion } from 'framer-motion';
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
+import { ReviewDialog } from "@/components/ReviewDialog"
+import { ReviewItem } from "@/components/ReviewItem"
 
 // --- Animation Variants ---
 const pageVariants = {
@@ -119,6 +121,10 @@ export default function ShopPage() {
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType | 'all'>('all')
   const { user } = useAuth()
   
+  // Add these new state variables for review functionality
+  const [userCanReview, setUserCanReview] = useState(false)
+  const [userReview, setUserReview] = useState<Review | null>(null)
+  
   // Check if current user is the shop owner
   const isShopOwner = user && shop && user.id === shop.owner_id
   
@@ -132,6 +138,70 @@ export default function ShopPage() {
   const hasCars = cars.length > 0
   const hasTuktuks = tuktuks.length > 0
   
+  // Add this function to check if user can review
+  const checkUserCanReview = async () => {
+    if (!user) return
+  
+    try {
+      const supabase = createClientComponentClient()
+      
+      // Check if user has any completed rentals with this shop
+      const { data: rentalData, error: rentalError } = await supabase
+        .from('rentals')
+        .select('id')
+        .eq('shop_id', id)
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .limit(1)
+      
+      if (rentalError) throw rentalError
+      
+      // Check if user already has a review for this shop
+      const { data: reviewData, error: reviewError } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('shop_id', id)
+        .eq('user_id', user.id)
+        .limit(1)
+      
+      if (reviewError) throw reviewError
+      
+      // User can review if they have completed rentals
+      setUserCanReview(rentalData ? rentalData.length > 0 : false)
+      
+      // If user already has a review, store it
+      if (reviewData && reviewData.length > 0) {
+        setUserReview(reviewData[0])
+      }
+    } catch (error) {
+      console.error('Error checking review eligibility:', error)
+    }
+  }
+  
+  // Add this function to refresh reviews
+  const refreshReviews = async () => {
+    try {
+      const supabase = createClientComponentClient()
+      
+      // Get reviews for this shop
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('shop_id', id);
+        
+      if (reviewsError) {
+        console.error('Error fetching reviews:', reviewsError);
+      } else {
+        setReviews(reviewsData || [])
+      }
+      
+      // Refresh user's review status
+      checkUserCanReview()
+    } catch (error) {
+      console.error('Error refreshing reviews:', error)
+    }
+  }
+
   useEffect(() => {
     async function fetchShopData() {
       if (!id || typeof id !== 'string') {
@@ -248,7 +318,12 @@ export default function ShopPage() {
     }
     
     fetchShopData()
-  }, [id])
+    
+    // Check if user can review when shop data is loaded
+    if (user) {
+      checkUserCanReview()
+    }
+  }, [id, user])
   
   const handleBookClick = (vehicleId: string) => {
     setSelectedVehicleId(vehicleId)
@@ -301,6 +376,21 @@ export default function ShopPage() {
   const averageRating = reviews.length > 0
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
     : 0
+
+  // Sort reviews before rendering them
+  const sortedReviews = [...reviews].sort((a, b) => {
+    // First prioritize reviews with responses
+    if (a.reply && !b.reply) return -1;
+    if (!a.reply && b.reply) return 1;
+    
+    // Then sort by date (newest first)
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  // Add these type guard helper functions
+  const canUserReview = (): boolean => {
+    return !!userCanReview;
+  }
 
   return (
     <motion.div
@@ -730,7 +820,7 @@ export default function ShopPage() {
         </div>
       )}
       
-      {/* Reviews with enhanced design */}
+      {/* Update the Reviews section with new components */}
       <div className="py-16 bg-gradient-to-b from-transparent to-black/70 border-t border-white/10 relative z-10">
         <div className="container mx-auto px-4">
           <motion.div
@@ -765,12 +855,22 @@ export default function ShopPage() {
                 <p className="text-white/70 text-center mb-6">
                   Be the first to share your experience with this shop!
                 </p>
-                <Button 
-                  variant="outline"
-                  className="border-primary/30 hover:bg-primary/5 text-primary hover:text-primary"
-                >
-                  Write a Review
-                </Button>
+                {user ? (
+                  userCanReview ? (
+                    <ReviewDialog 
+                      shopId={id as string} 
+                      onReviewSubmitted={refreshReviews} 
+                    />
+                  ) : (
+                    <p className="text-sm text-amber-400">
+                      Complete a rental with this shop to leave a review
+                    </p>
+                  )
+                ) : (
+                  <Button asChild>
+                    <Link href="/signin">Sign in to Review</Link>
+                  </Button>
+                )}
               </div>
             </motion.div>
           ) : (
@@ -782,67 +882,19 @@ export default function ShopPage() {
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
-              {reviews.map(review => (
-                <motion.div
-                  key={review.id}
-                  className="bg-black/60 backdrop-blur-sm border border-white/10 hover:border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all"
-                  variants={itemVariants}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                        {review.user_id.substring(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-medium">Customer</div>
-                        <div className="text-xs text-white/50">
-                          {new Date(review.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center bg-yellow-900/20 px-2 py-1.5 rounded-lg">
-                      {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          size={16} 
-                          className={i < review.rating ? "text-tropical-yellow fill-tropical-yellow" : "text-white/30"} 
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="bg-black/40 p-4 rounded-lg mb-4 relative">
-                    <div className="absolute -top-2 left-4 w-4 h-4 bg-black/40 rotate-45"></div>
-                    <p className="text-sm leading-relaxed">{review.comment || "No comment provided."}</p>
-                  </div>
-                  
-                  {/* Reply from shop owner */}
-                  {review.reply && (
-                    <div className="flex gap-3 mt-5 bg-primary/5 p-4 rounded-lg border-l-3 border-primary">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                          <MessageCircle size={14} className="text-primary" />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-primary flex items-center gap-2">
-                          Shop Response
-                          <span className="text-xs text-white/50 font-normal">Official reply</span>
-                        </div>
-                        <p className="mt-1 text-sm">{review.reply}</p>
-                      </div>
-                    </div>
-                  )}
+              {sortedReviews.map(review => (
+                <motion.div key={review.id} variants={itemVariants}>
+                  <ReviewItem 
+                    review={review} 
+                    isShopOwner={isShopOwner} 
+                    onResponseSubmitted={refreshReviews} 
+                  />
                 </motion.div>
               ))}
             </motion.div>
           )}
           
-          {reviews.length > 0 && (
+          {reviews.length > 0 && user && (
             <motion.div
               className="flex justify-center mt-10"
               variants={fadeIn}
@@ -851,9 +903,27 @@ export default function ShopPage() {
               viewport={{ once: true }}
               transition={{ delay: 0.5 }}
             >
-              <Button className="bg-primary text-white" size="sm">
-                Write a Review
-              </Button>
+              {userReview ? (
+                <ReviewDialog 
+                  shopId={id as string} 
+                  onReviewSubmitted={refreshReviews}
+                  isUpdate={true}
+                  existingReview={{
+                    id: userReview.id,
+                    rating: userReview.rating,
+                    comment: userReview.comment || ""
+                  }}
+                />
+              ) : userCanReview ? (
+                <ReviewDialog 
+                  shopId={id as string} 
+                  onReviewSubmitted={refreshReviews} 
+                />
+              ) : (
+                <p className="text-sm bg-amber-900/30 px-4 py-2 rounded-full border border-amber-500/30 text-amber-400">
+                  Complete a rental with this shop to leave a review
+                </p>
+              )}
             </motion.div>
           )}
         </div>
