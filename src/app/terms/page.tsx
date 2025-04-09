@@ -3,10 +3,23 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ExternalLink, ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function TermsOfServicePage() {
+  const router = useRouter();
+
+  const handleGoBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Go back to previous page if available, otherwise go to homepage
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  };
+
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen pt-20 bg-gradient-to-b from-black to-gray-900 text-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -15,19 +28,22 @@ export default function TermsOfServicePage() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
-            <Link href="/sign-up" className="inline-flex items-center text-sm text-primary hover:text-primary/80 transition-colors">
+            <button
+              onClick={handleGoBack}
+              className="inline-flex items-center text-sm text-primary hover:text-primary/80 transition-colors bg-transparent border-none cursor-pointer p-0"
+            >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Back to Sign Up
-            </Link>
+              Go Back
+            </button>
           </div>
-          
-          <motion.div 
+
+          <motion.div
             className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 md:p-10 hover:border-primary/50 transition-all duration-300 shadow-lg"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <motion.div 
+            <motion.div
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
@@ -58,7 +74,7 @@ export default function TermsOfServicePage() {
                 </p>
 
                 <hr className="my-8" />
-                
+
                 <h2 className="text-xl font-semibold group flex items-center">
                   <span className="bg-primary/10 text-primary px-2 py-1 rounded-md mr-3 text-sm">2</span>
                   Your Responsibility as a User
@@ -134,4 +150,4 @@ export default function TermsOfServicePage() {
       </div>
     </motion.div>
   );
-} 
+}
