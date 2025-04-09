@@ -8,6 +8,14 @@ const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY || 'sk_test_V5Q9YKvJ
 const PAYMONGO_PUBLIC_KEY = process.env.PAYMONGO_PUBLIC_KEY || 'pk_test_XeFkLLimXvWEHfoF4NCQSxtA';
 const PAYMONGO_API_URL = 'https://api.paymongo.com/v1';
 
+// Log environment variables (without exposing full secret key)
+console.log('PayMongo Environment Variables Check:');
+console.log('- SECRET_KEY exists:', !!process.env.PAYMONGO_SECRET_KEY);
+console.log('- SECRET_KEY prefix:', PAYMONGO_SECRET_KEY.substring(0, 7));
+console.log('- PUBLIC_KEY exists:', !!process.env.PAYMONGO_PUBLIC_KEY);
+console.log('- PUBLIC_KEY prefix:', PAYMONGO_PUBLIC_KEY.substring(0, 7));
+console.log('- API URL:', PAYMONGO_API_URL);
+
 // Helper function to encode API key for Basic Auth
 const encodeApiKey = (apiKey: string): string => {
   return Buffer.from(`${apiKey}:`).toString('base64');

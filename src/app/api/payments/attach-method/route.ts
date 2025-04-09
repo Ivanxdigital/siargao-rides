@@ -6,12 +6,21 @@ import { attachPaymentMethod } from '@/lib/paymongo';
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerComponentClient({ cookies });
-    
+
+    // Get the current authenticated user using the secure method
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const userId = user?.id;
+
+    if (userError) {
+      console.error('Error getting authenticated user:', userError);
+      // Continue anyway, as guest checkout might be allowed
+    }
+
     // Parse request body
-    const { 
-      paymentIntentId, 
-      paymentMethodId, 
-      clientKey 
+    const {
+      paymentIntentId,
+      paymentMethodId,
+      clientKey
     } = await request.json();
 
     // Validate input
@@ -28,7 +37,7 @@ export async function POST(request: NextRequest) {
       .select('id, rental_id')
       .eq('payment_intent_id', paymentIntentId)
       .single();
-    
+
     if (paymentError) {
       return NextResponse.json(
         { error: 'Payment record not found' },

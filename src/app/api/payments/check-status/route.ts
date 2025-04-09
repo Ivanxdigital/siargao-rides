@@ -6,11 +6,16 @@ import { getPaymentIntent } from '@/lib/paymongo';
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerComponentClient({ cookies });
-    
-    // Get the current authenticated user
-    const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
-    
+
+    // Get the current authenticated user using the secure method
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const userId = user?.id;
+
+    if (userError) {
+      console.error('Error getting authenticated user:', userError);
+      // Continue anyway, as guest checkout might be allowed
+    }
+
     // Parse request body
     const { paymentIntentId, clientKey } = await request.json();
 
@@ -24,35 +29,35 @@ export async function POST(request: NextRequest) {
 
     // Get payment intent from PayMongo
     const paymentIntent = await getPaymentIntent(paymentIntentId);
-    
+
     // Find the payment record
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('paymongo_payments')
       .select('id, rental_id, status')
       .eq('payment_intent_id', paymentIntentId)
       .single();
-    
+
     if (paymentError) {
       return NextResponse.json(
         { error: 'Payment record not found' },
         { status: 404 }
       );
     }
-    
+
     // Check if the rental belongs to the authenticated user
     const { data: rental, error: rentalError } = await supabase
       .from('rentals')
       .select('id, user_id')
       .eq('id', paymentRecord.rental_id)
       .single();
-    
+
     if (rentalError) {
       return NextResponse.json(
         { error: 'Rental not found' },
         { status: 404 }
       );
     }
-    
+
     // Verify that the rental belongs to the authenticated user or is a guest booking
     if (rental.user_id && rental.user_id !== userId) {
       return NextResponse.json(
@@ -60,7 +65,7 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-    
+
     // Update payment record status if it has changed
     if (paymentIntent.attributes.status !== paymentRecord.status) {
       await supabase
@@ -70,7 +75,7 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString()
         })
         .eq('id', paymentRecord.id);
-      
+
       // Update rental payment status if needed
       if (paymentIntent.attributes.status === 'succeeded') {
         await supabase
@@ -90,7 +95,7 @@ export async function POST(request: NextRequest) {
           .eq('id', paymentRecord.rental_id);
       }
     }
-    
+
     return NextResponse.json({
       success: true,
       payment: {

@@ -8,10 +8,15 @@ export async function POST(request: NextRequest) {
     console.log('Starting create-intent API call');
     const supabase = createServerComponentClient({ cookies });
 
-    // Get the current authenticated user
-    const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
+    // Get the current authenticated user using the secure method
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const userId = user?.id;
     console.log('User ID:', userId);
+
+    if (userError) {
+      console.error('Error getting authenticated user:', userError);
+      // Continue anyway, as guest checkout might be allowed
+    }
 
     // Parse request body
     const {
