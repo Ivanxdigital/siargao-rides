@@ -29,11 +29,11 @@ interface DateRange {
   endDate: Date;
 }
 
-export default function BookingForm({ 
-  bike, 
+export default function BookingForm({
+  bike,
   vehicle,
-  shop, 
-  user, 
+  shop,
+  user,
   isAuthenticated,
   startDate,
   endDate,
@@ -51,10 +51,10 @@ export default function BookingForm({
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const router = useRouter();
-  
+
   // Use either vehicle or bike depending on which is provided
   const rentalVehicle = vehicle || bike;
-  
+
   // Check availability for pre-filled dates when component mounts
   useEffect(() => {
     // Only check if both dates are provided and we have a vehicle ID
@@ -62,61 +62,61 @@ export default function BookingForm({
       // Format dates for consistency
       const formattedStart = new Date(startDate);
       const formattedEnd = new Date(endDate);
-      
-      console.log("Checking availability for pre-filled dates:", { 
+
+      console.log("Checking availability for pre-filled dates:", {
         vehicleId: rentalVehicle.id,
         startDate: formattedStart.toISOString(),
         endDate: formattedEnd.toISOString(),
         formattedStartDate: formattedStart.toISOString().split('T')[0],
         formattedEndDate: formattedEnd.toISOString().split('T')[0]
       });
-      
+
       // If the dates are the same or invalid, skip check
       if (formattedStart >= formattedEnd || isNaN(formattedStart.getTime()) || isNaN(formattedEnd.getTime())) {
         console.log("Invalid date range, skipping availability check");
         return;
       }
-      
+
       const checkInitialAvailability = async () => {
         try {
           // Skip API call entirely - we'll trust the API when user clicks "Book"
           // This avoids showing potentially incorrect unavailability messages
           console.log("Skipping pre-validation for automatic date filling to avoid false negatives");
-          
+
           // If we want to validate, we can add a simple check here
           // But for now, we're allowing the user to proceed to avoid false negatives
-          
+
         } catch (error) {
           console.error("Error checking availability:", error);
           // On error, don't show unavailability message to prevent blocking valid bookings
         }
       };
-      
+
       checkInitialAvailability();
     }
   }, [startDate, endDate, rentalVehicle?.id]);
-  
+
   // Fetch delivery options and payment methods
   useEffect(() => {
     const fetchOptions = async () => {
       try {
         const supabase = createClientComponentClient();
-        
+
         // Fetch delivery options
         const { data: deliveryData, error: deliveryError } = await supabase
           .from("delivery_options")
           .select("*")
           .eq("is_active", true);
-          
+
         if (deliveryError) {
           console.error("Error fetching delivery options:", deliveryError);
         } else {
           // If shop offers delivery, add/modify the delivery option
           let options = [...(deliveryData || [])];
-          
+
           // Filter out accommodation delivery option if it exists
           options = options.filter(option => !option.name.toLowerCase().includes('accommodation'));
-          
+
           // Add shop-specific delivery option if shop offers delivery
           if (shop.offers_delivery) {
             const shopDeliveryOption = {
@@ -129,17 +129,17 @@ export default function BookingForm({
             };
             options.push(shopDeliveryOption);
           }
-          
+
           setDeliveryOptions(options);
         }
-        
+
         // Fetch payment methods (cash only for now)
         const { data: paymentData, error: paymentError } = await supabase
           .from("payment_methods")
           .select("*")
           .eq("is_active", true)
           .eq("is_online", false); // Only get offline payment methods
-          
+
         if (paymentError) {
           console.error("Error fetching payment methods:", paymentError);
         } else {
@@ -149,10 +149,10 @@ export default function BookingForm({
         console.error("Error fetching options:", error);
       }
     };
-    
+
     fetchOptions();
   }, []);
-  
+
   // Update delivery fee when delivery option changes
   useEffect(() => {
     if (deliveryOption) {
@@ -164,7 +164,7 @@ export default function BookingForm({
       onDeliveryFeeChange(0);
     }
   }, [deliveryOption, deliveryOptions, onDeliveryFeeChange]);
-  
+
   // Get vehicle type for UI customization
   const getVehicleType = (): string => {
     if (vehicle) {
@@ -173,65 +173,65 @@ export default function BookingForm({
       return 'motorcycle'; // Default to motorcycle for bikes
     }
   };
-  
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!rentalVehicle) {
       setFormError("No vehicle information found.");
       return;
     }
-    
+
     // Validate required fields
     if (!startDate || !endDate) {
       setFormError("Please select both start and end dates.");
       return;
     }
-    
+
     if (!deliveryOption) {
       setFormError("Please select a delivery option.");
       return;
     }
-    
+
     if (!paymentMethod) {
       setFormError("Please select a payment method.");
       return;
     }
-    
+
     if (!agreeToTerms) {
       setFormError("You must agree to the terms and conditions to proceed.");
       return;
     }
-    
+
     // If the user is not authenticated, validate guest details
     if (!isAuthenticated) {
       const guestName = (document.getElementById("guest-name") as HTMLInputElement)?.value;
       const guestEmail = (document.getElementById("guest-email") as HTMLInputElement)?.value;
       const guestPhone = (document.getElementById("guest-phone") as HTMLInputElement)?.value;
-      
+
       if (!guestName || !guestEmail) {
         setFormError("Please provide your name and email address.");
         return;
       }
     }
-    
+
     // Double-check vehicle availability before proceeding
     setLoading(true);
     setFormError(null);
-    
+
     try {
       const supabase = createClientComponentClient();
-      
+
       // Make an API call to check if the vehicle is still available for the selected dates
       const vehicleId = vehicle?.id || bike?.id;
-      
+
       if (!vehicleId) {
         setFormError("Vehicle ID is missing.");
         setLoading(false);
         return;
       }
-      
+
       const response = await fetch(`/api/vehicles/check-availability`, {
         method: 'POST',
         headers: {
@@ -243,19 +243,19 @@ export default function BookingForm({
           endDate: endDate.toISOString()
         }),
       });
-      
+
       const availabilityData = await response.json();
-      
+
       if (!availabilityData.available) {
         // Vehicle is not available for the selected dates
         // Find alternative dates
         const alternativeDates = await findAlternativeDates(vehicleId, startDate, endDate);
-        
+
         if (alternativeDates.length > 0) {
-          const formattedAlternatives = alternativeDates.map(period => 
+          const formattedAlternatives = alternativeDates.map(period =>
             `${format(period.startDate, 'MMM d')} - ${format(period.endDate, 'MMM d, yyyy')}`
           ).join(', ');
-          
+
           setFormError(
             `Sorry, this vehicle is no longer available for the selected dates. ` +
             `Alternative dates: ${formattedAlternatives}`
@@ -266,34 +266,34 @@ export default function BookingForm({
             "Please choose different dates or select another vehicle."
           );
         }
-        
+
         setLoading(false);
         return;
       }
-      
+
       // Calculate pricing
       const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       const rentalPrice = rentalVehicle.price_per_day * days;
       const deliveryFeeAmount = deliveryOptions.find(o => o.id === deliveryOption)?.fee || 0;
       const totalPrice = rentalPrice + deliveryFeeAmount;
-      
+
       // Get current user session
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       // Get guest details if user is not authenticated
       let guestName = "";
       let guestEmail = "";
       let guestPhone = "";
-      
+
       if (!isAuthenticated) {
         guestName = (document.getElementById("guest-name") as HTMLInputElement)?.value;
         guestEmail = (document.getElementById("guest-email") as HTMLInputElement)?.value;
         guestPhone = (document.getElementById("guest-phone") as HTMLInputElement)?.value;
       }
-      
+
       // Generate a unique confirmation code
       const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-      
+
       // Create a new booking record - handle both vehicle and bike paths
       let bookingData: any = {
         shop_id: shop.id,
@@ -309,7 +309,7 @@ export default function BookingForm({
         confirmation_code: confirmationCode,
         created_at: new Date().toISOString()
       };
-      
+
       // Add the right ID field based on whether we're using vehicle or bike
       if (vehicle) {
         bookingData.vehicle_id = vehicle.id;
@@ -317,40 +317,48 @@ export default function BookingForm({
       } else if (bike) {
         bookingData.bike_id = bike.id;
       }
-      
+
       const { data: booking, error } = await supabase
         .from("rentals")
         .insert(bookingData)
         .select()
         .single();
-      
+
       if (error) {
         console.error("Error creating booking:", error);
         setFormError("An error occurred while processing your booking. Please try again.");
         setLoading(false);
         return;
       }
-      
+
       console.log("Booking created:", booking);
-      
-      // Navigate to the confirmation page
-      router.push(`/booking/confirmation/${booking.id}`);
-      
+
+      // Check if the selected payment method is PayMongo
+      const selectedPaymentMethod = paymentMethods.find(m => m.id === paymentMethod);
+
+      if (selectedPaymentMethod?.provider === 'paymongo') {
+        // Navigate to the payment page for online payment
+        router.push(`/booking/payment/${booking.id}`);
+      } else {
+        // Navigate to the confirmation page for offline payment methods
+        router.push(`/booking/confirmation/${booking.id}`);
+      }
+
     } catch (error) {
       console.error("Booking error:", error);
       setFormError("An error occurred while processing your booking. Please try again.");
       setLoading(false);
     }
   };
-  
+
   // Function to find alternative available dates
   const findAlternativeDates = async (vehicleId: string, initialStartDate: Date, initialEndDate: Date) => {
     const supabase = createClientComponentClient();
     const today = new Date();
     const alternativesCount = 3; // Number of alternatives to suggest
-    
+
     const alternatives: DateRange[] = [];
-    
+
     // Get existing bookings for this vehicle
     const { data: rentals, error: rentalsError } = await supabase
       .from('rentals')
@@ -358,60 +366,60 @@ export default function BookingForm({
       .or(`vehicle_id.eq.${vehicleId},bike_id.eq.${vehicleId}`)
       .in('status', ['pending', 'confirmed'])
       .gte('end_date', today.toISOString().split('T')[0]);
-      
+
     if (rentalsError) {
       console.error('Error fetching vehicle bookings:', rentalsError);
       return [];
     }
-    
+
     // Convert to BookedPeriod objects
     const bookedPeriods: DateRange[] = (rentals || []).map(rental => ({
       startDate: new Date(rental.start_date),
       endDate: new Date(rental.end_date)
     }));
-    
+
     // Get the rental duration
     const daysDifference = Math.ceil(
       (initialEndDate.getTime() - initialStartDate.getTime()) / (1000 * 60 * 60 * 24)
     );
-    
+
     // Try dates before the selected period
     const alternateBefore: DateRange = {
       startDate: subDays(initialStartDate, 7),
       endDate: subDays(initialEndDate, 7)
     };
-    
+
     // Check if this period is available
-    if (alternateBefore.startDate >= today && 
+    if (alternateBefore.startDate >= today &&
         !isDateRangeOverlapping(alternateBefore.startDate, alternateBefore.endDate, bookedPeriods)) {
       alternatives.push(alternateBefore);
     }
-    
+
     // Try dates after the selected period
     const alternateAfter: DateRange = {
       startDate: addDays(initialStartDate, 7),
       endDate: addDays(initialEndDate, 7)
     };
-    
+
     // Check if this period is available
     if (!isDateRangeOverlapping(alternateAfter.startDate, alternateAfter.endDate, bookedPeriods)) {
       alternatives.push(alternateAfter);
     }
-    
+
     // Try an additional period further in the future
     const alternateFurther: DateRange = {
       startDate: addDays(initialStartDate, 14),
       endDate: addDays(initialEndDate, 14)
     };
-    
+
     // Check if this period is available
     if (!isDateRangeOverlapping(alternateFurther.startDate, alternateFurther.endDate, bookedPeriods)) {
       alternatives.push(alternateFurther);
     }
-    
+
     return alternatives.slice(0, alternativesCount);
   };
-  
+
   // Helper function to check if a date range overlaps with any booked periods
   const isDateRangeOverlapping = (start: Date, end: Date, bookedPeriods: DateRange[]) => {
     return bookedPeriods.some(period => {
@@ -424,13 +432,13 @@ export default function BookingForm({
       );
     });
   };
-  
+
   // Conditional rendering for vehicle-specific options
   const renderVehicleSpecificOptions = () => {
     // Return null for all vehicle types to remove all options
     return null;
   };
-  
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Show form error if any */}
@@ -440,7 +448,7 @@ export default function BookingForm({
           <span>{formError}</span>
         </div>
       )}
-      
+
       {/* Rental period selection */}
       <div>
         <h3 className="text-lg font-medium mb-2">Select Rental Period</h3>
@@ -464,7 +472,7 @@ export default function BookingForm({
           vehicleId={vehicle?.id || bike?.id}
           showAvailabilityIndicator={true}
         />
-        
+
         {/* Show a message if both dates are already selected */}
         {startDate && endDate && (
           <p className="text-xs text-primary/90 mt-1.5 flex items-center">
@@ -472,25 +480,25 @@ export default function BookingForm({
             Dates pre-filled from your search. You can modify if needed.
           </p>
         )}
-        
+
         <p className="text-xs text-white/60 mt-1.5">
           Dates in red are already booked and cannot be selected.
         </p>
       </div>
-      
+
       {/* Vehicle-specific options */}
       {renderVehicleSpecificOptions()}
-      
+
       {/* Delivery options */}
       <div>
         <h3 className="text-lg font-medium mb-2">Delivery Options</h3>
         <div className="space-y-2">
           {deliveryOptions.map((option) => (
-            <label 
-              key={option.id} 
+            <label
+              key={option.id}
               className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
-                deliveryOption === option.id 
-                  ? 'border-primary/50 bg-primary/5' 
+                deliveryOption === option.id
+                  ? 'border-primary/50 bg-primary/5'
                   : 'border-white/10'
               }`}
             >
@@ -513,7 +521,7 @@ export default function BookingForm({
           ))}
         </div>
       </div>
-      
+
       {/* Show delivery address field if delivery is selected */}
       {deliveryOption && deliveryOptions.find(option => option.id === deliveryOption)?.requires_address && (
         <div>
@@ -527,17 +535,17 @@ export default function BookingForm({
           />
         </div>
       )}
-      
+
       {/* Payment options */}
       <div>
         <h3 className="text-lg font-medium mb-2">Payment Method</h3>
         <div className="space-y-2">
           {paymentMethods.map((method) => (
-            <label 
-              key={method.id} 
+            <label
+              key={method.id}
               className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
-                paymentMethod === method.id 
-                  ? 'border-primary/50 bg-primary/5' 
+                paymentMethod === method.id
+                  ? 'border-primary/50 bg-primary/5'
                   : 'border-white/10'
               }`}
             >
@@ -557,7 +565,7 @@ export default function BookingForm({
           ))}
         </div>
       </div>
-      
+
       {/* Guest information (for non-authenticated users) */}
       {!isAuthenticated && (
         <div>
@@ -593,7 +601,7 @@ export default function BookingForm({
           </div>
         </div>
       )}
-      
+
       {/* Terms and conditions */}
       <div className="pt-4">
         <label className="flex items-start gap-2 cursor-pointer">
@@ -604,7 +612,7 @@ export default function BookingForm({
             className="mt-1"
           />
           <span className="text-sm text-white/70">
-            I agree to the <TermsAndConditions><span className="text-primary hover:underline cursor-pointer">terms and conditions</span></TermsAndConditions> and understand that 
+            I agree to the <TermsAndConditions><span className="text-primary hover:underline cursor-pointer">terms and conditions</span></TermsAndConditions> and understand that
             {shop.requires_id_deposit && shop.requires_cash_deposit ? (
               ` I will need to provide a valid ID and a cash deposit of ₱${shop.cash_deposit_amount} when collecting the vehicle.`
             ) : shop.requires_id_deposit ? (
@@ -617,12 +625,12 @@ export default function BookingForm({
           </span>
         </label>
       </div>
-      
+
       {/* Submit button */}
       <div className="pt-4">
-        <Button 
-          type="submit" 
-          className="w-full" 
+        <Button
+          type="submit"
+          className="w-full"
           disabled={loading}
         >
           {loading ? "Processing..." : "Confirm Booking"}
@@ -630,4 +638,4 @@ export default function BookingForm({
       </div>
     </form>
   );
-} 
+}
