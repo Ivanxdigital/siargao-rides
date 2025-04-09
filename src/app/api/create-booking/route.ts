@@ -6,11 +6,11 @@ import { differenceInCalendarDays } from 'date-fns';
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerComponentClient({ cookies });
-    
+
     // Get the current authenticated user
     const { data: { session } } = await supabase.auth.getSession();
     const userId = session?.user?.id;
-    
+
     // Parse request body
     const {
       vehicleId,
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       .eq('vehicle_type_id', vehicleTypeId)
       .or(`status.eq.pending,status.eq.confirmed`)
       .or(
-        `and(start_date.lte.${parsedEndDate.toISOString()},end_date.gte.${parsedStartDate.toISOString()})`
+        `and(rentals.start_date.lte.${parsedEndDate.toISOString()},rentals.end_date.gte.${parsedStartDate.toISOString()})`
       );
 
     if (overlappingBookings && overlappingBookings.length > 0) {
@@ -113,10 +113,10 @@ export async function POST(request: NextRequest) {
     // Verify the price
     if (totalPrice && Math.abs(calculatedTotalPrice - totalPrice) > 0.01) {
       return NextResponse.json(
-        { 
-          error: 'Price verification failed', 
+        {
+          error: 'Price verification failed',
           expected: calculatedTotalPrice,
-          received: totalPrice 
+          received: totalPrice
         },
         { status: 400 }
       );
@@ -165,4 +165,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

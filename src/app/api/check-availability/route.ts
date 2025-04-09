@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       .eq('vehicle_type_id', vehicleTypeId)
       .or(`status.eq.pending,status.eq.confirmed`)
       .or(
-        `and(start_date.lte.${parsedEndDate.toISOString()},end_date.gte.${parsedStartDate.toISOString()})`
+        `and(rentals.start_date.lte.${parsedEndDate.toISOString()},rentals.end_date.gte.${parsedStartDate.toISOString()})`
       );
 
     if (bookingError) {
@@ -91,4 +91,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import { createPaymentIntent, convertAmountToCents } from '@/lib/paymongo';
+
+// Initialize Supabase client with service role for admin operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
   try {
@@ -108,9 +114,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store payment intent in database
-    console.log('Storing payment intent in database...');
-    const { data: paymongoPayment, error: paymentError } = await supabase
+    // Store payment intent in database using admin client to bypass RLS
+    console.log('Storing payment intent in database using admin client...');
+    const { data: paymongoPayment, error: paymentError } = await supabaseAdmin
       .from('paymongo_payments')
       .insert({
         rental_id: rentalId,
@@ -134,14 +140,16 @@ export async function POST(request: NextRequest) {
 
     console.log('Payment intent stored successfully:', paymongoPayment.id);
 
-    // Update rental payment status
-    await supabase
+    // Update rental payment status using admin client
+    await supabaseAdmin
       .from('rentals')
       .update({
         payment_intent_id: paymentIntent.id,
         payment_status: 'pending'
       })
       .eq('id', rentalId);
+
+    console.log('Rental payment status updated successfully');
 
     return NextResponse.json({
       success: true,
