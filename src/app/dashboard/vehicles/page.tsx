@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/Button";
 import ManageVehicleCard from "@/components/ManageVehicleCard";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useShopAccess } from "@/utils/shopAccess";
+import { checkShopSetupStatus } from "@/utils/shopSetupStatus";
+import { OnboardingGuide } from "@/components/shop/OnboardingGuide";
 import { 
   Select,
   SelectContent,
@@ -45,6 +47,17 @@ export default function ManageVehiclesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [vehicleTypeMap, setVehicleTypeMap] = useState<Record<string, VehicleType>>({});
+  const [shopData, setShopData] = useState<any>(null);
+  const [shopSetupStatus, setShopSetupStatus] = useState({
+    shopHasVehicles: false,
+    shopHasLogo: false,
+    shopHasBanner: false,
+    shopHasDescription: false,
+    shopHasLocation: false,
+    shopHasContactInfo: false,
+    shouldShowGuide: false,
+    completionPercentage: 0
+  });
 
   useEffect(() => {
     // Check if user is a shop owner
@@ -85,10 +98,10 @@ export default function ManageVehiclesPage() {
           setVehicleTypeMap(typeMap);
         }
         
-        // Get shop ID for the current user
+        // Get shop ID and details for the current user
         const { data: shopData, error: shopError } = await supabase
           .from("rental_shops")
-          .select("id")
+          .select("*, rental_shops!inner(*)")
           .eq("owner_id", user.id)
           .single();
         
@@ -98,6 +111,8 @@ export default function ManageVehiclesPage() {
           setVehicles([]);
           return;
         }
+        
+        setShopData(shopData);
         
         // Fetch vehicles for this shop
         const { data: vehiclesData, error: vehiclesError } = await supabase
@@ -134,6 +149,10 @@ export default function ManageVehiclesPage() {
         });
         
         setVehicles(formattedVehicles);
+        
+        // Update shop setup status
+        const setupStatus = checkShopSetupStatus(shopData, formattedVehicles.length);
+        setShopSetupStatus(setupStatus);
       } catch (error) {
         console.error("Error fetching vehicles:", error);
         setError("Failed to load vehicles. Please try again later.");
@@ -291,6 +310,20 @@ export default function ManageVehiclesPage() {
           Add New Vehicle
         </Button>
       </div>
+
+      {/* Onboarding Guide - only show if needed */}
+      {shopSetupStatus.shouldShowGuide && vehicles.length === 0 && (
+        <div className="mb-8">
+          <OnboardingGuide
+            shopHasVehicles={shopSetupStatus.shopHasVehicles}
+            shopHasLogo={shopSetupStatus.shopHasLogo}
+            shopHasBanner={shopSetupStatus.shopHasBanner}
+            shopHasDescription={shopSetupStatus.shopHasDescription}
+            shopHasLocation={shopSetupStatus.shopHasLocation}
+            shopHasContactInfo={shopSetupStatus.shopHasContactInfo}
+          />
+        </div>
+      )}
 
       {/* Search and filter */}
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

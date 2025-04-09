@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { 
-  ShoppingBag, 
-  Bike, 
-  BarChart, 
-  CalendarRange, 
-  Heart, 
+import {
+  ShoppingBag,
+  Bike,
+  BarChart,
+  CalendarRange,
+  Heart,
   Settings,
   PlusCircle,
   TrendingUp,
@@ -23,6 +23,9 @@ import {
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/SubscriptionStatus";
+import { OnboardingGuide } from "@/components/shop/OnboardingGuide";
+import { checkShopSetupStatus } from "@/utils/shopSetupStatus";
+import { ShopSetupGuide } from "@/components/shop/ShopSetupGuide";
 
 // Types for our dashboard data
 interface ShopStats {
@@ -78,10 +81,10 @@ const fadeIn = {
 
 const slideUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { duration: 0.5 } 
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 }
   }
 };
 
@@ -98,14 +101,14 @@ const containerVariants = {
 
 const cardVariants = {
   hidden: { opacity: 0, y: 15 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 20 
-    } 
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 20
+    }
   }
 };
 
@@ -129,6 +132,34 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [shopData, setShopData] = useState<ShopWithSubscription | null>(null);
   const [isSubscriptionCollapsed, setIsSubscriptionCollapsed] = useState(true);
+  const [shopSetupStatus, setShopSetupStatus] = useState({
+    shopHasVehicles: false,
+    shopHasLogo: false,
+    shopHasBanner: false,
+    shopHasDescription: false,
+    shopHasLocation: false,
+    shopHasContactInfo: false,
+    shouldShowGuide: false,
+    completionPercentage: 0
+  });
+  const [isGuideVisible, setIsGuideVisible] = useState(true);
+
+  // Load guide visibility preference from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && shopData?.id) {
+      const storedVisibility = localStorage.getItem(`guide_visible_${shopData.id}`);
+      if (storedVisibility !== null) {
+        setIsGuideVisible(storedVisibility === 'true');
+      }
+    }
+  }, [shopData?.id]);
+
+  // Save guide visibility preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && shopData?.id) {
+      localStorage.setItem(`guide_visible_${shopData.id}`, isGuideVisible.toString());
+    }
+  }, [isGuideVisible, shopData?.id]);
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
@@ -148,10 +179,10 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setIsDataLoading(true);
     setError(null);
-    
+
     try {
       const supabase = createClientComponentClient();
-      
+
       if (user?.user_metadata?.role === "shop_owner") {
         // Fetch shop data for shop owners
         await fetchShopOwnerData(supabase);
@@ -173,72 +204,76 @@ export default function DashboardPage() {
       // 1. Get the user's shop with subscription data
       const { data: shopWithSubscription, error: shopError } = await supabase
         .from("rental_shops")
-        .select("id, name, logo_url, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
+        .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, sms_number, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
         .eq("owner_id", user!.id)
         .single();
-      
+
       console.log("User ID:", user!.id); // Debug log
       console.log("Shop data:", shopWithSubscription); // Debug log
-      
+
       if (shopError) {
         console.error("Error fetching shop:", shopError);
         setError("Could not find your shop. Please ensure you have completed registration.");
         return;
       }
-      
+
       // Save shop data with subscription info for component
       setShopData(shopWithSubscription as ShopWithSubscription);
-      
+
       const shopId = shopWithSubscription.id;
-      
+
       // 2. Get vehicle statistics
       const { data: vehicles, error: vehiclesError } = await supabase
         .from("vehicles")
         .select("id, is_available, price_per_day")
         .eq("shop_id", shopId);
-      
+
       if (vehiclesError) {
         console.error("Error fetching vehicles:", vehiclesError);
         return;
       }
-      
+
       console.log("Vehicles data:", vehicles); // Debug log
-      
+
       const totalVehicles = vehicles?.length || 0;
       const availableVehicles = vehicles?.filter((vehicle: any) => vehicle.is_available).length || 0;
-      
+
+      // Update shop setup status with the shop data and vehicle count
+      const setupStatus = checkShopSetupStatus(shopWithSubscription, totalVehicles);
+      setShopSetupStatus(setupStatus);
+
       console.log("Total vehicles:", totalVehicles); // Debug log
       console.log("Available vehicles:", availableVehicles); // Debug log
-      
+
       // 3. Get active bookings
       const { data: activeBookings, error: bookingsError } = await supabase
         .from("rentals")
         .select("id, status")
         .eq("shop_id", shopId)
         .in("status", ["pending", "confirmed", "active"]);
-      
+
       if (bookingsError) {
         console.error("Error fetching bookings:", bookingsError);
         return;
       }
-      
+
       console.log("Active bookings data:", activeBookings); // Debug log
-      
+
       // 4. Calculate revenue (from completed bookings)
       const { data: completedBookings, error: revenueError } = await supabase
         .from("rentals")
         .select("total_price")
         .eq("shop_id", shopId)
         .eq("status", "completed");
-      
+
       if (revenueError) {
         console.error("Error fetching revenue data:", revenueError);
         return;
       }
-      
-      const totalRevenue = completedBookings?.reduce((sum: number, booking: { total_price?: number }) => 
+
+      const totalRevenue = completedBookings?.reduce((sum: number, booking: { total_price?: number }) =>
         sum + (booking.total_price || 0), 0) || 0;
-      
+
       // 5. Get recent bookings for the shop - using a simpler approach without joins
       try {
         // First get basic rental info
@@ -248,7 +283,7 @@ export default function DashboardPage() {
           .eq("shop_id", shopId)
           .order("created_at", { ascending: false })
           .limit(5);
-        
+
         if (rentalsError) {
           console.error("Error fetching rentals:", rentalsError);
           throw rentalsError;
@@ -260,7 +295,7 @@ export default function DashboardPage() {
           const formattedBookings = await Promise.all(rentalsData.map(async (rental) => {
             let vehicleName = "Unknown Vehicle";
             let customerName = "Guest";
-            
+
             // Get vehicle name
             if (rental.vehicle_id) {
               const { data: vehicleData } = await supabase
@@ -268,12 +303,12 @@ export default function DashboardPage() {
                 .select("name")
                 .eq("id", rental.vehicle_id)
                 .single();
-                
+
               if (vehicleData) {
                 vehicleName = vehicleData.name || "Unknown Vehicle";
               }
             }
-            
+
             // Get customer name
             if (rental.user_id) {
               const { data: userData } = await supabase
@@ -281,12 +316,12 @@ export default function DashboardPage() {
                 .select("first_name, last_name")
                 .eq("id", rental.user_id)
                 .single();
-                
+
               if (userData) {
                 customerName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || "Guest";
               }
             }
-            
+
             return {
               id: rental.id,
               vehicleName,
@@ -296,7 +331,7 @@ export default function DashboardPage() {
               status: rental.status
             };
           }));
-          
+
           setRecentBookings(formattedBookings);
         } else {
           setRecentBookings([]);
@@ -304,7 +339,7 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Error fetching recent bookings:", error);
       }
-      
+
       // Update state with all the shop owner data
       setShopStats({
         totalVehicles,
@@ -328,38 +363,38 @@ export default function DashboardPage() {
         .select("id")
         .eq("user_id", user!.id)
         .in("status", ["active", "confirmed"]);
-      
+
       if (bookingsError) {
         console.error("Error fetching user bookings:", bookingsError);
         return;
       }
-      
+
       // 2. Get user's saved vehicles (favorites)
       const { data: savedVehicles, error: favoritesError } = await supabase
         .from("favorites")
         .select("id")
         .eq("user_id", user!.id);
-      
+
       if (favoritesError) {
         console.error("Error fetching favorites:", favoritesError);
         return;
       }
-      
+
       // 3. Calculate profile completion percentage
       // This would normally be based on fields the user has filled out
       // For simplicity, we'll just check a few metadata fields
       const userMetadata = user?.user_metadata || {};
       let filledFields = 0;
       const totalFields = 5;
-      
+
       if (userMetadata.first_name) filledFields++;
       if (userMetadata.last_name) filledFields++;
       if (userMetadata.phone_number) filledFields++;
       if (userMetadata.address) filledFields++;
       if (user?.email) filledFields++;
-      
+
       const profileCompletionPercentage = Math.round((filledFields / totalFields) * 100);
-      
+
       // Update state with all the user data
       setUserStats({
         activeBookings: activeBookings?.length || 0,
@@ -398,7 +433,7 @@ export default function DashboardPage() {
       animate="visible"
       variants={fadeIn}
     >
-      <motion.div 
+      <motion.div
         className="pt-2 md:pt-4 mb-6 md:mb-8"
         variants={slideUp}
       >
@@ -415,14 +450,34 @@ export default function DashboardPage() {
       <div className="space-y-6 md:space-y-10">
         {/* Error message if any */}
         {error && (
-          <motion.div 
+          <motion.div
             className="bg-red-900/20 border border-red-700/50 text-red-400 px-4 py-3 rounded-lg mb-6"
             variants={slideUp}
           >
             {error}
           </motion.div>
         )}
-        
+
+        {/* Shop Setup Guide with toggle functionality - only for shop owners */}
+        <AnimatePresence mode="wait">
+          {isShopOwner && (
+            <motion.div
+              key="shop-setup-guide"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="w-full overflow-hidden"
+            >
+              <ShopSetupGuide
+                vehicleCount={shopStats.totalVehicles}
+                isVisible={isGuideVisible}
+                onToggleVisibility={() => setIsGuideVisible(!isGuideVisible)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Stats Overview */}
         {isShopOwner ? (
           <motion.div
@@ -432,7 +487,7 @@ export default function DashboardPage() {
           >
             {/* Subscription Status for Shop Owners */}
             {shopData && (
-              <motion.div 
+              <motion.div
                 className="mb-6 relative"
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 1 }}
@@ -440,9 +495,9 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-lg md:text-xl font-semibold text-white/90">Subscription Status</h2>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
                     onClick={toggleSubscriptionCollapse}
                     aria-label={isSubscriptionCollapsed ? "Expand subscription details" : "Collapse subscription details"}
@@ -463,22 +518,22 @@ export default function DashboardPage() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      transition={{ 
-                        duration: 0.3, 
+                      transition={{
+                        duration: 0.3,
                         ease: "easeOut"
                       }}
                     >
                       <SubscriptionStatus shop={shopData} />
                     </motion.div>
                   ) : (
-                    <motion.div 
+                    <motion.div
                       key="collapsed"
                       className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-lg flex items-center justify-between"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      transition={{ 
-                        duration: 0.3, 
+                      transition={{
+                        duration: 0.3,
                         ease: "easeOut"
                       }}
                     >
@@ -490,7 +545,7 @@ export default function DashboardPage() {
                           "bg-yellow-500"
                         }`}></div>
                         <span className="text-sm text-white/80">
-                          {shopData?.subscription_status 
+                          {shopData?.subscription_status
                             ? shopData.subscription_status.charAt(0).toUpperCase() + shopData.subscription_status.slice(1)
                             : "Unknown"} Subscription
                         </span>
@@ -501,8 +556,8 @@ export default function DashboardPage() {
                 </AnimatePresence>
               </motion.div>
             )}
-            
-            <motion.h2 
+
+            <motion.h2
               className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -510,11 +565,11 @@ export default function DashboardPage() {
             >
               Shop Overview
             </motion.h2>
-            <motion.div 
+            <motion.div
               className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
               variants={containerVariants}
             >
-              <motion.div 
+              <motion.div
                 className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
                 variants={cardVariants}
               >
@@ -533,8 +588,8 @@ export default function DashboardPage() {
                     <Bike size={18} className="text-primary" />
                   </div>
                 </div>
-                <Link 
-                  href="/dashboard/vehicles" 
+                <Link
+                  href="/dashboard/vehicles"
                   className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
                 >
                   View all vehicles
@@ -542,7 +597,7 @@ export default function DashboardPage() {
                 </Link>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-green-500/30 group"
                 variants={cardVariants}
               >
@@ -566,7 +621,7 @@ export default function DashboardPage() {
                 </p>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group"
                 variants={cardVariants}
               >
@@ -585,8 +640,8 @@ export default function DashboardPage() {
                     <CalendarRange size={18} className="text-blue-400" />
                   </div>
                 </div>
-                <Link 
-                  href="/dashboard/bookings" 
+                <Link
+                  href="/dashboard/bookings"
                   className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
                 >
                   View all bookings
@@ -594,7 +649,7 @@ export default function DashboardPage() {
                 </Link>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
                 variants={cardVariants}
               >
@@ -613,8 +668,8 @@ export default function DashboardPage() {
                     <TrendingUp size={18} className="text-primary" />
                   </div>
                 </div>
-                <Link 
-                  href="/dashboard/analytics" 
+                <Link
+                  href="/dashboard/analytics"
                   className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
                 >
                   View analytics
@@ -624,13 +679,13 @@ export default function DashboardPage() {
             </motion.div>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
-            <motion.div 
+            <motion.div
               className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-500/30 group"
               variants={cardVariants}
             >
@@ -650,8 +705,8 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="text-xs text-white/60 mt-1">
-                {userStats.activeBookings === 0 
-                  ? "No vehicles currently rented" 
+                {userStats.activeBookings === 0
+                  ? "No vehicles currently rented"
                   : userStats.activeBookings === 1
                     ? "You have 1 active booking"
                     : `You have ${userStats.activeBookings} active bookings`
@@ -659,7 +714,7 @@ export default function DashboardPage() {
               </p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-pink-500/30 group"
               variants={cardVariants}
             >
@@ -679,8 +734,8 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="text-xs text-white/60 mt-1">
-                {userStats.savedVehicles === 0 
-                  ? "No vehicles saved to favorites" 
+                {userStats.savedVehicles === 0
+                  ? "No vehicles saved to favorites"
                   : userStats.savedVehicles === 1
                     ? "You have 1 saved vehicle"
                     : `You have ${userStats.savedVehicles} saved vehicles`
@@ -688,7 +743,7 @@ export default function DashboardPage() {
               </p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
               variants={cardVariants}
             >
@@ -707,14 +762,14 @@ export default function DashboardPage() {
                   <Settings size={18} className="text-primary" />
                 </div>
               </div>
-              <motion.div 
+              <motion.div
                 className="w-full bg-white/10 rounded-full h-1.5 mt-2 mb-1 overflow-hidden"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6, duration: 0.5 }}
               >
-                <motion.div 
-                  className="bg-gradient-to-r from-primary to-blue-500 h-1.5 rounded-full" 
+                <motion.div
+                  className="bg-gradient-to-r from-primary to-blue-500 h-1.5 rounded-full"
                   style={{ width: "0%" }}
                   animate={{ width: `${userStats.profileCompletionPercentage}%` }}
                   transition={{ delay: 0.8, duration: 0.8, ease: "easeOut" }}
@@ -736,7 +791,7 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <motion.h2 
+          <motion.h2
             className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -744,7 +799,7 @@ export default function DashboardPage() {
           >
             Quick Actions
           </motion.h2>
-          <motion.div 
+          <motion.div
             className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
             variants={containerVariants}
             initial="hidden"
@@ -854,7 +909,7 @@ export default function DashboardPage() {
                 <Link href="/dashboard/bookings">View All</Link>
               </Button>
             </div>
-            <motion.div 
+            <motion.div
               className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/20"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -896,8 +951,8 @@ export default function DashboardPage() {
                     </thead>
                     <tbody className="divide-y divide-white/10">
                       {recentBookings.map((booking, index) => (
-                        <motion.tr 
-                          key={booking.id} 
+                        <motion.tr
+                          key={booking.id}
                           className="hover:bg-white/5 transition-colors"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -978,7 +1033,7 @@ export default function DashboardPage() {
 
         {/* Register as Shop Owner - only shown to tourists */}
         {!isShopOwner && (
-          <motion.div 
+          <motion.div
             className="bg-gradient-to-r from-primary/10 to-blue-500/10 border border-primary/20 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1003,4 +1058,4 @@ export default function DashboardPage() {
       </div>
     </motion.div>
   );
-} 
+}
