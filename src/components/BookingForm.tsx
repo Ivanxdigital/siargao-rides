@@ -47,7 +47,6 @@ export default function BookingForm({
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [deliveryOptions, setDeliveryOptions] = useState<any[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const router = useRouter();
@@ -96,7 +95,7 @@ export default function BookingForm({
     }
   }, [startDate, endDate, rentalVehicle?.id]);
 
-  // Fetch delivery options and payment methods
+  // Fetch delivery options
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -131,19 +130,6 @@ export default function BookingForm({
           }
 
           setDeliveryOptions(options);
-        }
-
-        // Fetch payment methods (cash only for now)
-        const { data: paymentData, error: paymentError } = await supabase
-          .from("payment_methods")
-          .select("*")
-          .eq("is_active", true)
-          .eq("is_online", false); // Only get offline payment methods
-
-        if (paymentError) {
-          console.error("Error fetching payment methods:", paymentError);
-        } else {
-          setPaymentMethods(paymentData || []);
         }
       } catch (error) {
         console.error("Error fetching options:", error);
@@ -204,16 +190,10 @@ export default function BookingForm({
       return;
     }
 
-    // If the user is not authenticated, validate guest details
+    // If the user is not authenticated, prompt them to sign in
     if (!isAuthenticated) {
-      const guestName = (document.getElementById("guest-name") as HTMLInputElement)?.value;
-      const guestEmail = (document.getElementById("guest-email") as HTMLInputElement)?.value;
-      const guestPhone = (document.getElementById("guest-phone") as HTMLInputElement)?.value;
-
-      if (!guestName || !guestEmail) {
-        setFormError("Please provide your name and email address.");
-        return;
-      }
+      setFormError("Please sign in or create an account to complete your booking.");
+      return;
     }
 
     // Double-check vehicle availability before proceeding
@@ -280,16 +260,7 @@ export default function BookingForm({
       // Get current user session
       const { data: { session } } = await supabase.auth.getSession();
 
-      // Get guest details if user is not authenticated
-      let guestName = "";
-      let guestEmail = "";
-      let guestPhone = "";
-
-      if (!isAuthenticated) {
-        guestName = (document.getElementById("guest-name") as HTMLInputElement)?.value;
-        guestEmail = (document.getElementById("guest-email") as HTMLInputElement)?.value;
-        guestPhone = (document.getElementById("guest-phone") as HTMLInputElement)?.value;
-      }
+      // We only proceed with authenticated users at this point
 
       // Generate a unique confirmation code
       const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -297,17 +268,18 @@ export default function BookingForm({
       // Create a new booking record - handle both vehicle and bike paths
       let bookingData: any = {
         shop_id: shop.id,
-        user_id: isAuthenticated ? session?.user?.id : null,
+        user_id: session?.user?.id, // User must be authenticated at this point
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         total_price: totalPrice,
-        payment_method_id: paymentMethod,
+        payment_method_id: paymentMethod === 'cash' ? '0bea770f-c0c2-4510-a22f-e42fc122eb9c' : 'c1cc5137-46dd-48c2-b91a-831d0a822c16', // Use the appropriate ID based on selection
         delivery_option_id: deliveryOption,
         status: "pending", // Initial status
         payment_status: "pending", // Initial payment status
         delivery_address: deliveryAddress,
         confirmation_code: confirmationCode,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString() // Add updated_at field
       };
 
       // Add the right ID field based on whether we're using vehicle or bike
@@ -334,9 +306,7 @@ export default function BookingForm({
       console.log("Booking created:", booking);
 
       // Check if the selected payment method is PayMongo
-      const selectedPaymentMethod = paymentMethods.find(m => m.id === paymentMethod);
-
-      if (selectedPaymentMethod?.provider === 'paymongo') {
+      if (paymentMethod === 'paymongo') {
         // Navigate to the payment page for online payment
         router.push(`/booking/payment/${booking.id}`);
       } else {
@@ -540,64 +510,73 @@ export default function BookingForm({
       <div>
         <h3 className="text-lg font-medium mb-2">Payment Method</h3>
         <div className="space-y-2">
-          {paymentMethods.map((method) => (
-            <label
-              key={method.id}
-              className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
-                paymentMethod === method.id
-                  ? 'border-primary/50 bg-primary/5'
-                  : 'border-white/10'
-              }`}
-            >
-              <input
-                type="radio"
-                name="paymentMethod"
-                value={method.id}
-                checked={paymentMethod === method.id}
-                onChange={() => setPaymentMethod(method.id)}
-                className="mt-1"
-              />
-              <div>
-                <div className="font-medium">{method.name}</div>
-                <div className="text-sm text-white/70">{method.description}</div>
-              </div>
-            </label>
-          ))}
+          {/* Cash option (merged Cash on Delivery and Cash on Pickup) */}
+          <label
+            className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
+              paymentMethod === 'cash'
+                ? 'border-primary/50 bg-primary/5'
+                : 'border-white/10'
+            }`}
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="cash"
+              checked={paymentMethod === 'cash'}
+              onChange={() => setPaymentMethod('cash')}
+              className="mt-1"
+            />
+            <div>
+              <div className="font-medium">Cash Payment</div>
+              <div className="text-sm text-white/70">Pay with cash when picking up or when the vehicle is delivered</div>
+            </div>
+          </label>
+
+          {/* PayMongo option */}
+          <label
+            className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
+              paymentMethod === 'paymongo'
+                ? 'border-primary/50 bg-primary/5'
+                : 'border-white/10'
+            }`}
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="paymongo"
+              checked={paymentMethod === 'paymongo'}
+              onChange={() => setPaymentMethod('paymongo')}
+              className="mt-1"
+            />
+            <div>
+              <div className="font-medium">Online Payment</div>
+              <div className="text-sm text-white/70">Pay online with credit/debit card, GCash, or other e-wallets</div>
+            </div>
+          </label>
         </div>
       </div>
 
-      {/* Guest information (for non-authenticated users) */}
+      {/* Authentication prompt for non-authenticated users */}
       {!isAuthenticated && (
-        <div>
-          <h3 className="text-lg font-medium mb-2">Guest Information</h3>
-          <div className="space-y-3">
-            <div>
-              <label htmlFor="guest-name" className="block text-sm mb-1">Name</label>
-              <input
-                id="guest-name"
-                type="text"
-                className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/50"
-                placeholder="Enter your full name"
-              />
-            </div>
-            <div>
-              <label htmlFor="guest-email" className="block text-sm mb-1">Email</label>
-              <input
-                id="guest-email"
-                type="email"
-                className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/50"
-                placeholder="Enter your email address"
-              />
-            </div>
-            <div>
-              <label htmlFor="guest-phone" className="block text-sm mb-1">Phone (optional)</label>
-              <input
-                id="guest-phone"
-                type="tel"
-                className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/50"
-                placeholder="Enter your phone number"
-              />
-            </div>
+        <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 my-4">
+          <h3 className="text-lg font-medium mb-2 text-primary">Sign In Required</h3>
+          <p className="text-white/80 mb-3">
+            You need to sign in or create an account to complete your booking.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={() => router.push(`/sign-in`)}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Sign In
+            </Button>
+            <Button
+              onClick={() => router.push(`/sign-up`)}
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary/10"
+            >
+              Create Account
+            </Button>
           </div>
         </div>
       )}
@@ -631,9 +610,9 @@ export default function BookingForm({
         <Button
           type="submit"
           className="w-full"
-          disabled={loading}
+          disabled={loading || !isAuthenticated}
         >
-          {loading ? "Processing..." : "Confirm Booking"}
+          {loading ? "Processing..." : isAuthenticated ? "Confirm Booking" : "Sign In to Book"}
         </Button>
       </div>
     </form>

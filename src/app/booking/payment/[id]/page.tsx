@@ -7,13 +7,13 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import PayMongoForm from "@/components/PayMongoForm";
-import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
 
 export default function BookingPaymentPage() {
   const params = useParams();
   const router = useRouter();
   const bookingId = params?.id as string;
-  
+
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function BookingPaymentPage() {
   const fetchBookingDetails = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch booking details
       const { data: booking, error: bookingError } = await supabase
         .from("rentals")
@@ -46,20 +46,20 @@ export default function BookingPaymentPage() {
         `)
         .eq("id", bookingId)
         .single();
-      
+
       if (bookingError) {
         throw new Error(bookingError.message);
       }
-      
+
       if (!booking) {
         throw new Error("Booking not found");
       }
-      
+
       // Check if payment is already completed
       if (booking.payment_status === "paid") {
         setPaymentSuccess(true);
       }
-      
+
       setBooking(booking);
     } catch (error: any) {
       console.error("Error fetching booking details:", error);
@@ -71,10 +71,10 @@ export default function BookingPaymentPage() {
 
   const handlePaymentSuccess = async () => {
     setPaymentSuccess(true);
-    
+
     // Refresh booking details to get updated status
     await fetchBookingDetails();
-    
+
     // Wait a moment before redirecting to confirmation page
     setTimeout(() => {
       router.push(`/booking/confirmation/${bookingId}`);
@@ -83,6 +83,9 @@ export default function BookingPaymentPage() {
 
   const handlePaymentError = (errorMessage: string) => {
     setError(errorMessage);
+
+    // The PayMongoForm component will handle redirecting to the failure page
+    // after a short delay to show the error message
   };
 
   if (loading) {
@@ -105,10 +108,17 @@ export default function BookingPaymentPage() {
             <p className="text-red-400">{error}</p>
           </div>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 flex gap-3">
           <Button onClick={() => router.back()} variant="outline" className="flex items-center">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go Back
+          </Button>
+          <Button
+            onClick={() => router.push(`/booking/payment-failed/${bookingId}`)}
+            className="flex items-center bg-red-600 hover:bg-red-700"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            View Payment Options
           </Button>
         </div>
       </div>
@@ -146,12 +156,12 @@ export default function BookingPaymentPage() {
           <span>Back to Booking Details</span>
         </Link>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-5 shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Complete Your Payment</h2>
-            
+
             {paymentSuccess ? (
               <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 flex items-start">
                 <CheckCircle className="text-green-500 w-5 h-5 mt-0.5 mr-2" />
@@ -170,16 +180,16 @@ export default function BookingPaymentPage() {
             )}
           </div>
         </div>
-        
+
         <div className="md:col-span-1">
           <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-5 shadow-sm sticky top-6">
             <h3 className="font-semibold mb-4 text-lg pb-2 border-b border-white/10">Booking Summary</h3>
-            
+
             <div className="mb-4">
               <h4 className="font-medium mb-2">{rentalVehicle?.name || 'Vehicle'}</h4>
               <p className="text-sm text-white/70">{vehicleType?.name || 'Vehicle'}</p>
             </div>
-            
+
             <div className="space-y-3 mb-4">
               <div className="flex justify-between items-start">
                 <span className="text-white/70">Rental Period:</span>
@@ -187,25 +197,25 @@ export default function BookingPaymentPage() {
                   {format(new Date(booking.start_date), 'MMM d, yyyy')} - {format(new Date(booking.end_date), 'MMM d, yyyy')}
                 </span>
               </div>
-              
+
               <div className="flex justify-between items-start">
                 <span className="text-white/70">Rental Fee:</span>
                 <span className="font-medium">₱{(booking.total_price - (booking.delivery_option?.fee || 0)).toFixed(2)}</span>
               </div>
-              
+
               {booking.delivery_option && (
                 <div className="flex justify-between items-start">
                   <span className="text-white/70">Delivery Fee:</span>
                   <span className="font-medium">₱{(booking.delivery_option.fee || 0).toFixed(2)}</span>
                 </div>
               )}
-              
+
               <div className="pt-2 border-t border-white/10 flex justify-between items-start font-semibold">
                 <span>Total:</span>
                 <span>₱{booking.total_price.toFixed(2)}</span>
               </div>
             </div>
-            
+
             <div className="text-xs text-white/50 mt-4">
               <p>Booking ID: {booking.id}</p>
               <p>Status: {booking.status}</p>

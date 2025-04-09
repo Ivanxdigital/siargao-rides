@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { AlertCircle, CreditCard, Smartphone } from 'lucide-react';
 
@@ -17,6 +18,7 @@ export default function PayMongoForm({
   onPaymentSuccess,
   onPaymentError
 }: PayMongoFormProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'gcash' | 'grab_pay' | 'paymaya'>('card');
@@ -88,19 +90,19 @@ export default function PayMongoForm({
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!paymentIntent) {
       setError('Payment intent not created. Please try again.');
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       // Create payment method based on selected type
       let paymentMethodResponse;
-      
+
       if (paymentMethod === 'card') {
         // Validate card details
         if (!cardDetails.cardNumber || !cardDetails.expMonth || !cardDetails.expYear || !cardDetails.cvc) {
@@ -108,7 +110,7 @@ export default function PayMongoForm({
           setLoading(false);
           return;
         }
-        
+
         // Create card payment method
         paymentMethodResponse = await fetch('/api/payments/create-method', {
           method: 'POST',
@@ -147,13 +149,13 @@ export default function PayMongoForm({
           }),
         });
       }
-      
+
       const paymentMethodData = await paymentMethodResponse.json();
-      
+
       if (!paymentMethodResponse.ok) {
         throw new Error(paymentMethodData.error || 'Failed to create payment method');
       }
-      
+
       // Attach payment method to payment intent
       const attachResponse = await fetch('/api/payments/attach-method', {
         method: 'POST',
@@ -166,13 +168,13 @@ export default function PayMongoForm({
           clientKey: paymentIntent.client_key
         }),
       });
-      
+
       const attachData = await attachResponse.json();
-      
+
       if (!attachResponse.ok) {
         throw new Error(attachData.error || 'Failed to process payment');
       }
-      
+
       // Handle different payment statuses
       if (attachData.payment.status === 'awaiting_next_action') {
         // 3D Secure authentication needed
@@ -189,13 +191,19 @@ export default function PayMongoForm({
       } else {
         // Payment failed or other status
         throw new Error(
-          attachData.payment.last_payment_error?.message || 
+          attachData.payment.last_payment_error?.message ||
           'Payment was not successful. Please try again.'
         );
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during payment processing');
-      onPaymentError(err.message || 'An error occurred during payment processing');
+      const errorMessage = err.message || 'An error occurred during payment processing';
+      setError(errorMessage);
+      onPaymentError(errorMessage);
+
+      // After showing the error briefly, redirect to the payment failed page
+      setTimeout(() => {
+        router.push(`/booking/payment-failed/${rentalId}`);
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -205,7 +213,7 @@ export default function PayMongoForm({
   const checkPaymentStatus = async () => {
     try {
       setLoading(true);
-      
+
       const response = await fetch('/api/payments/check-status', {
         method: 'POST',
         headers: {
@@ -216,13 +224,13 @@ export default function PayMongoForm({
           clientKey: paymentIntent.client_key
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to check payment status');
       }
-      
+
       if (data.payment.status === 'succeeded') {
         // Payment successful
         setShowAuthFrame(false);
@@ -234,13 +242,19 @@ export default function PayMongoForm({
         // Payment failed or other status
         setShowAuthFrame(false);
         throw new Error(
-          data.payment.last_payment_error?.message || 
+          data.payment.last_payment_error?.message ||
           'Payment was not successful. Please try again.'
         );
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred while checking payment status');
-      onPaymentError(err.message || 'An error occurred while checking payment status');
+      const errorMessage = err.message || 'An error occurred while checking payment status';
+      setError(errorMessage);
+      onPaymentError(errorMessage);
+
+      // After showing the error briefly, redirect to the payment failed page
+      setTimeout(() => {
+        router.push(`/booking/payment-failed/${rentalId}`);
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -263,12 +277,12 @@ export default function PayMongoForm({
           <p className="text-red-500 text-sm">{error}</p>
         </div>
       )}
-      
+
       {showAuthFrame ? (
         <div className="mb-4">
           <h3 className="font-medium mb-2">Complete Authentication</h3>
-          <iframe 
-            src={authUrl} 
+          <iframe
+            src={authUrl}
             className="w-full h-[400px] border border-gray-300 rounded-md"
             title="Payment Authentication"
           />
@@ -283,8 +297,8 @@ export default function PayMongoForm({
                 type="button"
                 onClick={() => setPaymentMethod('card')}
                 className={`p-3 border rounded-md flex flex-col items-center justify-center ${
-                  paymentMethod === 'card' 
-                    ? 'border-primary bg-primary/5' 
+                  paymentMethod === 'card'
+                    ? 'border-primary bg-primary/5'
                     : 'border-gray-300 hover:border-primary/50'
                 }`}
               >
@@ -295,8 +309,8 @@ export default function PayMongoForm({
                 type="button"
                 onClick={() => setPaymentMethod('gcash')}
                 className={`p-3 border rounded-md flex flex-col items-center justify-center ${
-                  paymentMethod === 'gcash' 
-                    ? 'border-primary bg-primary/5' 
+                  paymentMethod === 'gcash'
+                    ? 'border-primary bg-primary/5'
                     : 'border-gray-300 hover:border-primary/50'
                 }`}
               >
@@ -307,8 +321,8 @@ export default function PayMongoForm({
                 type="button"
                 onClick={() => setPaymentMethod('grab_pay')}
                 className={`p-3 border rounded-md flex flex-col items-center justify-center ${
-                  paymentMethod === 'grab_pay' 
-                    ? 'border-primary bg-primary/5' 
+                  paymentMethod === 'grab_pay'
+                    ? 'border-primary bg-primary/5'
                     : 'border-gray-300 hover:border-primary/50'
                 }`}
               >
@@ -319,8 +333,8 @@ export default function PayMongoForm({
                 type="button"
                 onClick={() => setPaymentMethod('paymaya')}
                 className={`p-3 border rounded-md flex flex-col items-center justify-center ${
-                  paymentMethod === 'paymaya' 
-                    ? 'border-primary bg-primary/5' 
+                  paymentMethod === 'paymaya'
+                    ? 'border-primary bg-primary/5'
                     : 'border-gray-300 hover:border-primary/50'
                 }`}
               >
@@ -329,7 +343,7 @@ export default function PayMongoForm({
               </button>
             </div>
           </div>
-          
+
           {/* Billing Information */}
           <div>
             <h3 className="font-medium mb-2">Billing Information</h3>
@@ -369,7 +383,7 @@ export default function PayMongoForm({
               </div>
             </div>
           </div>
-          
+
           {/* Card Details (only shown if card payment method is selected) */}
           {paymentMethod === 'card' && (
             <div>
@@ -432,7 +446,7 @@ export default function PayMongoForm({
               </div>
             </div>
           )}
-          
+
           {/* E-wallet instructions */}
           {paymentMethod !== 'card' && (
             <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-md">
@@ -443,7 +457,7 @@ export default function PayMongoForm({
               </p>
             </div>
           )}
-          
+
           {/* Submit Button */}
           <Button
             type="submit"
