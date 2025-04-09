@@ -26,39 +26,55 @@ export const createPaymentIntent = async (
   metadata: Record<string, any> = {}
 ) => {
   try {
+    console.log('PayMongo createPaymentIntent called with:', { amount, description, metadata });
+    console.log('Using PayMongo API URL:', PAYMONGO_API_URL);
+    console.log('Using PayMongo Secret Key (first 4 chars):', PAYMONGO_SECRET_KEY.substring(0, 4));
+
+    const payload = {
+      data: {
+        attributes: {
+          amount,
+          payment_method_allowed: ['card', 'gcash', 'grab_pay', 'paymaya'],
+          payment_method_options: {
+            card: {
+              request_three_d_secure: 'any',
+            },
+          },
+          currency: 'PHP',
+          description,
+          statement_descriptor: 'Siargao Rides',
+          metadata,
+        },
+      },
+    };
+
+    console.log('PayMongo request payload:', JSON.stringify(payload));
+
     const response = await fetch(`${PAYMONGO_API_URL}/payment_intents`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${encodeApiKey(PAYMONGO_SECRET_KEY)}`,
       },
-      body: JSON.stringify({
-        data: {
-          attributes: {
-            amount,
-            payment_method_allowed: ['card', 'gcash', 'grab_pay', 'paymaya'],
-            payment_method_options: {
-              card: {
-                request_three_d_secure: 'any',
-              },
-            },
-            currency: 'PHP',
-            description,
-            statement_descriptor: 'Siargao Rides',
-            metadata,
-          },
-        },
-      }),
+      body: JSON.stringify(payload),
     });
+
+    console.log('PayMongo API response status:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('PayMongo API error response:', errorData);
       throw new Error(
         `PayMongo API Error: ${errorData.errors?.[0]?.detail || 'Unknown error'}`
       );
     }
 
     const data = await response.json();
+    console.log('PayMongo API success response:', {
+      id: data.data.id,
+      status: data.data.attributes.status,
+      client_key: data.data.attributes.client_key,
+    });
     return data.data;
   } catch (error) {
     console.error('Error creating PayMongo payment intent:', error);

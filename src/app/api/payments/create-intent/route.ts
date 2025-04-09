@@ -5,12 +5,14 @@ import { createPaymentIntent, convertAmountToCents } from '@/lib/paymongo';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Starting create-intent API call');
     const supabase = createServerComponentClient({ cookies });
-    
+
     // Get the current authenticated user
     const { data: { session } } = await supabase.auth.getSession();
     const userId = session?.user?.id;
-    
+    console.log('User ID:', userId);
+
     // Parse request body
     const {
       rentalId,
@@ -19,8 +21,11 @@ export async function POST(request: NextRequest) {
       metadata = {}
     } = await request.json();
 
+    console.log('Request data:', { rentalId, amount, description });
+
     // Validate input
     if (!rentalId || !amount) {
+      console.log('Missing required fields');
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -51,19 +56,55 @@ export async function POST(request: NextRequest) {
 
     // Convert amount to cents for PayMongo
     const amountInCents = convertAmountToCents(amount);
+    console.log('Amount in cents:', amountInCents);
+
+    // Check if the paymongo_payments table exists
+    try {
+      const { count, error: tableCheckError } = await supabase
+        .from('paymongo_payments')
+        .select('*', { count: 'exact', head: true });
+
+      if (tableCheckError) {
+        console.error('Error checking paymongo_payments table:', tableCheckError);
+        return NextResponse.json(
+          { error: 'Database table not found', details: tableCheckError.message },
+          { status: 500 }
+        );
+      }
+
+      console.log('paymongo_payments table exists, count:', count);
+    } catch (tableError) {
+      console.error('Exception checking paymongo_payments table:', tableError);
+      return NextResponse.json(
+        { error: 'Database error', details: tableError.message },
+        { status: 500 }
+      );
+    }
 
     // Create payment intent with PayMongo
-    const paymentIntent = await createPaymentIntent(
-      amountInCents,
-      description || `Payment for Rental #${rentalId}`,
-      {
-        rental_id: rentalId,
-        user_id: userId || 'guest',
-        ...metadata
-      }
-    );
+    console.log('Creating PayMongo payment intent...');
+    let paymentIntent;
+    try {
+      paymentIntent = await createPaymentIntent(
+        amountInCents,
+        description || `Payment for Rental #${rentalId}`,
+        {
+          rental_id: rentalId,
+          user_id: userId || 'guest',
+          ...metadata
+        }
+      );
+      console.log('PayMongo payment intent created:', paymentIntent.id);
+    } catch (paymongoError) {
+      console.error('Error creating PayMongo payment intent:', paymongoError);
+      return NextResponse.json(
+        { error: 'Failed to create PayMongo payment intent', details: paymongoError.message },
+        { status: 500 }
+      );
+    }
 
     // Store payment intent in database
+    console.log('Storing payment intent in database...');
     const { data: paymongoPayment, error: paymentError } = await supabase
       .from('paymongo_payments')
       .insert({
@@ -85,6 +126,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    console.log('Payment intent stored successfully:', paymongoPayment.id);
 
     // Update rental payment status
     await supabase
