@@ -39,27 +39,27 @@ const Footer = () => {
           <div className="flex flex-col">
             <h4 className="font-semibold text-foreground mb-4">Connect With Us</h4>
             <div className="flex gap-4">
-              <a 
-                href="https://instagram.com" 
-                target="_blank" 
+              <a
+                href="https://www.instagram.com/siargaorides"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={24} />
               </a>
-              <a 
-                href="https://facebook.com" 
-                target="_blank" 
+              <a
+                href="https://www.facebook.com/profile.php?id=61575066621582"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook size={24} />
               </a>
-              <a 
-                href="https://wa.me/1234567890" 
-                target="_blank" 
+              <a
+                href="https://wa.me/1234567890"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="WhatsApp"
@@ -78,4 +78,4 @@ const Footer = () => {
   )
 }
 
-export default Footer 
+export default Footer
