@@ -125,31 +125,31 @@ export default function ShopPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType | 'all'>('all')
   const { user } = useAuth()
-  
+
   // Add these new state variables for review functionality
   const [userCanReview, setUserCanReview] = useState(false)
   const [userReview, setUserReview] = useState<ReviewWithDetails | null>(null)
-  
+
   // Check if current user is the shop owner
   const isShopOwner = user && shop && user.id === shop.owner_id
-  
+
   // Group vehicles by type
   const motorcycles = vehicles.filter(v => v.vehicle_type === 'motorcycle')
   const cars = vehicles.filter(v => v.vehicle_type === 'car')
   const tuktuks = vehicles.filter(v => v.vehicle_type === 'tuktuk')
-  
+
   // Check if shop has each type of vehicle
   const hasMotorcycles = motorcycles.length > 0
   const hasCars = cars.length > 0
   const hasTuktuks = tuktuks.length > 0
-  
+
   // Add this function to check if user can review
   const checkUserCanReview = async () => {
     if (!user) return
-  
+
     try {
       const supabase = createClientComponentClient()
-      
+
       // Check if user has any completed rentals with this shop
       const { data: rentalData, error: rentalError } = await supabase
         .from('rentals')
@@ -158,9 +158,9 @@ export default function ShopPage() {
         .eq('user_id', user.id)
         .eq('status', 'completed')
         .limit(1)
-      
+
       if (rentalError) throw rentalError
-      
+
       // Check if user already has a review for this shop
       const { data: reviewData, error: reviewError } = await supabase
         .from('reviews')
@@ -171,12 +171,12 @@ export default function ShopPage() {
         .eq('shop_id', id)
         .eq('user_id', user.id)
         .limit(1)
-      
+
       if (reviewError) throw reviewError
-      
+
       // User can review if they have completed rentals
       setUserCanReview(rentalData ? rentalData.length > 0 : false)
-      
+
       // If user already has a review, store it
       if (reviewData && reviewData.length > 0) {
         setUserReview(reviewData[0])
@@ -185,12 +185,12 @@ export default function ShopPage() {
       console.error('Error checking review eligibility:', error)
     }
   }
-  
+
   // Add this function to refresh reviews
   const refreshReviews = async () => {
     try {
       const supabase = createClientComponentClient()
-      
+
       // Get reviews for this shop with user details
       const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
@@ -199,13 +199,13 @@ export default function ShopPage() {
           user:users(*)
         `)
         .eq('shop_id', id);
-        
+
       if (reviewsError) {
         console.error('Error fetching reviews:', reviewsError);
       } else {
         setReviews(reviewsData || [])
       }
-      
+
       // Refresh user's review status
       checkUserCanReview()
     } catch (error) {
@@ -220,25 +220,25 @@ export default function ShopPage() {
         setLoading(false)
         return
       }
-      
+
       try {
         setLoading(true)
         const supabase = createClientComponentClient()
-        
+
         // Get shop data
         const { data: shopData, error: shopError } = await supabase
           .from('rental_shops')
           .select('*')
           .eq('id', id)
           .single();
-          
+
         if (shopError || !shopData) {
           console.error('Error fetching shop:', shopError);
           setError('Shop not found')
           setLoading(false)
           return
         }
-        
+
         // Check if shop is active
         if (!shopData.is_active) {
           console.log('Shop is inactive:', shopData);
@@ -247,12 +247,12 @@ export default function ShopPage() {
           setLoading(false)
           return
         }
-        
+
         setShop(shopData)
-        
+
         // For backwards compatibility: Try to get vehicles first, fall back to bikes if needed
         try {
-          // Get vehicles for this shop 
+          // Get vehicles for this shop
           const { data: vehiclesData, error: vehiclesError } = await supabase
             .from('vehicles')
             .select(`
@@ -264,22 +264,22 @@ export default function ShopPage() {
             .eq('is_available', true)
             .eq('is_verified', true)
             .eq('verification_status', 'approved');
-            
+
           if (vehiclesError) {
             throw vehiclesError;
           }
-          
+
           // Transform data to match our Vehicle type
           const formattedVehicles = vehiclesData.map(vehicle => ({
             ...vehicle,
             vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
             images: vehicle.vehicle_images || []
           }));
-          
+
           setVehicles(formattedVehicles)
         } catch (vehicleError) {
           console.log('Error fetching vehicles, falling back to bikes:', vehicleError);
-          
+
           // Fallback to bikes for backward compatibility
           const { data: bikesData, error: bikesError } = await supabase
             .from('bikes')
@@ -289,14 +289,14 @@ export default function ShopPage() {
             `)
             .eq('shop_id', id)
             .eq('is_available', true);
-            
+
           if (bikesError) {
             console.error('Error fetching bikes:', bikesError);
             setError('Failed to load vehicles')
             setLoading(false)
             return
           }
-          
+
           // Transform bike data to vehicle format for compatibility
           const formattedBikes = bikesData.map(bike => ({
             ...bike,
@@ -304,10 +304,10 @@ export default function ShopPage() {
             vehicle_type_id: '1', // Assume motorcycles have ID 1
             images: bike.bike_images || []
           }));
-          
+
           setVehicles(formattedBikes)
         }
-        
+
         // Get reviews for this shop with user details
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('reviews')
@@ -316,13 +316,13 @@ export default function ShopPage() {
             user:users(*)
           `)
           .eq('shop_id', id);
-          
+
         if (reviewsError) {
           console.error('Error fetching reviews:', reviewsError);
         } else {
           setReviews(reviewsData || [])
         }
-        
+
         setLoading(false)
       } catch (err) {
         console.error('Error fetching shop data:', err)
@@ -330,15 +330,15 @@ export default function ShopPage() {
         setLoading(false)
       }
     }
-    
+
     fetchShopData()
-    
+
     // Check if user can review when shop data is loaded
     if (user) {
       checkUserCanReview()
     }
   }, [id, user])
-  
+
   const handleBookClick = (vehicleId: string) => {
     setSelectedVehicleId(vehicleId)
     // Navigate to the booking page with vehicle ID and shop ID
@@ -356,7 +356,7 @@ export default function ShopPage() {
       </div>
     )
   }
-  
+
   // Error state
   if (error || !shop) {
     return (
@@ -385,7 +385,7 @@ export default function ShopPage() {
       </div>
     )
   }
-  
+
   // Calculate average rating
   const averageRating = reviews.length > 0
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
@@ -396,7 +396,7 @@ export default function ShopPage() {
     // First prioritize reviews with responses
     if (a.reply && !b.reply) return -1;
     if (!a.reply && b.reply) return 1;
-    
+
     // Then sort by date (newest first)
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
@@ -419,7 +419,7 @@ export default function ShopPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-blue-900/5 to-transparent"></div>
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5"></div>
       </div>
-      
+
       {/* Banner with enhanced height and overlay */}
       <motion.div
         className="relative h-[35vh] md:h-[40vh] w-full z-10 overflow-hidden"
@@ -434,12 +434,12 @@ export default function ShopPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/10 backdrop-blur-[2px]"></div>
       </motion.div>
-      
+
       {/* Shop Info with better positioning and card styling */}
       <div className="container mx-auto px-4 -mt-32 md:-mt-36 relative z-10">
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
           {/* Profile Image with improved styling */}
-          <motion.div 
+          <motion.div
             className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-black shadow-xl bg-gradient-to-br from-gray-900 to-black relative group"
             whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
           >
@@ -451,7 +451,7 @@ export default function ShopPage() {
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
           </motion.div>
-          
+
           {/* Shop Details with better typography */}
           <motion.div
             className="flex-1 backdrop-blur-md bg-white/5 rounded-2xl p-5 md:p-7 border border-white/10 shadow-lg"
@@ -459,12 +459,12 @@ export default function ShopPage() {
           >
             <div className="flex justify-between items-start flex-wrap gap-3">
               <h1 className="text-2xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80">{shop.name}</h1>
-              
+
               {/* Add Edit Shop button for shop owners */}
               {isShopOwner && (
-                <Button 
+                <Button
                   asChild
-                  variant="outline" 
+                  variant="outline"
                   size="sm"
                   className="border-primary/30 hover:bg-primary/10 hover:text-primary transition-all"
                 >
@@ -484,18 +484,18 @@ export default function ShopPage() {
                 <span className="ml-1.5 font-medium">{averageRating.toFixed(1)}</span>
               </div>
               <span className="text-sm text-white/70">({reviews.length} reviews)</span>
-              {shop.is_verified && 
+              {shop.is_verified &&
                 <Badge variant="verified" className="ml-2 bg-emerald-700/60 text-emerald-100 border border-emerald-500/30 px-2.5 py-1">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="14" 
-                    height="14" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     className="mr-1"
                   >
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -506,7 +506,7 @@ export default function ShopPage() {
               }
             </div>
             <p className="text-white/80 mt-5 max-w-2xl text-sm md:text-base leading-relaxed">{shop.description || "No description available."}</p>
-            
+
             {/* Vehicle type badges */}
             <div className="flex flex-wrap gap-2 mt-5">
               {hasMotorcycles && (
@@ -547,7 +547,7 @@ export default function ShopPage() {
               </div>
             )}
           </motion.div>
-          
+
           {/* Contact Info Card with improved styling */}
           <motion.div
             className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg w-full md:w-auto md:min-w-80 mt-4 md:mt-0"
@@ -555,7 +555,7 @@ export default function ShopPage() {
           >
             <h3 className="font-semibold mb-5 text-lg text-white/90">Contact Information</h3>
             <div className="space-y-5">
-              <motion.div 
+              <motion.div
                 className="flex items-start gap-3 group"
                 whileHover={{ x: 3, transition: { duration: 0.2 } }}
               >
@@ -566,9 +566,9 @@ export default function ShopPage() {
                   {shop.address}, <br/>{shop.city}
                 </span>
               </motion.div>
-              
+
               {shop.phone_number && (
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-3 group"
                   whileHover={{ x: 3, transition: { duration: 0.2 } }}
                 >
@@ -580,9 +580,9 @@ export default function ShopPage() {
                   </a>
                 </motion.div>
               )}
-              
+
               {shop.email && (
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-3 group"
                   whileHover={{ x: 3, transition: { duration: 0.2 } }}
                 >
@@ -594,57 +594,57 @@ export default function ShopPage() {
                   </a>
                 </motion.div>
               )}
-              
+
               {/* Facebook link */}
               {shop.facebook_url && (
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-3 group"
                   whileHover={{ x: 3, transition: { duration: 0.2 } }}
                 >
                   <div className="bg-blue-600/10 p-2 rounded-full">
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="18" 
-                      height="18" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       className="text-blue-400"
                     >
                       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
                     </svg>
                   </div>
-                  <a 
-                    href={shop.facebook_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={shop.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-blue-400 hover:text-blue-300 transition-colors pt-1.5"
                   >
                     Facebook Page
                   </a>
                 </motion.div>
               )}
-              
+
               {/* Instagram link */}
               {shop.instagram_url && (
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-3 group"
                   whileHover={{ x: 3, transition: { duration: 0.2 } }}
                 >
                   <div className="bg-pink-600/10 p-2 rounded-full">
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="18" 
-                      height="18" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       className="text-pink-400"
                     >
                       <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
@@ -652,51 +652,51 @@ export default function ShopPage() {
                       <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                     </svg>
                   </div>
-                  <a 
-                    href={shop.instagram_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={shop.instagram_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-pink-400 hover:text-pink-300 transition-colors pt-1.5"
                   >
                     Instagram Profile
                   </a>
                 </motion.div>
               )}
-              
+
               {/* SMS Number */}
               {shop.sms_number && (
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-3 group"
                   whileHover={{ x: 3, transition: { duration: 0.2 } }}
                 >
                   <div className="bg-green-600/10 p-2 rounded-full">
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="18" 
-                      height="18" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       className="text-green-400"
                     >
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                   </div>
-                  <a 
-                    href={`sms:${shop.sms_number}`} 
+                  <a
+                    href={`sms:${shop.sms_number}`}
                     className="text-sm text-green-400 hover:text-green-300 transition-colors pt-1.5"
                   >
                     Send SMS
                   </a>
                 </motion.div>
               )}
-              
+
               {shop.whatsapp && (
-                <Button 
-                  className="w-full mt-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-none shadow-md" 
+                <Button
+                  className="w-full mt-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-none shadow-md"
                   onClick={() => window.open(`https://wa.me/${shop.whatsapp?.replace(/\+/g, '').replace(/\s/g, '')}`, '_blank')}
                 >
                   <MessageCircle size={18} className="mr-2" />
@@ -707,9 +707,9 @@ export default function ShopPage() {
           </motion.div>
         </div>
       </div>
-      
+
       {/* Notice about ID requirements with improved glass morphism */}
-      <motion.div 
+      <motion.div
         className="container mx-auto px-4 mt-10 mb-4 relative z-10"
         variants={fadeIn}
         initial="hidden"
@@ -731,22 +731,22 @@ export default function ShopPage() {
               <p className="text-white/90 text-xs md:text-sm mt-2 leading-relaxed">
                 {shop.requires_id_deposit && shop.requires_cash_deposit ? (
                   <>
-                    This shop requires a valid ID and a cash deposit of <span className="font-medium text-yellow-300">₱{shop.cash_deposit_amount}</span> when renting vehicles. 
+                    This shop requires a valid ID and a cash deposit of <span className="font-medium text-yellow-300">₱{shop.cash_deposit_amount}</span> when renting vehicles.
                     Both will be safely returned to you when you bring back the vehicle in good condition.
                   </>
                 ) : shop.requires_id_deposit ? (
                   <>
-                    This shop requires a <span className="font-medium text-yellow-300">valid ID</span> as a deposit when renting vehicles. 
+                    This shop requires a <span className="font-medium text-yellow-300">valid ID</span> as a deposit when renting vehicles.
                     Your ID will be safely returned to you when you bring back the vehicle in good condition.
                   </>
                 ) : shop.requires_cash_deposit ? (
                   <>
-                    This shop requires a cash deposit of <span className="font-medium text-yellow-300">₱{shop.cash_deposit_amount}</span> when renting vehicles. 
+                    This shop requires a cash deposit of <span className="font-medium text-yellow-300">₱{shop.cash_deposit_amount}</span> when renting vehicles.
                     The deposit will be fully refunded when you bring back the vehicle in good condition.
                   </>
                 ) : (
                   <>
-                    Most rental shops in Siargao will request some form of deposit. Please check with this shop 
+                    Most rental shops in Siargao will request some form of deposit. Please check with this shop
                     directly about their specific requirements.
                   </>
                 )}
@@ -755,10 +755,10 @@ export default function ShopPage() {
           </div>
         </div>
       </motion.div>
-      
+
       {/* Vehicle Type Tabs with improved styling */}
       {vehicles.length > 0 && (
-        <motion.div 
+        <motion.div
           className="container mx-auto px-4 mt-10 relative z-10"
           variants={fadeIn}
           initial="hidden"
@@ -766,44 +766,44 @@ export default function ShopPage() {
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
         >
-          <div className="bg-white/5 backdrop-blur-md p-1.5 rounded-full inline-flex flex-wrap gap-2 border border-white/10 shadow-md">
-            <Button 
+          <div className="bg-white/5 backdrop-blur-md p-1.5 rounded-2xl flex flex-wrap justify-center sm:justify-start gap-2 border border-white/10 shadow-md w-full overflow-hidden">
+            <Button
               variant={selectedVehicleType === 'all' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setSelectedVehicleType('all')}
-              className={`rounded-full px-4 ${selectedVehicleType === 'all' ? 'bg-white/10 text-white shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+              className={`rounded-full px-3 text-sm ${selectedVehicleType === 'all' ? 'bg-white/10 text-white shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
             >
               All Vehicles
             </Button>
-            
+
             {hasMotorcycles && (
-              <Button 
+              <Button
                 variant={selectedVehicleType === 'motorcycle' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('motorcycle')}
-                className={`rounded-full px-4 ${selectedVehicleType === 'motorcycle' ? 'bg-primary/20 text-primary shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+                className={`rounded-full px-3 text-sm ${selectedVehicleType === 'motorcycle' ? 'bg-primary/20 text-primary shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
               >
                 <Bike size={14} className="mr-1.5" /> Motorcycles
               </Button>
             )}
-            
+
             {hasCars && (
-              <Button 
+              <Button
                 variant={selectedVehicleType === 'car' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('car')}
-                className={`rounded-full px-4 ${selectedVehicleType === 'car' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+                className={`rounded-full px-3 text-sm ${selectedVehicleType === 'car' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
               >
                 <Car size={14} className="mr-1.5" /> Cars
               </Button>
             )}
-            
+
             {hasTuktuks && (
-              <Button 
+              <Button
                 variant={selectedVehicleType === 'tuktuk' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedVehicleType('tuktuk')}
-                className={`rounded-full px-4 ${selectedVehicleType === 'tuktuk' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+                className={`rounded-full px-3 text-sm ${selectedVehicleType === 'tuktuk' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
               >
                 <Truck size={14} className="mr-1.5" /> Tuktuks
               </Button>
@@ -811,27 +811,27 @@ export default function ShopPage() {
           </div>
         </motion.div>
       )}
-      
+
       {/* Vehicle Listings with improved styling */}
       <div className="container mx-auto px-4 py-12 relative z-10">
-        <motion.div 
+        <motion.div
           className="flex items-center gap-3 mb-8"
-          variants={fadeIn} 
+          variants={fadeIn}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
         >
           <h2 className="text-xl md:text-2xl font-semibold text-white">
-            {selectedVehicleType === 'all' ? 'Available Vehicles' : 
+            {selectedVehicleType === 'all' ? 'Available Vehicles' :
             selectedVehicleType === 'motorcycle' ? 'Available Motorcycles' :
             selectedVehicleType === 'car' ? 'Available Cars' : 'Available Tuktuks'}
           </h2>
           <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
         </motion.div>
-        
+
         {vehicles.length === 0 ? (
-          <motion.div 
+          <motion.div
             className="text-center py-16 backdrop-blur-md bg-black/20 rounded-xl border border-dashed border-white/10"
             variants={fadeIn}
             initial="hidden"
@@ -846,19 +846,19 @@ export default function ShopPage() {
             <p className="text-white/50 text-sm mt-2">Check back later or browse other shops.</p>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            transition={{ delay: 0.5 }} 
+            transition={{ delay: 0.5 }}
           >
             {vehicles
               .filter(v => selectedVehicleType === 'all' || v.vehicle_type === selectedVehicleType)
               .map(vehicle => (
-                <motion.div 
-                  key={vehicle.id} 
+                <motion.div
+                  key={vehicle.id}
                   variants={itemVariants}
                   whileHover={{ y: -5, transition: { duration: 0.2 } }}
                   className="transform transition-all duration-300"
@@ -883,23 +883,23 @@ export default function ShopPage() {
           </motion.div>
         )}
       </div>
-      
+
       {/* Conditionally render the availability section when a vehicle is selected */}
       {selectedVehicleId && vehicles.length > 0 && (
         <div className="container mx-auto px-4 pb-12 relative z-10">
           {vehicles
             .filter(v => v.id === selectedVehicleId)
             .map(vehicle => (
-              <VehicleAvailabilitySection 
+              <VehicleAvailabilitySection
                 key={vehicle.id}
-                vehicleId={vehicle.id} 
+                vehicleId={vehicle.id}
                 vehicleName={vehicle.name}
                 vehicleType={vehicle.vehicle_type}
               />
             ))}
         </div>
       )}
-      
+
       {/* Update the Reviews section with new components */}
       <div className="py-16 bg-gradient-to-b from-transparent to-black/70 border-t border-white/10 relative z-10">
         <div className="container mx-auto px-4">
@@ -917,7 +917,7 @@ export default function ShopPage() {
               See what our customers have to say about their experience with {shop.name}
             </p>
           </motion.div>
-          
+
           {reviews.length === 0 ? (
             <motion.div
               className="max-w-2xl mx-auto bg-black/60 backdrop-blur-sm rounded-xl border border-dashed border-primary/30 overflow-hidden shadow-sm"
@@ -940,9 +940,9 @@ export default function ShopPage() {
                 </p>
                 {user ? (
                   userCanReview ? (
-                    <ReviewDialog 
-                      shopId={id as string} 
-                      onReviewSubmitted={refreshReviews} 
+                    <ReviewDialog
+                      shopId={id as string}
+                      onReviewSubmitted={refreshReviews}
                     />
                   ) : (
                     <p className="text-sm text-amber-400">
@@ -967,16 +967,16 @@ export default function ShopPage() {
             >
               {sortedReviews.map(review => (
                 <motion.div key={review.id} variants={itemVariants}>
-                  <ReviewItem 
-                    review={review} 
-                    isShopOwner={isShopOwner} 
-                    onResponseSubmitted={refreshReviews} 
+                  <ReviewItem
+                    review={review}
+                    isShopOwner={isShopOwner}
+                    onResponseSubmitted={refreshReviews}
                   />
                 </motion.div>
               ))}
             </motion.div>
           )}
-          
+
           {reviews.length > 0 && user && (
             <motion.div
               className="flex justify-center mt-10"
@@ -987,8 +987,8 @@ export default function ShopPage() {
               transition={{ delay: 0.5 }}
             >
               {userReview ? (
-                <ReviewDialog 
-                  shopId={id as string} 
+                <ReviewDialog
+                  shopId={id as string}
                   onReviewSubmitted={refreshReviews}
                   isUpdate={true}
                   existingReview={{
@@ -998,9 +998,9 @@ export default function ShopPage() {
                   }}
                 />
               ) : userCanReview ? (
-                <ReviewDialog 
-                  shopId={id as string} 
-                  onReviewSubmitted={refreshReviews} 
+                <ReviewDialog
+                  shopId={id as string}
+                  onReviewSubmitted={refreshReviews}
                 />
               ) : (
                 <p className="text-sm bg-amber-900/30 px-4 py-2 rounded-full border border-amber-500/30 text-amber-400">
@@ -1013,4 +1013,4 @@ export default function ShopPage() {
       </div>
     </motion.div>
   )
-} 
+}
