@@ -3,6 +3,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Hide reCAPTCHA badge since we're showing the attribution text */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -129,32 +134,32 @@
   :root {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    
+
     --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    
+
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    
+
     --primary: 173 70% 50%;  /* Tropical teal */
     --primary-foreground: 240 10% 3.9%;
-    
+
     --secondary: 160 84% 39%;  /* Tropical green */
     --secondary-foreground: 0 0% 98%;
-    
+
     --muted: 240 5% 15%;
     --muted-foreground: 240 5% 65%;
-    
+
     --accent: 48 96% 53%;  /* Tropical yellow */
     --accent-foreground: 240 10% 3.9%;
-    
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    
+
     --border: 240 5% 15%;
     --input: 240 5% 15%;
     --ring: 173 70% 50%;  /* Tropical teal */
-    
+
     --radius: 0.5rem;
   }
 }
@@ -163,7 +168,7 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -175,19 +180,19 @@
   .animate-hover-lift {
     @apply transition-transform duration-200;
   }
-  
+
   .animate-hover-lift:hover {
     @apply -translate-y-1;
   }
-  
+
   .animate-fade-in {
     @apply transition-opacity duration-300 ease-in-out;
   }
-  
+
   .animate-pulse-subtle {
     animation: pulse-subtle 2s infinite;
   }
-  
+
   @keyframes pulse-subtle {
     0%, 100% {
       opacity: 1;
