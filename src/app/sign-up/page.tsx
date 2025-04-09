@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -20,29 +21,37 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
-  
-  const { register, signInWithGoogle } = useAuth();
+  const router = useRouter();
+
+  const { register, signInWithGoogle, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
     setApiError("");
     setIsLoading(true);
-    
+
     // Validate passwords match
     if (password !== confirmPassword) {
       setFormError("Passwords do not match");
       setIsLoading(false);
       return;
     }
-    
+
     // Password strength validation
     if (password.length < 8) {
       setFormError("Password must be at least 8 characters long");
       setIsLoading(false);
       return;
     }
-    
+
     try {
       // Always register with "tourist" role
       const { error } = await register(email, password, firstName, lastName, role);
@@ -60,10 +69,10 @@ export default function SignUpPage() {
     setFormError("");
     setApiError("");
     setGoogleLoading(true);
-    
+
     try {
       const { error } = await signInWithGoogle();
-      
+
       if (error) {
         setApiError(error.message || "Failed to sign up with Google");
       }
@@ -77,7 +86,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen pt-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -85,7 +94,7 @@ export default function SignUpPage() {
     >
       <section className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden min-h-screen">
         {/* Background with overlay gradient */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 z-0 opacity-20"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.2 }}
@@ -93,32 +102,32 @@ export default function SignUpPage() {
         >
           <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
         </motion.div>
-        
+
         <div className="container mx-auto px-4 py-12 relative z-10">
-          <motion.div 
+          <motion.div
             className="max-w-md mx-auto"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ 
-              duration: 0.7, 
-              ease: [0.22, 1, 0.36, 1] 
+            transition={{
+              duration: 0.7,
+              ease: [0.22, 1, 0.36, 1]
             }}
           >
-            <motion.div 
+            <motion.div
               className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ 
-                duration: 0.5, 
+              transition={{
+                duration: 0.5,
                 delay: 0.3,
                 ease: [0.22, 1, 0.36, 1]
               }}
-              whileHover={{ 
+              whileHover={{
                 boxShadow: "0 10px 25px -5px rgba(79, 70, 229, 0.1)",
                 borderColor: "rgba(79, 70, 229, 0.5)"
               }}
             >
-              <motion.div 
+              <motion.div
                 className="text-center mb-6"
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -127,7 +136,7 @@ export default function SignUpPage() {
                 <Badge className="mb-4 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
                   Join Siargao Rides
                 </Badge>
-                <motion.h1 
+                <motion.h1
                   className="text-3xl font-bold"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -135,7 +144,7 @@ export default function SignUpPage() {
                 >
                   Create an Account
                 </motion.h1>
-                <motion.p 
+                <motion.p
                   className="text-gray-300 mt-2"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -144,9 +153,9 @@ export default function SignUpPage() {
                   Join Siargao Rides to find or list motorbikes for rent
                 </motion.p>
               </motion.div>
-              
+
               {(apiError || formError) && (
-                <motion.div 
+                <motion.div
                   className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded-md mb-6"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -155,16 +164,16 @@ export default function SignUpPage() {
                   {formError || apiError}
                 </motion.div>
               )}
-              
-              <motion.form 
-                className="space-y-6" 
+
+              <motion.form
+                className="space-y-6"
                 onSubmit={handleSubmit}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.8 }}
               >
                 <div className="space-y-4">
-                  <motion.div 
+                  <motion.div
                     className="grid grid-cols-2 gap-4"
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -183,7 +192,7 @@ export default function SignUpPage() {
                         placeholder="John"
                       />
                     </div>
-                    
+
                     <div>
                       <label htmlFor="lastName" className="block text-sm font-medium mb-1 text-gray-200">
                         Last Name
@@ -198,7 +207,7 @@ export default function SignUpPage() {
                       />
                     </div>
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -217,7 +226,7 @@ export default function SignUpPage() {
                       required
                     />
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -239,7 +248,7 @@ export default function SignUpPage() {
                       Must be at least 8 characters long
                     </p>
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -258,7 +267,7 @@ export default function SignUpPage() {
                       required
                     />
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -269,22 +278,22 @@ export default function SignUpPage() {
                     </p>
                   </motion.div>
                 </div>
-                
+
                 <motion.div
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.5, delay: 1.4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center" 
+                  <Button
+                    type="submit"
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center"
                     disabled={isLoading}
                   >
                     {isLoading ? "Creating Account..." : "Sign Up"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
                 </motion.div>
-                
+
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-700"></div>
@@ -333,8 +342,8 @@ export default function SignUpPage() {
                     )}
                   </Button>
                 </motion.div>
-                
-                <motion.p 
+
+                <motion.p
                   className="text-xs text-center text-gray-400"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -351,8 +360,8 @@ export default function SignUpPage() {
                   .
                 </motion.p>
               </motion.form>
-              
-              <motion.div 
+
+              <motion.div
                 className="mt-6 text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -371,4 +380,4 @@ export default function SignUpPage() {
       </section>
     </motion.div>
   );
-} 
+}

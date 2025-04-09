@@ -39,10 +39,17 @@ export default function SignInPage() {
   const [cooldownTimer, setCooldownTimer] = useState(0);
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>(getDefaultRateLimitState());
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, isAuthenticated, isLoading: authLoading } = useAuth();
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSubmittingRef = useRef(false);
   const router = useRouter();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   // Load rate limit state from localStorage on component mount
   useEffect(() => {
