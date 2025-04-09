@@ -12,15 +12,15 @@ import { Textarea } from "@/components/ui/Textarea";
 import { toast } from "sonner";
 
 // Icons
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  ChevronLeft, 
-  Calendar, 
-  MapPin, 
-  CreditCard, 
-  Clock, 
-  Share2, 
+import {
+  CheckCircle,
+  AlertCircle,
+  ChevronLeft,
+  Calendar,
+  MapPin,
+  CreditCard,
+  Clock,
+  Share2,
   Printer,
   User,
   Phone,
@@ -39,14 +39,14 @@ export default function BookingConfirmationPage() {
   // Get booking ID from URL using multiple methods
   const params = useParams();
   const router = useRouter();
-  
+
   // Log what we're getting to debug
   console.log("Full URL:", typeof window !== 'undefined' ? window.location.href : 'Not in browser');
   console.log("Params object:", params);
-  
+
   // Method 1: From params object
   let bookingId = params?.id;
-  
+
   // Method 2: Try from URL path if params failed
   if (!bookingId && typeof window !== 'undefined') {
     const pathParts = window.location.pathname.split('/');
@@ -56,7 +56,7 @@ export default function BookingConfirmationPage() {
       console.log("Got ID from URL path:", bookingId);
     }
   }
-  
+
   // Final check
   if (bookingId) {
     // If it's an array, take the first item
@@ -87,15 +87,15 @@ export default function BookingConfirmationPage() {
 
       try {
         setLoading(true);
-        
+
         // First get basic booking data
         const { data: bookingData, error: bookingError } = await supabase
           .from("rentals")
           .select(`
-            id, 
-            start_date, 
-            end_date, 
-            total_price, 
+            id,
+            start_date,
+            end_date,
+            total_price,
             status,
             created_at,
             vehicle_id,
@@ -129,7 +129,7 @@ export default function BookingConfirmationPage() {
           console.error("Error fetching booking history:", historyError);
         } else {
           setBookingHistory(historyData || []);
-          
+
           // If no history exists yet, create a default history entry for booking creation
           if (!historyData || historyData.length === 0) {
             // Create default history based on booking creation
@@ -143,7 +143,7 @@ export default function BookingConfirmationPage() {
                 event_type: 'creation'
               }
             ];
-            
+
             if (bookingData.status !== 'pending') {
               defaultHistory.push({
                 id: 'status-change',
@@ -154,7 +154,7 @@ export default function BookingConfirmationPage() {
                 event_type: 'status_change'
               });
             }
-            
+
             setBookingHistory(defaultHistory);
           }
         }
@@ -165,14 +165,14 @@ export default function BookingConfirmationPage() {
           .select("*")
           .eq("id", bookingData.vehicle_id)
           .single();
-          
+
         if (vehicleError) {
           console.error("Error fetching vehicle:", vehicleError);
         }
-        
+
         // Try multiple possible sources for the vehicle image
         let vehicleImageUrl: string | null = null;
-        
+
         // Check if we have vehicle images
         const { data: vehicleImages, error: vehicleImagesError } = await supabase
           .from("vehicle_images")
@@ -180,14 +180,14 @@ export default function BookingConfirmationPage() {
           .eq("vehicle_id", bookingData.vehicle_id)
           .eq("is_primary", true)
           .limit(1);
-        
+
         if (!vehicleImagesError && vehicleImages && vehicleImages.length > 0) {
           vehicleImageUrl = vehicleImages[0].image_url;
         }
         // Fallback to other possible image sources
         else if (vehicleData?.image_url) {
           vehicleImageUrl = vehicleData.image_url;
-        } 
+        }
         // Check for images array (structured as objects with image_url)
         else if (vehicleData?.images && Array.isArray(vehicleData.images) && vehicleData.images.length > 0) {
           if (typeof vehicleData.images[0] === 'string') {
@@ -204,9 +204,9 @@ export default function BookingConfirmationPage() {
         else if (vehicleData?.thumbnail) {
           vehicleImageUrl = vehicleData.thumbnail;
         }
-        
+
         console.log("Vehicle image URL for confirmation:", vehicleImageUrl);
-        
+
         // Add imageUrl to vehicle data
         const enhancedVehicleData = {
           ...vehicleData,
@@ -221,23 +221,23 @@ export default function BookingConfirmationPage() {
             .select("*")
             .eq("id", bookingData.vehicle_type_id)
             .single(),
-            
+
           // Get shop data
           supabase
             .from("rental_shops")
             .select("*")
             .eq("id", bookingData.shop_id)
             .single(),
-            
+
           // Get user data if available
-          bookingData.user_id ? 
+          bookingData.user_id ?
             supabase
               .from("users")
               .select("*")
               .eq("id", bookingData.user_id)
-              .single() : 
+              .single() :
             Promise.resolve({ data: null }),
-            
+
           // Get payment method
           bookingData.payment_method_id ?
             supabase
@@ -246,7 +246,7 @@ export default function BookingConfirmationPage() {
               .eq("id", bookingData.payment_method_id)
               .single() :
             Promise.resolve({ data: null }),
-            
+
           // Get delivery option
           bookingData.delivery_option_id ?
             supabase
@@ -330,7 +330,7 @@ export default function BookingConfirmationPage() {
     if (!type) {
       return <Bike className="text-primary" />;
     }
-    
+
     switch (type.toLowerCase()) {
       case 'car':
         return <Car className="text-primary" />;
@@ -370,7 +370,7 @@ export default function BookingConfirmationPage() {
     let icon;
     let title;
     let colorClass;
-    
+
     switch (action) {
       case 'creation':
         icon = <Info size={16} />;
@@ -402,7 +402,7 @@ export default function BookingConfirmationPage() {
         title = 'Booking Updated';
         colorClass = 'text-gray-400';
     }
-    
+
     return { icon, title, colorClass };
   };
 
@@ -442,7 +442,7 @@ export default function BookingConfirmationPage() {
       };
 
       let result;
-      
+
       if (existingReview) {
         // Update existing review
         const { data, error } = await supabase
@@ -454,10 +454,10 @@ export default function BookingConfirmationPage() {
           })
           .eq("id", existingReview.id)
           .select();
-          
+
         if (error) throw error;
         result = data;
-        
+
         toast.success("Your review has been updated");
       } else {
         // Create new review
@@ -465,10 +465,10 @@ export default function BookingConfirmationPage() {
           .from("vehicle_reviews")
           .insert(reviewData)
           .select();
-          
+
         if (error) throw error;
         result = data;
-        
+
         // Add to booking history
         await supabase
           .from("booking_history")
@@ -482,13 +482,13 @@ export default function BookingConfirmationPage() {
               review_id: result[0].id
             }
           });
-          
+
         toast.success("Your review has been submitted");
       }
-      
+
       setExistingReview(result[0]);
       setShowReviewForm(false);
-      
+
     } catch (error) {
       console.error("Error submitting review:", error);
       toast.error("Failed to submit review");
@@ -526,7 +526,7 @@ export default function BookingConfirmationPage() {
               <AlertCircle size={64} className="text-red-500" />
               <h1 className="text-2xl font-bold">{error || "Booking not found"}</h1>
               <p className="text-gray-400 mb-4">We couldn't find the booking you're looking for.</p>
-              
+
               {/* Add debugging info for users */}
               <div className="text-left text-xs text-gray-400 mb-4 p-2 bg-gray-800/50 rounded-md">
                 <p>Debug info:</p>
@@ -534,7 +534,7 @@ export default function BookingConfirmationPage() {
                 <p>Params: {JSON.stringify(params)}</p>
                 <p>Path: {typeof window !== 'undefined' ? window.location.pathname : 'Not available'}</p>
               </div>
-              
+
               <Button asChild>
                 <Link href="/my-bookings">
                   <ChevronLeft className="mr-2 h-4 w-4" />
@@ -554,15 +554,15 @@ export default function BookingConfirmationPage() {
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   const rentalPrice = (booking.vehicle?.price_per_day || 0) * days;
   const deliveryFee = booking.deliveryOption?.fee || 0;
-  
+
   // Get customer info - use user data if available
-  const customerName = booking.user 
-    ? `${booking.user.first_name || ''} ${booking.user.last_name || ''}`.trim() 
+  const customerName = booking.user
+    ? `${booking.user.first_name || ''} ${booking.user.last_name || ''}`.trim()
     : "Guest";
-    
+
   const customerEmail = booking.user?.email || "N/A";
   const customerPhone = booking.user?.phone || "N/A";
-  
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -599,7 +599,7 @@ export default function BookingConfirmationPage() {
           </Link>
         </div>
 
-        <motion.div 
+        <motion.div
           className="bg-black/50 backdrop-blur-sm border border-white/10 rounded-xl p-8 shadow-xl print:bg-white print:border-gray-200 print:shadow-none"
           variants={containerVariants}
           initial="hidden"
@@ -645,7 +645,7 @@ export default function BookingConfirmationPage() {
           </div>
 
           {/* Booking Status Timeline */}
-          <motion.div 
+          <motion.div
             className="mb-12 print:mb-8"
             variants={itemVariants}
           >
@@ -683,7 +683,7 @@ export default function BookingConfirmationPage() {
           </motion.div>
 
           {/* Vehicle Details */}
-          <motion.div 
+          <motion.div
             className="mb-12 print:mb-8"
             variants={itemVariants}
           >
@@ -691,10 +691,16 @@ export default function BookingConfirmationPage() {
             <div className="bg-white/5 print:bg-gray-100 rounded-lg p-6">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 <div className="w-full md:w-36 h-36 bg-gray-800 print:bg-gray-200 rounded-lg overflow-hidden">
-                  {booking?.vehicle?.image_url ? (
-                    <img 
-                      src={booking.vehicle.image_url} 
-                      alt={booking.vehicle.name} 
+                  {booking?.vehicle?.imageUrl ? (
+                    <img
+                      src={booking.vehicle.imageUrl}
+                      alt={booking.vehicle.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : booking?.vehicle?.image_url ? (
+                    <img
+                      src={booking.vehicle.image_url}
+                      alt={booking.vehicle.name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -703,7 +709,7 @@ export default function BookingConfirmationPage() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                     <h3 className="text-xl font-bold">
@@ -713,32 +719,32 @@ export default function BookingConfirmationPage() {
                       {booking?.status?.toUpperCase()}
                     </div>
                   </div>
-                  
+
                   {booking?.vehicle?.type && (
                     <p className="text-white/60 print:text-gray-600 text-sm mb-4">
                       {booking.vehicle.type.charAt(0).toUpperCase() + booking.vehicle.type.slice(1)}
                     </p>
                   )}
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div className="flex items-center">
                       <Calendar className="mr-2 text-primary" size={16} />
                       <div>
                         <div className="text-xs text-white/60 print:text-gray-600">Rental Period</div>
                         <div className="text-sm">
-                          {booking?.start_date && booking?.end_date 
+                          {booking?.start_date && booking?.end_date
                             ? `${format(new Date(booking.start_date), 'PPP')} - ${format(new Date(booking.end_date), 'PPP')}`
                             : "Dates not specified"}
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center">
                       <Clock className="mr-2 text-primary" size={16} />
                       <div>
                         <div className="text-xs text-white/60 print:text-gray-600">Duration</div>
                         <div className="text-sm">
-                          {booking?.duration 
+                          {booking?.duration
                             ? `${booking.duration} ${booking.duration === 1 ? 'day' : 'days'}`
                             : "Duration not specified"}
                         </div>
@@ -751,7 +757,7 @@ export default function BookingConfirmationPage() {
           </motion.div>
 
           {/* Rental Shop Details */}
-          <motion.div 
+          <motion.div
             className="mb-12 print:mb-8"
             variants={itemVariants}
           >
@@ -764,7 +770,7 @@ export default function BookingConfirmationPage() {
                 <div className="flex-1">
                   <h3 className="text-lg font-medium mb-1">{booking?.shop?.name || "Shop name unavailable"}</h3>
                   <p className="text-white/60 print:text-gray-700 mb-3">{booking?.shop?.address || "Address unavailable"}</p>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     {booking?.shop?.phone && (
                       <div className="flex items-center">
@@ -775,7 +781,7 @@ export default function BookingConfirmationPage() {
                         </div>
                       </div>
                     )}
-                    
+
                     {booking?.shop?.email && (
                       <div className="flex items-center">
                         <Mail className="mr-2 text-primary" size={16} />
@@ -792,7 +798,7 @@ export default function BookingConfirmationPage() {
           </motion.div>
 
           {/* Payment Details */}
-          <motion.div 
+          <motion.div
             className="mb-12 print:mb-8"
             variants={itemVariants}
           >
@@ -809,7 +815,7 @@ export default function BookingConfirmationPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="border-t border-white/10 print:border-gray-200 pt-4 mt-4">
                 <div className="flex justify-between mb-2">
                   <span className="text-white/80 print:text-gray-600">Base rental rate</span>
@@ -847,7 +853,7 @@ export default function BookingConfirmationPage() {
           </motion.div>
 
           {/* Customer Details */}
-          <motion.div 
+          <motion.div
             className="mb-8"
             variants={itemVariants}
           >
@@ -883,7 +889,7 @@ export default function BookingConfirmationPage() {
 
           {/* Additional Notes */}
           {booking?.notes && (
-            <motion.div 
+            <motion.div
               className="mb-12 print:mb-8"
               variants={itemVariants}
             >
@@ -896,7 +902,7 @@ export default function BookingConfirmationPage() {
 
           {/* Review Section */}
           {canReview() && (
-            <motion.div 
+            <motion.div
               className="mb-12 print:hidden"
               variants={itemVariants}
             >
@@ -904,15 +910,15 @@ export default function BookingConfirmationPage() {
                 <h2 className="text-lg font-semibold mb-4">Leave a Review</h2>
                 <div className="bg-white/5 rounded-lg p-6">
                   <p className="mb-4">How was your experience with this vehicle?</p>
-                  
+
                   <div className="mb-6">
-                    <RatingStars 
-                      value={reviewRating} 
-                      onChange={setReviewRating} 
+                    <RatingStars
+                      value={reviewRating}
+                      onChange={setReviewRating}
                       size="lg"
                     />
                   </div>
-                  
+
                   <div className="mb-6">
                     <Textarea
                       placeholder="Share your experience..."
@@ -921,7 +927,7 @@ export default function BookingConfirmationPage() {
                       className="bg-white/10 border-white/20"
                     />
                   </div>
-                  
+
                   <Button
                     onClick={handleSubmitReview}
                     disabled={reviewSubmitting}
@@ -935,7 +941,7 @@ export default function BookingConfirmationPage() {
           )}
 
           {/* Action Buttons */}
-          <motion.div 
+          <motion.div
             className="flex flex-wrap gap-3 pt-4 border-t border-white/10 print:border-gray-200 print:hidden"
             variants={itemVariants}
           >
@@ -948,9 +954,9 @@ export default function BookingConfirmationPage() {
               <Printer size={16} />
               Print
             </Button>
-            
+
             <Button
-              variant="outline" 
+              variant="outline"
               size="sm"
               className="flex items-center gap-2"
               onClick={handleShare}
@@ -963,4 +969,4 @@ export default function BookingConfirmationPage() {
       </div>
     </div>
   );
-} 
+}
