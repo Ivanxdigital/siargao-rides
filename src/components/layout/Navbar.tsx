@@ -66,20 +66,20 @@ const Navbar = () => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
     }
-    
+
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
-  
+
   // Better scroll lock implementation
   useEffect(() => {
     const html = document.documentElement
     const body = document.body
-    
+
     if (isMenuOpen) {
       // Store current scroll position
       scrollPosition.current = window.scrollY
-      
+
       // Apply fixed position and prevent scrolling
       body.style.position = 'fixed'
       body.style.top = `-${scrollPosition.current}px`
@@ -88,6 +88,13 @@ const Navbar = () => {
       body.style.bottom = '0'
       html.style.overflow = 'hidden'
       body.style.overflow = 'hidden'
+
+      // Ensure the mobile menu content is scrollable
+      const mobileMenuContent = document.querySelector('.mobile-menu-content')
+      if (mobileMenuContent) {
+        mobileMenuContent.style.height = '100%'
+        mobileMenuContent.style.overflowY = 'auto'
+      }
     } else {
       // Restore scrolling and position
       body.style.position = ''
@@ -97,7 +104,7 @@ const Navbar = () => {
       body.style.bottom = ''
       html.style.overflow = ''
       body.style.overflow = ''
-      
+
       // Restore scroll position
       if (scrollPosition.current > 0) {
         window.scrollTo(0, scrollPosition.current)
@@ -110,7 +117,7 @@ const Navbar = () => {
     const style = document.createElement('style')
     style.textContent = styles.shadowGlow
     document.head.appendChild(style)
-    
+
     return () => {
       document.head.removeChild(style)
     }
@@ -136,24 +143,24 @@ const Navbar = () => {
 
   return (
     <>
-      <nav 
+      <nav
         className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${
-          scrolled 
-            ? "py-3 bg-transparent backdrop-blur-md shadow-md border-b border-white/10" 
+          scrolled
+            ? "py-3 bg-transparent backdrop-blur-md shadow-md border-b border-white/10"
             : "py-5 bg-transparent"
         } ${isMenuOpen ? 'bg-black/90 backdrop-blur-md border-b border-white/10' : ''}`}
       >
         <div className="container mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="relative group flex items-center">
-            <motion.div 
+            <motion.div
               className="relative h-8 md:h-9 w-auto flex items-center mt-0.5 md:mt-0"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
               <Image
-                src="/images/Horizontal Logo.png" 
+                src="/images/Horizontal Logo.png"
                 alt="Siargao Rides Logo"
                 width={180}
                 height={45}
@@ -169,7 +176,7 @@ const Navbar = () => {
             <NavLink href="/browse" isScrolled={scrolled}>Browse</NavLink>
             <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
-            
+
             {isAuthenticated ? (
               <div className="relative">
                 <button
@@ -179,7 +186,7 @@ const Navbar = () => {
                 >
                   <div className={`relative w-8 h-8 rounded-full overflow-hidden border-2 transition-all duration-300 ${isProfileMenuOpen ? 'border-primary avatar-pulse' : 'border-transparent group-hover:border-primary group-hover:avatar-pulse'}`}>
                     {user?.user_metadata?.avatar_url ? (
-                      <Image 
+                      <Image
                         src={user.user_metadata.avatar_url}
                         alt="Profile"
                         fill
@@ -192,15 +199,15 @@ const Navbar = () => {
                       </div>
                     )}
                   </div>
-                  <ChevronDown 
-                    size={16} 
-                    className={`transition-all duration-300 ${isProfileMenuOpen ? 'text-primary rotate-180' : 'text-white/70 group-hover:text-primary group-hover:rotate-180'}`} 
+                  <ChevronDown
+                    size={16}
+                    className={`transition-all duration-300 ${isProfileMenuOpen ? 'text-primary rotate-180' : 'text-white/70 group-hover:text-primary group-hover:rotate-180'}`}
                   />
                 </button>
-                
+
                 {/* Profile Menu Dropdown */}
                 {isProfileMenuOpen && (
-                  <motion.div 
+                  <motion.div
                     className="absolute right-0 mt-2 w-56 bg-card border border-border shadow-lg rounded-md overflow-hidden z-50"
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -210,7 +217,7 @@ const Navbar = () => {
                     <div className="p-3 border-b border-border bg-card/70 flex items-center gap-3">
                       <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10">
                         {user?.user_metadata?.avatar_url ? (
-                          <Image 
+                          <Image
                             src={user.user_metadata.avatar_url}
                             alt="Profile"
                             fill
@@ -237,7 +244,7 @@ const Navbar = () => {
                         <User className="h-4 w-4 group-hover:text-primary transition-colors duration-200" />
                         <span className="group-hover:translate-x-1 transition-transform duration-200">Dashboard</span>
                       </Link>
-                      
+
                       {shopData && (
                         <Link
                           href={`/shop/${shopData.id}`}
@@ -248,7 +255,7 @@ const Navbar = () => {
                           <span className="group-hover:translate-x-1 transition-transform duration-200">My Shop</span>
                         </Link>
                       )}
-                      
+
                       <Link
                         href="/dashboard/my-bookings"
                         className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
@@ -257,7 +264,7 @@ const Navbar = () => {
                         <Calendar className="h-4 w-4 group-hover:text-primary transition-colors duration-200" />
                         <span className="group-hover:translate-x-1 transition-transform duration-200">My Bookings</span>
                       </Link>
-                      
+
                       {isAdmin && (
                         <Link
                           href="/dashboard/admin"
@@ -268,7 +275,7 @@ const Navbar = () => {
                           <span className="group-hover:translate-x-1 transition-transform duration-200">Admin Panel</span>
                         </Link>
                       )}
-                      
+
                       <Link
                         href="/profile"
                         className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
@@ -277,7 +284,7 @@ const Navbar = () => {
                         <Settings className="h-4 w-4 group-hover:text-primary transition-colors duration-200" />
                         <span className="group-hover:translate-x-1 transition-transform duration-200">Account Settings</span>
                       </Link>
-                      
+
                       <button
                         className="flex items-center gap-2 w-full p-2 text-sm hover:bg-red-50 text-red-600 hover:text-red-700 rounded-md transition-all duration-200 group"
                         onClick={handleLogout}
@@ -302,7 +309,7 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <motion.button 
+          <motion.button
             className="md:hidden text-white p-2 rounded-full hover:bg-white/10 transition-all duration-300 z-[1000] relative"
             onClick={toggleMenu}
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
@@ -316,30 +323,16 @@ const Navbar = () => {
 
       {/* Mobile Menu - Also update the mobile menu header */}
       {isMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-[998] bg-black/90 backdrop-blur-md pt-20">
-          {/* Add mobile logo at the top of mobile menu for better branding */}
-          <div className="flex justify-center mb-8">
-            <motion.div 
-              className="relative w-24 h-24"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-            >
-              <Image
-                src="/images/Vertical Logo Without Outline.png" 
-                alt="Siargao Rides Logo"
-                width={96}
-                height={96}
-                className="object-contain"
-              />
-            </motion.div>
-          </div>
-          <div className="pb-8 px-6 overflow-y-auto max-h-screen">
+        <div className="md:hidden fixed inset-0 z-[998] bg-black/90 backdrop-blur-md flex flex-col">
+          {/* Fixed header section - just padding */}
+          <div className="pt-20 px-6"></div>
+          {/* Scrollable content section */}
+          <div className="flex-1 overflow-y-auto pb-8 px-6 mobile-menu-content" style={{ maxHeight: 'calc(100vh - 100px)' }}>
             {isAuthenticated && (
               <div className="mb-6 p-4 bg-black/40 rounded-lg border border-white/10 flex items-center gap-4">
                 <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-primary/40">
                   {user?.user_metadata?.avatar_url ? (
-                    <Image 
+                    <Image
                       src={user.user_metadata.avatar_url}
                       alt="Profile"
                       fill
@@ -358,7 +351,7 @@ const Navbar = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="space-y-3 mb-6">
               <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)} icon={<Home size={16} />}>
                 Home
@@ -373,7 +366,7 @@ const Navbar = () => {
                 Contact
               </MobileNavLink>
             </div>
-            
+
             {/* Rest of the mobile menu remains unchanged */}
             {isAuthenticated ? (
               <>
@@ -382,27 +375,27 @@ const Navbar = () => {
                   <MobileNavLink href="/dashboard" onClick={() => setIsMenuOpen(false)} icon={<User size={16} />}>
                     Dashboard
                   </MobileNavLink>
-                  
+
                   {shopData && (
                     <MobileNavLink href={`/shop/${shopData.id}`} onClick={() => setIsMenuOpen(false)} icon={<ShoppingBag size={16} />}>
                       My Shop
                     </MobileNavLink>
                   )}
-                  
+
                   <MobileNavLink href="/dashboard/my-bookings" onClick={() => setIsMenuOpen(false)} icon={<Calendar size={16} />}>
                     My Bookings
                   </MobileNavLink>
-                  
+
                   {isAdmin && (
                     <MobileNavLink href="/dashboard/admin" onClick={() => setIsMenuOpen(false)} icon={<ShieldCheck size={16} />}>
                       Admin Panel
                     </MobileNavLink>
                   )}
-                  
+
                   <MobileNavLink href="/profile" onClick={() => setIsMenuOpen(false)} icon={<Settings size={16} />}>
                     Profile Settings
                   </MobileNavLink>
-                  
+
                   <button
                     className="flex items-center w-full py-3 px-3 text-white hover:text-destructive rounded-md transition-colors mt-2 text-sm"
                     onClick={() => {
@@ -428,9 +421,9 @@ const Navbar = () => {
                 </div>
               </>
             )}
-            
+
             {/* Menu Footer */}
-            <div className="mt-auto pt-6">
+            <div className="mt-6 pt-6">
               <div className="h-px w-full bg-white/10 mb-4"></div>
               <div className="flex justify-between items-center">
                 <div className="text-xs text-white/50">© {new Date().getFullYear()} Siargao Rides</div>
@@ -473,20 +466,20 @@ const NavLink = ({ href, children, isScrolled }: { href: string, children: React
 }
 
 // MobileNavLink component
-const MobileNavLink = ({ 
-  href, 
-  onClick, 
+const MobileNavLink = ({
+  href,
+  onClick,
   children,
   icon
-}: { 
-  href: string, 
-  onClick: () => void, 
+}: {
+  href: string,
+  onClick: () => void,
   children: React.ReactNode,
-  icon?: React.ReactNode 
+  icon?: React.ReactNode
 }) => {
   return (
-    <Link 
-      href={href} 
+    <Link
+      href={href}
       className="flex items-center py-3 px-4 text-white text-sm font-medium hover:bg-white/5 rounded-md transition-all duration-300 group relative overflow-hidden"
       onClick={onClick}
     >
@@ -503,4 +496,4 @@ const MobileNavLink = ({
   )
 }
 
-export default Navbar 
+export default Navbar
