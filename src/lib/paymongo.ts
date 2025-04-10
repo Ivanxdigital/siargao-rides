@@ -42,7 +42,7 @@ export const createPaymentIntent = async (
       data: {
         attributes: {
           amount,
-          payment_method_allowed: ['card', 'gcash', 'grab_pay', 'paymaya'],
+          payment_method_allowed: ['card', 'gcash'],
           payment_method_options: {
             card: {
               request_three_d_secure: 'any',
@@ -98,7 +98,7 @@ export const createPaymentIntent = async (
  * @returns Payment Method object
  */
 export const createPaymentMethod = async (
-  type: 'card' | 'gcash' | 'grab_pay' | 'paymaya',
+  type: 'card' | 'gcash',
   details?: {
     card_number: string;
     exp_month: number;
