@@ -26,21 +26,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is an admin
-    const { data: userData, error: userDataError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', userId)
-      .single();
-
-    if (userDataError || !userData) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    if (userData.role !== 'admin') {
+    // Check if user is an admin from user metadata
+    if (user.user_metadata?.role !== 'admin') {
+      console.log('User is not an admin. User metadata:', user.user_metadata);
       return NextResponse.json(
         { error: 'Unauthorized. Admin access required.' },
         { status: 403 }
@@ -65,10 +53,10 @@ export async function POST(request: NextRequest) {
     const { data: rental, error: rentalError } = await supabase
       .from('rentals')
       .select(`
-        id, 
-        shop_id, 
-        deposit_required, 
-        deposit_paid, 
+        id,
+        shop_id,
+        deposit_required,
+        deposit_paid,
         deposit_amount,
         deposit_payment_id,
         status
@@ -101,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     // Get shop owner's payment details
     const { data: shop, error: shopError } = await supabase
-      .from('shops')
+      .from('rental_shops')
       .select('id, owner_id, name')
       .eq('id', rental.shop_id)
       .single();

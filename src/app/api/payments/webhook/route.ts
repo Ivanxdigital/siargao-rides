@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { addDays, format, eachDayOfInterval } from 'date-fns';
 
 // Initialize Supabase client with service role for webhook processing
 // This is necessary because webhooks don't have cookies for auth
@@ -72,7 +73,10 @@ async function handlePaymentPaid(event: any) {
 
   // Check if this is a deposit payment
   // Since the is_deposit column might not exist, we check the metadata field
-  const isDeposit = paymentRecord.metadata && paymentRecord.metadata.is_deposit;
+  // PayMongo stores all metadata values as strings
+  const isDeposit = paymentRecord.metadata &&
+                   (paymentRecord.metadata.is_deposit === true ||
+                    paymentRecord.metadata.is_deposit === 'true');
 
   if (isDeposit) {
     // Update rental record for deposit payment
@@ -86,6 +90,9 @@ async function handlePaymentPaid(event: any) {
       .eq('id', paymentRecord.rental_id);
 
     console.log('Deposit payment marked as paid for rental:', paymentRecord.rental_id);
+
+    // Block dates for the booking since deposit is paid
+    await blockDatesForBooking(paymentRecord.rental_id);
   } else {
     // Update rental record for full payment
     await supabase
@@ -99,6 +106,93 @@ async function handlePaymentPaid(event: any) {
       .eq('id', paymentRecord.rental_id);
 
     console.log('Full payment marked as paid for rental:', paymentRecord.rental_id);
+
+    // Block dates for the booking since payment is complete
+    await blockDatesForBooking(paymentRecord.rental_id);
+  }
+}
+
+/**
+ * Block dates for a confirmed booking
+ */
+async function blockDatesForBooking(rentalId: string) {
+  try {
+    console.log('Blocking dates for rental:', rentalId);
+
+    // Get the rental details
+    const { data: rental, error: rentalError } = await supabase
+      .from('rentals')
+      .select('id, vehicle_id, start_date, end_date')
+      .eq('id', rentalId)
+      .single();
+
+    if (rentalError || !rental) {
+      console.error('Error fetching rental for blocking dates:', rentalError);
+      return;
+    }
+
+    // Generate all dates between start_date and end_date
+    const startDate = new Date(rental.start_date);
+    const endDate = new Date(rental.end_date);
+
+    const dateRange = eachDayOfInterval({
+      start: startDate,
+      end: endDate
+    });
+
+    // Format dates for database (YYYY-MM-DD)
+    const formattedDates = dateRange.map(date => ({
+      vehicle_id: rental.vehicle_id,
+      date: format(date, 'yyyy-MM-dd'),
+      reason: `Booked (Rental #${rental.id})`
+    }));
+
+    // Check if any dates are already blocked
+    const { data: existingBlocks, error: existingBlocksError } = await supabase
+      .from('vehicle_blocked_dates')
+      .select('date')
+      .eq('vehicle_id', rental.vehicle_id)
+      .in('date', formattedDates.map(d => d.date));
+
+    if (existingBlocksError) {
+      console.error('Error checking existing blocked dates:', existingBlocksError);
+      return;
+    }
+
+    // Filter out dates that are already blocked
+    const existingBlockDates = existingBlocks.map(block => block.date);
+    const newBlockedDates = formattedDates.filter(date => !existingBlockDates.includes(date.date));
+
+    if (newBlockedDates.length === 0) {
+      console.log('All dates are already blocked for rental:', rentalId);
+      return;
+    }
+
+    // Insert the dates into vehicle_blocked_dates
+    const { data: blockedDates, error: blockError } = await supabase
+      .from('vehicle_blocked_dates')
+      .insert(newBlockedDates)
+      .select();
+
+    if (blockError) {
+      console.error('Error blocking dates for rental:', blockError);
+      return;
+    }
+
+    console.log(`Successfully blocked ${newBlockedDates.length} dates for rental:`, rentalId);
+
+    // Add entry to booking history
+    await supabase
+      .from('booking_history')
+      .insert({
+        booking_id: rentalId,
+        event_type: 'dates_blocked',
+        status: 'completed',
+        notes: `Blocked ${newBlockedDates.length} dates for this booking`,
+        created_at: new Date().toISOString()
+      });
+  } catch (error) {
+    console.error('Error in blockDatesForBooking:', error);
   }
 }
 
@@ -134,7 +228,10 @@ async function handlePaymentFailed(event: any) {
 
   // Check if this is a deposit payment
   // Since the is_deposit column might not exist, we check the metadata field
-  const isDeposit = paymentRecord.metadata && paymentRecord.metadata.is_deposit;
+  // PayMongo stores all metadata values as strings
+  const isDeposit = paymentRecord.metadata &&
+                   (paymentRecord.metadata.is_deposit === true ||
+                    paymentRecord.metadata.is_deposit === 'true');
 
   if (isDeposit) {
     // Update rental record for failed deposit payment

@@ -31,11 +31,7 @@ CREATE POLICY admin_all_access ON deposit_payouts
   FOR ALL
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
-    )
+    auth.jwt() ->> 'role' = 'admin'
   );
 
 -- Policy for shop owners to see their own payouts
@@ -44,8 +40,8 @@ CREATE POLICY shop_owner_select ON deposit_payouts
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM shops
-      WHERE shops.id = deposit_payouts.shop_id
-      AND shops.owner_id = auth.uid()
+      SELECT 1 FROM rental_shops
+      WHERE rental_shops.id = deposit_payouts.shop_id
+      AND rental_shops.owner_id = auth.uid()
     )
   );

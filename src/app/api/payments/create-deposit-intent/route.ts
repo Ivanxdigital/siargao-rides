@@ -92,15 +92,25 @@ export async function POST(request: NextRequest) {
     console.log('Creating PayMongo deposit payment intent...');
     let paymentIntent;
     try {
+      // Flatten metadata - PayMongo doesn't support nested objects
+      const flatMetadata = {
+        rental_id: rentalId,
+        user_id: userId,
+        is_deposit: 'true', // Use string instead of boolean
+        // Add any other metadata as flat key-value pairs
+        ...Object.entries(metadata).reduce((acc, [key, value]) => {
+          // Convert any nested objects to string
+          acc[key] = typeof value === 'object' ? JSON.stringify(value) : value;
+          return acc;
+        }, {})
+      };
+
+      console.log('Flattened metadata for PayMongo:', flatMetadata);
+
       paymentIntent = await createPaymentIntent(
         amountInCents,
         description || `Deposit Payment for Rental #${rentalId}`,
-        {
-          rental_id: rentalId,
-          user_id: userId,
-          is_deposit: true,
-          ...metadata
-        }
+        flatMetadata
       );
       console.log('PayMongo deposit payment intent created:', paymentIntent.id);
     } catch (paymongoError) {
@@ -124,10 +134,10 @@ export async function POST(request: NextRequest) {
         amount: amount,
         currency: 'PHP',
         status: paymentIntent.attributes.status,
-        // Store deposit information in metadata regardless of column existence
+        // Store deposit information in metadata as flat structure
         metadata: {
           ...metadata,
-          is_deposit: true
+          is_deposit: 'true' // Use string instead of boolean for consistency
         }
       })
       .select()

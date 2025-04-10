@@ -38,6 +38,7 @@ export default function DepositPayoutManager() {
   const fetchPayouts = async () => {
     try {
       setLoading(true);
+      console.log("Fetching payouts...");
 
       // Fetch rentals with deposits that need to be processed
       const { data: pendingRentals, error: pendingError } = await supabase
@@ -56,7 +57,7 @@ export default function DepositPayoutManager() {
           deposit_processed,
           created_at,
           shop:shop_id(id, name, owner_id),
-          vehicle:vehicle_id(id, name, image_url),
+          vehicle:vehicle_id(id, name),
           user:user_id(id, email, first_name, last_name)
         `)
         .eq("deposit_required", true)
@@ -66,8 +67,11 @@ export default function DepositPayoutManager() {
         .order("created_at", { ascending: false });
 
       if (pendingError) {
+        console.error("Error fetching pending rentals:", pendingError);
         throw new Error(pendingError.message);
       }
+
+      console.log("Pending rentals:", pendingRentals);
 
       // Fetch existing payouts
       const { data: payouts, error: payoutsError } = await supabase
@@ -93,24 +97,27 @@ export default function DepositPayoutManager() {
             status,
             deposit_amount,
             shop:shop_id(id, name, owner_id),
-            vehicle:vehicle_id(id, name, image_url),
+            vehicle:vehicle_id(id, name),
             user:user_id(id, email, first_name, last_name)
           )
         `)
-        .eq("status", filterStatus === "all" ? filterStatus : filterStatus)
+        .eq("status", filterStatus === "all" ? "completed" : filterStatus)
         .order("created_at", { ascending: false });
 
       if (payoutsError) {
+        console.error("Error fetching payouts:", payoutsError);
         throw new Error(payoutsError.message);
       }
 
+      console.log("Completed payouts:", payouts);
+
       // Filter by search term if provided
-      let filteredPending = pendingRentals;
-      let filteredPayouts = payouts;
+      let filteredPending = pendingRentals || [];
+      let filteredPayouts = payouts || [];
 
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
-        filteredPending = pendingRentals.filter(rental => 
+        filteredPending = pendingRentals.filter(rental =>
           rental.id.toLowerCase().includes(term) ||
           rental.shop?.name.toLowerCase().includes(term) ||
           rental.vehicle?.name.toLowerCase().includes(term) ||
@@ -118,7 +125,7 @@ export default function DepositPayoutManager() {
           `${rental.user?.first_name} ${rental.user?.last_name}`.toLowerCase().includes(term)
         );
 
-        filteredPayouts = payouts.filter(payout => 
+        filteredPayouts = payouts.filter(payout =>
           payout.id.toLowerCase().includes(term) ||
           payout.rental_id.toLowerCase().includes(term) ||
           payout.rental?.shop?.name.toLowerCase().includes(term) ||
@@ -141,6 +148,7 @@ export default function DepositPayoutManager() {
   const handleProcessPayout = async (rentalId: string, reason: string = "Customer no-show") => {
     try {
       setProcessingId(rentalId);
+      console.log("Processing payout for rental:", rentalId);
 
       const response = await fetch("/api/admin/process-deposit-payout", {
         method: "POST",

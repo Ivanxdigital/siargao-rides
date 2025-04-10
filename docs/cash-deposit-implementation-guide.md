@@ -92,6 +92,15 @@ CREATE INDEX idx_rentals_deposit_paid ON rentals(deposit_paid);
    - Created admin API endpoint for processing payouts
    - Created admin interface for managing deposit payouts
 
+## Blocking Dates on Calendar
+
+To prevent vehicles from being double-booked, we've implemented a system that only blocks dates on the calendar after payment confirmation:
+
+1. For cash payments, dates are only blocked after the deposit has been paid
+2. For online payments, dates are only blocked after the full payment has been processed
+
+This ensures that vehicles remain available for booking until a financial commitment has been made, preventing ghost bookings and maximizing vehicle availability.
+
 ## Conclusion
 
 The cash deposit implementation is now complete. This feature ensures that when users choose cash payment, they must pay a 300 PHP deposit through PayMongo to secure their booking. This helps prevent ghost bookings and provides compensation to shop owners in case of no-shows.
@@ -102,5 +111,6 @@ The implementation includes:
 2. UI updates to inform users about the deposit requirement
 3. Payment flow for processing deposits
 4. Admin interface for managing deposit payouts
+5. Smart date blocking that only reserves dates after payment/deposit confirmation
 
 Shop owners can now be confident that their vehicles won't be reserved by users who don't show up, and they'll receive compensation for their time and lost business opportunities in case of no-shows.

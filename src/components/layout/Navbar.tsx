@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
-import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar, ShoppingBag } from "lucide-react"
+import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar, ShoppingBag, Info } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
@@ -174,6 +174,7 @@ const Navbar = () => {
           <div className="hidden md:flex gap-8 items-center">
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
             <NavLink href="/browse" isScrolled={scrolled}>Browse</NavLink>
+            <NavLink href="/about" isScrolled={scrolled}>About Us</NavLink>
             <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
 
@@ -358,6 +359,9 @@ const Navbar = () => {
               </MobileNavLink>
               <MobileNavLink href="/browse" onClick={() => setIsMenuOpen(false)} icon={<Search size={16} />}>
                 Browse
+              </MobileNavLink>
+              <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)} icon={<Info size={16} />}>
+                About Us
               </MobileNavLink>
               <MobileNavLink href="/register" onClick={() => setIsMenuOpen(false)} icon={<Clipboard size={16} />}>
                 Register Your Shop
