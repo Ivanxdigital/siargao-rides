@@ -149,21 +149,29 @@ export default function BookingPaymentPage() {
   const shop = booking.shop;
 
   return (
-    <div className="container max-w-4xl mx-auto pt-20 pb-12 px-4 sm:px-6">
-      <div className="mb-8">
-        <Link
-          href={`/booking/${booking?.vehicle_id}`}
-          className="inline-flex items-center text-primary hover:text-primary/80 py-2"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          <span>Back to Booking</span>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-950 to-blue-900 pt-16 pb-12 px-4 sm:px-6 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('/images/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-10"></div>
+
+      {/* Animated gradient orbs */}
+      <div className="absolute top-1/4 -left-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
+      <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl animate-pulse-slow animation-delay-2000"></div>
+      <div className="absolute top-3/4 left-1/3 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse-slow animation-delay-4000"></div>
+
+      <div className="container max-w-4xl mx-auto relative z-10">
+        <div className="mb-8 pt-4">
+          <Link
+            href={`/booking/${booking?.vehicle_id}`}
+            className="inline-flex items-center text-white hover:text-primary py-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            <span>Back to Booking</span>
+          </Link>
+        </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
-          <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg shadow-md overflow-hidden">
-            <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-5 border-b border-white/10">
+          <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 p-5 border-b border-white/10">
               <h2 className="text-xl font-semibold text-white">Complete Your Payment</h2>
             </div>
 
@@ -189,7 +197,7 @@ export default function BookingPaymentPage() {
         </div>
 
         <div className="md:col-span-1">
-          <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg shadow-md p-5 sticky top-6">
+          <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg shadow-lg p-5 sticky top-6">
             <h3 className="font-semibold text-white mb-4 text-lg pb-2 border-b border-white/10">Booking Summary</h3>
 
             <div className="mb-5">
@@ -229,6 +237,7 @@ export default function BookingPaymentPage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
