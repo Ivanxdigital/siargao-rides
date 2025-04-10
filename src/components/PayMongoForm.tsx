@@ -483,6 +483,20 @@ export default function PayMongoForm({
               `Pay ₱${amount.toFixed(2)}`
             )}
           </Button>
+
+          {/* PayMongo Badge */}
+          <div className="mt-8 flex flex-col items-center justify-center">
+            <div className="flex items-center justify-center mb-2">
+              <img
+                src="/images/paymongo-badge-transparent.png"
+                alt="Secured by PayMongo"
+                className="h-8"
+              />
+            </div>
+            <p className="text-xs text-white/50 text-center">
+              Payments are securely processed by PayMongo, a PCI-DSS Level 1 compliant payment processor.
+            </p>
+          </div>
         </form>
       )}
     </div>

@@ -149,7 +149,7 @@ export default function BookingPaymentPage() {
   const shop = booking.shop;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-950 to-blue-900 pt-16 pb-12 px-4 sm:px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/95 to-blue-950 pt-16 pb-12 px-4 sm:px-6 relative overflow-hidden">
       <div className="absolute inset-0 bg-[url('/images/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-10"></div>
 
       {/* Animated gradient orbs */}
@@ -199,6 +199,16 @@ export default function BookingPaymentPage() {
         <div className="md:col-span-1">
           <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg shadow-lg p-5 sticky top-6">
             <h3 className="font-semibold text-white mb-4 text-lg pb-2 border-b border-white/10">Booking Summary</h3>
+
+            {rentalVehicle?.image_url && (
+              <div className="mb-4 aspect-video overflow-hidden rounded-lg border border-white/10">
+                <img
+                  src={rentalVehicle.image_url}
+                  alt={rentalVehicle.name || 'Vehicle'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
 
             <div className="mb-5">
               <h4 className="font-medium text-white mb-1">{rentalVehicle?.name || 'Vehicle'}</h4>
