@@ -16,37 +16,37 @@ interface BookingSummaryProps {
   deliveryFee?: number;
 }
 
-export default function BookingSummary({ 
+export default function BookingSummary({
   bike,
   vehicle,
-  shop, 
-  startDate, 
+  shop,
+  startDate,
   endDate,
   deliveryFee = 0
 }: BookingSummaryProps) {
   const [totalDays, setTotalDays] = useState(0);
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
-  
+
   // Use either vehicle or bike depending on which is provided
   const rentalVehicle = vehicle || bike;
-  
+
   // Calculate rental duration and costs
   useEffect(() => {
     if (startDate && endDate && rentalVehicle) {
       // Calculate days between dates (without the +1)
       const dayCount = differenceInDays(endDate, startDate);
       setTotalDays(dayCount);
-      
+
       // Calculate price based on duration
       let price = 0;
-      
+
       // For longer rentals, apply weekly/monthly rates if available
       if (dayCount >= 30 && rentalVehicle.price_per_month) {
         const months = Math.floor(dayCount / 30);
         const remainingDays = dayCount % 30;
         price = months * rentalVehicle.price_per_month;
-        
+
         if (remainingDays > 0) {
           if (remainingDays >= 7 && rentalVehicle.price_per_week) {
             const weeks = Math.floor(remainingDays / 7);
@@ -61,14 +61,14 @@ export default function BookingSummary({
         const weeks = Math.floor(dayCount / 7);
         const remainingDays = dayCount % 7;
         price = weeks * rentalVehicle.price_per_week;
-        
+
         if (remainingDays > 0) {
           price += remainingDays * rentalVehicle.price_per_day;
         }
       } else {
         price = dayCount * rentalVehicle.price_per_day;
       }
-      
+
       setSubtotal(price);
       setTotal(price + deliveryFee);
     } else {
@@ -77,7 +77,7 @@ export default function BookingSummary({
       setTotal(0);
     }
   }, [startDate, endDate, rentalVehicle, deliveryFee]);
-  
+
   // Get vehicle type for displaying specific details
   const getVehicleType = (): VehicleType => {
     if (vehicle) {
@@ -86,25 +86,25 @@ export default function BookingSummary({
       return 'motorcycle'; // Default to motorcycle for bikes
     }
   };
-  
+
   // Render vehicle-specific details
   const renderVehicleDetails = () => {
     if (!rentalVehicle) return null;
-    
+
     const vehicleType = getVehicleType();
     const specs = rentalVehicle.specifications || {};
-    
+
     return (
       <VehicleDetailsDisplay
         vehicleType={vehicleType}
         specifications={specs}
-        className="mt-2 text-white/70"
+        className="mt-2 mb-6 text-white/70"
         variant="list"
         size="sm"
       />
     );
   };
-  
+
   if (!rentalVehicle) {
     return (
       <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-5 shadow-sm sticky top-6">
@@ -112,11 +112,11 @@ export default function BookingSummary({
       </div>
     );
   }
-  
+
   return (
     <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-5 shadow-sm sticky top-6">
       <h3 className="font-semibold mb-4 text-lg pb-2 border-b border-white/10">Booking Summary</h3>
-      
+
       {/* Vehicle details */}
       <div className="flex items-center gap-3 mb-6">
         {rentalVehicle?.images && rentalVehicle.images[0]?.image_url && (
@@ -132,7 +132,7 @@ export default function BookingSummary({
         <div>
           <h4 className="font-medium">{rentalVehicle?.name}</h4>
           <p className="text-sm text-white/70">{shop?.name}</p>
-          
+
           {/* Display vehicle type if it's from the new Vehicle type */}
           {vehicle && (
             <p className="text-xs text-white/50 capitalize">
@@ -141,10 +141,10 @@ export default function BookingSummary({
           )}
         </div>
       </div>
-      
+
       {/* Vehicle-specific details */}
       {renderVehicleDetails()}
-      
+
       {!startDate || !endDate ? (
         <div className="text-center py-4 border border-dashed border-white/20 rounded-lg mb-4">
           <p className="text-white/50 text-sm">
@@ -159,7 +159,7 @@ export default function BookingSummary({
               <span className="text-white/70">Rental Period:</span>
               <span className="font-medium text-right">{totalDays} {totalDays === 1 ? 'day' : 'days'}</span>
             </div>
-            
+
             <div className="flex justify-between items-start">
               <span className="text-white/70">Rate:</span>
               <div className="text-right">
@@ -172,12 +172,12 @@ export default function BookingSummary({
                 )}
               </div>
             </div>
-            
+
             <div className="flex justify-between">
               <span className="text-white/70">Subtotal:</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
-            
+
             {deliveryFee > 0 && (
               <div className="flex justify-between bg-primary/10 p-2 rounded-md -mx-2">
                 <span className="text-white/80">Delivery Fee:</span>
@@ -185,7 +185,7 @@ export default function BookingSummary({
               </div>
             )}
           </div>
-          
+
           {/* Total */}
           <div className="border-t border-white/10 pt-3 mt-4">
             <div className="flex justify-between">
@@ -195,7 +195,7 @@ export default function BookingSummary({
           </div>
         </>
       )}
-      
+
       {/* ID deposit info */}
       <div className="mt-6 p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-md text-xs">
         <p className="text-yellow-400 font-medium mb-1">Deposit Required</p>
@@ -219,7 +219,7 @@ export default function BookingSummary({
           )}
         </p>
       </div>
-      
+
       {/* Cancellation policy */}
       <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/20 rounded-md text-xs">
         <p className="text-blue-400 font-medium mb-1">Cancellation Policy</p>
@@ -227,4 +227,4 @@ export default function BookingSummary({
       </div>
     </div>
   );
-} 
+}

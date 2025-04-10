@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/Button";
 import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Separator } from "@/components/ui/Separator";
@@ -48,7 +48,7 @@ export default function BookingDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [shopId, setShopId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  
+
   const supabase = createClientComponentClient();
   const router = useRouter();
 
@@ -74,28 +74,28 @@ export default function BookingDetailsPage() {
         // Only check auth if we haven't refreshed recently
         let freshSupabase = supabase;
         const now = Date.now();
-        
+
         try {
           if (now - lastAuthRefresh > MIN_AUTH_REFRESH_INTERVAL) {
             console.log("Checking auth session...");
-            
+
             // Get current session but don't force a refresh every time
             const { data: sessionData } = await freshSupabase.auth.getSession();
-            
+
             if (!sessionData.session) {
               console.error("No active session found, redirecting to login");
               router.push("/sign-in");
               return;
             }
-            
+
             // Only refresh if token is about to expire (within 5 minutes)
             const expiresAt = sessionData.session.expires_at;
             const expiresIn = expiresAt ? expiresAt - Math.floor(now / 1000) : 0;
-            
+
             if (expiresIn < 300) { // less than 5 minutes left
               console.log("Token expiring soon, refreshing auth session...");
               const { error: refreshError } = await freshSupabase.auth.refreshSession();
-              
+
               if (refreshError) {
                 if (refreshError.message.includes("rate limit") && retryCount < 2) {
                   console.log("Hit rate limit, waiting before retry...");
@@ -105,7 +105,7 @@ export default function BookingDetailsPage() {
                   checkUserAndFetchBooking(retryCount + 1);
                   return;
                 }
-                
+
                 console.error("Failed to refresh session:", refreshError);
                 // If rate limited, wait before continuing
                 if (refreshError.message.includes("rate limit")) {
@@ -140,7 +140,7 @@ export default function BookingDetailsPage() {
           console.error("Error executing shop query:", shopQueryError);
           throw new Error("Failed to query shop data");
         }
-        
+
         const { data: shop, error: shopError } = shopQuery;
 
         if (shopError) {
@@ -154,7 +154,7 @@ export default function BookingDetailsPage() {
             setError(`Shop error: ${shopError.message || "Unknown shop error"}`);
           } else {
             console.error("Empty shop error object - likely an auth issue");
-            
+
             // If this is not the final retry attempt, try again with exponential backoff
             if (retryCount < 2) {
               console.log(`Retrying data fetch (attempt ${retryCount + 2})...`);
@@ -164,7 +164,7 @@ export default function BookingDetailsPage() {
               checkUserAndFetchBooking(retryCount + 1);
               return;
             }
-            
+
             setError("Authentication error. Please refresh the page or sign in again.");
           }
           setLoading(false);
@@ -180,37 +180,37 @@ export default function BookingDetailsPage() {
 
         console.log(`Found shop with ID: ${shop.id}`);
         setShopId(shop.id);
-        
+
         console.log(`Fetching booking with ID: ${bookingId} for shop: ${shop.id}`);
-        
+
         try {
           // Fetch the booking details - use the same client instance, don't create a new one
           console.log(`Executing query for booking ${bookingId} in shop ${shop.id}`);
           let bookingResult;
           try {
             console.log("About to execute Supabase query...");
-            
+
             // Use simple field selection for more reliability, removing guest fields that don't exist
             bookingResult = await freshSupabase
               .from("rentals")
-              .select("id, start_date, end_date, total_price, status, created_at, vehicle_id, shop_id, user_id, payment_method_id, delivery_option_id, payment_status")
+              .select("id, start_date, end_date, total_price, status, created_at, vehicle_id, shop_id, user_id, payment_method_id, delivery_option_id, payment_status, deposit_required, deposit_paid, deposit_amount, deposit_processed")
               .eq("id", bookingId)
               .eq("shop_id", shop.id)
               .single();
-            
+
             console.log("Query executed");
           } catch (queryExecutionError) {
             console.error("Error during Supabase query execution:", queryExecutionError);
-            
+
             // Try to handle network errors specifically
             if (queryExecutionError instanceof Error) {
-              if (queryExecutionError.message.includes('fetch') || 
+              if (queryExecutionError.message.includes('fetch') ||
                   queryExecutionError.message.includes('network') ||
                   queryExecutionError.message.includes('Failed to fetch')) {
                 throw new Error("Network connection error. Please check your internet connection and try again.");
               }
             }
-            
+
             // If this is not the final retry attempt, try again with exponential backoff
             if (retryCount < 2) {
               console.log(`Retrying after query execution error (attempt ${retryCount + 2})...`);
@@ -220,7 +220,7 @@ export default function BookingDetailsPage() {
               checkUserAndFetchBooking(retryCount + 1);
               return;
             }
-            
+
             throw new Error(`Query execution error: ${queryExecutionError instanceof Error ? queryExecutionError.message : 'Unknown error'}`);
           }
 
@@ -239,7 +239,7 @@ export default function BookingDetailsPage() {
             } else {
               // If we get an empty error object and this is not the final retry attempt, try again
               console.error("Empty booking error object - likely an auth issue");
-              
+
               if (retryCount < 2) {
                 console.log(`Retrying after empty error object (attempt ${retryCount + 2})...`);
                 // Exponential backoff for retries
@@ -248,22 +248,22 @@ export default function BookingDetailsPage() {
                 checkUserAndFetchBooking(retryCount + 1);
                 return;
               }
-              
+
               setError("Authentication error. Please try refreshing the page or signing in again.");
             }
             setLoading(false);
             return;
           }
-  
+
           if (!bookingData) {
             console.error("No booking data returned for ID:", bookingId);
             setError("Booking not found");
             setLoading(false);
             return;
           }
-  
+
           console.log("Base booking data:", bookingData);
-  
+
           // Now fetch all the related data in separate queries
           let vehicleData: VehicleData = {
             id: "",
@@ -276,7 +276,7 @@ export default function BookingDetailsPage() {
           let userData = null;
           let paymentMethodData = null;
           let deliveryOptionData = null;
-  
+
           // Get vehicle data
           if (bookingData.vehicle_id) {
             console.log(`Fetching vehicle with ID: ${bookingData.vehicle_id}`);
@@ -285,12 +285,12 @@ export default function BookingDetailsPage() {
               .select("*")
               .eq("id", bookingData.vehicle_id)
               .single();
-  
+
             if (vehicleError) {
               console.warn("Error fetching vehicle details:", vehicleError);
             } else if (vehicle) {
               vehicleData = vehicle as VehicleData;
-              
+
               // Get vehicle image (primary first)
               const { data: images } = await freshSupabase
                 .from("vehicle_images")
@@ -298,7 +298,7 @@ export default function BookingDetailsPage() {
                 .eq("vehicle_id", vehicle.id)
                 .eq("is_primary", true)
                 .limit(1);
-              
+
               if (images && images.length > 0) {
                 vehicleData.image_url = images[0].image_url;
               } else {
@@ -308,7 +308,7 @@ export default function BookingDetailsPage() {
                   .select("image_url")
                   .eq("vehicle_id", vehicle.id)
                   .limit(1);
-                
+
                 if (anyImage && anyImage.length > 0) {
                   vehicleData.image_url = anyImage[0].image_url;
                 } else {
@@ -318,7 +318,7 @@ export default function BookingDetailsPage() {
               }
             }
           }
-  
+
           // Get shop data
           if (bookingData.shop_id) {
             console.log(`Fetching shop with ID: ${bookingData.shop_id}`);
@@ -327,14 +327,14 @@ export default function BookingDetailsPage() {
               .select("*")
               .eq("id", bookingData.shop_id)
               .single();
-  
+
             if (shopDetailError) {
               console.warn("Error fetching shop details:", shopDetailError);
             } else {
               shopData = shop;
             }
           }
-  
+
           // Get user data
           if (bookingData.user_id) {
             console.log(`Fetching user with ID: ${bookingData.user_id}`);
@@ -344,7 +344,7 @@ export default function BookingDetailsPage() {
                 .select("*")
                 .eq("id", bookingData.user_id)
                 .single();
-    
+
               if (userError) {
                 if (Object.keys(userError).length > 0) {
                   console.error("User query error details:", {
@@ -363,7 +363,7 @@ export default function BookingDetailsPage() {
               console.error("Error fetching user data:", userFetchError);
             }
           }
-  
+
           // Get payment method
           if (bookingData.payment_method_id) {
             console.log(`Fetching payment method with ID: ${bookingData.payment_method_id}`);
@@ -372,14 +372,14 @@ export default function BookingDetailsPage() {
               .select("*")
               .eq("id", bookingData.payment_method_id)
               .single();
-  
+
             if (methodError) {
               console.warn("Error fetching payment method:", methodError);
             } else {
               paymentMethodData = method;
             }
           }
-  
+
           // Get delivery option
           if (bookingData.delivery_option_id) {
             console.log(`Fetching delivery option with ID: ${bookingData.delivery_option_id}`);
@@ -388,14 +388,14 @@ export default function BookingDetailsPage() {
               .select("*")
               .eq("id", bookingData.delivery_option_id)
               .single();
-  
+
             if (deliveryError) {
               console.warn("Error fetching delivery option:", deliveryError);
             } else {
               deliveryOptionData = delivery;
             }
           }
-  
+
           // Combine all the data
           const completeBooking = {
             ...bookingData,
@@ -405,7 +405,7 @@ export default function BookingDetailsPage() {
             payment_method: paymentMethodData,
             delivery_option: deliveryOptionData
           };
-  
+
           console.log("Complete booking data:", completeBooking);
           setBooking(completeBooking);
           setLoading(false);
@@ -427,20 +427,20 @@ export default function BookingDetailsPage() {
 
   const handleStatusChange = async (newStatus: string) => {
     if (!bookingId) return;
-    
+
     try {
       setProcessing(true);
-      
+
       const { error } = await supabase
         .from("rentals")
         .update({ status: newStatus })
         .eq("id", bookingId);
-      
+
       if (error) throw error;
-      
+
       // Get vehicle name for the notification
       const vehicleName = booking?.vehicle?.name || 'Vehicle';
-      
+
       // Instead of fetching all new data, just update the status in our existing state
       setBooking((prevBooking) => {
         if (!prevBooking) return null;
@@ -449,12 +449,12 @@ export default function BookingDetailsPage() {
           status: newStatus
         };
       });
-      
+
       setProcessing(false);
-      
+
       // Show success message using toast instead of alert
       notifyBookingStatusChange(bookingId, vehicleName, newStatus as any);
-      
+
     } catch (error) {
       console.error("Error updating status:", error);
       // Show error message using toast instead of alert
@@ -555,16 +555,16 @@ export default function BookingDetailsPage() {
   const startDate = new Date(booking.start_date);
   const endDate = new Date(booking.end_date);
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  
+
   // Add null checks for vehicles and related properties
   const pricePerDay = booking.vehicle?.price_per_day || 0;
   const rentalPrice = pricePerDay * days;
   const deliveryFee = booking.delivery_option?.fee || 0;
-  
-  const customerName = booking.guest_name || (booking.user 
-    ? `${booking.user.first_name || ''} ${booking.user.last_name || ''}`.trim() 
+
+  const customerName = booking.guest_name || (booking.user
+    ? `${booking.user.first_name || ''} ${booking.user.last_name || ''}`.trim()
     : "Guest");
-    
+
   const customerEmail = booking.guest_email || booking.user?.email || "N/A";
   const customerPhone = booking.guest_phone || booking.user?.phone || "N/A";
 
@@ -574,7 +574,7 @@ export default function BookingDetailsPage() {
         <div className="text-muted-foreground">Vehicle information not available</div>
       );
     }
-    
+
     return (
       <div className="flex items-start gap-4">
         <div className="h-20 w-20 rounded-md overflow-hidden bg-muted">
@@ -602,7 +602,7 @@ export default function BookingDetailsPage() {
         <div className="text-muted-foreground">Shop information not available</div>
       );
     }
-    
+
     return (
       <div className="flex items-start gap-3">
         <MapPin className="w-5 h-5 text-primary mt-0.5" />
@@ -616,6 +616,9 @@ export default function BookingDetailsPage() {
   };
 
   const renderPaymentDetails = () => {
+    const isCashPayment = booking.payment_method_id === '0bea770f-c0c2-4510-a22f-e42fc122eb9c';
+    const hasDepositPaid = booking.deposit_required && booking.deposit_paid;
+
     return (
       <div className="flex items-start gap-3">
         <CreditCard className="w-5 h-5 text-primary mt-0.5" />
@@ -625,6 +628,21 @@ export default function BookingDetailsPage() {
           <p className="text-sm text-muted-foreground">
             Status: {booking.payment_status || "Not paid"}
           </p>
+
+          {/* Show deposit information for cash payments */}
+          {isCashPayment && hasDepositPaid && (
+            <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+              <h4 className="text-sm font-medium text-green-800 dark:text-green-400">Deposit Paid</h4>
+              <p className="text-xs text-green-700 dark:text-green-500 mt-1">
+                Customer has paid a ₱{booking.deposit_amount?.toFixed(2)} deposit. Please deduct this amount from the final payment when they pick up the vehicle.
+              </p>
+              {booking.status === 'cancelled' && !booking.deposit_processed && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  This booking was cancelled. The deposit will be processed and paid out to you on the next working day.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -665,12 +683,12 @@ export default function BookingDetailsPage() {
                 Created on {format(new Date(booking.created_at), "MMMM d, yyyy 'at' h:mm a")}
               </CardDescription>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
               {booking.status !== "cancelled" && booking.status !== "completed" && (
                 <>
                   {booking.status !== "confirmed" && (
-                    <Button 
+                    <Button
                       variant="outline"
                       className="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
                       onClick={() => handleStatusChange("confirmed")}
@@ -681,7 +699,7 @@ export default function BookingDetailsPage() {
                     </Button>
                   )}
                   {booking.status !== "completed" && (
-                    <Button 
+                    <Button
                       variant="outline"
                       className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
                       onClick={() => handleStatusChange("completed")}
@@ -691,7 +709,7 @@ export default function BookingDetailsPage() {
                       Complete
                     </Button>
                   )}
-                  <Button 
+                  <Button
                     variant="outline"
                     className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
                     onClick={() => handleStatusChange("cancelled")}
@@ -705,9 +723,9 @@ export default function BookingDetailsPage() {
             </div>
           </div>
         </CardHeader>
-        
+
         <Separator />
-        
+
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
@@ -756,16 +774,16 @@ export default function BookingDetailsPage() {
                       <span className="text-muted-foreground">Rental Fee</span>
                       <span>₱{rentalPrice.toLocaleString()}</span>
                     </div>
-                    
+
                     {deliveryFee > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Delivery Fee</span>
                         <span>₱{deliveryFee.toLocaleString()}</span>
                       </div>
                     )}
-                    
+
                     <Separator />
-                    
+
                     <div className="flex justify-between font-medium">
                       <span>Total</span>
                       <span>₱{booking.total_price.toLocaleString()}</span>
@@ -779,4 +797,4 @@ export default function BookingDetailsPage() {
       </Card>
     </div>
   );
-} 
+}
