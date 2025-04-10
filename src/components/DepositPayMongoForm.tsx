@@ -295,11 +295,11 @@ export default function DepositPayMongoForm({
     <div className="p-5">
       {/* PayMongo Header */}
       <div className="mb-6 flex flex-col items-center">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-3 rounded-xl shadow-lg mb-4 flex items-center justify-center">
+        <div className="mb-4 flex items-center justify-center">
           <img
-            src="/images/paymongo-badge-transparent.png"
+            src="/images/paymongo-logo.png"
             alt="PayMongo"
-            className="h-8"
+            className="h-12 sm:h-14"
           />
         </div>
         <h2 className="text-xl font-bold text-white mb-1">Secure Deposit Payment</h2>
