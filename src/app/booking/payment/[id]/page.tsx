@@ -146,7 +146,6 @@ export default function BookingPaymentPage() {
 
   const rentalVehicle = booking.vehicle;
   const vehicleType = booking.vehicle_type;
-  const shop = booking.shop;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/95 to-blue-950 pt-16 pb-12 px-4 sm:px-6 relative overflow-hidden">
@@ -188,6 +187,7 @@ export default function BookingPaymentPage() {
                 <PayMongoForm
                   rentalId={bookingId}
                   amount={booking.total_price}
+                  vehicle={rentalVehicle}
                   onPaymentSuccess={handlePaymentSuccess}
                   onPaymentError={handlePaymentError}
                 />

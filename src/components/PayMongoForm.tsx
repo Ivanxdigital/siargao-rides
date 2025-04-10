@@ -8,6 +8,7 @@ import { AlertCircle, CreditCard, Smartphone } from 'lucide-react';
 interface PayMongoFormProps {
   rentalId: string;
   amount: number;
+  vehicle?: any; // Vehicle data including image_url
   onPaymentSuccess: () => void;
   onPaymentError: (error: string) => void;
 }
@@ -15,6 +16,7 @@ interface PayMongoFormProps {
 export default function PayMongoForm({
   rentalId,
   amount,
+  vehicle,
   onPaymentSuccess,
   onPaymentError
 }: PayMongoFormProps) {
@@ -465,6 +467,21 @@ export default function PayMongoForm({
             </div>
           )}
 
+          {/* Vehicle Image (if available) */}
+          {vehicle?.image_url && (
+            <div className="mt-6 mb-6">
+              <h3 className="font-semibold text-white mb-3 text-base">Vehicle</h3>
+              <div className="aspect-video overflow-hidden rounded-lg border border-white/10">
+                <img
+                  src={vehicle.image_url}
+                  alt={vehicle.name || 'Vehicle'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <p className="mt-2 text-sm text-white/70">{vehicle.name}</p>
+            </div>
+          )}
+
           {/* Submit Button */}
           <Button
             type="submit"
@@ -490,7 +507,7 @@ export default function PayMongoForm({
               <img
                 src="/images/paymongo-badge-transparent.png"
                 alt="Secured by PayMongo"
-                className="h-8"
+                className="h-12 sm:h-14"
               />
             </div>
             <p className="text-xs text-white/50 text-center">
