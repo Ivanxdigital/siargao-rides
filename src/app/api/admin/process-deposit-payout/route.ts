@@ -79,8 +79,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if rental status is appropriate for payout (no-show or cancelled)
-    if (rental.status !== 'no_show' && rental.status !== 'cancelled') {
+    // Check if rental status is appropriate for payout (cancelled)
+    if (rental.status !== 'cancelled') {
       return NextResponse.json(
         { error: 'Rental status does not qualify for deposit payout' },
         { status: 400 }

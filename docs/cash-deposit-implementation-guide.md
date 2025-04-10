@@ -103,7 +103,7 @@ This ensures that vehicles remain available for booking until a financial commit
 
 ## Conclusion
 
-The cash deposit implementation is now complete. This feature ensures that when users choose cash payment, they must pay a 300 PHP deposit through PayMongo to secure their booking. This helps prevent ghost bookings and provides compensation to shop owners in case of no-shows.
+The cash deposit implementation is now complete. This feature ensures that when users choose cash payment, they must pay a 300 PHP deposit through PayMongo to secure their booking. This helps prevent ghost bookings and provides compensation to shop owners in case of cancellations.
 
 The implementation includes:
 
@@ -113,4 +113,4 @@ The implementation includes:
 4. Admin interface for managing deposit payouts
 5. Smart date blocking that only reserves dates after payment/deposit confirmation
 
-Shop owners can now be confident that their vehicles won't be reserved by users who don't show up, and they'll receive compensation for their time and lost business opportunities in case of no-shows.
+Shop owners can now be confident that their vehicles won't be reserved by users who cancel their bookings, and they'll receive compensation for their time and lost business opportunities in case of cancellations.

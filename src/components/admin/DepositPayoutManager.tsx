@@ -63,7 +63,7 @@ export default function DepositPayoutManager() {
         .eq("deposit_required", true)
         .eq("deposit_paid", true)
         .eq("deposit_processed", false)
-        .in("status", ["no_show", "cancelled"])
+        .eq("status", "cancelled")
         .order("created_at", { ascending: false });
 
       if (pendingError) {
