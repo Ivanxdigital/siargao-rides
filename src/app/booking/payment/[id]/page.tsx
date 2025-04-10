@@ -159,18 +159,18 @@ export default function BookingPaymentPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-5 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800">Complete Your Payment</h2>
+          <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-5 border-b border-white/10">
+              <h2 className="text-xl font-semibold text-white">Complete Your Payment</h2>
             </div>
 
             <div className="p-0">
               {paymentSuccess ? (
-                <div className="m-6 bg-green-50 border border-green-200 rounded-lg p-5 flex items-start">
-                  <CheckCircle className="text-green-500 w-6 h-6 mt-0.5 mr-3" />
+                <div className="m-6 bg-green-900/30 border border-green-500/30 rounded-lg p-5 flex items-start">
+                  <CheckCircle className="text-green-400 w-6 h-6 mt-0.5 mr-3" />
                   <div>
-                    <h3 className="font-semibold text-green-700 text-lg mb-1">Payment Successful</h3>
-                    <p className="text-green-600">Your payment has been processed successfully. Redirecting to your booking confirmation...</p>
+                    <h3 className="font-semibold text-green-400 text-lg mb-1">Payment Successful</h3>
+                    <p className="text-green-300">Your payment has been processed successfully. Redirecting to your booking confirmation...</p>
                   </div>
                 </div>
               ) : (
@@ -186,41 +186,41 @@ export default function BookingPaymentPage() {
         </div>
 
         <div className="md:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 sticky top-6">
-            <h3 className="font-semibold text-gray-800 mb-4 text-lg pb-2 border-b border-gray-200">Booking Summary</h3>
+          <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg shadow-md p-5 sticky top-6">
+            <h3 className="font-semibold text-white mb-4 text-lg pb-2 border-b border-white/10">Booking Summary</h3>
 
             <div className="mb-5">
-              <h4 className="font-medium text-gray-800 mb-1">{rentalVehicle?.name || 'Vehicle'}</h4>
-              <p className="text-sm text-gray-600">{vehicleType?.name || 'Vehicle'}</p>
+              <h4 className="font-medium text-white mb-1">{rentalVehicle?.name || 'Vehicle'}</h4>
+              <p className="text-sm text-white/70">{vehicleType?.name || 'Vehicle'}</p>
             </div>
 
             <div className="space-y-3 mb-5">
               <div className="flex justify-between items-start">
-                <span className="text-gray-600">Rental Period:</span>
-                <span className="font-medium text-gray-800 text-right">
+                <span className="text-white/70">Rental Period:</span>
+                <span className="font-medium text-white text-right">
                   {format(new Date(booking.start_date), 'MMM d, yyyy')} - {format(new Date(booking.end_date), 'MMM d, yyyy')}
                 </span>
               </div>
 
               <div className="flex justify-between items-start">
-                <span className="text-gray-600">Rental Fee:</span>
-                <span className="font-medium text-gray-800">₱{(booking.total_price - (booking.delivery_option?.fee || 0)).toFixed(2)}</span>
+                <span className="text-white/70">Rental Fee:</span>
+                <span className="font-medium text-white">₱{(booking.total_price - (booking.delivery_option?.fee || 0)).toFixed(2)}</span>
               </div>
 
               {booking.delivery_option && (
                 <div className="flex justify-between items-start">
-                  <span className="text-gray-600">Delivery Fee:</span>
-                  <span className="font-medium text-gray-800">₱{(booking.delivery_option.fee || 0).toFixed(2)}</span>
+                  <span className="text-white/70">Delivery Fee:</span>
+                  <span className="font-medium text-white">₱{(booking.delivery_option.fee || 0).toFixed(2)}</span>
                 </div>
               )}
 
-              <div className="pt-3 border-t border-gray-200 flex justify-between items-start font-semibold">
-                <span className="text-gray-800">Total:</span>
-                <span className="text-primary text-lg">₱{booking.total_price.toFixed(2)}</span>
+              <div className="pt-3 border-t border-white/10 flex justify-between items-start font-semibold">
+                <span className="text-white">Total:</span>
+                <span className="text-primary-400 text-lg">₱{booking.total_price.toFixed(2)}</span>
               </div>
             </div>
 
-            <div className="text-xs text-gray-500 mt-4 pt-3 border-t border-gray-200">
+            <div className="text-xs text-white/50 mt-4 pt-3 border-t border-white/10">
               <p className="mb-1">Booking ID: <span className="font-medium">{booking.id}</span></p>
               <p>Status: <span className="font-medium capitalize">{booking.status}</span></p>
             </div>

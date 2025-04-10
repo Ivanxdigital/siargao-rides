@@ -270,20 +270,20 @@ export default function PayMongoForm({
   };
 
   return (
-    <div className="w-full bg-white rounded-lg shadow-sm p-6">
+    <div className="w-full p-6">
       {error && (
-        <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
-          <AlertCircle className="w-5 h-5 text-red-500 mr-3 mt-0.5" />
-          <p className="text-red-600 text-sm">{error}</p>
+        <div className="mb-5 p-4 bg-red-900/30 border border-red-500/30 rounded-lg flex items-start">
+          <AlertCircle className="w-5 h-5 text-red-400 mr-3 mt-0.5" />
+          <p className="text-red-300 text-sm">{error}</p>
         </div>
       )}
 
       {showAuthFrame ? (
         <div className="mb-5">
-          <h3 className="font-semibold text-gray-800 mb-3">Complete Authentication</h3>
+          <h3 className="font-semibold text-white mb-3">Complete Authentication</h3>
           <iframe
             src={authUrl}
-            className="w-full h-[400px] border border-gray-200 rounded-lg shadow-sm"
+            className="w-full h-[400px] border border-white/10 rounded-lg shadow-md"
             title="Payment Authentication"
           />
         </div>
@@ -291,93 +291,93 @@ export default function PayMongoForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Payment Method Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
+            <label className="block text-sm font-medium text-white mb-3">Payment Method</label>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('card')}
                 className={`p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
                   paymentMethod === 'card'
-                    ? 'border-primary bg-primary/10 shadow-sm'
-                    : 'border-gray-200 hover:border-primary/50 hover:bg-gray-50'
+                    ? 'border-primary bg-primary/20 shadow-md'
+                    : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
                 }`}
               >
-                <CreditCard className={`w-6 h-6 mb-2 ${paymentMethod === 'card' ? 'text-primary' : 'text-gray-600'}`} />
-                <span className={`text-sm font-medium ${paymentMethod === 'card' ? 'text-primary' : 'text-gray-700'}`}>Card</span>
+                <CreditCard className={`w-6 h-6 mb-2 ${paymentMethod === 'card' ? 'text-primary' : 'text-white/70'}`} />
+                <span className={`text-sm font-medium ${paymentMethod === 'card' ? 'text-primary' : 'text-white'}`}>Card</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMethod('gcash')}
                 className={`p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
                   paymentMethod === 'gcash'
-                    ? 'border-primary bg-primary/10 shadow-sm'
-                    : 'border-gray-200 hover:border-primary/50 hover:bg-gray-50'
+                    ? 'border-primary bg-primary/20 shadow-md'
+                    : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
                 }`}
               >
-                <Smartphone className={`w-6 h-6 mb-2 ${paymentMethod === 'gcash' ? 'text-primary' : 'text-gray-600'}`} />
-                <span className={`text-sm font-medium ${paymentMethod === 'gcash' ? 'text-primary' : 'text-gray-700'}`}>GCash</span>
+                <Smartphone className={`w-6 h-6 mb-2 ${paymentMethod === 'gcash' ? 'text-primary' : 'text-white/70'}`} />
+                <span className={`text-sm font-medium ${paymentMethod === 'gcash' ? 'text-primary' : 'text-white'}`}>GCash</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMethod('grab_pay')}
                 className={`p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
                   paymentMethod === 'grab_pay'
-                    ? 'border-primary bg-primary/10 shadow-sm'
-                    : 'border-gray-200 hover:border-primary/50 hover:bg-gray-50'
+                    ? 'border-primary bg-primary/20 shadow-md'
+                    : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
                 }`}
               >
-                <Smartphone className={`w-6 h-6 mb-2 ${paymentMethod === 'grab_pay' ? 'text-primary' : 'text-gray-600'}`} />
-                <span className={`text-sm font-medium ${paymentMethod === 'grab_pay' ? 'text-primary' : 'text-gray-700'}`}>GrabPay</span>
+                <Smartphone className={`w-6 h-6 mb-2 ${paymentMethod === 'grab_pay' ? 'text-primary' : 'text-white/70'}`} />
+                <span className={`text-sm font-medium ${paymentMethod === 'grab_pay' ? 'text-primary' : 'text-white'}`}>GrabPay</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMethod('paymaya')}
                 className={`p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
                   paymentMethod === 'paymaya'
-                    ? 'border-primary bg-primary/10 shadow-sm'
-                    : 'border-gray-200 hover:border-primary/50 hover:bg-gray-50'
+                    ? 'border-primary bg-primary/20 shadow-md'
+                    : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
                 }`}
               >
-                <Smartphone className={`w-6 h-6 mb-2 ${paymentMethod === 'paymaya' ? 'text-primary' : 'text-gray-600'}`} />
-                <span className={`text-sm font-medium ${paymentMethod === 'paymaya' ? 'text-primary' : 'text-gray-700'}`}>Maya</span>
+                <Smartphone className={`w-6 h-6 mb-2 ${paymentMethod === 'paymaya' ? 'text-primary' : 'text-white/70'}`} />
+                <span className={`text-sm font-medium ${paymentMethod === 'paymaya' ? 'text-primary' : 'text-white'}`}>Maya</span>
               </button>
             </div>
           </div>
 
           {/* Billing Information */}
-          <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-            <h3 className="font-semibold text-gray-800 mb-4">Billing Information</h3>
+          <div className="bg-white/5 p-5 rounded-lg border border-white/10">
+            <h3 className="font-semibold text-white mb-4">Billing Information</h3>
             <div className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label htmlFor="name" className="block text-sm font-medium text-white mb-1">Full Name</label>
                 <input
                   type="text"
                   id="name"
                   value={billingDetails.name}
                   onChange={(e) => setBillingDetails({ ...billingDetails, name: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                  className="w-full p-3 border border-white/10 rounded-lg bg-white/5 text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label htmlFor="email" className="block text-sm font-medium text-white mb-1">Email</label>
                 <input
                   type="email"
                   id="email"
                   value={billingDetails.email}
                   onChange={(e) => setBillingDetails({ ...billingDetails, email: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                  className="w-full p-3 border border-white/10 rounded-lg bg-white/5 text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">Phone Number</label>
                 <input
                   type="tel"
                   id="phone"
                   value={billingDetails.phone}
                   onChange={(e) => setBillingDetails({ ...billingDetails, phone: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                  className="w-full p-3 border border-white/10 rounded-lg bg-white/5 text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                   placeholder="Optional"
                 />
               </div>
@@ -386,17 +386,17 @@ export default function PayMongoForm({
 
           {/* Card Details (only shown if card payment method is selected) */}
           {paymentMethod === 'card' && (
-            <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-              <h3 className="font-semibold text-gray-800 mb-4">Card Details</h3>
+            <div className="bg-white/5 p-5 rounded-lg border border-white/10">
+              <h3 className="font-semibold text-white mb-4">Card Details</h3>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                  <label htmlFor="cardNumber" className="block text-sm font-medium text-white mb-1">Card Number</label>
                   <input
                     type="text"
                     id="cardNumber"
                     value={cardDetails.cardNumber}
                     onChange={handleCardNumberChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                    className="w-full p-3 border border-white/10 rounded-lg bg-white/5 text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                     placeholder="1234 5678 9012 3456"
                     maxLength={19}
                     required
@@ -404,39 +404,39 @@ export default function PayMongoForm({
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label htmlFor="expMonth" className="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                    <label htmlFor="expMonth" className="block text-sm font-medium text-white mb-1">Month</label>
                     <input
                       type="text"
                       id="expMonth"
                       value={cardDetails.expMonth}
                       onChange={(e) => setCardDetails({ ...cardDetails, expMonth: e.target.value.replace(/\D/g, '') })}
-                      className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                      className="w-full p-3 border border-white/10 rounded-lg bg-white/5 text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                       placeholder="MM"
                       maxLength={2}
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="expYear" className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                    <label htmlFor="expYear" className="block text-sm font-medium text-white mb-1">Year</label>
                     <input
                       type="text"
                       id="expYear"
                       value={cardDetails.expYear}
                       onChange={(e) => setCardDetails({ ...cardDetails, expYear: e.target.value.replace(/\D/g, '') })}
-                      className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                      className="w-full p-3 border border-white/10 rounded-lg bg-white/5 text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                       placeholder="YY"
                       maxLength={2}
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="cvc" className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+                    <label htmlFor="cvc" className="block text-sm font-medium text-white mb-1">CVC</label>
                     <input
                       type="text"
                       id="cvc"
                       value={cardDetails.cvc}
                       onChange={(e) => setCardDetails({ ...cardDetails, cvc: e.target.value.replace(/\D/g, '') })}
-                      className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                      className="w-full p-3 border border-white/10 rounded-lg bg-white/5 text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                       placeholder="123"
                       maxLength={4}
                       required
@@ -449,8 +449,8 @@ export default function PayMongoForm({
 
           {/* E-wallet instructions */}
           {paymentMethod !== 'card' && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700 font-medium">
+            <div className="p-4 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+              <p className="text-sm text-blue-300 font-medium">
                 {paymentMethod === 'gcash' && 'You will be redirected to GCash to complete your payment.'}
                 {paymentMethod === 'grab_pay' && 'You will be redirected to GrabPay to complete your payment.'}
                 {paymentMethod === 'paymaya' && 'You will be redirected to Maya to complete your payment.'}
@@ -461,7 +461,7 @@ export default function PayMongoForm({
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full py-3 text-base font-medium transition-all duration-200 shadow-sm hover:shadow"
+            className="w-full py-3 text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
             disabled={loading || !paymentIntent}
           >
             {loading ? (
