@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format, addHours, isAfter, isBefore, parseISO } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
   Filter,
   Calendar,
   Bike,
@@ -29,10 +29,10 @@ import {
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/Dialog";
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
 } from "@/components/ui/Popover";
 import { Calendar as CalendarComponent } from "@/components/ui/Calendar";
 import { Input } from "@/components/ui/Input";
@@ -52,7 +52,7 @@ export default function MyBookingsPage() {
   const [isSubmittingDateChange, setIsSubmittingDateChange] = useState(false);
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
-  
+
   const supabase = createClientComponentClient();
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -73,15 +73,15 @@ export default function MyBookingsPage() {
   const fetchUserBookings = async () => {
     try {
       setLoading(true);
-      
+
       // Base query for rentals
       let query = supabase
         .from("rentals")
         .select(`
-          id, 
-          start_date, 
-          end_date, 
-          total_price, 
+          id,
+          start_date,
+          end_date,
+          total_price,
           status,
           created_at,
           vehicle_id,
@@ -90,20 +90,20 @@ export default function MyBookingsPage() {
         `)
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
-      
+
       // Apply status filter if not "all"
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter);
       }
-      
+
       // Execute the query to get rentals
       const { data: rentalData, error: rentalsError } = await query;
-      
+
       if (rentalsError) {
         console.error("Supabase rentals query error:", rentalsError);
         throw new Error(rentalsError.message);
       }
-      
+
       // Enhanced logging to debug id issues
       console.log("Rental data:", rentalData);
       if (rentalData && rentalData.length > 0) {
@@ -111,7 +111,7 @@ export default function MyBookingsPage() {
         console.log("Booking ID type:", typeof rentalData[0].id);
         console.log("All booking IDs:", rentalData.map(b => b.id));
       }
-      
+
       // Process the rentals to fetch related data
       if (rentalData && rentalData.length > 0) {
         const processedBookings = await Promise.all(
@@ -123,7 +123,7 @@ export default function MyBookingsPage() {
                 .select("*")  // Select all fields to ensure we get all image related fields
                 .eq("id", rental.vehicle_id)
                 .single();
-                
+
               if (vehicleError) {
                 console.error("Error fetching vehicle data:", vehicleError);
                 return {
@@ -132,12 +132,12 @@ export default function MyBookingsPage() {
                   shop: null
                 };
               }
-              
+
               console.log("Full vehicle data:", vehicleData);
-              
+
               // Try multiple possible sources for the vehicle image
               let vehicleImageUrl: string | null = null;
-              
+
               // Check if we have vehicle images
               const { data: vehicleImages, error: vehicleImagesError } = await supabase
                 .from("vehicle_images")
@@ -145,14 +145,14 @@ export default function MyBookingsPage() {
                 .eq("vehicle_id", rental.vehicle_id)
                 .eq("is_primary", true)
                 .limit(1);
-              
+
               if (!vehicleImagesError && vehicleImages && vehicleImages.length > 0) {
                 vehicleImageUrl = vehicleImages[0].image_url;
               }
               // Fallback to other possible image sources
               else if (vehicleData?.image_url) {
                 vehicleImageUrl = vehicleData.image_url;
-              } 
+              }
               // Check for images array (structured as objects with image_url)
               else if (vehicleData?.images && Array.isArray(vehicleData.images) && vehicleData.images.length > 0) {
                 if (typeof vehicleData.images[0] === 'string') {
@@ -169,16 +169,16 @@ export default function MyBookingsPage() {
               else if (vehicleData?.thumbnail) {
                 vehicleImageUrl = vehicleData.thumbnail;
               }
-              
+
               console.log("Final resolved vehicle image URL:", vehicleImageUrl);
-              
+
               // Get shop info
               const { data: shopData } = await supabase
                 .from("rental_shops")
                 .select("name, address")
                 .eq("id", rental.shop_id)
                 .single();
-              
+
               return {
                 ...rental,
                 vehicle: {
@@ -197,7 +197,7 @@ export default function MyBookingsPage() {
             }
           })
         );
-        
+
         setBookings(processedBookings);
       } else {
         // No bookings found
@@ -218,11 +218,11 @@ export default function MyBookingsPage() {
     // 2. Start date is at least 48 hours in the future
     const allowedStatuses = ["pending", "confirmed"];
     if (!allowedStatuses.includes(booking.status)) return false;
-    
+
     const now = new Date();
     const startDate = new Date(booking.start_date);
     const hoursUntilStart = Math.floor((startDate.getTime() - now.getTime()) / (1000 * 60 * 60));
-    
+
     return hoursUntilStart >= 48;
   };
 
@@ -232,35 +232,47 @@ export default function MyBookingsPage() {
     // 2. Start date is at least 24 hours in the future
     const allowedStatuses = ["pending", "confirmed"];
     if (!allowedStatuses.includes(booking.status)) return false;
-    
+
     const now = new Date();
     const startDate = new Date(booking.start_date);
     const hoursUntilStart = Math.floor((startDate.getTime() - now.getTime()) / (1000 * 60 * 60));
-    
+
     return hoursUntilStart >= 24;
   };
 
   const handleCancelBooking = async (bookingId: string) => {
     try {
       setCancelling(bookingId);
-      
+
       // Get the booking details for the notification
       const { data: bookingData, error: fetchError } = await supabase
         .from("rentals")
-        .select("*, vehicle:vehicles(*)")
+        .select("*")
         .eq("id", bookingId)
         .single();
-        
+
       if (fetchError) {
         throw fetchError;
       }
-      
-      const vehicleName = bookingData?.vehicle?.name || 'Vehicle';
-      
+
+      // Get vehicle data separately
+      let vehicleName = 'Vehicle'; // Default fallback
+      if (bookingData && bookingData.vehicle_id) {
+        const { data: vehicleData, error: vehicleError } = await supabase
+          .from("vehicles")
+          .select("*")
+          .eq("id", bookingData.vehicle_id)
+          .single();
+
+        if (!vehicleError && vehicleData) {
+          vehicleName = vehicleData.name || 'Vehicle';
+        }
+      }
+
       // Update booking status to cancelled
       const { error } = await supabase
         .from("rentals")
-        .update({ 
+        .update({
           status: "cancelled",
           cancelled_at: new Date().toISOString(),
           cancelled_by: user!.id,
@@ -273,7 +285,7 @@ export default function MyBookingsPage() {
 
       // Refresh bookings
       fetchUserBookings();
-      
+
       // Use toast notification instead of alert
       notifyBookingStatusChange(bookingId, vehicleName, 'cancelled');
     } catch (error) {
@@ -292,22 +304,22 @@ export default function MyBookingsPage() {
       toast.error("Please fill in all required fields");
       return;
     }
-    
+
     // Validate dates
     if (isBefore(newEndDate, newStartDate)) {
       toast.error("End date cannot be before start date");
       return;
     }
-    
+
     const now = new Date();
     if (isBefore(newStartDate, now)) {
       toast.error("Start date cannot be in the past");
       return;
     }
-    
+
     try {
       setIsSubmittingDateChange(true);
-      
+
       // First check if the new dates are available
       const { data: availabilityData, error: availabilityError } = await supabase
         .from("vehicles")
@@ -315,16 +327,16 @@ export default function MyBookingsPage() {
         .eq("id", selectedBooking.vehicle_id)
         .not("rentals", "id", "eq", selectedBooking.id)
         .or(`end_date.lt.${newStartDate.toISOString()},start_date.gt.${newEndDate.toISOString()}`);
-        
+
       if (availabilityError) {
         throw availabilityError;
       }
-      
+
       if (!availabilityData || availabilityData.length === 0) {
         toast.error("The vehicle is not available for the selected dates");
         return;
       }
-      
+
       // Create a date change request
       const { data: requestData, error: requestError } = await supabase
         .from("date_change_requests")
@@ -339,11 +351,11 @@ export default function MyBookingsPage() {
           status: "pending"
         })
         .select();
-        
+
       if (requestError) {
         throw requestError;
       }
-      
+
       // Add to booking history
       await supabase
         .from("booking_history")
@@ -360,23 +372,23 @@ export default function MyBookingsPage() {
             reason: dateChangeReason
           }
         });
-      
+
       // Close the dialog and show success message
       setIsDateChangeOpen(false);
-      
+
       // Clear form
       setSelectedBooking(null);
       setNewStartDate(undefined);
       setNewEndDate(undefined);
       setDateChangeReason("");
-      
+
       toast.success("Date change request submitted", {
         description: "The shop owner will review your request and get back to you"
       });
-      
+
       // Refresh bookings
       fetchUserBookings();
-      
+
     } catch (error) {
       console.error("Error submitting date change request:", error);
       toast.error("Failed to submit date change request", {
@@ -438,35 +450,35 @@ export default function MyBookingsPage() {
       {/* Adjusted padding and removed redundant headers */}
       <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
         <div className="flex flex-wrap gap-2">
-          <Button 
+          <Button
             variant={statusFilter === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setStatusFilter("all")}
           >
             All Bookings
           </Button>
-          <Button 
+          <Button
             variant={statusFilter === "pending" ? "default" : "outline"}
             size="sm"
             onClick={() => setStatusFilter("pending")}
           >
             Pending
           </Button>
-          <Button 
+          <Button
             variant={statusFilter === "confirmed" ? "default" : "outline"}
             size="sm"
             onClick={() => setStatusFilter("confirmed")}
           >
             Confirmed
           </Button>
-          <Button 
+          <Button
             variant={statusFilter === "completed" ? "default" : "outline"}
             size="sm"
             onClick={() => setStatusFilter("completed")}
           >
             Completed
           </Button>
-          <Button 
+          <Button
             variant={statusFilter === "cancelled" ? "default" : "outline"}
             size="sm"
             onClick={() => setStatusFilter("cancelled")}
@@ -487,8 +499,8 @@ export default function MyBookingsPage() {
           <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <p className="text-xl font-semibold mb-2">No bookings found</p>
           <p className="text-gray-400 mb-6">
-            {statusFilter !== "all" 
-              ? `You don't have any ${statusFilter} bookings.` 
+            {statusFilter !== "all"
+              ? `You don't have any ${statusFilter} bookings.`
               : "You haven't made any bookings yet."}
           </p>
           <Button asChild>
@@ -502,9 +514,9 @@ export default function MyBookingsPage() {
               <div className="p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6">
                 {/* Vehicle Image */}
                 <div className="w-full md:w-48 h-32 rounded-md overflow-hidden flex-shrink-0 bg-gray-800">
-                  <img 
-                    src={booking.vehicle?.imageUrl || booking.vehicle?.image_url || "/placeholder.jpg"} 
-                    alt={booking.vehicle?.name || "Vehicle"} 
+                  <img
+                    src={booking.vehicle?.imageUrl || booking.vehicle?.image_url || "/placeholder.jpg"}
+                    alt={booking.vehicle?.name || "Vehicle"}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       console.error("Image failed to load:", e.currentTarget.src);
@@ -512,7 +524,7 @@ export default function MyBookingsPage() {
                     }}
                   />
                 </div>
-                
+
                 {/* Booking Details */}
                 <div className="flex-grow flex flex-col justify-between">
                   <div>
@@ -520,9 +532,9 @@ export default function MyBookingsPage() {
                       <h3 className="text-xl font-semibold">{booking.vehicle?.name || "Vehicle Rental"}</h3>
                       {getStatusBadge(booking.status)}
                     </div>
-                    
+
                     <p className="text-sm text-gray-400 mb-2">{booking.shop?.name} • {booking.shop?.address}</p>
-                    
+
                     <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-2">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-primary" />
@@ -538,16 +550,16 @@ export default function MyBookingsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col md:flex-row gap-2 mt-4 justify-between items-start md:items-center">
                     <div className="text-xs text-gray-400">
                       Booked on {format(new Date(booking.created_at), "MMMM d, yyyy")}
                     </div>
-                    
+
                     <div className="flex gap-2">
-                      <Button 
-                        asChild 
-                        variant="outline" 
+                      <Button
+                        asChild
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           console.log("Booking ID before navigation:", booking.id);
@@ -558,10 +570,10 @@ export default function MyBookingsPage() {
                           View Details
                         </Link>
                       </Button>
-                      
+
                       {canChangeDates(booking) && (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => {
                             setSelectedBooking(booking);
@@ -575,10 +587,10 @@ export default function MyBookingsPage() {
                           Change Dates
                         </Button>
                       )}
-                      
+
                       {canCancelBooking(booking) && (
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           size="sm"
                           onClick={() => handleCancelBooking(booking.id)}
                           disabled={cancelling === booking.id}
@@ -594,7 +606,7 @@ export default function MyBookingsPage() {
           ))}
         </div>
       )}
-      
+
       {/* Date Change Request Dialog */}
       <Dialog open={isDateChangeOpen} onOpenChange={setIsDateChangeOpen}>
         <DialogContent className="sm:max-w-[500px]">
@@ -604,7 +616,7 @@ export default function MyBookingsPage() {
               Submit a request to change your booking dates. The shop owner will need to approve this request.
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedBooking && (
             <div className="space-y-4 py-4">
               <div className="flex items-center justify-between text-sm">
@@ -613,7 +625,7 @@ export default function MyBookingsPage() {
                   {format(new Date(selectedBooking.start_date), "MMM d, yyyy")} - {format(new Date(selectedBooking.end_date), "MMM d, yyyy")}
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="start-date" className="text-sm font-medium">New Start Date</label>
@@ -645,7 +657,7 @@ export default function MyBookingsPage() {
                     </PopoverContent>
                   </Popover>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label htmlFor="end-date" className="text-sm font-medium">New End Date</label>
                   <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
@@ -679,7 +691,7 @@ export default function MyBookingsPage() {
                   </Popover>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <label htmlFor="reason" className="text-sm font-medium">Reason for Date Change</label>
                 <Input
@@ -691,16 +703,16 @@ export default function MyBookingsPage() {
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsDateChangeOpen(false)}
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleDateChangeRequest} 
+            <Button
+              onClick={handleDateChangeRequest}
               disabled={isSubmittingDateChange || !newStartDate || !newEndDate || !dateChangeReason.trim()}
             >
               {isSubmittingDateChange ? "Submitting..." : "Submit Request"}
@@ -710,4 +722,4 @@ export default function MyBookingsPage() {
       </Dialog>
     </div>
   );
-} 
+}
