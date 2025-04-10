@@ -273,6 +273,19 @@ export default function PayMongoForm({
 
   return (
     <div className="w-full p-4 sm:p-6">
+      {/* PayMongo Header */}
+      <div className="mb-6 flex flex-col items-center">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-3 rounded-xl shadow-lg mb-4 flex items-center justify-center">
+          <img
+            src="/images/paymongo-badge-transparent.png"
+            alt="PayMongo"
+            className="h-8"
+          />
+        </div>
+        <h2 className="text-xl font-bold text-white mb-1">Secure Checkout</h2>
+        <p className="text-sm text-white/70 text-center">Your payment is protected by PayMongo's secure payment system</p>
+      </div>
+
       {error && (
         <div className="mb-5 p-4 bg-red-900/30 border border-red-500/30 rounded-lg flex items-start">
           <AlertCircle className="w-5 h-5 text-red-400 mr-3 flex-shrink-0" />
@@ -501,17 +514,59 @@ export default function PayMongoForm({
             )}
           </Button>
 
-          {/* PayMongo Badge */}
-          <div className="mt-8 flex flex-col items-center justify-center">
-            <div className="flex items-center justify-center mb-2">
-              <img
-                src="/images/paymongo-badge-transparent.png"
-                alt="Secured by PayMongo"
-                className="h-12 sm:h-14"
-              />
+          {/* Security and Trust Indicators */}
+          <div className="mt-8 space-y-6">
+            {/* PayMongo Badge and Security Info */}
+            <div className="flex flex-col items-center justify-center bg-gradient-to-b from-blue-900/30 to-blue-950/30 rounded-lg p-4 border border-blue-500/20">
+              <div className="flex items-center justify-center mb-3">
+                <img
+                  src="/images/paymongo-badge-transparent.png"
+                  alt="Secured by PayMongo"
+                  className="h-14 sm:h-16"
+                />
+              </div>
+              <p className="text-sm text-white/80 text-center font-medium mb-2">
+                Secure Payment Processing
+              </p>
+              <p className="text-xs text-white/60 text-center">
+                Your payment information is securely processed by PayMongo, a PCI-DSS Level 1 compliant payment processor licensed by the Bangko Sentral ng Pilipinas.
+              </p>
             </div>
-            <p className="text-xs text-white/50 text-center">
-              Payments are securely processed by PayMongo, a PCI-DSS Level 1 compliant payment processor.
+
+            {/* Security Features */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="flex flex-col items-center justify-center p-3 bg-white/5 rounded-lg border border-white/10">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span className="text-xs text-white/70 text-center">End-to-End Encryption</span>
+              </div>
+              <div className="flex flex-col items-center justify-center p-3 bg-white/5 rounded-lg border border-white/10">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span className="text-xs text-white/70 text-center">Secure Checkout</span>
+              </div>
+              <div className="flex flex-col items-center justify-center p-3 bg-white/5 rounded-lg border border-white/10 col-span-2 sm:col-span-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs text-white/70 text-center">Verified by PayMongo</span>
+              </div>
+            </div>
+
+            {/* Payment Methods */}
+            <div className="flex flex-wrap justify-center gap-3 pt-2">
+              <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d33b5c7d372_Visa.svg" alt="Visa" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
+              <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d0070c7d36e_Mastercard.svg" alt="Mastercard" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
+              <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d0d7fc7d36f_GCash.svg" alt="GCash" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
+              <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d3a8fc7d371_GrabPay.svg" alt="GrabPay" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
+              <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d3a8fc7d371_GrabPay.svg" alt="Maya" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
+            </div>
+
+            {/* Legal Text */}
+            <p className="text-[10px] text-white/40 text-center pt-2">
+              By proceeding with this payment, you agree to PayMongo's <a href="https://www.paymongo.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Terms of Service</a> and <a href="https://www.paymongo.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Privacy Policy</a>.
             </p>
           </div>
         </form>
