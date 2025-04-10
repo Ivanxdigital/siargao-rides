@@ -13,7 +13,7 @@ import {
   createClientComponentClient
 } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from "next/navigation";
-import { subscribeToBookingNotifications } from '@/lib/notifications';
+import { subscribeToBookingNotifications, subscribeToShopOwnerNotifications } from '@/lib/notifications';
 
 interface VerificationResult {
   error: any;
@@ -68,6 +68,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const supabase = createClientComponentClient();
   const router = useRouter();
   const [notificationSubscription, setNotificationSubscription] = useState<{ unsubscribe: () => void } | null>(null);
+  const [shopNotificationSubscription, setShopNotificationSubscription] = useState<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -86,6 +87,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const subscription = subscribeToBookingNotifications(session.user.id);
             setNotificationSubscription(subscription);
           }
+
+          // If user is a shop owner, subscribe to shop notifications
+          if (role === 'shop_owner' && !shopNotificationSubscription) {
+            console.log('User is a shop owner, setting up shop notification subscription');
+            // Get the shop ID for this owner
+            const getShopId = async () => {
+              console.log('Fetching shop ID for owner:', session.user.id);
+              const { data, error } = await supabase
+                .from('rental_shops')
+                .select('id')
+                .eq('owner_id', session.user.id)
+                .single();
+
+              if (error) {
+                console.error('Error fetching shop ID:', error);
+              }
+
+              if (!error && data) {
+                console.log('Found shop ID for owner:', data.id);
+                const shopSubscription = subscribeToShopOwnerNotifications(data.id);
+                setShopNotificationSubscription(shopSubscription);
+              } else {
+                console.log('No shop found for this owner');
+              }
+            };
+
+            getShopId();
+          } else if (role === 'shop_owner') {
+            console.log('Shop owner already has notification subscription');
+          } else {
+            console.log('User is not a shop owner, role:', role);
+          }
         } else {
           setIsAdmin(false);
 
@@ -93,6 +126,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (notificationSubscription) {
             notificationSubscription.unsubscribe();
             setNotificationSubscription(null);
+          }
+
+          if (shopNotificationSubscription) {
+            shopNotificationSubscription.unsubscribe();
+            setShopNotificationSubscription(null);
           }
         }
       } catch (error) {
@@ -210,6 +248,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const subscription = subscribeToBookingNotifications(session.user.id);
             setNotificationSubscription(subscription);
           }
+
+          // If user is a shop owner, subscribe to shop notifications
+          if (user.user_metadata?.role === 'shop_owner' && !shopNotificationSubscription) {
+            console.log('User is a shop owner (auth change), setting up shop notification subscription');
+            // Get the shop ID for this owner
+            const getShopId = async () => {
+              console.log('Fetching shop ID for owner (auth change):', session.user.id);
+              const { data, error } = await supabase
+                .from('rental_shops')
+                .select('id')
+                .eq('owner_id', session.user.id)
+                .single();
+
+              if (error) {
+                console.error('Error fetching shop ID (auth change):', error);
+              }
+
+              if (!error && data) {
+                console.log('Found shop ID for owner (auth change):', data.id);
+                const shopSubscription = subscribeToShopOwnerNotifications(data.id);
+                setShopNotificationSubscription(shopSubscription);
+              } else {
+                console.log('No shop found for this owner (auth change)');
+              }
+            };
+
+            getShopId();
+          } else if (user.user_metadata?.role === 'shop_owner') {
+            console.log('Shop owner already has notification subscription (auth change)');
+          }
         } else {
           setIsAdmin(false);
           setIsLoading(false);
@@ -219,6 +287,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             notificationSubscription.unsubscribe();
             setNotificationSubscription(null);
           }
+
+          if (shopNotificationSubscription) {
+            shopNotificationSubscription.unsubscribe();
+            setShopNotificationSubscription(null);
+          }
         }
       }
     );
@@ -226,12 +299,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       subscription.unsubscribe();
 
-      // Cleanup notification subscription on unmount
+      // Cleanup notification subscriptions on unmount
       if (notificationSubscription) {
         notificationSubscription.unsubscribe();
       }
+
+      if (shopNotificationSubscription) {
+        shopNotificationSubscription.unsubscribe();
+      }
     };
-  }, [supabase.auth, router, notificationSubscription]);
+  }, [supabase.auth, router, notificationSubscription, shopNotificationSubscription]);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);

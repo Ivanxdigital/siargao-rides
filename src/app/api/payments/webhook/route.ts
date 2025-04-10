@@ -78,34 +78,96 @@ async function handlePaymentPaid(event: any) {
                    (paymentRecord.metadata.is_deposit === true ||
                     paymentRecord.metadata.is_deposit === 'true');
 
+  console.log('Payment webhook: Fetching rental with user information for better notifications');
+  // Fetch rental with user information for better notifications
+  const { data: rentalWithUser, error: rentalUserError } = await supabase
+    .from('rentals')
+    .select(`
+      id,
+      user_id,
+      shop_id,
+      vehicle_name,
+      users(first_name, last_name, email)
+    `)
+    .eq('id', paymentRecord.rental_id)
+    .single();
+
+  if (rentalUserError) {
+    console.error('Payment webhook: Error fetching rental with user information:', rentalUserError);
+  } else {
+    console.log('Payment webhook: Found rental with shop_id:', rentalWithUser?.shop_id);
+  }
+
+  // Create customer name for notifications
+  let customerName = 'Customer';
+  if (rentalWithUser?.users) {
+    const firstName = rentalWithUser.users.first_name || '';
+    const lastName = rentalWithUser.users.last_name || '';
+    customerName = `${firstName} ${lastName}`.trim() || 'Customer';
+    console.log('Payment webhook: Created customer name:', customerName);
+  } else {
+    console.log('Payment webhook: No user information found, using default customer name');
+
+    // Fallback: Try to get user information directly
+    if (rentalWithUser?.user_id) {
+      console.log('Payment webhook: Trying to get user information directly');
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('first_name, last_name')
+        .eq('id', rentalWithUser.user_id)
+        .single();
+
+      if (!userError && userData) {
+        const firstName = userData.first_name || '';
+        const lastName = userData.last_name || '';
+        customerName = `${firstName} ${lastName}`.trim() || 'Customer';
+        console.log('Payment webhook: Created customer name from direct user query:', customerName);
+      } else if (userError) {
+        console.error('Payment webhook: Error getting user information directly:', userError);
+      }
+    }
+  }
+
   if (isDeposit) {
+    console.log('Payment webhook: Processing deposit payment for rental:', paymentRecord.rental_id);
     // Update rental record for deposit payment
-    await supabase
+    const { error: updateError } = await supabase
       .from('rentals')
       .update({
         deposit_paid: true,
         status: 'confirmed',
+        customer_name: customerName,
         updated_at: new Date().toISOString()
       })
       .eq('id', paymentRecord.rental_id);
 
-    console.log('Deposit payment marked as paid for rental:', paymentRecord.rental_id);
+    if (updateError) {
+      console.error('Payment webhook: Error updating rental for deposit payment:', updateError);
+    } else {
+      console.log('Payment webhook: Deposit payment marked as paid for rental:', paymentRecord.rental_id);
+    }
 
     // Block dates for the booking since deposit is paid
     await blockDatesForBooking(paymentRecord.rental_id);
   } else {
+    console.log('Payment webhook: Processing full payment for rental:', paymentRecord.rental_id);
     // Update rental record for full payment
-    await supabase
+    const { error: updateError } = await supabase
       .from('rentals')
       .update({
         payment_status: 'paid',
         status: 'confirmed',
+        customer_name: customerName,
         payment_date: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', paymentRecord.rental_id);
 
-    console.log('Full payment marked as paid for rental:', paymentRecord.rental_id);
+    if (updateError) {
+      console.error('Payment webhook: Error updating rental for full payment:', updateError);
+    } else {
+      console.log('Payment webhook: Full payment marked as paid for rental:', paymentRecord.rental_id);
+    }
 
     // Block dates for the booking since payment is complete
     await blockDatesForBooking(paymentRecord.rental_id);
