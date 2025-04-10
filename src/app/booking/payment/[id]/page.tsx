@@ -149,11 +149,14 @@ export default function BookingPaymentPage() {
   const shop = booking.shop;
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
-      <div className="mb-6">
-        <Link href={`/booking/confirmation/${bookingId}`} className="inline-flex items-center text-primary hover:text-primary/80">
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          <span>Back to Booking Details</span>
+    <div className="container max-w-4xl mx-auto pt-20 pb-12 px-4 sm:px-6">
+      <div className="mb-8">
+        <Link
+          href={`/booking/${booking?.vehicle_id}`}
+          className="inline-flex items-center text-primary hover:text-primary/80 py-2"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          <span>Back to Booking</span>
         </Link>
       </div>
 
