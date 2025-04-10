@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Find the payment record
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('paymongo_payments')
-      .select('id, rental_id, status')
+      .select('id, rental_id, status, is_deposit, metadata')
       .eq('payment_intent_id', paymentIntentId)
       .single();
 
@@ -76,23 +76,51 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', paymentRecord.id);
 
+      // Check if this is a deposit payment
+      // Since the is_deposit column might not exist, we check the metadata field
+      const isDeposit = paymentRecord.metadata && paymentRecord.metadata.is_deposit;
+
       // Update rental payment status if needed
       if (paymentIntent.attributes.status === 'succeeded') {
-        await supabase
-          .from('rentals')
-          .update({
-            payment_status: 'paid',
-            status: 'confirmed',
-            payment_date: new Date().toISOString()
-          })
-          .eq('id', paymentRecord.rental_id);
+        if (isDeposit) {
+          // Update rental record for deposit payment
+          await supabase
+            .from('rentals')
+            .update({
+              deposit_paid: true,
+              status: 'confirmed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', paymentRecord.rental_id);
+        } else {
+          // Update rental record for full payment
+          await supabase
+            .from('rentals')
+            .update({
+              payment_status: 'paid',
+              status: 'confirmed',
+              payment_date: new Date().toISOString()
+            })
+            .eq('id', paymentRecord.rental_id);
+        }
       } else if (paymentIntent.attributes.status === 'awaiting_payment_method') {
-        await supabase
-          .from('rentals')
-          .update({
-            payment_status: 'failed'
-          })
-          .eq('id', paymentRecord.rental_id);
+        if (isDeposit) {
+          await supabase
+            .from('rentals')
+            .update({
+              deposit_paid: false,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', paymentRecord.rental_id);
+        } else {
+          await supabase
+            .from('rentals')
+            .update({
+              payment_status: 'failed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', paymentRecord.rental_id);
+        }
       }
     }
 

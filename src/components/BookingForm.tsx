@@ -51,6 +51,9 @@ export default function BookingForm({
   const [formError, setFormError] = useState<string | null>(null);
   const router = useRouter();
 
+  // Deposit amount constant
+  const DEPOSIT_AMOUNT = 300; // 300 PHP deposit for cash payments
+
   // Use either vehicle or bike depending on which is provided
   const rentalVehicle = vehicle || bike;
 
@@ -279,7 +282,11 @@ export default function BookingForm({
         delivery_address: deliveryAddress,
         confirmation_code: confirmationCode,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString() // Add updated_at field
+        updated_at: new Date().toISOString(), // Add updated_at field
+        // Add deposit fields for cash payments
+        deposit_required: paymentMethod === 'cash',
+        deposit_amount: paymentMethod === 'cash' ? DEPOSIT_AMOUNT : 0,
+        deposit_paid: false
       };
 
       // Add the right ID field based on whether we're using vehicle or bike
@@ -305,12 +312,15 @@ export default function BookingForm({
 
       console.log("Booking created:", booking);
 
-      // Check if the selected payment method is PayMongo
+      // Handle different payment methods
       if (paymentMethod === 'paymongo') {
-        // Navigate to the payment page for online payment
+        // Navigate to the payment page for full online payment
         router.push(`/booking/payment/${booking.id}`);
+      } else if (paymentMethod === 'cash') {
+        // Navigate to the deposit payment page for cash payments
+        router.push(`/booking/deposit-payment/${booking.id}`);
       } else {
-        // Navigate to the confirmation page for offline payment methods
+        // Navigate to the confirmation page for other payment methods
         router.push(`/booking/confirmation/${booking.id}`);
       }
 
@@ -529,6 +539,11 @@ export default function BookingForm({
             <div>
               <div className="font-medium">Cash Payment</div>
               <div className="text-sm text-white/70">Pay with cash when picking up or when the vehicle is delivered</div>
+              <div className="mt-2 p-2 bg-blue-900/30 border border-blue-500/30 rounded-md text-xs text-white/80">
+                <p className="font-medium text-blue-400 mb-1">₱300 Deposit Required</p>
+                <p>A ₱300 deposit is required to secure your booking and prevent ghost bookings. This deposit will be processed through our secure payment system.</p>
+                <p className="mt-1">If you don't show up for your booking, the deposit will be kept by the shop owner as compensation.</p>
+              </div>
             </div>
           </label>
 

@@ -5,13 +5,13 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  LayoutDashboard, 
-  Bike, 
-  Calendar, 
-  Settings, 
-  ShoppingBag, 
-  BarChart, 
+import {
+  LayoutDashboard,
+  Bike,
+  Calendar,
+  Settings,
+  ShoppingBag,
+  BarChart,
   LogOut,
   UsersRound,
   Menu,
@@ -22,7 +22,8 @@ import {
   CheckCircle,
   Shield,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -48,8 +49,8 @@ const SidebarItem = ({ href, icon, title, active, collapsed = false }: SidebarIt
         className={cn(
           "w-full transition-all duration-200",
           collapsed ? "justify-center p-2 h-10 w-10 rounded-full" : "justify-start gap-3 mb-1 px-4 py-2.5",
-          active 
-            ? "bg-primary text-primary-foreground shadow-sm" 
+          active
+            ? "bg-primary text-primary-foreground shadow-sm"
             : "hover:bg-primary/10 hover:text-primary"
         )}
       >
@@ -81,11 +82,11 @@ const SidebarItem = ({ href, icon, title, active, collapsed = false }: SidebarIt
 // Layout animation variants
 const layoutVariants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
     transition: {
       duration: 0.4,
-      when: "beforeChildren", 
+      when: "beforeChildren",
       staggerChildren: 0.05
     }
   }
@@ -93,8 +94,8 @@ const layoutVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, x: -5 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     x: 0,
     transition: {
       type: "spring",
@@ -106,7 +107,7 @@ const itemVariants = {
 
 const contentVariants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
     transition: {
       duration: 0.3,
@@ -166,20 +167,20 @@ export default function DashboardLayout({
   // Show loading state while checking authentication or setting up user
   if (isLoading || isSettingUp) {
     return (
-      <motion.div 
+      <motion.div
         className="min-h-screen bg-background flex items-center justify-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         <div className="flex flex-col items-center gap-3">
-          <motion.div 
+          <motion.div
             className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.3 }}
           ></motion.div>
-          <motion.div 
+          <motion.div
             className="text-primary/80 font-medium"
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
@@ -196,7 +197,7 @@ export default function DashboardLayout({
   const isAdmin = user?.user_metadata?.role === "admin";
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative"
       initial="hidden"
       animate="visible"
@@ -204,14 +205,14 @@ export default function DashboardLayout({
     >
       {/* Subtle background pattern */}
       <div className="absolute inset-0 z-0 opacity-15">
-        <motion.div 
+        <motion.div
           className="absolute inset-0 bg-[url('/grid.svg')] bg-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.07 }}
           transition={{ duration: 1 }}
         ></motion.div>
       </div>
-      
+
       {/* Mobile sidebar toggle button */}
       <motion.button
         onClick={toggleSidebar}
@@ -226,7 +227,7 @@ export default function DashboardLayout({
 
       <div className="flex h-screen w-full relative z-10 overflow-hidden pt-[60px]">
         {/* Sidebar Navigation */}
-        <motion.aside 
+        <motion.aside
           className={cn(
             "fixed md:relative z-20 top-[60px] md:top-0 left-0 h-[calc(100vh-60px)] md:h-full bg-black/70 border-r border-white/10 backdrop-blur-md transition-all duration-300 ease-in-out",
             isCollapsed ? "md:w-20" : "md:w-64",
@@ -247,7 +248,7 @@ export default function DashboardLayout({
 
           <div className="h-full flex flex-col pt-6 pb-6 px-4 overflow-y-auto">
             {/* Logo/Brand */}
-            <motion.div 
+            <motion.div
               className={cn(
                 "flex items-center py-3 mb-4",
                 isCollapsed ? "justify-center" : "px-2"
@@ -271,7 +272,7 @@ export default function DashboardLayout({
             </motion.div>
 
             {/* User Profile */}
-            <motion.div 
+            <motion.div
               className={cn(
                 "mb-5 pb-4 border-b border-white/10",
                 isCollapsed ? "flex justify-center" : ""
@@ -284,9 +285,9 @@ export default function DashboardLayout({
                     <TooltipTrigger asChild>
                       <div className="h-10 w-10 rounded-full border-2 border-primary/50 overflow-hidden shadow-md cursor-pointer">
                         {user?.user_metadata?.profile_picture ? (
-                          <img 
-                            src={user.user_metadata.profile_picture} 
-                            alt="Profile" 
+                          <img
+                            src={user.user_metadata.profile_picture}
+                            alt="Profile"
                             className="object-cover w-full h-full"
                             onError={(e) => {
                               e.currentTarget.src = `https://ui-avatars.com/api/?name=${user?.user_metadata?.first_name || "User"}&background=6d28d9&color=fff`;
@@ -302,7 +303,7 @@ export default function DashboardLayout({
                     <TooltipContent side="right" className="bg-background/90 backdrop-blur-sm border-primary/20">
                       {user?.user_metadata?.first_name} {user?.user_metadata?.last_name || ""}
                       <div className="text-xs opacity-70">
-                        {user?.user_metadata?.role === "shop_owner" ? "Shop Owner" : 
+                        {user?.user_metadata?.role === "shop_owner" ? "Shop Owner" :
                         user?.user_metadata?.role === "admin" ? "Administrator" : "Rider"}
                       </div>
                     </TooltipContent>
@@ -312,9 +313,9 @@ export default function DashboardLayout({
                 <div className="flex items-center gap-3 px-2 py-1">
                   <div className="h-10 w-10 rounded-full border-2 border-primary/50 overflow-hidden shadow-md">
                     {user?.user_metadata?.profile_picture ? (
-                      <img 
-                        src={user.user_metadata.profile_picture} 
-                        alt="Profile" 
+                      <img
+                        src={user.user_metadata.profile_picture}
+                        alt="Profile"
                         className="object-cover w-full h-full"
                         onError={(e) => {
                           e.currentTarget.src = `https://ui-avatars.com/api/?name=${user?.user_metadata?.first_name || "User"}&background=6d28d9&color=fff`;
@@ -331,19 +332,19 @@ export default function DashboardLayout({
                       {user?.user_metadata?.first_name} {user?.user_metadata?.last_name || ""}
                     </h3>
                     <p className="text-xs text-white/60 truncate">
-                      {user?.user_metadata?.role === "shop_owner" ? "Shop Owner" : 
+                      {user?.user_metadata?.role === "shop_owner" ? "Shop Owner" :
                       user?.user_metadata?.role === "admin" ? "Administrator" : "Rider"}
                     </p>
                   </div>
                 </div>
               )}
             </motion.div>
-            
+
             <div className="flex-1 space-y-5 overflow-y-auto">
               {/* Dashboard Navigation */}
               <div>
                 {!isCollapsed && (
-                  <motion.h2 
+                  <motion.h2
                     className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4"
                     variants={itemVariants}
                   >
@@ -385,7 +386,7 @@ export default function DashboardLayout({
               {isShopOwner && (
                 <div>
                   {!isCollapsed && (
-                    <motion.h2 
+                    <motion.h2
                       className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4"
                       variants={itemVariants}
                     >
@@ -418,11 +419,11 @@ export default function DashboardLayout({
                         animate={{ opacity: 1, height: "auto" }}
                         transition={{ duration: 0.2 }}
                       >
-                        <Link 
-                          href="/dashboard/bookings" 
+                        <Link
+                          href="/dashboard/bookings"
                           className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${
-                            pathname === "/dashboard/bookings" 
-                              ? "bg-primary/20 text-primary" 
+                            pathname === "/dashboard/bookings"
+                              ? "bg-primary/20 text-primary"
                               : "text-white/70 hover:text-white hover:bg-white/10"
                           }`}
                           onClick={handleLinkClick}
@@ -430,11 +431,11 @@ export default function DashboardLayout({
                           <List size={16} />
                           <span>List View</span>
                         </Link>
-                        <Link 
-                          href="/dashboard/bookings/calendar" 
+                        <Link
+                          href="/dashboard/bookings/calendar"
                           className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${
-                            pathname === "/dashboard/bookings/calendar" 
-                              ? "bg-primary/20 text-primary" 
+                            pathname === "/dashboard/bookings/calendar"
+                              ? "bg-primary/20 text-primary"
                               : "text-white/70 hover:text-white hover:bg-white/10"
                           }`}
                           onClick={handleLinkClick}
@@ -470,7 +471,7 @@ export default function DashboardLayout({
               {isAdmin && (
                 <div>
                   {!isCollapsed && (
-                    <motion.h2 
+                    <motion.h2
                       className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4"
                       variants={itemVariants}
                     >
@@ -493,6 +494,15 @@ export default function DashboardLayout({
                         icon={<CheckCircle size={18} />}
                         title="Shop Verification"
                         active={pathname === "/dashboard/admin/verification"}
+                        collapsed={isCollapsed}
+                      />
+                    </motion.div>
+                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                      <SidebarItem
+                        href="/dashboard/admin/deposit-payouts"
+                        icon={<DollarSign size={18} />}
+                        title="Deposit Payouts"
+                        active={pathname === "/dashboard/admin/deposit-payouts"}
                         collapsed={isCollapsed}
                       />
                     </motion.div>
@@ -537,8 +547,8 @@ export default function DashboardLayout({
 
         {/* Overlay for mobile sidebar */}
         {sidebarOpen && (
-          <motion.div 
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-10 md:hidden" 
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-10 md:hidden"
             onClick={toggleSidebar}
             aria-hidden="true"
             initial={{ opacity: 0 }}
@@ -549,7 +559,7 @@ export default function DashboardLayout({
         )}
 
         {/* Main Content */}
-        <motion.main 
+        <motion.main
           className={cn(
             "flex-1 p-6 transition-all duration-300 overflow-auto",
             !isCollapsed ? "md:pl-8" : "md:pl-6"
@@ -563,4 +573,4 @@ export default function DashboardLayout({
       </div>
     </motion.div>
   );
-} 
+}

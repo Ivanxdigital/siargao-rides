@@ -106,7 +106,10 @@ export default function BookingConfirmationPage() {
             delivery_option_id,
             payment_status,
             confirmation_code,
-            delivery_address
+            delivery_address,
+            deposit_required,
+            deposit_amount,
+            deposit_paid
           `)
           .eq("id", bookingId)
           .single();
@@ -813,39 +816,61 @@ export default function BookingConfirmationPage() {
                   <p className="text-white/60 print:text-gray-700">
                     {booking?.payment_method || "Cash payment on arrival"}
                   </p>
+
+                  {/* Show deposit status if required */}
+                  {booking.deposit_required && (
+                    <div className="mt-2">
+                      {booking.deposit_paid ? (
+                        <div className="inline-flex items-center px-2 py-1 rounded text-xs bg-green-500/20 text-green-500">
+                          <CheckCircle size={12} className="mr-1" />
+                          Deposit Paid (₱{booking.deposit_amount?.toFixed(2)})
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-500">
+                          <AlertCircle size={12} className="mr-1" />
+                          Deposit Required (₱{booking.deposit_amount?.toFixed(2)})
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="border-t border-white/10 print:border-gray-200 pt-4 mt-4">
                 <div className="flex justify-between mb-2">
                   <span className="text-white/80 print:text-gray-600">Base rental rate</span>
-                  <span>${booking?.base_price || 0}</span>
+                  <span>₱{booking?.base_price || 0}</span>
                 </div>
                 {booking?.extras > 0 && (
                   <div className="flex justify-between mb-2">
                     <span className="text-white/80 print:text-gray-600">Additional services</span>
-                    <span>${booking.extras}</span>
+                    <span>₱{booking.extras}</span>
                   </div>
                 )}
                 {booking?.discount > 0 && (
                   <div className="flex justify-between mb-2">
                     <span className="text-white/80 print:text-gray-600">Discount</span>
-                    <span className="text-green-500">-${booking.discount}</span>
+                    <span className="text-green-500">-₱{booking.discount}</span>
                   </div>
                 )}
-                {booking?.deposit > 0 && (
+                {booking.deposit_required && (
                   <div className="flex justify-between mb-2">
-                    <span className="text-white/80 print:text-gray-600">Security Deposit (refundable)</span>
-                    <span>${booking.deposit}</span>
+                    <span className="text-white/80 print:text-gray-600">Deposit {booking.deposit_paid ? '(Paid)' : '(Required)'}</span>
+                    <span>₱{booking.deposit_amount?.toFixed(2) || 0}</span>
                   </div>
                 )}
                 <div className="border-t border-white/10 print:border-gray-200 pt-4 mt-4 flex justify-between font-bold">
                   <span>Total</span>
-                  <span>${booking?.total_price || 0}</span>
+                  <span>₱{booking?.total_price || 0}</span>
                 </div>
-                {booking?.deposit > 0 && (
+                {booking.deposit_required && !booking.deposit_paid && (
                   <p className="text-sm text-white/60 print:text-gray-600 mt-2">
-                    *Deposit will be refunded upon return of the vehicle in agreed condition
+                    *Deposit payment is required to confirm your booking
+                  </p>
+                )}
+                {booking.deposit_required && booking.deposit_paid && (
+                  <p className="text-sm text-white/60 print:text-gray-600 mt-2">
+                    *Deposit will be kept by the shop owner if you don't show up for your booking
                   </p>
                 )}
               </div>
