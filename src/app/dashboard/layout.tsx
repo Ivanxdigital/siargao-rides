@@ -506,6 +506,15 @@ export default function DashboardLayout({
                         collapsed={isCollapsed}
                       />
                     </motion.div>
+                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                      <SidebarItem
+                        href="/dashboard/admin/settings"
+                        icon={<Settings size={18} />}
+                        title="Admin Settings"
+                        active={pathname === "/dashboard/admin/settings"}
+                        collapsed={isCollapsed}
+                      />
+                    </motion.div>
                   </div>
                 </div>
               )}

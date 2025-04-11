@@ -71,7 +71,7 @@ export default function AdminDashboardPage() {
             console.error("Error fetching shops:", error.message || error);
           } else {
             setShops(data || []);
-            
+
             // Count pending shops
             const pending = data?.filter(shop => !shop.is_verified) || [];
             setPendingShops(pending.length);
@@ -87,7 +87,7 @@ export default function AdminDashboardPage() {
       fetchShops();
     }
   }, [isAuthenticated, isAdmin]);
-  
+
   // Fetch pending vehicles count
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
@@ -149,7 +149,7 @@ export default function AdminDashboardPage() {
           Manage users, shops, and platform settings.
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {/* Overview Stats */}
         <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
@@ -212,7 +212,7 @@ export default function AdminDashboardPage() {
       {/* Admin Tools */}
       <div className="mb-12">
         <h2 className="text-xl font-semibold text-white/90 mb-4">Admin Tools</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
@@ -229,7 +229,7 @@ export default function AdminDashboardPage() {
               <Link href="/dashboard/admin/subscriptions">Manage Subscriptions</Link>
             </Button>
           </div>
-          
+
           <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -244,7 +244,7 @@ export default function AdminDashboardPage() {
               <Link href="/dashboard/admin/shops/verification">Verify Shops</Link>
             </Button>
           </div>
-          
+
           <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
@@ -259,6 +259,21 @@ export default function AdminDashboardPage() {
               <Link href="/dashboard/admin/vehicles/verification">Verify Vehicles</Link>
             </Button>
           </div>
+
+          <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 md:p-6 shadow-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                <Settings className="h-5 w-5 text-cyan-500" />
+              </div>
+              <h3 className="text-lg font-medium text-white/90">System Settings</h3>
+            </div>
+            <p className="text-sm text-white/60 mb-4">
+              Configure global platform settings and payment options
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/dashboard/admin/settings">Manage Settings</Link>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -267,7 +282,7 @@ export default function AdminDashboardPage() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-white/90">Recent Users</h2>
         </div>
-        
+
         <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -332,7 +347,7 @@ export default function AdminDashboardPage() {
             <Link href="/dashboard/admin/verification">Verify Shops</Link>
           </Button>
         </div>
-        
+
         <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -390,4 +405,4 @@ export default function AdminDashboardPage() {
       </div>
     </div>
   );
-} 
+}
