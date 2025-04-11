@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     // Check if user is admin
     const userRole = userData.user.user_metadata?.role || null;
     const isAdmin = userRole === 'admin';
-    
+
     if (!isAdmin) {
       return NextResponse.json({ error: 'Only admins can update payment settings' }, { status: 403 });
     }
@@ -73,8 +73,8 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from('system_settings')
       .update({
-        value: body,
-        updated_at: new Date().toISOString()
+        value: body
+        // Let Supabase handle the updated_at timestamp
       })
       .eq('key', 'payment_settings')
       .select();
@@ -94,8 +94,9 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error in POST /api/settings/payment:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error.message || 'Unknown error' },
       { status: 500 }
     );
   }

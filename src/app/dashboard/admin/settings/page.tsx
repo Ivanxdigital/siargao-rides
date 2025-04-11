@@ -59,6 +59,8 @@ export default function AdminSettingsPage() {
       setIsSaving(true);
       setStatusMessage(null);
 
+      console.log('Saving payment settings:', paymentSettings);
+
       const response = await fetch('/api/settings/payment', {
         method: 'POST',
         headers: {
@@ -68,9 +70,11 @@ export default function AdminSettingsPage() {
       });
 
       const data = await response.json();
+      console.log('Response from API:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update payment settings');
+        console.error('API error response:', data);
+        throw new Error(data.error || data.details || 'Failed to update payment settings');
       }
 
       toast.success('Payment settings updated successfully');
@@ -85,10 +89,12 @@ export default function AdminSettingsPage() {
       }, 3000);
     } catch (error: any) {
       console.error('Error saving payment settings:', error);
-      toast.error(error.message || 'Failed to update payment settings');
+      console.error('Error details:', error.stack || 'No stack trace available');
+      const errorMessage = error.message || 'Failed to update payment settings';
+      toast.error(errorMessage);
       setStatusMessage({
         type: 'error',
-        message: error.message || 'Failed to update payment settings'
+        message: errorMessage
       });
     } finally {
       setIsSaving(false);
