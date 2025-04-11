@@ -10,7 +10,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useShopAccess } from "@/utils/shopAccess";
 import { checkShopSetupStatus } from "@/utils/shopSetupStatus";
 import { OnboardingGuide } from "@/components/shop/OnboardingGuide";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -74,19 +74,19 @@ export default function ManageVehiclesPage() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         if (!user?.id) {
           setError("User not authenticated");
           return;
         }
-        
+
         const supabase = createClientComponentClient();
-        
+
         // First, get all vehicle types for mapping
         const { data: vehicleTypesData, error: typesError } = await supabase
           .from("vehicle_types")
           .select("id, name");
-          
+
         if (typesError) {
           console.error("Error fetching vehicle types:", typesError);
         } else if (vehicleTypesData) {
@@ -97,23 +97,23 @@ export default function ManageVehiclesPage() {
           });
           setVehicleTypeMap(typeMap);
         }
-        
+
         // Get shop ID and details for the current user
         const { data: shopData, error: shopError } = await supabase
           .from("rental_shops")
-          .select("*, rental_shops!inner(*)")
+          .select("*")
           .eq("owner_id", user.id)
           .single();
-        
+
         if (shopError || !shopData) {
           console.error("Error fetching shop:", shopError);
           setError("No shop found for this user");
           setVehicles([]);
           return;
         }
-        
+
         setShopData(shopData);
-        
+
         // Fetch vehicles for this shop
         const { data: vehiclesData, error: vehiclesError } = await supabase
           .from("vehicles")
@@ -123,13 +123,13 @@ export default function ManageVehiclesPage() {
             vehicle_types(id, name)
           `)
           .eq("shop_id", shopData.id);
-        
+
         if (vehiclesError) {
           console.error("Error fetching vehicles:", vehiclesError);
           setError("Failed to load vehicles. Please try again later.");
           return;
         }
-        
+
         // Transform data to match our Vehicle type
         const formattedVehicles = vehiclesData.map(vehicle => {
           // Fix image URLs
@@ -139,7 +139,7 @@ export default function ManageVehiclesPage() {
             // Ensure image_url exists
             image_url: img.image_url || img.url
           }));
-          
+
           return {
             ...vehicle,
             // Convert verification_status to our VerificationStatus type
@@ -147,9 +147,9 @@ export default function ManageVehiclesPage() {
             images: formattedImages
           };
         });
-        
+
         setVehicles(formattedVehicles);
-        
+
         // Update shop setup status
         const setupStatus = checkShopSetupStatus(shopData, formattedVehicles.length);
         setShopSetupStatus(setupStatus);
@@ -178,18 +178,18 @@ export default function ManageVehiclesPage() {
     if (window.confirm("Are you sure you want to delete this vehicle?")) {
       try {
         const supabase = createClientComponentClient();
-        
+
         // Delete the vehicle
         const { error } = await supabase
           .from("vehicles")
           .delete()
           .eq("id", vehicleId);
-        
+
         if (error) {
           console.error("Error deleting vehicle:", error);
           throw new Error("Failed to delete vehicle");
         }
-        
+
         // Update the state if successful
         setVehicles((prevVehicles) => prevVehicles.filter((vehicle) => vehicle.id !== vehicleId));
       } catch (error) {
@@ -202,18 +202,18 @@ export default function ManageVehiclesPage() {
   const handleToggleAvailability = async (vehicleId: string, isAvailable: boolean) => {
     try {
       const supabase = createClientComponentClient();
-      
+
       // Update the vehicle availability
       const { error } = await supabase
         .from("vehicles")
         .update({ is_available: isAvailable })
         .eq("id", vehicleId);
-      
+
       if (error) {
         console.error("Error updating vehicle availability:", error);
         throw new Error("Failed to update vehicle availability");
       }
-      
+
       // Update the state if successful
       setVehicles((prevVehicles) =>
         prevVehicles.map((vehicle) =>
@@ -232,13 +232,13 @@ export default function ManageVehiclesPage() {
     if (vehicleTypeMap[typeId]) {
       return vehicleTypeMap[typeId];
     }
-    
+
     // If we have the vehicle_types relation loaded, use that
     const vehicle = vehicles.find(v => v.vehicle_type_id === typeId);
     if (vehicle?.vehicle_types?.name) {
       return vehicle.vehicle_types.name as VehicleType;
     }
-    
+
     // Fallback for backward compatibility with numeric IDs
     if (typeof typeId === 'number' || !isNaN(Number(typeId))) {
       const numericId = Number(typeId);
@@ -251,7 +251,7 @@ export default function ManageVehiclesPage() {
           return "tuktuk";
       }
     }
-    
+
     // Default to motorcycle if nothing else works
     console.warn(`Unknown vehicle type ID: ${typeId}, defaulting to motorcycle`);
     return "motorcycle";
@@ -263,7 +263,7 @@ export default function ManageVehiclesPage() {
     const currentVehicleType = getVehicleType(vehicle.vehicle_type_id);
     const matchesType = vehicleTypeFilter === "all" || currentVehicleType === vehicleTypeFilter;
     const matchesVerification = verificationFilter === "all" || vehicle.verification_status === verificationFilter;
-    
+
     return matchesSearch && matchesType && matchesVerification;
   });
 
@@ -275,7 +275,7 @@ export default function ManageVehiclesPage() {
       </div>
     );
   }
-  
+
   // If subscription is inactive or expired, show appropriate message
   if (!hasAccess) {
     return (
@@ -284,7 +284,7 @@ export default function ManageVehiclesPage() {
           <AlertCircle size={40} className="text-amber-600 dark:text-amber-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">Subscription Required</h3>
           <p className="text-muted-foreground mb-6">
-            {subscriptionStatus === 'expired' 
+            {subscriptionStatus === 'expired'
               ? "Your subscription has expired. Please renew your subscription to manage vehicles."
               : "You need an active subscription to manage vehicles."}
           </p>
@@ -337,8 +337,8 @@ export default function ManageVehiclesPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
-        <Select 
+
+        <Select
           value={vehicleTypeFilter}
           onValueChange={(value) => setVehicleTypeFilter(value as VehicleType | "all")}
         >
@@ -353,7 +353,7 @@ export default function ManageVehiclesPage() {
           </SelectContent>
         </Select>
 
-        <Select 
+        <Select
           value={verificationFilter}
           onValueChange={(value) => setVerificationFilter(value as VerificationStatus | "all")}
         >
@@ -440,4 +440,4 @@ export default function ManageVehiclesPage() {
       )}
     </div>
   );
-} 
+}

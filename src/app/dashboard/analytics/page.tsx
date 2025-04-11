@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 // Define interfaces for analytics data
-interface PopularBike {
+interface PopularVehicle {
   id: string;
   name: string;
   bookings: number;
@@ -27,7 +27,7 @@ interface Analytics {
   uniqueCustomers: number;
   bookingRate: number;
   repeatCustomers: number;
-  popularBikes: PopularBike[];
+  popularBikes: PopularVehicle[];
   monthlyBookings: MonthlyBooking[];
 }
 
@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
       // 1. Fetch current period bookings
       let bookingsQuery = supabase
         .from("rentals")
-        .select("id, user_id, start_date, end_date, total_price, payment_status, bikes(id, name)")
+        .select("id, user_id, start_date, end_date, total_price, payment_status, vehicle_id, created_at")
         .eq("shop_id", shopId);
 
       if (startDate) {
@@ -172,38 +172,64 @@ export default function AnalyticsPage() {
       const repeatCustomers = Object.values(userBookingCounts).filter(count => count > 1).length;
 
       // Calculate booking rate (simplistic approach)
-      // Assuming each bike is available every day, calculate what percentage of possible booking days were used
-      const totalAvailableBikeDays = await calculateAvailableBikeDays(supabase, shopId, startDate);
+      // Assuming each vehicle is available every day, calculate what percentage of possible booking days were used
+      const totalAvailableVehicleDays = await calculateAvailableVehicleDays(supabase, shopId, startDate);
       const totalBookedDays = calculateTotalBookedDays(bookings || []);
-      const bookingRate = totalAvailableBikeDays > 0
-        ? Math.round((totalBookedDays / totalAvailableBikeDays) * 100)
+      const bookingRate = totalAvailableVehicleDays > 0
+        ? Math.round((totalBookedDays / totalAvailableVehicleDays) * 100)
         : 0;
 
-      // Calculate popular bikes
-      const bikeStats: {[key: string]: {id: string, name: string, bookings: number, revenue: number}} = {};
+      // Calculate popular vehicles
+      const vehicleStats: {[key: string]: {id: string, name: string, bookings: number, revenue: number}} = {};
 
+      // First, get all vehicle IDs from bookings
+      const vehicleIds = bookings?.map(booking => booking.vehicle_id).filter(Boolean) || [];
+
+      // Fetch vehicle details if we have any vehicle IDs
+      let vehicleDetails: Record<string, { id: string, name: string }> = {};
+
+      if (vehicleIds.length > 0) {
+        // Get unique vehicle IDs
+        const uniqueVehicleIds = [...new Set(vehicleIds)];
+
+        // Fetch vehicle names
+        const { data: vehicles } = await supabase
+          .from("vehicles")
+          .select("id, name")
+          .in("id", uniqueVehicleIds);
+
+        // Create a lookup map
+        if (vehicles) {
+          vehicles.forEach(vehicle => {
+            vehicleDetails[vehicle.id] = {
+              id: vehicle.id,
+              name: vehicle.name
+            };
+          });
+        }
+      }
+
+      // Process bookings to calculate stats
       bookings?.forEach(booking => {
-        if (booking.bikes) {
-          // Fix type issue by ensuring proper access to bike properties
-          const bikeData = booking.bikes as any;
-          const bikeId = bikeData.id;
-          const bikeName = bikeData.name;
+        if (booking.vehicle_id && vehicleDetails[booking.vehicle_id]) {
+          const vehicleId = booking.vehicle_id;
+          const vehicleName = vehicleDetails[vehicleId]?.name || 'Unknown Vehicle';
 
-          if (!bikeStats[bikeId]) {
-            bikeStats[bikeId] = {
-              id: bikeId,
-              name: bikeName,
+          if (!vehicleStats[vehicleId]) {
+            vehicleStats[vehicleId] = {
+              id: vehicleId,
+              name: vehicleName,
               bookings: 0,
               revenue: 0
             };
           }
 
-          bikeStats[bikeId].bookings += 1;
-          bikeStats[bikeId].revenue += booking.total_price || 0;
+          vehicleStats[vehicleId].bookings += 1;
+          vehicleStats[vehicleId].revenue += booking.total_price || 0;
         }
       });
 
-      const popularBikes = Object.values(bikeStats)
+      const popularBikes = Object.values(vehicleStats)
         .sort((a, b) => b.bookings - a.bookings)
         .slice(0, 3);
 
@@ -267,34 +293,34 @@ export default function AnalyticsPage() {
     }
   };
 
-  // Helper function to calculate available bike days
-  const calculateAvailableBikeDays = async (supabase: any, shopId: string, startDate: string | null) => {
+  // Helper function to calculate available vehicle days
+  const calculateAvailableVehicleDays = async (supabase: any, shopId: string, startDate: string | null) => {
     try {
-      // Get all bikes for the shop
-      const { data: bikes } = await supabase
-        .from("bikes")
+      // Get all vehicles for the shop
+      const { data: vehicles } = await supabase
+        .from("vehicles")
         .select("id, created_at")
         .eq("shop_id", shopId);
 
-      if (!bikes || bikes.length === 0) return 0;
+      if (!vehicles || vehicles.length === 0) return 0;
 
       const now = new Date();
       let totalDays = 0;
 
-      bikes.forEach((bike: any) => {
-        // Use either the startDate for filtering or the bike creation date, whichever is later
-        const bikeStartDate = startDate ?
-          new Date(Math.max(new Date(startDate).getTime(), new Date(bike.created_at).getTime())) :
-          new Date(bike.created_at);
+      vehicles.forEach((vehicle: any) => {
+        // Use either the startDate for filtering or the vehicle creation date, whichever is later
+        const vehicleStartDate = startDate ?
+          new Date(Math.max(new Date(startDate).getTime(), new Date(vehicle.created_at).getTime())) :
+          new Date(vehicle.created_at);
 
-        // Calculate days between bikeStartDate and now
-        const dayDiff = Math.floor((now.getTime() - bikeStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        // Calculate days between vehicleStartDate and now
+        const dayDiff = Math.floor((now.getTime() - vehicleStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         totalDays += Math.max(0, dayDiff);
       });
 
       return totalDays;
     } catch (error) {
-      console.error("Error calculating available bike days:", error);
+      console.error("Error calculating available vehicle days:", error);
       return 0;
     }
   };
@@ -379,11 +405,12 @@ export default function AnalyticsPage() {
             Track your shop's performance and rental statistics
           </p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={selectedTimeFrame === "30days" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedTimeFrame("30days")}
+            className="w-full sm:w-auto"
           >
             Last 30 Days
           </Button>
@@ -391,6 +418,7 @@ export default function AnalyticsPage() {
             variant={selectedTimeFrame === "6months" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedTimeFrame("6months")}
+            className="w-full sm:w-auto"
           >
             Last 6 Months
           </Button>
@@ -398,6 +426,7 @@ export default function AnalyticsPage() {
             variant={selectedTimeFrame === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedTimeFrame("all")}
+            className="w-full sm:w-auto"
           >
             All Time
           </Button>
@@ -519,20 +548,22 @@ export default function AnalyticsPage() {
         <div className="bg-card border border-border rounded-lg p-6 lg:col-span-2">
           <h3 className="text-lg font-semibold mb-4">Monthly Bookings</h3>
           {analytics.monthlyBookings.length > 0 ? (
-            <div className="h-64 w-full flex items-end justify-between">
-              {analytics.monthlyBookings.map((item) => (
-                <div key={item.month} className="flex flex-col items-center">
-                  <div
-                    className="w-12 bg-primary rounded-t transition-all duration-300 hover:bg-primary/80"
-                    style={{
-                      height: `${(item.bookings / maxBookings) * 180}px`,
-                      minHeight: item.bookings > 0 ? '20px' : '4px'
-                    }}
-                  ></div>
-                  <div className="text-muted-foreground text-xs mt-2">{item.displayMonth || item.month.split('-')[0]}</div>
-                  <div className="text-sm font-medium">{item.bookings}</div>
-                </div>
-              ))}
+            <div className="h-64 w-full overflow-x-auto pb-2">
+              <div className="min-w-[500px] h-full flex items-end justify-between">
+                {analytics.monthlyBookings.map((item) => (
+                  <div key={item.month} className="flex flex-col items-center">
+                    <div
+                      className="w-8 sm:w-12 bg-primary rounded-t transition-all duration-300 hover:bg-primary/80"
+                      style={{
+                        height: `${(item.bookings / maxBookings) * 180}px`,
+                        minHeight: item.bookings > 0 ? '20px' : '4px'
+                      }}
+                    ></div>
+                    <div className="text-muted-foreground text-xs mt-2">{item.displayMonth || item.month.split('-')[0]}</div>
+                    <div className="text-sm font-medium">{item.bookings}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center h-64 text-muted-foreground">
@@ -542,25 +573,25 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="bg-card border border-border rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Popular Bikes</h3>
+          <h3 className="text-lg font-semibold mb-4">Popular Vehicles</h3>
           {analytics.popularBikes.length > 0 ? (
             <div className="space-y-4">
-              {analytics.popularBikes.map((bike) => (
-                <div key={bike.id} className="flex items-center">
+              {analytics.popularBikes.map((vehicle) => (
+                <div key={vehicle.id} className="flex items-center">
                   <div className="bg-primary/10 p-2 rounded-md mr-3">
                     <Bike size={16} className="text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium">{bike.name}</h4>
+                  <div className="flex-1 min-w-0"> {/* Added min-w-0 to prevent overflow */}
+                    <h4 className="text-sm font-medium truncate">{vehicle.name}</h4>
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>{bike.bookings} bookings</span>
-                      <span>₱{bike.revenue.toLocaleString()}</span>
+                      <span>{vehicle.bookings} bookings</span>
+                      <span>₱{vehicle.revenue.toLocaleString()}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-1 mt-2">
                       <div
                         className="bg-primary h-1 rounded-full"
                         style={{
-                          width: `${(bike.bookings / (analytics.popularBikes[0]?.bookings || 1)) * 100}%`
+                          width: `${(vehicle.bookings / (analytics.popularBikes[0]?.bookings || 1)) * 100}%`
                         }}
                       ></div>
                     </div>
@@ -570,7 +601,7 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <div className="flex items-center justify-center h-48 text-muted-foreground">
-              No bike rental data available for this period
+              No vehicle rental data available for this period
             </div>
           )}
         </div>
@@ -580,18 +611,18 @@ export default function AnalyticsPage() {
       <div className="bg-card border border-border rounded-lg p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">Booking Rate</h3>
         <div className="flex items-center mb-4">
-          <div className="w-full bg-muted rounded-full h-4">
+          <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
             <div
               className="bg-primary h-4 rounded-full text-xs flex items-center justify-center text-white"
-              style={{ width: `${analytics.bookingRate}%` }}
+              style={{ width: `${Math.min(analytics.bookingRate, 100)}%` }}
             >
-              {analytics.bookingRate}%
+              {analytics.bookingRate > 100 ? '100+' : analytics.bookingRate}%
             </div>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
           {analytics.bookingRate > 0
-            ? `Your bikes were booked ${analytics.bookingRate}% of available days this period.`
+            ? `Your vehicles were booked ${analytics.bookingRate}% of available days this period.`
             : "No booking data available for calculating the booking rate in this period."
           }
         </p>
@@ -620,7 +651,7 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <p className="text-sm">
-                  Consider adding more {analytics.popularBikes[0]?.name} models to your fleet as they have the highest booking rate.
+                  Consider adding more {analytics.popularBikes[0]?.name} vehicles to your fleet as they have the highest booking rate.
                 </p>
               </li>
             )}
@@ -643,7 +674,7 @@ export default function AnalyticsPage() {
               <p className="text-sm">
                 {analytics.bookingRate < 50
                   ? "Consider adjusting your pricing to increase your booking rate."
-                  : "Your booking rate is good. Consider adding more bikes to your fleet to increase revenue."
+                  : "Your booking rate is good. Consider adding more vehicles to your fleet to increase revenue."
                 }
               </p>
             </li>
@@ -670,7 +701,7 @@ export default function AnalyticsPage() {
           </ul>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Start renting out your bikes to customers to receive personalized recommendations based on your rental data.
+            Start renting out your vehicles to customers to receive personalized recommendations based on your rental data.
           </p>
         )}
       </div>
