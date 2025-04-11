@@ -6,11 +6,11 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import PayMongoForm from "@/components/PayMongoForm";
-import GCashPaymentForm from "@/components/GCashPaymentForm";
+import DepositPayMongoForm from "@/components/DepositPayMongoForm";
+import GCashDepositForm from "@/components/GCashDepositForm";
 import { ArrowLeft, CheckCircle, AlertCircle, RefreshCw, CreditCard, Smartphone } from "lucide-react";
 
-export default function BookingPaymentPage() {
+export default function BookingDepositPage() {
   const params = useParams();
   const router = useRouter();
   const bookingId = params?.id as string;
@@ -57,9 +57,9 @@ export default function BookingPaymentPage() {
         throw new Error("Booking not found");
       }
 
-      // Check if payment is already completed
-      if (booking.payment_status === "paid") {
-        setPaymentSuccess(true);
+      // Check if deposit is already paid
+      if (booking.deposit_paid) {
+        setError("Deposit has already been paid for this booking");
       }
 
       setBooking(booking);
@@ -85,9 +85,6 @@ export default function BookingPaymentPage() {
 
   const handlePaymentError = (errorMessage: string) => {
     setError(errorMessage);
-
-    // The PayMongoForm component will handle redirecting to the failure page
-    // after a short delay to show the error message
   };
 
   if (loading) {
@@ -148,6 +145,7 @@ export default function BookingPaymentPage() {
 
   const rentalVehicle = booking.vehicle;
   const vehicleType = booking.vehicle_type;
+  const depositAmount = 300; // Fixed deposit amount
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/95 to-blue-950 pt-16 pb-12 px-4 sm:px-6 relative overflow-hidden">
@@ -173,7 +171,7 @@ export default function BookingPaymentPage() {
         <div className="md:col-span-2">
           <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg shadow-lg overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 p-5 border-b border-white/10">
-              <h2 className="text-xl font-semibold text-white">Complete Your Payment</h2>
+              <h2 className="text-xl font-semibold text-white">Pay Deposit to Secure Your Booking</h2>
             </div>
 
             <div className="p-0">
@@ -181,8 +179,8 @@ export default function BookingPaymentPage() {
                 <div className="m-6 bg-green-900/30 border border-green-500/30 rounded-lg p-5 flex items-start">
                   <CheckCircle className="text-green-400 w-6 h-6 mt-0.5 mr-3" />
                   <div>
-                    <h3 className="font-semibold text-green-400 text-lg mb-1">Payment Successful</h3>
-                    <p className="text-green-300">Your payment has been processed successfully. Redirecting to your booking confirmation...</p>
+                    <h3 className="font-semibold text-green-400 text-lg mb-1">Deposit Payment Successful</h3>
+                    <p className="text-green-300">Your deposit has been processed successfully. Redirecting to your booking confirmation...</p>
                   </div>
                 </div>
               ) : (
@@ -217,24 +215,24 @@ export default function BookingPaymentPage() {
                       </button>
                     </div>
                   </div>
-
+                  
                   {/* Payment Form */}
                   {paymentMethod === 'card' ? (
-                    <PayMongoForm
+                    <DepositPayMongoForm
                       rentalId={bookingId}
-                      amount={booking.total_price}
+                      amount={depositAmount}
                       vehicle={rentalVehicle}
                       onPaymentSuccess={handlePaymentSuccess}
                       onPaymentError={handlePaymentError}
                     />
                   ) : (
-                    <GCashPaymentForm
+                    <GCashDepositForm
                       rentalId={bookingId}
-                      amount={booking.total_price}
+                      totalAmount={booking.total_price}
                       vehicleName={rentalVehicle?.name || 'Vehicle'}
                       vehicleImage={rentalVehicle?.image_url}
-                      onSuccess={(sourceId, checkoutUrl) => {
-                        console.log('GCash source created:', sourceId);
+                      onSuccess={(sourceId) => {
+                        console.log('GCash deposit source created:', sourceId);
                         // Redirect happens in the component
                       }}
                       onError={handlePaymentError}
@@ -274,20 +272,20 @@ export default function BookingPaymentPage() {
               </div>
 
               <div className="flex justify-between items-start">
-                <span className="text-white/70">Rental Fee:</span>
-                <span className="font-medium text-white">₱{(booking.total_price - (booking.delivery_option?.fee || 0)).toFixed(2)}</span>
+                <span className="text-white/70">Total Rental Fee:</span>
+                <span className="font-medium text-white">₱{booking.total_price.toFixed(2)}</span>
               </div>
 
-              {booking.delivery_option && (
-                <div className="flex justify-between items-start">
-                  <span className="text-white/70">Delivery Fee:</span>
-                  <span className="font-medium text-white">₱{(booking.delivery_option.fee || 0).toFixed(2)}</span>
-                </div>
-              )}
+              <div className="flex justify-between items-start bg-amber-900/20 p-2 rounded-md">
+                <span className="text-amber-300/90">Deposit Amount:</span>
+                <span className="font-medium text-amber-300">₱{depositAmount.toFixed(2)}</span>
+              </div>
 
-              <div className="pt-3 border-t border-white/10 flex justify-between items-start font-semibold">
-                <span className="text-white">Total:</span>
-                <span className="text-primary-400 text-lg">₱{booking.total_price.toFixed(2)}</span>
+              <div className="pt-3 border-t border-white/10">
+                <p className="text-xs text-amber-300/80">
+                  This deposit secures your booking and will be deducted from the total amount due at pickup. 
+                  If you don't show up, the deposit will be kept by the shop owner as compensation.
+                </p>
               </div>
             </div>
 

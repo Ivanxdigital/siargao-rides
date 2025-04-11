@@ -23,7 +23,7 @@ export default function PayMongoForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'gcash' | 'grab_pay' | 'paymaya'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'gcash'>('card');
   const [paymentIntent, setPaymentIntent] = useState<any>(null);
   const [cardDetails, setCardDetails] = useState({
     cardNumber: '',
@@ -304,60 +304,7 @@ export default function PayMongoForm({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Payment Method Selection */}
-          <div>
-            <label className="block text-base font-medium text-white mb-3">Payment Method</label>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('card')}
-                className={`p-3 sm:p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
-                  paymentMethod === 'card'
-                    ? 'border-primary bg-primary/20 shadow-md'
-                    : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
-                }`}
-              >
-                <CreditCard className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${paymentMethod === 'card' ? 'text-primary' : 'text-white/70'}`} />
-                <span className={`text-xs sm:text-sm font-medium ${paymentMethod === 'card' ? 'text-primary' : 'text-white'}`}>Card</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('gcash')}
-                className={`p-3 sm:p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
-                  paymentMethod === 'gcash'
-                    ? 'border-primary bg-primary/20 shadow-md'
-                    : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
-                }`}
-              >
-                <Smartphone className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${paymentMethod === 'gcash' ? 'text-primary' : 'text-white/70'}`} />
-                <span className={`text-xs sm:text-sm font-medium ${paymentMethod === 'gcash' ? 'text-primary' : 'text-white'}`}>GCash</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('grab_pay')}
-                className={`p-3 sm:p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
-                  paymentMethod === 'grab_pay'
-                    ? 'border-primary bg-primary/20 shadow-md'
-                    : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
-                }`}
-              >
-                <Smartphone className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${paymentMethod === 'grab_pay' ? 'text-primary' : 'text-white/70'}`} />
-                <span className={`text-xs sm:text-sm font-medium ${paymentMethod === 'grab_pay' ? 'text-primary' : 'text-white'}`}>GrabPay</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('paymaya')}
-                className={`p-3 sm:p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
-                  paymentMethod === 'paymaya'
-                    ? 'border-primary bg-primary/20 shadow-md'
-                    : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
-                }`}
-              >
-                <Smartphone className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${paymentMethod === 'paymaya' ? 'text-primary' : 'text-white/70'}`} />
-                <span className={`text-xs sm:text-sm font-medium ${paymentMethod === 'paymaya' ? 'text-primary' : 'text-white'}`}>Maya</span>
-              </button>
-            </div>
-          </div>
+
 
           {/* Billing Information */}
           <div className="bg-white/5 p-4 sm:p-5 rounded-lg border border-white/10">
@@ -560,8 +507,6 @@ export default function PayMongoForm({
               <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d33b5c7d372_Visa.svg" alt="Visa" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
               <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d0070c7d36e_Mastercard.svg" alt="Mastercard" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
               <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d0d7fc7d36f_GCash.svg" alt="GCash" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
-              <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d3a8fc7d371_GrabPay.svg" alt="GrabPay" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
-              <img src="https://assets-global.website-files.com/60d79037bf79a69621881af0/60d7b9f2a2121d3a8fc7d371_GrabPay.svg" alt="Maya" className="h-6 opacity-70 hover:opacity-100 transition-opacity" />
             </div>
 
             {/* Legal Text */}
