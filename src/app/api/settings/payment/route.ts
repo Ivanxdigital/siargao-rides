@@ -70,28 +70,48 @@ export async function POST(request: Request) {
     }
 
     // Update payment settings
-    const { data, error } = await supabase
-      .from('system_settings')
-      .update({
-        value: body
-        // Let Supabase handle the updated_at timestamp
-      })
-      .eq('key', 'payment_settings')
-      .select();
+    try {
+      console.log('Updating payment settings with body:', JSON.stringify(body, null, 2));
 
-    if (error) {
-      console.error('Error updating payment settings:', error);
+      const { data, error } = await supabase
+        .from('system_settings')
+        .update({
+          value: body
+          // Let Supabase handle the updated_at timestamp
+        })
+        .eq('key', 'payment_settings')
+        .select();
+
+      if (error) {
+        console.error('Supabase error updating payment settings:', error);
+        return NextResponse.json(
+          { error: 'Database error', details: error.message },
+          { status: 500 }
+        );
+      }
+
+      if (!data || data.length === 0) {
+        console.error('No data returned from update operation');
+        return NextResponse.json(
+          { error: 'No data returned from update operation' },
+          { status: 500 }
+        );
+      }
+
+      console.log('Successfully updated payment settings, returned data:', JSON.stringify(data, null, 2));
+
+      return NextResponse.json({
+        success: true,
+        message: 'Payment settings updated successfully',
+        settings: data[0].value
+      });
+    } catch (updateError: any) {
+      console.error('Error in update operation:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update payment settings' },
+        { error: 'Error updating settings', details: updateError.message || 'Unknown error' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Payment settings updated successfully',
-      settings: data[0].value
-    });
   } catch (error: any) {
     console.error('Error in POST /api/settings/payment:', error);
     console.error('Error details:', JSON.stringify(error, null, 2));

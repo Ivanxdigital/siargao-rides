@@ -61,32 +61,39 @@ export default function AdminSettingsPage() {
 
       console.log('Saving payment settings:', paymentSettings);
 
-      const response = await fetch('/api/settings/payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentSettings),
-      });
+      try {
+        const response = await fetch('/api/settings/payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(paymentSettings),
+        });
 
-      const data = await response.json();
-      console.log('Response from API:', data);
+        const data = await response.json();
+        console.log('Response from API:', data);
 
-      if (!response.ok) {
-        console.error('API error response:', data);
-        throw new Error(data.error || data.details || 'Failed to update payment settings');
+        if (!response.ok) {
+          console.error('API error response:', data);
+          throw new Error(data.error || data.details || 'Failed to update payment settings');
+        }
+
+        toast.success('Payment settings updated successfully');
+        setStatusMessage({
+          type: 'success',
+          message: 'Payment settings updated successfully'
+        });
+
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setStatusMessage(null);
+        }, 3000);
+
+        return data;
+      } catch (fetchError) {
+        console.error('Fetch error:', fetchError);
+        throw fetchError;
       }
-
-      toast.success('Payment settings updated successfully');
-      setStatusMessage({
-        type: 'success',
-        message: 'Payment settings updated successfully'
-      });
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setStatusMessage(null);
-      }, 3000);
     } catch (error: any) {
       console.error('Error saving payment settings:', error);
       console.error('Error details:', error.stack || 'No stack trace available');
