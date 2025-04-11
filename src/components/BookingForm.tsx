@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DateRangePicker from "@/components/DateRangePicker";
+import TimeSlotPicker from "@/components/TimeSlotPicker";
+import ContactInfoInput, { ContactInfo } from "@/components/ContactInfoInput";
 import { Button } from "@/components/ui/Button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Bike, RentalShop, Vehicle } from "@/lib/types";
 import { User } from "@supabase/auth-helpers-nextjs";
-import { Info, AlertCircle } from "lucide-react";
+import { Info, AlertCircle, Clock, Phone } from "lucide-react";
 import { addDays, subDays, format, isWithinInterval } from "date-fns";
 import { TermsAndConditions } from "./TermsAndConditions";
 
@@ -45,6 +47,8 @@ export default function BookingForm({
   const [deliveryOption, setDeliveryOption] = useState<string | null>(null);
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [pickupTime, setPickupTime] = useState<string | null>(null);
+  const [contactInfo, setContactInfo] = useState<ContactInfo>({ method: "", countryCode: "+63", number: "" });
   const [loading, setLoading] = useState(false);
   const [deliveryOptions, setDeliveryOptions] = useState<any[]>([]);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -54,7 +58,9 @@ export default function BookingForm({
     enable_cash_with_deposit: true,
     require_deposit: true,
     enable_paymongo_card: true,
-    enable_paymongo_gcash: true
+    enable_paymongo_gcash: true,
+    default_grace_period_minutes: 30,
+    enable_auto_cancellation: true
   });
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const router = useRouter();
@@ -220,6 +226,12 @@ export default function BookingForm({
       return;
     }
 
+    // Validate pickup time for temporary cash payments
+    if (paymentMethod === 'temp_cash' && !pickupTime) {
+      setFormError("Please select a pickup time for cash payment.");
+      return;
+    }
+
     if (!agreeToTerms) {
       setFormError("You must agree to the terms and conditions to proceed.");
       return;
@@ -316,6 +328,11 @@ export default function BookingForm({
         updated_at: new Date().toISOString(), // Add updated_at field
       };
 
+      // Add contact information if provided
+      if (contactInfo.method && contactInfo.number) {
+        bookingData.contact_info = contactInfo;
+      }
+
       // Set payment method ID based on selection
       if (paymentMethod === 'cash') {
         // Regular cash payment with deposit
@@ -329,6 +346,18 @@ export default function BookingForm({
         bookingData.deposit_required = false;
         bookingData.deposit_amount = 0;
         bookingData.deposit_paid = true; // Mark as paid since no deposit is required
+
+        // Add pickup time and auto-cancellation settings for temporary cash payments
+        if (pickupTime) {
+          // Create a Date object for the pickup time by combining the start date with the pickup time
+          const pickupDate = new Date(startDate);
+          const [hours, minutes] = pickupTime.split(':').map(Number);
+          pickupDate.setHours(hours, minutes, 0, 0);
+
+          bookingData.pickup_time = pickupDate.toISOString();
+          bookingData.grace_period_minutes = systemSettings.default_grace_period_minutes || 30;
+          bookingData.auto_cancel_enabled = systemSettings.enable_auto_cancellation !== false;
+        }
       } else if (paymentMethod === 'paymongo_card') {
         // PayMongo Card payment
         bookingData.payment_method_id = 'c1cc5137-46dd-48c2-b91a-831d0a822c16';
@@ -577,6 +606,22 @@ export default function BookingForm({
         </div>
       )}
 
+      {/* Contact Information */}
+      <div>
+        <h3 className="text-lg font-medium mb-2 flex items-center">
+          <Phone size={18} className="mr-2 text-primary" />
+          Contact Information (Optional)
+        </h3>
+        <p className="text-sm text-white/70 mb-3">
+          Add your WhatsApp or Telegram contact for easier communication with the shop owner.
+        </p>
+        <ContactInfoInput
+          value={contactInfo}
+          onChange={setContactInfo}
+          required={false}
+        />
+      </div>
+
       {/* Payment options */}
       <div>
         <h3 className="text-lg font-medium mb-2">Payment Method</h3>
@@ -599,12 +644,29 @@ export default function BookingForm({
                 className="mt-1"
               />
               <div>
-                <div className="font-medium">Cash Payment (No Deposit)</div>
+                <div className="font-medium">Cash Payment</div>
                 <div className="text-sm text-white/70">Pay the full amount with cash when picking up or when the vehicle is delivered</div>
                 <div className="mt-2 p-2 bg-green-900/30 border border-green-500/30 rounded-md text-xs text-white/80">
-                  <p className="font-medium text-green-400 mb-1">No Deposit Required</p>
                   <p>Pay the full amount in cash directly to the shop when you pick up or receive your vehicle.</p>
+                  <div className="flex items-center mt-2 mb-1">
+                    <Clock className="w-3 h-3 mr-1 text-green-400" />
+                    <p className="font-medium text-green-400">Pickup Time Required</p>
+                  </div>
+                  <p className="mb-1">Please select a pickup time below. Your booking will be automatically cancelled if you're more than {systemSettings.default_grace_period_minutes || 30} minutes late.</p>
                 </div>
+
+                {/* Time Slot Picker - only shown for temporary cash payment */}
+                {paymentMethod === 'temp_cash' && (
+                  <div className="mt-3">
+                    <TimeSlotPicker
+                      value={pickupTime}
+                      onChange={setPickupTime}
+                      date={startDate}
+                      shopHours={shop.opening_hours?.[format(startDate || new Date(), 'EEEE').toLowerCase()] || { open: "08:00", close: "18:00" }}
+                      interval={30}
+                    />
+                  </div>
+                )}
               </div>
             </label>
           )}

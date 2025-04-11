@@ -121,7 +121,13 @@ export default function BookingConfirmationPage() {
             delivery_address,
             deposit_required,
             deposit_amount,
-            deposit_paid
+            deposit_paid,
+            pickup_time,
+            grace_period_minutes,
+            auto_cancel_enabled,
+            auto_cancel_processed,
+            shop_owner_override,
+            contact_info
           `)
           .eq("id", bookingId)
           .single();
@@ -710,8 +716,21 @@ export default function BookingConfirmationPage() {
                   Your booking has been confirmed! Please pay the full amount of ₱{booking?.total_price?.toFixed(2)} in cash when you {booking?.deliveryOption?.name === 'Self Pickup' ? 'pick up your vehicle' : 'receive your vehicle delivery'}.
                 </p>
                 <p className="mt-2 text-white/70 text-sm">
-                  No deposit is required for this booking. The shop owner has been notified of your reservation.
+                  The shop owner has been notified of your reservation.
                 </p>
+
+                {/* Show pickup time if available */}
+                {booking?.pickup_time && (
+                  <div className="mt-3 p-3 bg-blue-900/30 border border-blue-500/30 rounded-md">
+                    <div className="flex items-center mb-1">
+                      <Clock className="text-blue-400 w-4 h-4 mr-2" />
+                      <h4 className="font-medium text-blue-400">Pickup Time: {format(new Date(booking.pickup_time), 'h:mm a, EEEE, MMMM d')}</h4>
+                    </div>
+                    <p className="text-sm text-white/80">
+                      Please arrive on time. Your booking will be automatically cancelled if you're more than {booking.grace_period_minutes || 30} minutes late.
+                    </p>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

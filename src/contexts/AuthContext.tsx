@@ -73,7 +73,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const getSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Try to get the session, but handle JWT token errors
+        let sessionResult;
+        try {
+          sessionResult = await supabase.auth.getSession();
+        } catch (tokenError) {
+          console.error('Error getting session:', tokenError);
+
+          // If there's a JWT token error, sign out and clear the session
+          if (tokenError.message?.includes('Invalid value for JWT claim')) {
+            console.log('Invalid JWT token detected, signing out...');
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+          throw tokenError; // Re-throw other errors
+        }
+
+        const { data: { session } } = sessionResult;
         setSession(session);
         setUser(session?.user || null);
 
@@ -142,162 +161,184 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user || null);
+    let authSubscription;
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (_event, session) => {
+          try {
+            setSession(session);
+            setUser(session?.user || null);
+          } catch (tokenError) {
+            console.error('Error in auth state change handler:', tokenError);
 
-        // Check if this is a new user from Google sign-in (or other OAuth)
-        if (session?.user) {
-          const user = session.user;
+            // If there's a JWT token error, sign out and clear the session
+            if (tokenError.message?.includes('Invalid value for JWT claim')) {
+              console.log('Invalid JWT token detected in auth state change, signing out...');
+              await supabase.auth.signOut();
+              setSession(null);
+              setUser(null);
+              return;
+            }
+          }
 
-          // If we have a Google user who doesn't have a role set
-          if (
-            user.app_metadata.provider === 'google' &&
-            (!user.user_metadata?.role || user.user_metadata.role === '')
-          ) {
-            console.log("New Google user detected, setting up profile with 'tourist' role");
-            setIsSettingUp(true);
+          // Check if this is a new user from Google sign-in (or other OAuth)
+          if (session?.user) {
+            const user = session.user;
 
-            try {
-              // First, update user metadata with tourist role and name info
-              const { error: updateError } = await supabase.auth.updateUser({
-                data: {
-                  role: 'tourist',
-                  first_name: user.user_metadata.full_name?.split(' ')[0] || '',
-                  last_name: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
+            // If we have a Google user who doesn't have a role set
+            if (
+              user.app_metadata.provider === 'google' &&
+              (!user.user_metadata?.role || user.user_metadata.role === '')
+            ) {
+              console.log("New Google user detected, setting up profile with 'tourist' role");
+              setIsSettingUp(true);
+
+              try {
+                // First, update user metadata with tourist role and name info
+                const { error: updateError } = await supabase.auth.updateUser({
+                  data: {
+                    role: 'tourist',
+                    first_name: user.user_metadata.full_name?.split(' ')[0] || '',
+                    last_name: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
+                  }
+                });
+
+                if (updateError) {
+                  console.error("Error updating Google user metadata:", updateError);
+                  throw updateError;
                 }
-              });
 
-              if (updateError) {
-                console.error("Error updating Google user metadata:", updateError);
-                throw updateError;
-              }
-
-              // Create a record in our users table via API route
-              const apiUrl = '/api/auth/register';
-              console.log(`Calling API route ${apiUrl} for new Google user:`, {
-                userId: user.id,
-                email: user.email,
-                firstName: user.user_metadata.full_name?.split(' ')[0] || '',
-                lastName: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
-                role: 'tourist',
-              });
-
-              const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+                // Create a record in our users table via API route
+                const apiUrl = '/api/auth/register';
+                console.log(`Calling API route ${apiUrl} for new Google user:`, {
                   userId: user.id,
                   email: user.email,
                   firstName: user.user_metadata.full_name?.split(' ')[0] || '',
                   lastName: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
                   role: 'tourist',
-                }),
-              });
+                });
 
-              if (!response.ok) {
-                let responseData;
-                try {
-                  responseData = await response.json();
-                } catch (jsonError) {
-                  responseData = { error: 'Invalid JSON response' };
+                const response = await fetch(apiUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    email: user.email,
+                    firstName: user.user_metadata.full_name?.split(' ')[0] || '',
+                    lastName: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
+                    role: 'tourist',
+                  }),
+                });
+
+                if (!response.ok) {
+                  let responseData;
+                  try {
+                    responseData = await response.json();
+                  } catch (jsonError) {
+                    responseData = { error: 'Invalid JSON response' };
+                  }
+
+                  // If the record already exists, this isn't necessarily an error
+                  if (response.status === 409 && responseData.error === 'Duplicate user') {
+                    console.log('User record already exists, continuing...');
+                  } else {
+                    console.error('API register route error for Google user:', {
+                      status: response.status,
+                      statusText: response.statusText,
+                      data: responseData
+                    });
+                    throw new Error(responseData.error || 'Failed to create user record');
+                  }
                 }
 
-                // If the record already exists, this isn't necessarily an error
-                if (response.status === 409 && responseData.error === 'Duplicate user') {
-                  console.log('User record already exists, continuing...');
+                // Refresh the session to get updated metadata
+                const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+                if (refreshError) throw refreshError;
+                if (newSession) {
+                  setSession(newSession);
+                  setUser(newSession.user);
+                }
+
+                // Now redirect to dashboard
+                router.push("/dashboard");
+              } catch (err) {
+                console.error("Error setting up Google user profile:", err);
+                router.push("/error?message=Failed to complete user setup");
+              } finally {
+                setIsSettingUp(false);
+              }
+            } else {
+              // Existing user, just update role but don't redirect
+              const role = user.user_metadata?.role;
+              setIsAdmin(role === 'admin');
+              setIsLoading(false);
+              // Removed automatic redirect here to allow users to browse the homepage
+            }
+
+            // Subscribe to booking notifications if not already subscribed
+            if (!notificationSubscription && session.user.id) {
+              const subscription = subscribeToBookingNotifications(session.user.id);
+              setNotificationSubscription(subscription);
+            }
+
+            // If user is a shop owner, subscribe to shop notifications
+            if (user.user_metadata?.role === 'shop_owner' && !shopNotificationSubscription) {
+              console.log('User is a shop owner (auth change), setting up shop notification subscription');
+              // Get the shop ID for this owner
+              const getShopId = async () => {
+                console.log('Fetching shop ID for owner (auth change):', session.user.id);
+                const { data, error } = await supabase
+                  .from('rental_shops')
+                  .select('id')
+                  .eq('owner_id', session.user.id)
+                  .single();
+
+                if (error) {
+                  console.error('Error fetching shop ID (auth change):', error);
+                }
+
+                if (!error && data) {
+                  console.log('Found shop ID for owner (auth change):', data.id);
+                  const shopSubscription = subscribeToShopOwnerNotifications(data.id);
+                  setShopNotificationSubscription(shopSubscription);
                 } else {
-                  console.error('API register route error for Google user:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    data: responseData
-                  });
-                  throw new Error(responseData.error || 'Failed to create user record');
+                  console.log('No shop found for this owner (auth change)');
                 }
-              }
+              };
 
-              // Refresh the session to get updated metadata
-              const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
-              if (refreshError) throw refreshError;
-              if (newSession) {
-                setSession(newSession);
-                setUser(newSession.user);
-              }
-
-              // Now redirect to dashboard
-              router.push("/dashboard");
-            } catch (err) {
-              console.error("Error setting up Google user profile:", err);
-              router.push("/error?message=Failed to complete user setup");
-            } finally {
-              setIsSettingUp(false);
+              getShopId();
+            } else if (user.user_metadata?.role === 'shop_owner') {
+              console.log('Shop owner already has notification subscription (auth change)');
             }
           } else {
-            // Existing user, just update role but don't redirect
-            const role = user.user_metadata?.role;
-            setIsAdmin(role === 'admin');
+            setIsAdmin(false);
             setIsLoading(false);
-            // Removed automatic redirect here to allow users to browse the homepage
-          }
 
-          // Subscribe to booking notifications if not already subscribed
-          if (!notificationSubscription && session.user.id) {
-            const subscription = subscribeToBookingNotifications(session.user.id);
-            setNotificationSubscription(subscription);
-          }
+            // Unsubscribe from notifications if user is no longer authenticated
+            if (notificationSubscription) {
+              notificationSubscription.unsubscribe();
+              setNotificationSubscription(null);
+            }
 
-          // If user is a shop owner, subscribe to shop notifications
-          if (user.user_metadata?.role === 'shop_owner' && !shopNotificationSubscription) {
-            console.log('User is a shop owner (auth change), setting up shop notification subscription');
-            // Get the shop ID for this owner
-            const getShopId = async () => {
-              console.log('Fetching shop ID for owner (auth change):', session.user.id);
-              const { data, error } = await supabase
-                .from('rental_shops')
-                .select('id')
-                .eq('owner_id', session.user.id)
-                .single();
-
-              if (error) {
-                console.error('Error fetching shop ID (auth change):', error);
-              }
-
-              if (!error && data) {
-                console.log('Found shop ID for owner (auth change):', data.id);
-                const shopSubscription = subscribeToShopOwnerNotifications(data.id);
-                setShopNotificationSubscription(shopSubscription);
-              } else {
-                console.log('No shop found for this owner (auth change)');
-              }
-            };
-
-            getShopId();
-          } else if (user.user_metadata?.role === 'shop_owner') {
-            console.log('Shop owner already has notification subscription (auth change)');
-          }
-        } else {
-          setIsAdmin(false);
-          setIsLoading(false);
-
-          // Unsubscribe from notifications if user is no longer authenticated
-          if (notificationSubscription) {
-            notificationSubscription.unsubscribe();
-            setNotificationSubscription(null);
-          }
-
-          if (shopNotificationSubscription) {
-            shopNotificationSubscription.unsubscribe();
-            setShopNotificationSubscription(null);
+            if (shopNotificationSubscription) {
+              shopNotificationSubscription.unsubscribe();
+              setShopNotificationSubscription(null);
+            }
           }
         }
-      }
-    );
+      );
+      authSubscription = subscription;
+
+    } catch (error) {
+      console.error('Error setting up auth state change handler:', error);
+    }
 
     return () => {
-      subscription.unsubscribe();
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
 
       // Cleanup notification subscriptions on unmount
       if (notificationSubscription) {

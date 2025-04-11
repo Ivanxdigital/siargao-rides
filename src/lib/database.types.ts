@@ -186,6 +186,32 @@ export interface Database {
           payment_status: PaymentStatus
           created_at: string
           updated_at: string
+          payment_method_id?: string
+          delivery_option_id?: string
+          delivery_address?: string
+          payment_reference?: string
+          payment_intent_id?: string
+          payment_amount?: number
+          payment_fee?: number
+          payment_date?: string
+          booking_notes?: string
+          expires_at?: string
+          cancellation_reason?: string
+          cancelled_at?: string
+          cancelled_by?: string
+          confirmation_code?: string
+          deposit_required?: boolean
+          deposit_amount?: number
+          deposit_paid?: boolean
+          deposit_payment_id?: string
+          deposit_processed?: boolean
+          customer_name?: string
+          pickup_time?: string
+          grace_period_minutes?: number
+          auto_cancel_enabled?: boolean
+          auto_cancel_processed?: boolean
+          auto_cancel_scheduled_for?: string
+          shop_owner_override?: boolean
         }
         Insert: {
           id?: string
@@ -200,6 +226,33 @@ export interface Database {
           payment_status?: PaymentStatus
           created_at?: string
           updated_at?: string
+          payment_method_id?: string
+          delivery_option_id?: string
+          delivery_address?: string
+          payment_reference?: string
+          payment_intent_id?: string
+          payment_amount?: number
+          payment_fee?: number
+          payment_date?: string
+          booking_notes?: string
+          expires_at?: string
+          cancellation_reason?: string
+          cancelled_at?: string
+          cancelled_by?: string
+          confirmation_code?: string
+          deposit_required?: boolean
+          deposit_amount?: number
+          deposit_paid?: boolean
+          deposit_payment_id?: string
+          deposit_processed?: boolean
+          customer_name?: string
+          pickup_time?: string
+          grace_period_minutes?: number
+          auto_cancel_enabled?: boolean
+          auto_cancel_processed?: boolean
+          auto_cancel_scheduled_for?: string
+          shop_owner_override?: boolean
+          contact_info?: Json
         }
         Update: {
           id?: string
@@ -214,6 +267,33 @@ export interface Database {
           payment_status?: PaymentStatus
           created_at?: string
           updated_at?: string
+          payment_method_id?: string
+          delivery_option_id?: string
+          delivery_address?: string
+          payment_reference?: string
+          payment_intent_id?: string
+          payment_amount?: number
+          payment_fee?: number
+          payment_date?: string
+          booking_notes?: string
+          expires_at?: string
+          cancellation_reason?: string
+          cancelled_at?: string
+          cancelled_by?: string
+          confirmation_code?: string
+          deposit_required?: boolean
+          deposit_amount?: number
+          deposit_paid?: boolean
+          deposit_payment_id?: string
+          deposit_processed?: boolean
+          customer_name?: string
+          pickup_time?: string
+          grace_period_minutes?: number
+          auto_cancel_enabled?: boolean
+          auto_cancel_processed?: boolean
+          auto_cancel_scheduled_for?: string
+          shop_owner_override?: boolean
+          contact_info?: Json
         }
       }
       reviews: {
@@ -416,4 +496,4 @@ export interface Database {
       [_ in never]: never
     }
   }
-} 
+}

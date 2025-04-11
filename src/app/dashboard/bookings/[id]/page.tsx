@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle, Eye } from "lucide-react";
+import AutoCancellationOverride from "@/components/AutoCancellationOverride";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -80,7 +81,21 @@ export default function BookingDetailsPage() {
             console.log("Checking auth session...");
 
             // Get current session but don't force a refresh every time
-            const { data: sessionData } = await freshSupabase.auth.getSession();
+            let sessionData;
+            try {
+              sessionData = (await freshSupabase.auth.getSession()).data;
+            } catch (tokenError) {
+              console.error('Error getting session:', tokenError);
+
+              // If there's a JWT token error, sign out and redirect to login
+              if (tokenError.message?.includes('Invalid value for JWT claim')) {
+                console.log('Invalid JWT token detected, signing out...');
+                await freshSupabase.auth.signOut();
+                router.push("/sign-in");
+                return;
+              }
+              throw tokenError; // Re-throw other errors
+            }
 
             if (!sessionData.session) {
               console.error("No active session found, redirecting to login");
@@ -94,7 +109,22 @@ export default function BookingDetailsPage() {
 
             if (expiresIn < 300) { // less than 5 minutes left
               console.log("Token expiring soon, refreshing auth session...");
-              const { error: refreshError } = await freshSupabase.auth.refreshSession();
+              let refreshError;
+              try {
+                const refreshResult = await freshSupabase.auth.refreshSession();
+                refreshError = refreshResult.error;
+              } catch (tokenError) {
+                console.error('Error refreshing session:', tokenError);
+
+                // If there's a JWT token error, sign out and redirect to login
+                if (tokenError.message?.includes('Invalid value for JWT claim')) {
+                  console.log('Invalid JWT token detected during refresh, signing out...');
+                  await freshSupabase.auth.signOut();
+                  router.push("/sign-in");
+                  return;
+                }
+                throw tokenError; // Re-throw other errors
+              }
 
               if (refreshError) {
                 if (refreshError.message.includes("rate limit") && retryCount < 2) {
@@ -193,7 +223,7 @@ export default function BookingDetailsPage() {
             // Use simple field selection for more reliability, removing guest fields that don't exist
             bookingResult = await freshSupabase
               .from("rentals")
-              .select("id, start_date, end_date, total_price, status, created_at, vehicle_id, shop_id, user_id, payment_method_id, delivery_option_id, payment_status, deposit_required, deposit_paid, deposit_amount, deposit_processed")
+              .select("id, start_date, end_date, total_price, status, created_at, vehicle_id, shop_id, user_id, payment_method_id, delivery_option_id, payment_status, deposit_required, deposit_paid, deposit_amount, deposit_processed, pickup_time, grace_period_minutes, auto_cancel_enabled, auto_cancel_processed, shop_owner_override, contact_info")
               .eq("id", bookingId)
               .eq("shop_id", shop.id)
               .single();
@@ -633,13 +663,36 @@ export default function BookingDetailsPage() {
           {/* Show temporary cash payment notice */}
           {isTemporaryCashPayment && (
             <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-400">Cash Payment (No Deposit)</h4>
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-400">Cash Payment</h4>
               <p className="text-xs text-blue-700 dark:text-blue-500 mt-1">
                 Customer will pay the full amount of ₱{booking.total_price?.toFixed(2)} in cash when they {booking.delivery_option?.name === 'Self Pickup' ? 'pick up the vehicle' : 'receive the vehicle delivery'}.
               </p>
-              <p className="text-xs text-blue-700 dark:text-blue-500 mt-1">
-                No deposit was required for this booking.
-              </p>
+
+              {/* Show pickup time if available */}
+              {booking.pickup_time && (
+                <p className="text-xs text-blue-700 dark:text-blue-500 mt-1">
+                  Pickup time: {format(new Date(booking.pickup_time), 'h:mm a, EEEE, MMMM d')}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Show auto-cancellation override for temporary cash payments with pickup time */}
+          {isTemporaryCashPayment && booking.pickup_time && booking.status !== 'cancelled' && (
+            <div className="mt-3">
+              <AutoCancellationOverride
+                bookingId={booking.id}
+                pickupTime={booking.pickup_time}
+                gracePeriodMinutes={booking.grace_period_minutes || 30}
+                isOverridden={booking.shop_owner_override}
+                onOverride={() => {
+                  // Update the local state to reflect the override
+                  setBooking({
+                    ...booking,
+                    shop_owner_override: true
+                  });
+                }}
+              />
             </div>
           )}
 
@@ -663,6 +716,9 @@ export default function BookingDetailsPage() {
   };
 
   const renderCustomerInfo = () => {
+    // Check if contact info exists
+    const hasContactInfo = booking.contact_info && booking.contact_info.method && booking.contact_info.number;
+
     return (
       <div className="flex items-start gap-3">
         <User className="w-5 h-5 text-primary mt-0.5" />
@@ -671,6 +727,18 @@ export default function BookingDetailsPage() {
           <p>{customerName}</p>
           <p className="text-sm text-muted-foreground">{customerEmail}</p>
           <p className="text-sm text-muted-foreground">{customerPhone}</p>
+
+          {/* Display contact information if available */}
+          {hasContactInfo && (
+            <div className="mt-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-md">
+              <h4 className="text-sm font-medium text-indigo-800 dark:text-indigo-400">
+                {booking.contact_info.method === 'whatsapp' ? 'WhatsApp' : 'Telegram'} Contact
+              </h4>
+              <p className="text-xs text-indigo-700 dark:text-indigo-500 mt-1">
+                {booking.contact_info.countryCode} {booking.contact_info.number}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );

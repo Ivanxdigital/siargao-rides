@@ -1,9 +1,10 @@
 import { toast } from 'sonner';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
+import { format, addMinutes } from 'date-fns';
 
 // Status types for bookings
-type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'rejected';
+type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'rejected' | 'auto-cancelled';
 
 // Payment status types
 type PaymentStatus = 'pending' | 'paid' | 'failed';
@@ -42,6 +43,11 @@ export const notifyBookingStatusChange = (bookingId: string, vehicleName: string
     cancelled: {
       title: `Booking for ${vehicleName} cancelled`,
       description: 'The booking has been cancelled.',
+      type: 'error' as const
+    },
+    'auto-cancelled': {
+      title: `Booking for ${vehicleName} auto-cancelled`,
+      description: 'The booking was automatically cancelled due to no-show.',
       type: 'error' as const
     },
     completed: {
@@ -170,6 +176,58 @@ export const notifyShopOwnerPayment = (bookingId: string, vehicleName: string, c
 };
 
 /**
+ * Notify about an upcoming pickup
+ */
+export const notifyUpcomingPickup = (bookingId: string, vehicleName: string, pickupTime: Date) => {
+  toast.info(
+    `Upcoming Pickup: ${vehicleName}`,
+    {
+      description: `Reminder: Customer will pick up ${vehicleName} at ${format(pickupTime, 'h:mm a')} today.`,
+      action: {
+        label: 'View',
+        onClick: () => window.location.href = `/dashboard/bookings/${bookingId}`
+      },
+      duration: 10000, // Show for 10 seconds
+    }
+  );
+};
+
+/**
+ * Notify about an auto-cancellation
+ */
+export const notifyAutoCancellation = (bookingId: string, vehicleName: string, pickupTime: Date, gracePeriodMinutes: number = 30) => {
+  const autoCancelTime = addMinutes(pickupTime, gracePeriodMinutes);
+
+  toast.error(
+    `Booking Auto-Cancelled: ${vehicleName}`,
+    {
+      description: `The booking was automatically cancelled because the customer didn't show up by ${format(autoCancelTime, 'h:mm a')}.`,
+      action: {
+        label: 'View',
+        onClick: () => window.location.href = `/dashboard/bookings/${bookingId}`
+      },
+      duration: 10000, // Show for 10 seconds
+    }
+  );
+};
+
+/**
+ * Notify about an auto-cancellation override
+ */
+export const notifyAutoCancellationOverride = (bookingId: string, vehicleName: string) => {
+  toast.success(
+    `Auto-Cancellation Overridden: ${vehicleName}`,
+    {
+      description: `You have successfully overridden the auto-cancellation for this booking.`,
+      action: {
+        label: 'View',
+        onClick: () => window.location.href = `/dashboard/bookings/${bookingId}`
+      },
+    }
+  );
+};
+
+/**
  * Subscribe to shop owner booking notifications
  * This should be called for users with the shop_owner role
  */
@@ -196,6 +254,27 @@ export const subscribeToShopOwnerNotifications = (shopId: string) => {
           newBooking.vehicle_name || 'Vehicle',
           newBooking.customer_name || 'A customer'
         );
+
+        // If this is a temporary cash payment with pickup time, set a reminder
+        if (newBooking.payment_method_id === '5c5e37c7-3f69-4e72-ae03-10cab46f6724' && newBooking.pickup_time) {
+          const pickupTime = new Date(newBooking.pickup_time);
+          const now = new Date();
+          const timeUntilPickup = pickupTime.getTime() - now.getTime();
+
+          // If pickup is in the future, set a reminder for 1 hour before
+          if (timeUntilPickup > 0) {
+            const reminderTime = timeUntilPickup - (60 * 60 * 1000); // 1 hour before pickup
+            if (reminderTime > 0) {
+              setTimeout(() => {
+                notifyUpcomingPickup(
+                  newBooking.id,
+                  newBooking.vehicle_name || 'Vehicle',
+                  pickupTime
+                );
+              }, reminderTime);
+            }
+          }
+        }
       }
     )
     .on(
