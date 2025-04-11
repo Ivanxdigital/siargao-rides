@@ -391,7 +391,7 @@ export default function Home() {
         {/* Hero Content - improved padding and spacing for mobile */}
         <div className="container mx-auto relative z-20 h-full flex flex-col justify-center py-8 pb-16 sm:py-12 sm:pb-24 px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 hero-heading-animate">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-blue-200 to-white animate-gradient-x leading-relaxed drop-shadow-xl filter-shadow-strong tracking-wide">
                 Because Walking in Flip-Flops Only Gets You So Far
               </span>
