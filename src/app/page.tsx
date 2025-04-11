@@ -27,6 +27,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<ShopCardData[] | null>(null)
   const [videoLoaded, setVideoLoaded] = useState(false)
+  const [videoError, setVideoError] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const searchResultsRef = useRef<HTMLDivElement>(null)
@@ -135,11 +136,42 @@ export default function Home() {
     iframe.allowFullscreen = true;
     iframe.setAttribute('playsinline', '1'); // Explicit for iOS
     iframe.setAttribute('webkit-playsinline', '1'); // For older iOS versions
-    iframe.onload = () => setVideoLoaded(true);
+
+    // Handle successful load
+    iframe.onload = () => {
+      setVideoLoaded(true);
+      setVideoError(false);
+    };
+
+    // Handle error
+    iframe.onerror = () => {
+      console.error('YouTube iframe failed to load');
+      setVideoError(true);
+      setVideoLoaded(false);
+    };
+
+    // Additional error handling for YouTube iframe
+    const handleIframeError = () => {
+      console.error('YouTube iframe encountered an error');
+      setVideoError(true);
+      setVideoLoaded(false);
+    };
 
     // Append to container
     videoContainerRef.current.appendChild(iframe);
-  }, [videoId, isMobile]);
+
+    // Set a timeout to check if video loaded successfully
+    const timeoutId = setTimeout(() => {
+      if (!videoLoaded) {
+        console.warn('YouTube video did not load within timeout period');
+        setVideoError(true);
+      }
+    }, 5000); // 5 second timeout
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [videoId, isMobile, videoLoaded]);
 
   const handleSearch = async (params: SearchParams) => {
     console.log("Search params:", params)
@@ -334,11 +366,25 @@ export default function Home() {
           <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-purple-900/10 to-transparent z-10"></div>
         </div>
 
-        {/* YouTube Video Background - Desktop Only */}
+        {/* YouTube Video Background or Fallback Image - Desktop Only */}
         <div className="absolute inset-0 w-full h-full hidden md:block">
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10"></div>
           <div className="relative w-full h-full overflow-hidden">
-            <div ref={videoContainerRef} className="w-full h-full"></div>
+            {videoError ? (
+              /* Fallback Image when video fails to load */
+              <div className="w-full h-full relative">
+                <Image
+                  src="/images/background-GL.jpg"
+                  alt="Siargao Island Background"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            ) : (
+              /* YouTube Video Container */
+              <div ref={videoContainerRef} className="w-full h-full"></div>
+            )}
           </div>
         </div>
 
