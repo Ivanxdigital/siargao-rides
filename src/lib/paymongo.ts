@@ -4,9 +4,21 @@
  */
 
 // PayMongo API keys
-const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY || 'sk_test_V5Q9YKvJ8xkLui4rWCZn7fbL';
-const PAYMONGO_PUBLIC_KEY = process.env.PAYMONGO_PUBLIC_KEY || 'pk_test_XeFkLLimXvWEHfoF4NCQSxtA';
+const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
+const PAYMONGO_PUBLIC_KEY = process.env.PAYMONGO_PUBLIC_KEY;
 const PAYMONGO_API_URL = 'https://api.paymongo.com/v1';
+const PAYMONGO_WEBHOOK_SECRET = process.env.PAYMONGO_WEBHOOK_SECRET;
+
+// Check if API keys are set
+if (!PAYMONGO_SECRET_KEY) {
+  console.error('PAYMONGO_SECRET_KEY environment variable is not set');
+  // Don't throw error to avoid breaking existing functionality
+}
+
+if (!PAYMONGO_PUBLIC_KEY) {
+  console.error('PAYMONGO_PUBLIC_KEY environment variable is not set');
+  // Don't throw error to avoid breaking existing functionality
+}
 
 // Log environment variables (without exposing full secret key)
 console.log('PayMongo Environment Variables Check:');
@@ -56,7 +68,15 @@ export const createPaymentIntent = async (
       },
     };
 
-    console.log('PayMongo request payload:', JSON.stringify(payload));
+    // Log sanitized payload without sensitive data
+    console.log('PayMongo request payload:', {
+      type: 'payment_intent',
+      amount: payload.data.attributes.amount,
+      currency: payload.data.attributes.currency,
+      description: payload.data.attributes.description,
+      // Don't log full metadata
+      metadata: '[REDACTED]'
+    });
 
     const response = await fetch(`${PAYMONGO_API_URL}/payment_intents`, {
       method: 'POST',
@@ -292,4 +312,47 @@ export const convertAmountToCents = (amount: number): number => {
  */
 export const convertAmountFromCents = (amount: number): number => {
   return amount / 100;
+};
+
+/**
+ * Verify PayMongo webhook signature
+ * @param payload Raw request body as string
+ * @param signature PayMongo signature from headers
+ * @param webhookSecret Webhook secret from PayMongo dashboard
+ * @returns Boolean indicating if signature is valid
+ */
+export const verifyWebhookSignature = (
+  payload: string,
+  signature: string | null,
+  webhookSecret: string | undefined
+): boolean => {
+  try {
+    // If signature or webhook secret is missing, verification fails
+    if (!signature || !webhookSecret) {
+      console.error('Missing signature or webhook secret for verification');
+      return false;
+    }
+
+    const crypto = require('crypto');
+
+    // Extract timestamp and signatures from the header
+    const [timestamp, signatures] = signature.split(',');
+    const timestampValue = timestamp.split('=')[1];
+    const signaturesValue = signatures.split('=')[1];
+
+    // Create the signed payload
+    const signedPayload = `${timestampValue}.${payload}`;
+
+    // Create the expected signature using HMAC
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(signedPayload)
+      .digest('hex');
+
+    // Compare the expected signature with the provided one
+    return expectedSignature === signaturesValue;
+  } catch (error) {
+    console.error('Error verifying webhook signature:', error);
+    return false;
+  }
 };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { addDays, format, eachDayOfInterval } from 'date-fns';
+import { verifyWebhookSignature } from '@/lib/paymongo';
 
 // Initialize Supabase client with service role for webhook processing
 // This is necessary because webhooks don't have cookies for auth
@@ -12,13 +13,30 @@ export async function POST(request: NextRequest) {
   try {
     // Get the raw request body
     const rawBody = await request.text();
-    const payload = JSON.parse(rawBody);
 
-    // Verify the webhook signature (in production, you should implement this)
-    // const signature = request.headers.get('paymongo-signature');
-    // if (!verifyWebhookSignature(rawBody, signature)) {
-    //   return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-    // }
+    // Get the signature from headers
+    const signature = request.headers.get('paymongo-signature');
+
+    // Get the webhook secret from environment variables
+    const webhookSecret = process.env.PAYMONGO_WEBHOOK_SECRET;
+
+    // Verify the signature in production
+    if (process.env.NODE_ENV === 'production') {
+      if (!webhookSecret || !signature || !verifyWebhookSignature(rawBody, signature, webhookSecret)) {
+        console.error('Invalid webhook signature');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    } else {
+      // In development, log but don't reject if signature verification fails
+      if (signature && webhookSecret) {
+        const isValid = verifyWebhookSignature(rawBody, signature, webhookSecret);
+        console.log(`Webhook signature verification: ${isValid ? 'Valid' : 'Invalid'} (development mode)`);
+      } else {
+        console.log('Skipping webhook signature verification in development mode');
+      }
+    }
+
+    const payload = JSON.parse(rawBody);
 
     // Process the webhook event
     const event = payload.data;

@@ -6,9 +6,20 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // PayMongo API keys
-const PAYMONGO_SECRET_KEY = process.env.NEXT_PUBLIC_PAYMONGO_SECRET_KEY || 'sk_test_V5Q9YKvJ8xkLui4rWCZn7fbL';
-const PAYMONGO_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY || 'pk_test_XeFkLLimXvWEHfoF4NCQSxtA';
+const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
+const PAYMONGO_PUBLIC_KEY = process.env.PAYMONGO_PUBLIC_KEY;
 const PAYMONGO_API_URL = 'https://api.paymongo.com/v1';
+
+// Check if API keys are set
+if (!PAYMONGO_SECRET_KEY) {
+  console.error('PAYMONGO_SECRET_KEY environment variable is not set');
+  // Don't throw error to avoid breaking existing functionality
+}
+
+if (!PAYMONGO_PUBLIC_KEY) {
+  console.error('PAYMONGO_PUBLIC_KEY environment variable is not set');
+  // Don't throw error to avoid breaking existing functionality
+}
 
 // Helper function to encode API key for Basic Auth
 const encodeApiKey = (apiKey: string): string => {
@@ -18,7 +29,7 @@ const encodeApiKey = (apiKey: string): string => {
 /**
  * Create a PayMongo Source for GCash payment
  * This generates a checkout URL that the user will be redirected to
- * 
+ *
  * @param amount Amount in decimal (e.g., 100.00)
  * @param description Description of the payment
  * @param successUrl URL to redirect after successful payment
@@ -39,10 +50,10 @@ export const createGCashSource = async (
 ) => {
   try {
     console.log('Creating GCash source with amount:', amount);
-    
+
     // Convert amount to cents
     const amountInCents = Math.round(amount * 100);
-    
+
     const payload = {
       data: {
         attributes: {
@@ -61,9 +72,16 @@ export const createGCashSource = async (
         }
       }
     };
-    
-    console.log('PayMongo GCash source request payload:', JSON.stringify(payload));
-    
+
+    // Log sanitized payload without sensitive data
+    console.log('PayMongo GCash source request payload:', {
+      type: 'gcash',
+      amount: payload.data.attributes.amount,
+      currency: payload.data.attributes.currency,
+      // Don't log sensitive fields
+      billing: '[REDACTED]'
+    });
+
     const response = await fetch(`${PAYMONGO_API_URL}/sources`, {
       method: 'POST',
       headers: {
@@ -72,19 +90,19 @@ export const createGCashSource = async (
       },
       body: JSON.stringify(payload)
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       console.error('PayMongo GCash source error:', errorData);
       throw new Error(`PayMongo API Error: ${errorData.errors?.[0]?.detail || 'Unknown error'}`);
     }
-    
+
     const data = await response.json();
     console.log('PayMongo GCash source created:', {
       id: data.data.id,
       checkoutUrl: data.data.attributes.redirect.checkout_url
     });
-    
+
     return data.data;
   } catch (error) {
     console.error('Error creating GCash source:', error);
@@ -95,7 +113,7 @@ export const createGCashSource = async (
 /**
  * Create a PayMongo Payment from a Source
  * This should be called from your webhook handler when you receive a source.chargeable event
- * 
+ *
  * @param sourceId ID of the Source to create a payment from
  * @param amount Amount in decimal (e.g., 100.00)
  * @param description Description of the payment
@@ -108,10 +126,10 @@ export const createPaymentFromSource = async (
 ) => {
   try {
     console.log('Creating payment from source:', sourceId);
-    
+
     // Convert amount to cents
     const amountInCents = Math.round(amount * 100);
-    
+
     const payload = {
       data: {
         attributes: {
@@ -125,7 +143,7 @@ export const createPaymentFromSource = async (
         }
       }
     };
-    
+
     const response = await fetch(`${PAYMONGO_API_URL}/payments`, {
       method: 'POST',
       headers: {
@@ -134,19 +152,19 @@ export const createPaymentFromSource = async (
       },
       body: JSON.stringify(payload)
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       console.error('PayMongo payment error:', errorData);
       throw new Error(`PayMongo API Error: ${errorData.errors?.[0]?.detail || 'Unknown error'}`);
     }
-    
+
     const data = await response.json();
     console.log('PayMongo payment created:', {
       id: data.data.id,
       status: data.data.attributes.status
     });
-    
+
     return data.data;
   } catch (error) {
     console.error('Error creating payment from source:', error);
@@ -156,7 +174,7 @@ export const createPaymentFromSource = async (
 
 /**
  * Retrieve a Source to check its status
- * 
+ *
  * @param sourceId ID of the Source to retrieve
  * @returns Source object
  */
@@ -169,12 +187,12 @@ export const retrieveSource = async (sourceId: string) => {
         'Authorization': `Basic ${encodeApiKey(PAYMONGO_SECRET_KEY)}`
       }
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(`PayMongo API Error: ${errorData.errors?.[0]?.detail || 'Unknown error'}`);
     }
-    
+
     const data = await response.json();
     return data.data;
   } catch (error) {
@@ -185,7 +203,7 @@ export const retrieveSource = async (sourceId: string) => {
 
 /**
  * Store source information in the database
- * 
+ *
  * @param sourceId Source ID from PayMongo
  * @param rentalId Rental ID in your system
  * @param amount Amount of the payment
@@ -200,7 +218,7 @@ export const storeSourceInDatabase = async (
 ) => {
   try {
     const supabase = createClientComponentClient();
-    
+
     const { data, error } = await supabase
       .from('paymongo_sources')
       .insert({
@@ -213,12 +231,12 @@ export const storeSourceInDatabase = async (
       })
       .select()
       .single();
-      
+
     if (error) {
       console.error('Error storing source in database:', error);
       throw error;
     }
-    
+
     return data;
   } catch (error) {
     console.error('Error storing source in database:', error);

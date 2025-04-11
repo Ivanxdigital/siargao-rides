@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createPaymentFromSource } from '@/lib/paymongo-ewallet';
 import { blockDatesForBooking } from '@/lib/bookings';
+import { verifyWebhookSignature } from '@/lib/paymongo';
 
 // Initialize Supabase client with service role for admin operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -11,32 +12,55 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 export async function POST(request: NextRequest) {
   try {
     console.log('GCash webhook received');
-    
+
     // Get the raw request body
     const rawBody = await request.text();
+
+    // Get the signature from headers
+    const signature = request.headers.get('paymongo-signature');
+
+    // Get the webhook secret from environment variables
+    const webhookSecret = process.env.PAYMONGO_WEBHOOK_SECRET;
+
+    // Verify the signature in production
+    if (process.env.NODE_ENV === 'production') {
+      if (!webhookSecret || !signature || !verifyWebhookSignature(rawBody, signature, webhookSecret)) {
+        console.error('Invalid webhook signature');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    } else {
+      // In development, log but don't reject if signature verification fails
+      if (signature && webhookSecret) {
+        const isValid = verifyWebhookSignature(rawBody, signature, webhookSecret);
+        console.log(`Webhook signature verification: ${isValid ? 'Valid' : 'Invalid'} (development mode)`);
+      } else {
+        console.log('Skipping webhook signature verification in development mode');
+      }
+    }
+
     const payload = JSON.parse(rawBody);
-    
+
     console.log('Webhook payload type:', payload.data.attributes.type);
-    
+
     // Check if this is a source.chargeable event
     if (payload.data.attributes.type !== 'source.chargeable') {
       console.log('Not a source.chargeable event, ignoring');
       return NextResponse.json({ received: true });
     }
-    
+
     // Extract source data
     const sourceData = payload.data.attributes.data;
     const sourceId = sourceData.id;
-    
+
     console.log('Processing source.chargeable event for source:', sourceId);
-    
+
     // Get the source from our database
     const { data: sourceRecord, error: sourceError } = await supabase
       .from('paymongo_sources')
       .select('id, rental_id, amount, status')
       .eq('source_id', sourceId)
       .single();
-      
+
     if (sourceError || !sourceRecord) {
       console.error('Source not found in database:', sourceError);
       return NextResponse.json(
@@ -44,16 +68,16 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-    
+
     console.log('Found source record:', sourceRecord);
-    
+
     // Get the rental information
     const { data: rental, error: rentalError } = await supabase
       .from('rentals')
       .select('id, user_id, shop_id, vehicle_id, vehicle_name, total_price, status, payment_status')
       .eq('id', sourceRecord.rental_id)
       .single();
-      
+
     if (rentalError || !rental) {
       console.error('Rental not found:', rentalError);
       return NextResponse.json(
@@ -61,12 +85,12 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-    
+
     console.log('Found rental:', rental.id);
-    
+
     // Check if this is a deposit payment or full payment
     const isDeposit = sourceRecord.amount === 300; // 300 PHP deposit
-    
+
     // Create a payment from the source
     try {
       console.log('Creating payment from source...');
@@ -75,9 +99,9 @@ export async function POST(request: NextRequest) {
         sourceRecord.amount,
         `${isDeposit ? 'Deposit' : 'Full'} payment for Rental #${rental.id}`
       );
-      
+
       console.log('Payment created:', payment.id);
-      
+
       // Store payment in database
       const { data: paymentRecord, error: paymentError } = await supabase
         .from('paymongo_payments')
@@ -91,19 +115,19 @@ export async function POST(request: NextRequest) {
         })
         .select()
         .single();
-        
+
       if (paymentError) {
         console.error('Error storing payment:', paymentError);
       } else {
         console.log('Payment stored:', paymentRecord.id);
       }
-      
+
       // Fetch rental with user information for better notifications
       console.log('Fetching rental with user information for notifications');
       const { data: rentalWithUser, error: rentalUserError } = await supabase
         .from('rentals')
         .select(`
-          id, 
+          id,
           user_id,
           shop_id,
           vehicle_name,
@@ -111,13 +135,13 @@ export async function POST(request: NextRequest) {
         `)
         .eq('id', rental.id)
         .single();
-      
+
       if (rentalUserError) {
         console.error('Error fetching rental with user information:', rentalUserError);
       } else {
         console.log('Found rental with shop_id:', rentalWithUser?.shop_id);
       }
-      
+
       // Create customer name for notifications
       let customerName = 'Customer';
       if (rentalWithUser?.users) {
@@ -127,7 +151,7 @@ export async function POST(request: NextRequest) {
         console.log('Created customer name:', customerName);
       } else {
         console.log('No user information found, using default customer name');
-        
+
         // Fallback: Try to get user information directly
         if (rentalWithUser?.user_id) {
           console.log('Trying to get user information directly');
@@ -136,7 +160,7 @@ export async function POST(request: NextRequest) {
             .select('first_name, last_name')
             .eq('id', rentalWithUser.user_id)
             .single();
-            
+
           if (!userError && userData) {
             const firstName = userData.first_name || '';
             const lastName = userData.last_name || '';
@@ -147,7 +171,7 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-      
+
       // Update the source status
       await supabase
         .from('paymongo_sources')
@@ -155,7 +179,7 @@ export async function POST(request: NextRequest) {
           status: 'chargeable'
         })
         .eq('source_id', sourceId);
-      
+
       // Update rental based on payment type
       if (isDeposit) {
         console.log('Processing deposit payment for rental:', rental.id);
@@ -168,13 +192,13 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString()
           })
           .eq('id', rental.id);
-        
+
         if (updateError) {
           console.error('Error updating rental for deposit payment:', updateError);
         } else {
           console.log('Deposit payment marked as paid for rental:', rental.id);
         }
-        
+
         // Block dates for the booking since deposit is paid
         await blockDatesForBooking(rental.id);
       } else {
@@ -189,21 +213,21 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString()
           })
           .eq('id', rental.id);
-        
+
         if (updateError) {
           console.error('Error updating rental for full payment:', updateError);
         } else {
           console.log('Full payment marked as paid for rental:', rental.id);
         }
-        
+
         // Block dates for the booking since payment is complete
         await blockDatesForBooking(rental.id);
       }
-      
+
       return NextResponse.json({ success: true });
     } catch (paymentError: any) {
       console.error('Error creating payment from source:', paymentError);
-      
+
       // Update the source status to failed
       await supabase
         .from('paymongo_sources')
@@ -211,7 +235,7 @@ export async function POST(request: NextRequest) {
           status: 'failed'
         })
         .eq('source_id', sourceId);
-      
+
       return NextResponse.json(
         { error: 'Failed to create payment', details: paymentError.message },
         { status: 500 }

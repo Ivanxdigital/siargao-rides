@@ -35,10 +35,36 @@ export async function POST(request: NextRequest) {
     console.log('Request data:', { rentalId, amount, description });
 
     // Validate input
-    if (!rentalId || !amount) {
-      console.log('Missing required fields');
+    if (!rentalId) {
+      console.log('Missing required field: rentalId');
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required field: rentalId' },
+        { status: 400 }
+      );
+    }
+
+    if (!amount) {
+      console.log('Missing required field: amount');
+      return NextResponse.json(
+        { error: 'Missing required field: amount' },
+        { status: 400 }
+      );
+    }
+
+    // Type validation
+    if (typeof amount !== 'number' || amount <= 0) {
+      console.log('Invalid amount:', amount);
+      return NextResponse.json(
+        { error: 'Amount must be a positive number' },
+        { status: 400 }
+      );
+    }
+
+    // Validate rental ID format (UUID)
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rentalId)) {
+      console.log('Invalid rental ID format:', rentalId);
+      return NextResponse.json(
+        { error: 'Invalid rental ID format' },
         { status: 400 }
       );
     }
@@ -163,8 +189,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error in create-intent API:', error);
+
+    // Don't expose internal error details in production
+    const message = process.env.NODE_ENV === 'production'
+      ? 'An error occurred processing your payment'
+      : error.message;
+
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: message },
       { status: 500 }
     );
   }
