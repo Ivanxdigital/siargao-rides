@@ -72,35 +72,35 @@ export default function AnalyticsPage() {
 
     try {
       const supabase = createClientComponentClient();
-      
+
       // Get the user's shop ID
       const { data: shops, error: shopError } = await supabase
         .from("rental_shops")
         .select("id")
         .eq("owner_id", user!.id)
         .single();
-      
+
       if (shopError) {
         console.error("Error fetching shop:", shopError);
         setError("Could not find your shop. Please ensure you have completed registration.");
         setIsLoading(false);
         return;
       }
-      
+
       const shopId = shops.id;
-      
+
       // Calculate date ranges based on selected time frame
       const now = new Date();
       let startDate: string | null = null;
       let prevPeriodStartDate: string | null = null;
       let prevPeriodEndDate: string | null = null;
-      
+
       if (timeFrame === "30days") {
         // Last 30 days
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(now.getDate() - 30);
         startDate = thirtyDaysAgo.toISOString();
-        
+
         // Previous 30 days before that for comparison
         const sixtyDaysAgo = new Date();
         sixtyDaysAgo.setDate(now.getDate() - 60);
@@ -111,56 +111,57 @@ export default function AnalyticsPage() {
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(now.getMonth() - 6);
         startDate = sixMonthsAgo.toISOString();
-        
+
         // Previous 6 months for comparison
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(now.getMonth() - 12);
         prevPeriodStartDate = twelveMonthsAgo.toISOString();
         prevPeriodEndDate = startDate;
       }
-      
+
       // 1. Fetch current period bookings
       let bookingsQuery = supabase
         .from("rentals")
-        .select("id, user_id, start_date, end_date, total_price, bikes(id, name)")
+        .select("id, user_id, start_date, end_date, total_price, payment_status, bikes(id, name)")
         .eq("shop_id", shopId);
-      
+
       if (startDate) {
         bookingsQuery = bookingsQuery.gte("created_at", startDate);
       }
-      
+
       const { data: bookings, error: bookingsError } = await bookingsQuery;
-      
+
       if (bookingsError) {
         console.error("Error fetching bookings:", bookingsError);
         setError("Failed to load analytics data. Please try again later.");
         setIsLoading(false);
         return;
       }
-      
+
       // 2. Fetch previous period bookings for comparison
       let prevBookingsData: any[] = [];
-      
+
       if (prevPeriodStartDate && prevPeriodEndDate) {
         const { data: prevBookings } = await supabase
           .from("rentals")
-          .select("id, user_id, total_price")
+          .select("id, user_id, total_price, payment_status")
           .eq("shop_id", shopId)
           .gte("created_at", prevPeriodStartDate)
           .lt("created_at", prevPeriodEndDate);
-          
+
         prevBookingsData = prevBookings || [];
       }
-      
+
       // Calculate total bookings
       const totalBookings = bookings?.length || 0;
-      
-      // Calculate total revenue
-      const totalRevenue = bookings?.reduce((sum, booking) => sum + (booking.total_price || 0), 0) || 0;
-      
+
+      // Calculate total revenue (only from paid bookings)
+      const totalRevenue = bookings?.filter(booking => booking.payment_status === 'paid')
+        .reduce((sum, booking) => sum + (booking.total_price || 0), 0) || 0;
+
       // Calculate unique customers
       const uniqueCustomers = new Set(bookings?.map(booking => booking.user_id)).size;
-      
+
       // Calculate repeat customers (users with more than one booking)
       const userBookingCounts: {[key: string]: number} = {};
       bookings?.forEach(booking => {
@@ -169,25 +170,25 @@ export default function AnalyticsPage() {
         }
       });
       const repeatCustomers = Object.values(userBookingCounts).filter(count => count > 1).length;
-      
+
       // Calculate booking rate (simplistic approach)
       // Assuming each bike is available every day, calculate what percentage of possible booking days were used
       const totalAvailableBikeDays = await calculateAvailableBikeDays(supabase, shopId, startDate);
       const totalBookedDays = calculateTotalBookedDays(bookings || []);
-      const bookingRate = totalAvailableBikeDays > 0 
-        ? Math.round((totalBookedDays / totalAvailableBikeDays) * 100) 
+      const bookingRate = totalAvailableBikeDays > 0
+        ? Math.round((totalBookedDays / totalAvailableBikeDays) * 100)
         : 0;
-      
+
       // Calculate popular bikes
       const bikeStats: {[key: string]: {id: string, name: string, bookings: number, revenue: number}} = {};
-      
+
       bookings?.forEach(booking => {
         if (booking.bikes) {
           // Fix type issue by ensuring proper access to bike properties
           const bikeData = booking.bikes as any;
           const bikeId = bikeData.id;
           const bikeName = bikeData.name;
-          
+
           if (!bikeStats[bikeId]) {
             bikeStats[bikeId] = {
               id: bikeId,
@@ -196,24 +197,26 @@ export default function AnalyticsPage() {
               revenue: 0
             };
           }
-          
+
           bikeStats[bikeId].bookings += 1;
           bikeStats[bikeId].revenue += booking.total_price || 0;
         }
       });
-      
+
       const popularBikes = Object.values(bikeStats)
         .sort((a, b) => b.bookings - a.bookings)
         .slice(0, 3);
-      
+
       // Calculate monthly bookings
       const monthlyBookings = generateMonthlyBookingsData(bookings || [], timeFrame);
-      
+
       // Calculate percentage changes from previous period
       const prevTotalBookings = prevBookingsData.length;
-      const prevTotalRevenue = prevBookingsData.reduce((sum, booking) => sum + (booking.total_price || 0), 0);
+      const prevTotalRevenue = prevBookingsData
+        .filter(booking => booking.payment_status === 'paid')
+        .reduce((sum, booking) => sum + (booking.total_price || 0), 0);
       const prevUniqueCustomers = new Set(prevBookingsData.map(booking => booking.user_id)).size;
-      
+
       // Calculate repeat customers for previous period
       const prevUserBookingCounts: {[key: string]: number} = {};
       prevBookingsData.forEach(booking => {
@@ -222,22 +225,22 @@ export default function AnalyticsPage() {
         }
       });
       const prevRepeatCustomers = Object.values(prevUserBookingCounts).filter(count => count > 1).length;
-      
+
       // Calculate percentage changes
-      const bookingsPercentChange = prevTotalBookings > 0 
-        ? Math.round(((totalBookings - prevTotalBookings) / prevTotalBookings) * 100) 
+      const bookingsPercentChange = prevTotalBookings > 0
+        ? Math.round(((totalBookings - prevTotalBookings) / prevTotalBookings) * 100)
         : 0;
-      
-      const revenuePercentChange = prevTotalRevenue > 0 
-        ? Math.round(((totalRevenue - prevTotalRevenue) / prevTotalRevenue) * 100) 
+
+      const revenuePercentChange = prevTotalRevenue > 0
+        ? Math.round(((totalRevenue - prevTotalRevenue) / prevTotalRevenue) * 100)
         : 0;
-      
-      const customersPercentChange = prevUniqueCustomers > 0 
-        ? Math.round(((uniqueCustomers - prevUniqueCustomers) / prevUniqueCustomers) * 100) 
+
+      const customersPercentChange = prevUniqueCustomers > 0
+        ? Math.round(((uniqueCustomers - prevUniqueCustomers) / prevUniqueCustomers) * 100)
         : 0;
-      
+
       const repeatCustomersChange = repeatCustomers - prevRepeatCustomers;
-      
+
       // Update state with analytics data
       setAnalytics({
         totalBookings,
@@ -248,14 +251,14 @@ export default function AnalyticsPage() {
         popularBikes,
         monthlyBookings,
       });
-      
+
       setPrevPeriodData({
         bookingsPercentChange,
         revenuePercentChange,
         customersPercentChange,
         repeatCustomersChange,
       });
-      
+
     } catch (err) {
       console.error("Error in fetchAnalyticsData:", err);
       setError("Failed to load analytics data. Please try again later.");
@@ -272,23 +275,23 @@ export default function AnalyticsPage() {
         .from("bikes")
         .select("id, created_at")
         .eq("shop_id", shopId);
-      
+
       if (!bikes || bikes.length === 0) return 0;
-      
+
       const now = new Date();
       let totalDays = 0;
-      
+
       bikes.forEach((bike: any) => {
         // Use either the startDate for filtering or the bike creation date, whichever is later
-        const bikeStartDate = startDate ? 
-          new Date(Math.max(new Date(startDate).getTime(), new Date(bike.created_at).getTime())) : 
+        const bikeStartDate = startDate ?
+          new Date(Math.max(new Date(startDate).getTime(), new Date(bike.created_at).getTime())) :
           new Date(bike.created_at);
-        
+
         // Calculate days between bikeStartDate and now
         const dayDiff = Math.floor((now.getTime() - bikeStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         totalDays += Math.max(0, dayDiff);
       });
-      
+
       return totalDays;
     } catch (error) {
       console.error("Error calculating available bike days:", error);
@@ -312,41 +315,41 @@ export default function AnalyticsPage() {
   // Helper function to generate monthly bookings data
   const generateMonthlyBookingsData = (bookings: any[], timeFrame: string): MonthlyBooking[] => {
     // Get the number of months to show based on timeFrame
-    const monthsToShow = timeFrame === "30days" ? 6 : 
-                          timeFrame === "6months" ? 6 : 
+    const monthsToShow = timeFrame === "30days" ? 6 :
+                          timeFrame === "6months" ? 6 :
                           12;
-    
+
     // Create an array of the last N months
     const monthsData: MonthlyBooking[] = [];
     const now = new Date();
-    
+
     for (let i = monthsToShow - 1; i >= 0; i--) {
       const monthDate = new Date();
       // Set date to first day of month to avoid any day-related issues
       monthDate.setDate(1);
       monthDate.setMonth(now.getMonth() - i);
-      
+
       const monthKey = monthDate.toLocaleString('default', { month: 'short' });
       const monthYear = monthDate.getFullYear();
       const month = monthDate.getMonth();
-      
+
       // Use month/year for display but index position as the unique identifier
       const uniqueKey = `month-${i}`;
       const displayMonth = monthKey;
-      
+
       // Count bookings for this month
       const monthBookings = bookings.filter(booking => {
         const bookingDate = new Date(booking.created_at);
         return bookingDate.getMonth() === month && bookingDate.getFullYear() === monthYear;
       }).length;
-      
+
       monthsData.push({
         month: uniqueKey, // Use position-based key for uniqueness
         bookings: monthBookings,
         displayMonth: displayMonth // Add display month for rendering
       });
     }
-    
+
     return monthsData;
   };
 
@@ -427,8 +430,8 @@ export default function AnalyticsPage() {
               ) : (
                 <TrendingUp size={14} className="mr-1 transform rotate-180" />
               )}
-              {prevPeriodData.bookingsPercentChange === 0 && analytics.totalBookings === 0 
-                ? "No bookings in this period" 
+              {prevPeriodData.bookingsPercentChange === 0 && analytics.totalBookings === 0
+                ? "No bookings in this period"
                 : `${prevPeriodData.bookingsPercentChange >= 0 ? '+' : ''}${prevPeriodData.bookingsPercentChange}% from previous period`
               }
             </span>
@@ -452,8 +455,8 @@ export default function AnalyticsPage() {
               ) : (
                 <TrendingUp size={14} className="mr-1 transform rotate-180" />
               )}
-              {prevPeriodData.revenuePercentChange === 0 && analytics.totalRevenue === 0 
-                ? "No revenue in this period" 
+              {prevPeriodData.revenuePercentChange === 0 && analytics.totalRevenue === 0
+                ? "No revenue in this period"
                 : `${prevPeriodData.revenuePercentChange >= 0 ? '+' : ''}${prevPeriodData.revenuePercentChange}% from previous period`
               }
             </span>
@@ -477,8 +480,8 @@ export default function AnalyticsPage() {
               ) : (
                 <TrendingUp size={14} className="mr-1 transform rotate-180" />
               )}
-              {prevPeriodData.customersPercentChange === 0 && analytics.uniqueCustomers === 0 
-                ? "No customers in this period" 
+              {prevPeriodData.customersPercentChange === 0 && analytics.uniqueCustomers === 0
+                ? "No customers in this period"
                 : `${prevPeriodData.customersPercentChange >= 0 ? '+' : ''}${prevPeriodData.customersPercentChange}% from previous period`
               }
             </span>
@@ -502,8 +505,8 @@ export default function AnalyticsPage() {
               ) : (
                 <TrendingUp size={14} className="mr-1 transform rotate-180" />
               )}
-              {prevPeriodData.repeatCustomersChange === 0 && analytics.repeatCustomers === 0 
-                ? "No repeat customers" 
+              {prevPeriodData.repeatCustomersChange === 0 && analytics.repeatCustomers === 0
+                ? "No repeat customers"
                 : `${prevPeriodData.repeatCustomersChange >= 0 ? '+' : ''}${prevPeriodData.repeatCustomersChange} from previous period`
               }
             </span>
@@ -519,9 +522,9 @@ export default function AnalyticsPage() {
             <div className="h-64 w-full flex items-end justify-between">
               {analytics.monthlyBookings.map((item) => (
                 <div key={item.month} className="flex flex-col items-center">
-                  <div 
+                  <div
                     className="w-12 bg-primary rounded-t transition-all duration-300 hover:bg-primary/80"
-                    style={{ 
+                    style={{
                       height: `${(item.bookings / maxBookings) * 180}px`,
                       minHeight: item.bookings > 0 ? '20px' : '4px'
                     }}
@@ -554,10 +557,10 @@ export default function AnalyticsPage() {
                       <span>₱{bike.revenue.toLocaleString()}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-1 mt-2">
-                      <div 
-                        className="bg-primary h-1 rounded-full" 
-                        style={{ 
-                          width: `${(bike.bookings / (analytics.popularBikes[0]?.bookings || 1)) * 100}%` 
+                      <div
+                        className="bg-primary h-1 rounded-full"
+                        style={{
+                          width: `${(bike.bookings / (analytics.popularBikes[0]?.bookings || 1)) * 100}%`
                         }}
                       ></div>
                     </div>
@@ -578,7 +581,7 @@ export default function AnalyticsPage() {
         <h3 className="text-lg font-semibold mb-4">Booking Rate</h3>
         <div className="flex items-center mb-4">
           <div className="w-full bg-muted rounded-full h-4">
-            <div 
+            <div
               className="bg-primary h-4 rounded-full text-xs flex items-center justify-center text-white"
               style={{ width: `${analytics.bookingRate}%` }}
             >
@@ -587,7 +590,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          {analytics.bookingRate > 0 
+          {analytics.bookingRate > 0
             ? `Your bikes were booked ${analytics.bookingRate}% of available days this period.`
             : "No booking data available for calculating the booking rate in this period."
           }
@@ -638,7 +641,7 @@ export default function AnalyticsPage() {
                 </svg>
               </div>
               <p className="text-sm">
-                {analytics.bookingRate < 50 
+                {analytics.bookingRate < 50
                   ? "Consider adjusting your pricing to increase your booking rate."
                   : "Your booking rate is good. Consider adding more bikes to your fleet to increase revenue."
                 }
@@ -673,4 +676,4 @@ export default function AnalyticsPage() {
       </div>
     </div>
   );
-} 
+}

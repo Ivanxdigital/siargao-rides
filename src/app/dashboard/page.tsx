@@ -259,20 +259,22 @@ export default function DashboardPage() {
 
       console.log("Active bookings data:", activeBookings); // Debug log
 
-      // 4. Calculate revenue (from completed bookings)
-      const { data: completedBookings, error: revenueError } = await supabase
+      // 4. Calculate revenue (from paid bookings)
+      const { data: paidBookings, error: revenueError } = await supabase
         .from("rentals")
         .select("total_price")
         .eq("shop_id", shopId)
-        .eq("status", "completed");
+        .eq("payment_status", "paid");
 
       if (revenueError) {
         console.error("Error fetching revenue data:", revenueError);
         return;
       }
 
-      const totalRevenue = completedBookings?.reduce((sum: number, booking: { total_price?: number }) =>
+      const totalRevenue = paidBookings?.reduce((sum: number, booking: { total_price?: number }) =>
         sum + (booking.total_price || 0), 0) || 0;
+
+      console.log("Paid bookings:", paidBookings); // Debug log for paid bookings
 
       // 5. Get recent bookings for the shop - using a simpler approach without joins
       try {

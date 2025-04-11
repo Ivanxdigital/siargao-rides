@@ -617,6 +617,7 @@ export default function BookingDetailsPage() {
 
   const renderPaymentDetails = () => {
     const isCashPayment = booking.payment_method_id === '0bea770f-c0c2-4510-a22f-e42fc122eb9c';
+    const isTemporaryCashPayment = booking.payment_method_id === '5c5e37c7-3f69-4e72-ae03-10cab46f6724';
     const hasDepositPaid = booking.deposit_required && booking.deposit_paid;
 
     return (
@@ -629,7 +630,20 @@ export default function BookingDetailsPage() {
             Status: {booking.payment_status || "Not paid"}
           </p>
 
-          {/* Show deposit information for cash payments */}
+          {/* Show temporary cash payment notice */}
+          {isTemporaryCashPayment && (
+            <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-400">Cash Payment (No Deposit)</h4>
+              <p className="text-xs text-blue-700 dark:text-blue-500 mt-1">
+                Customer will pay the full amount of ₱{booking.total_price?.toFixed(2)} in cash when they {booking.delivery_option?.name === 'Self Pickup' ? 'pick up the vehicle' : 'receive the vehicle delivery'}.
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-500 mt-1">
+                No deposit was required for this booking.
+              </p>
+            </div>
+          )}
+
+          {/* Show deposit information for regular cash payments */}
           {isCashPayment && hasDepositPaid && (
             <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
               <h4 className="text-sm font-medium text-green-800 dark:text-green-400">Deposit Paid</h4>

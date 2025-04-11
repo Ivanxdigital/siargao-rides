@@ -49,6 +49,11 @@ export default function BookingForm({
   const [deliveryOptions, setDeliveryOptions] = useState<any[]>([]);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [systemSettings, setSystemSettings] = useState<any>({
+    enable_temporary_cash_payment: false,
+    require_deposit: true
+  });
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const router = useRouter();
 
   // Deposit amount constant
@@ -56,6 +61,30 @@ export default function BookingForm({
 
   // Use either vehicle or bike depending on which is provided
   const rentalVehicle = vehicle || bike;
+
+  // Fetch system settings when component mounts
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        setIsLoadingSettings(true);
+        const response = await fetch('/api/settings/payment');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch payment settings');
+        }
+
+        const data = await response.json();
+        setSystemSettings(data.settings);
+      } catch (error) {
+        console.error('Error fetching payment settings:', error);
+        // Fall back to default settings if there's an error
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+
+    fetchSystemSettings();
+  }, []);
 
   // Check availability for pre-filled dates when component mounts
   useEffect(() => {
@@ -275,7 +304,6 @@ export default function BookingForm({
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         total_price: totalPrice,
-        payment_method_id: paymentMethod === 'cash' ? '0bea770f-c0c2-4510-a22f-e42fc122eb9c' : 'c1cc5137-46dd-48c2-b91a-831d0a822c16', // Use the appropriate ID based on selection
         delivery_option_id: deliveryOption,
         status: "pending", // Initial status
         payment_status: "pending", // Initial payment status
@@ -283,10 +311,27 @@ export default function BookingForm({
         confirmation_code: confirmationCode,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(), // Add updated_at field
-        // Add deposit fields for cash payments
-        deposit_required: paymentMethod === 'cash',
-        deposit_amount: paymentMethod === 'cash' ? DEPOSIT_AMOUNT : 0,
-        deposit_paid: false
+      };
+
+      // Set payment method ID based on selection
+      if (paymentMethod === 'cash') {
+        // Regular cash payment with deposit
+        bookingData.payment_method_id = '0bea770f-c0c2-4510-a22f-e42fc122eb9c';
+        bookingData.deposit_required = true;
+        bookingData.deposit_amount = DEPOSIT_AMOUNT;
+        bookingData.deposit_paid = false;
+      } else if (paymentMethod === 'temp_cash') {
+        // Temporary cash payment (no deposit)
+        bookingData.payment_method_id = '5c5e37c7-3f69-4e72-ae03-10cab46f6724'; // ID of the temporary cash payment method
+        bookingData.deposit_required = false;
+        bookingData.deposit_amount = 0;
+        bookingData.deposit_paid = true; // Mark as paid since no deposit is required
+      } else {
+        // PayMongo payment
+        bookingData.payment_method_id = 'c1cc5137-46dd-48c2-b91a-831d0a822c16';
+        bookingData.deposit_required = false;
+        bookingData.deposit_amount = 0;
+        bookingData.deposit_paid = false;
       };
 
       // Add the right ID field based on whether we're using vehicle or bike
@@ -319,6 +364,9 @@ export default function BookingForm({
       } else if (paymentMethod === 'cash') {
         // Navigate to the deposit payment page for cash payments
         router.push(`/booking/deposit-payment/${booking.id}`);
+      } else if (paymentMethod === 'temp_cash') {
+        // Navigate directly to the confirmation page for temporary cash payments (no deposit)
+        router.push(`/booking/confirmation/${booking.id}?payment_method=temp_cash`);
       } else {
         // Navigate to the confirmation page for other payment methods
         router.push(`/booking/confirmation/${booking.id}`);
@@ -520,7 +568,35 @@ export default function BookingForm({
       <div>
         <h3 className="text-lg font-medium mb-2">Payment Method</h3>
         <div className="space-y-2">
-          {/* Cash option (merged Cash on Delivery and Cash on Pickup) */}
+          {/* Temporary Cash Payment (no deposit) - only shown when enabled in settings */}
+          {systemSettings.enable_temporary_cash_payment && (
+            <label
+              className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
+                paymentMethod === 'temp_cash'
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-white/10'
+              }`}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="temp_cash"
+                checked={paymentMethod === 'temp_cash'}
+                onChange={() => setPaymentMethod('temp_cash')}
+                className="mt-1"
+              />
+              <div>
+                <div className="font-medium">Cash Payment (No Deposit)</div>
+                <div className="text-sm text-white/70">Pay the full amount with cash when picking up or when the vehicle is delivered</div>
+                <div className="mt-2 p-2 bg-green-900/30 border border-green-500/30 rounded-md text-xs text-white/80">
+                  <p className="font-medium text-green-400 mb-1">No Deposit Required</p>
+                  <p>Pay the full amount in cash directly to the shop when you pick up or receive your vehicle.</p>
+                </div>
+              </div>
+            </label>
+          )}
+
+          {/* Regular Cash option with deposit */}
           <label
             className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
               paymentMethod === 'cash'
@@ -537,7 +613,7 @@ export default function BookingForm({
               className="mt-1"
             />
             <div>
-              <div className="font-medium">Cash Payment</div>
+              <div className="font-medium">Cash Payment with Deposit</div>
               <div className="text-sm text-white/70">Pay with cash when picking up or when the vehicle is delivered</div>
               <div className="mt-2 p-2 bg-blue-900/30 border border-blue-500/30 rounded-md text-xs text-white/80">
                 <p className="font-medium text-blue-400 mb-1">₱300 Deposit Required</p>

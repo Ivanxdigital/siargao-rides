@@ -77,6 +77,18 @@ export default function BookingConfirmationPage() {
   const [existingReview, setExistingReview] = useState<any>(null);
   const supabase = createClientComponentClient();
 
+  // Check if this is a temporary cash payment from URL query parameter
+  const [isTemporaryCashPayment, setIsTemporaryCashPayment] = useState(false);
+
+  useEffect(() => {
+    // Check URL for temporary cash payment parameter
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentMethod = urlParams.get('payment_method');
+      setIsTemporaryCashPayment(paymentMethod === 'temp_cash');
+    }
+  }, []);
+
   useEffect(() => {
     const fetchBookingDetails = async () => {
       if (!bookingId) {
@@ -684,6 +696,25 @@ export default function BookingConfirmationPage() {
               })}
             </div>
           </motion.div>
+
+          {/* Temporary Cash Payment Notice */}
+          {isTemporaryCashPayment && (
+            <motion.div
+              className="mb-8 bg-green-900/30 border border-green-500/30 rounded-lg p-4 flex items-start"
+              variants={itemVariants}
+            >
+              <CheckCircle className="text-green-500 w-5 h-5 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-green-400 mb-1">Cash Payment at {booking?.deliveryOption?.name === 'Self Pickup' ? 'Pickup' : 'Delivery'}</h3>
+                <p className="text-white/80">
+                  Your booking has been confirmed! Please pay the full amount of ₱{booking?.total_price?.toFixed(2)} in cash when you {booking?.deliveryOption?.name === 'Self Pickup' ? 'pick up your vehicle' : 'receive your vehicle delivery'}.
+                </p>
+                <p className="mt-2 text-white/70 text-sm">
+                  No deposit is required for this booking. The shop owner has been notified of your reservation.
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           {/* Vehicle Details */}
           <motion.div
