@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { Car, Users, Store } from "lucide-react";
+import { Car, Users, Store, Settings } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
