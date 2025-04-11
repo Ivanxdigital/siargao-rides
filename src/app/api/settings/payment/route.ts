@@ -9,19 +9,12 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// GET /api/settings/payment - Get payment settings
+// GET /api/settings/payment - Get payment settings (public access allowed)
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-
-    // Get current session to check authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Fetch payment settings from system_settings table
-    const { data, error } = await supabase
+    // Use admin client to bypass authentication for public access to payment settings
+    // This allows unauthenticated users to see which payment methods are available
+    const { data, error } = await supabaseAdmin
       .from('system_settings')
       .select('*')
       .eq('key', 'payment_settings')
@@ -38,10 +31,16 @@ export async function GET() {
     return NextResponse.json({ settings: data.value });
   } catch (error: any) {
     console.error('Error in GET /api/settings/payment:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    // Return default settings as fallback in case of error
+    return NextResponse.json({
+      settings: {
+        enable_temporary_cash_payment: false,
+        enable_cash_with_deposit: true,
+        require_deposit: true,
+        enable_paymongo_card: true,
+        enable_paymongo_gcash: true
+      }
+    });
   }
 }
 
