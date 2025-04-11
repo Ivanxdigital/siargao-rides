@@ -51,7 +51,9 @@ export default function BookingForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [systemSettings, setSystemSettings] = useState<any>({
     enable_temporary_cash_payment: false,
-    require_deposit: true
+    require_deposit: true,
+    enable_paymongo_card: true,
+    enable_paymongo_gcash: true
   });
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const router = useRouter();
@@ -326,9 +328,19 @@ export default function BookingForm({
         bookingData.deposit_required = false;
         bookingData.deposit_amount = 0;
         bookingData.deposit_paid = true; // Mark as paid since no deposit is required
-      } else {
-        // PayMongo payment
+      } else if (paymentMethod === 'paymongo_card') {
+        // PayMongo Card payment
         bookingData.payment_method_id = 'c1cc5137-46dd-48c2-b91a-831d0a822c16';
+        bookingData.payment_provider = 'paymongo';
+        bookingData.payment_type = 'card';
+        bookingData.deposit_required = false;
+        bookingData.deposit_amount = 0;
+        bookingData.deposit_paid = false;
+      } else if (paymentMethod === 'paymongo_gcash') {
+        // PayMongo GCash payment
+        bookingData.payment_method_id = 'd2e25a8b-7e2d-4e5f-8f3c-9b7a8b6c9d0e'; // Use a different ID for GCash
+        bookingData.payment_provider = 'paymongo';
+        bookingData.payment_type = 'gcash';
         bookingData.deposit_required = false;
         bookingData.deposit_amount = 0;
         bookingData.deposit_paid = false;
@@ -358,9 +370,9 @@ export default function BookingForm({
       console.log("Booking created:", booking);
 
       // Handle different payment methods
-      if (paymentMethod === 'paymongo') {
-        // Navigate to the payment page for full online payment
-        router.push(`/booking/payment/${booking.id}`);
+      if (paymentMethod === 'paymongo_card' || paymentMethod === 'paymongo_gcash') {
+        // Navigate to the payment page for online payment
+        router.push(`/booking/payment/${booking.id}?payment_type=${paymentMethod === 'paymongo_card' ? 'card' : 'gcash'}`);
       } else if (paymentMethod === 'cash') {
         // Navigate to the deposit payment page for cash payments
         router.push(`/booking/deposit-payment/${booking.id}`);
@@ -623,27 +635,53 @@ export default function BookingForm({
             </div>
           </label>
 
-          {/* PayMongo option */}
-          <label
-            className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
-              paymentMethod === 'paymongo'
-                ? 'border-primary/50 bg-primary/5'
-                : 'border-white/10'
-            }`}
-          >
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="paymongo"
-              checked={paymentMethod === 'paymongo'}
-              onChange={() => setPaymentMethod('paymongo')}
-              className="mt-1"
-            />
-            <div>
-              <div className="font-medium">Online Payment</div>
-              <div className="text-sm text-white/70">Pay online with credit/debit card, GCash, or other e-wallets</div>
-            </div>
-          </label>
+          {/* PayMongo Card option */}
+          {systemSettings.enable_paymongo_card && (
+            <label
+              className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
+                paymentMethod === 'paymongo_card'
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-white/10'
+              }`}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="paymongo_card"
+                checked={paymentMethod === 'paymongo_card'}
+                onChange={() => setPaymentMethod('paymongo_card')}
+                className="mt-1"
+              />
+              <div>
+                <div className="font-medium">Card Payment</div>
+                <div className="text-sm text-white/70">Pay online with credit/debit card through PayMongo</div>
+              </div>
+            </label>
+          )}
+
+          {/* PayMongo GCash option */}
+          {systemSettings.enable_paymongo_gcash && (
+            <label
+              className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
+                paymentMethod === 'paymongo_gcash'
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-white/10'
+              }`}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="paymongo_gcash"
+                checked={paymentMethod === 'paymongo_gcash'}
+                onChange={() => setPaymentMethod('paymongo_gcash')}
+                className="mt-1"
+              />
+              <div>
+                <div className="font-medium">GCash Payment</div>
+                <div className="text-sm text-white/70">Pay online with GCash through PayMongo</div>
+              </div>
+            </label>
+          )}
         </div>
       </div>
 

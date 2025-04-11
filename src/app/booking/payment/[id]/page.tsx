@@ -25,6 +25,15 @@ export default function BookingPaymentPage() {
   useEffect(() => {
     if (bookingId) {
       fetchBookingDetails();
+
+      // Check if payment_type is specified in the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentType = urlParams.get('payment_type');
+      if (paymentType === 'gcash') {
+        setPaymentMethod('gcash');
+      } else if (paymentType === 'card') {
+        setPaymentMethod('card');
+      }
     } else {
       setError("Booking ID is missing");
       setLoading(false);

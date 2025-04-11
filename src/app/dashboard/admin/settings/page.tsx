@@ -15,7 +15,9 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState({
     enable_temporary_cash_payment: false,
-    require_deposit: true
+    require_deposit: true,
+    enable_paymongo_card: true,
+    enable_paymongo_gcash: true
   });
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
@@ -185,44 +187,88 @@ export default function AdminSettingsPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-medium text-white/90">Enable Temporary Cash Payment</h3>
-                    <p className="text-sm text-white/60">
-                      Allow customers to pay with cash at pickup or delivery without requiring a deposit
-                    </p>
-                  </div>
-                  <Switch
-                    checked={paymentSettings.enable_temporary_cash_payment}
-                    onCheckedChange={(checked) =>
-                      setPaymentSettings({
-                        ...paymentSettings,
-                        enable_temporary_cash_payment: checked
-                      })
-                    }
-                  />
-                </div>
-
-                {paymentSettings.enable_temporary_cash_payment && (
-                  <div className="flex items-center justify-between pl-6 border-l-2 border-primary/20">
+              <div className="space-y-6">
+                {/* Cash Payment Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-white/90 border-b border-white/10 pb-2">Cash Payment Options</h3>
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-base font-medium text-white/90">Require Deposit</h3>
+                      <h3 className="text-base font-medium text-white/90">Enable Temporary Cash Payment</h3>
                       <p className="text-sm text-white/60">
-                        Require customers to pay a deposit for temporary cash payments
+                        Allow customers to pay with cash at pickup or delivery without requiring a deposit
                       </p>
                     </div>
                     <Switch
-                      checked={paymentSettings.require_deposit}
+                      checked={paymentSettings.enable_temporary_cash_payment}
                       onCheckedChange={(checked) =>
                         setPaymentSettings({
                           ...paymentSettings,
-                          require_deposit: checked
+                          enable_temporary_cash_payment: checked
                         })
                       }
                     />
                   </div>
-                )}
+
+                  {paymentSettings.enable_temporary_cash_payment && (
+                    <div className="flex items-center justify-between pl-6 border-l-2 border-primary/20">
+                      <div>
+                        <h3 className="text-base font-medium text-white/90">Require Deposit</h3>
+                        <p className="text-sm text-white/60">
+                          Require customers to pay a deposit for temporary cash payments
+                        </p>
+                      </div>
+                      <Switch
+                        checked={paymentSettings.require_deposit}
+                        onCheckedChange={(checked) =>
+                          setPaymentSettings({
+                            ...paymentSettings,
+                            require_deposit: checked
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* PayMongo Payment Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-white/90 border-b border-white/10 pb-2">PayMongo Payment Options</h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-medium text-white/90">Enable Card Payments</h3>
+                      <p className="text-sm text-white/60">
+                        Allow customers to pay with credit/debit cards through PayMongo
+                      </p>
+                    </div>
+                    <Switch
+                      checked={paymentSettings.enable_paymongo_card}
+                      onCheckedChange={(checked) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          enable_paymongo_card: checked
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-medium text-white/90">Enable GCash Payments</h3>
+                      <p className="text-sm text-white/60">
+                        Allow customers to pay with GCash through PayMongo
+                      </p>
+                    </div>
+                    <Switch
+                      checked={paymentSettings.enable_paymongo_gcash}
+                      onCheckedChange={(checked) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          enable_paymongo_gcash: checked
+                        })
+                      }
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-white/10">
