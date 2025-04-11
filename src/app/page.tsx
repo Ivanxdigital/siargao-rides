@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import SearchBar, { SearchParams } from "@/components/SearchBar"
@@ -36,13 +36,13 @@ export default function Home() {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
-    
+
     // Set initial value
     checkIfMobile()
-    
+
     // Add event listener
     window.addEventListener('resize', checkIfMobile)
-    
+
     // Clean up
     return () => window.removeEventListener('resize', checkIfMobile)
   }, [])
@@ -55,43 +55,43 @@ export default function Home() {
       try {
         setLoading(true)
         setError(null)
-        
+
         // Fetch shops and bikes
         const shopsData = await service.getVerifiedShops()
-        
+
         // Only fetch verified vehicles for public display
         // The API now defaults to only returning verified vehicles
         const bikesData = await service.getBikes()
-        
+
         setBikes(bikesData)
-        
+
         // Transform shop data for the card component
         const shopCardData = await Promise.all(
           shopsData.map(async (shop) => {
             // Get bikes for this shop - only verified bikes will be included
             const shopBikes = bikesData.filter(bike => bike.shop_id === shop.id)
-            
+
             // Calculate starting price (lowest price per day)
             const startingPrice = shopBikes.length > 0
               ? Math.min(...shopBikes.map(bike => bike.price_per_day))
               : 0
-            
+
             // Get shop reviews (in a real app we'd calculate average rating)
             const reviews = await service.getShopReviews(shop.id)
             const reviewCount = reviews.length
             const averageRating = reviewCount > 0
               ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
               : 0
-            
+
             // Get bike images for thumbnails
             const bikeImages = shopBikes.flatMap(bike => bike.images?.map(img => img.image_url) || [])
-            
+
             return {
               id: shop.id,
               name: shop.name,
               // Use bike images if available, or use shop logo/placeholder
-              images: bikeImages.length > 0 
-                ? bikeImages.slice(0, 3) 
+              images: bikeImages.length > 0
+                ? bikeImages.slice(0, 3)
                 : [shop.logo_url || 'https://placehold.co/600x400/1e3b8a/white?text=Shop+Image'],
               startingPrice,
               rating: averageRating || 4.5, // Default rating if no reviews
@@ -99,7 +99,7 @@ export default function Home() {
             }
           })
         )
-        
+
         setShops(shopCardData)
       } catch (error: any) {
         console.error("Error fetching data:", {
@@ -112,7 +112,7 @@ export default function Home() {
         setLoading(false)
       }
     }
-    
+
     fetchData()
   }, [])
 
@@ -122,10 +122,10 @@ export default function Home() {
 
     // Clear out any existing content
     videoContainerRef.current.innerHTML = '';
-    
+
     // Create iframe element
     const iframe = document.createElement('iframe');
-    
+
     // Set attributes - improved for mobile compatibility
     iframe.className = 'absolute w-[150%] md:w-[120%] h-[150%] md:h-[120%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2';
     iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&rel=0&disablekb=1&modestbranding=1&showinfo=0`;
@@ -136,7 +136,7 @@ export default function Home() {
     iframe.setAttribute('playsinline', '1'); // Explicit for iOS
     iframe.setAttribute('webkit-playsinline', '1'); // For older iOS versions
     iframe.onload = () => setVideoLoaded(true);
-    
+
     // Append to container
     videoContainerRef.current.appendChild(iframe);
   }, [videoId, isMobile]);
@@ -145,7 +145,7 @@ export default function Home() {
     console.log("Search params:", params)
     setLoading(true)
     setError(null)
-    
+
     try {
       // Map the UI vehicle type to our database category
       let category: BikeCategory | undefined = undefined
@@ -159,9 +159,9 @@ export default function Home() {
         }
         category = categoryMap[params.category]
       }
-      
+
       console.log("Searching bikes with filters:", { category, maxPrice: params.budget })
-      
+
       // Filter bikes based on search parameters using Supabase API
       // Only fetch verified vehicles for public display
       const filteredBikes = await service.getBikes({
@@ -170,27 +170,27 @@ export default function Home() {
         // We would add location filtering here if the bikes table had a location field
         // For now, we'll filter by shop location after getting the bikes
       })
-      
+
       console.log(`Found ${filteredBikes.length} bikes matching price and category criteria`)
-      
+
       // Get unique shop IDs from filtered bikes
       const shopIds = [...new Set(filteredBikes.map(bike => bike.shop_id))]
       console.log(`These bikes belong to ${shopIds.length} different shops`)
-      
+
       // Get shops with these IDs
       const shopsData = await Promise.all(
         shopIds.map(async (shopId) => {
           const shop = await service.getShopById(shopId)
-          
+
           // Skip if shop not found or not verified
           if (!shop || !shop.is_verified) return null
-          
+
           // Check location match if a location is specified
           if (params.location) {
             const shopAddress = shop.address?.toLowerCase() || ""
             const shopCity = shop.city?.toLowerCase() || ""
             const searchLocation = params.location.toLowerCase()
-            
+
             console.log(`Checking location for shop ${shop.name}:`, {
               searchLocation,
               shopAddress,
@@ -198,38 +198,38 @@ export default function Home() {
               addressMatch: shopAddress.includes(searchLocation),
               cityMatch: shopCity.includes(searchLocation)
             })
-            
+
             // Skip if neither address nor city contains the search location
             if (!shopAddress.includes(searchLocation) && !shopCity.includes(searchLocation)) {
               console.log(`Shop ${shop.name} excluded due to location mismatch`)
               return null
             }
           }
-          
+
           // Get shop bikes that passed our filters
           const shopBikes = filteredBikes.filter(bike => bike.shop_id === shopId)
-          
+
           // Skip if no bikes left after location filtering
           if (shopBikes.length === 0) return null
-          
+
           // Calculate starting price
           const startingPrice = Math.min(...shopBikes.map(bike => bike.price_per_day))
-          
+
           // Get shop reviews
           const reviews = await service.getShopReviews(shopId)
           const reviewCount = reviews.length
           const averageRating = reviewCount > 0
             ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
             : 0
-          
+
           // Get bike images for thumbnails
           const bikeImages = shopBikes.flatMap(bike => bike.images?.map(img => img.image_url) || [])
-          
+
           return {
             id: shop.id,
             name: shop.name,
-            images: bikeImages.length > 0 
-              ? bikeImages.slice(0, 3) 
+            images: bikeImages.length > 0
+              ? bikeImages.slice(0, 3)
               : [shop.logo_url || 'https://placehold.co/600x400/1e3b8a/white?text=Shop+Image'],
             startingPrice,
             rating: averageRating || 4.5,
@@ -237,16 +237,16 @@ export default function Home() {
           }
         })
       )
-      
+
       // Filter out any null results
       const filteredShops = shopsData.filter(shop => shop !== null) as ShopCardData[]
       console.log(`Final search results: ${filteredShops.length} shops with matching bikes`)
-      
+
       setSearchResults(filteredShops)
-      
+
       // Scroll to search results after a short delay to allow rendering
       setTimeout(() => {
-        searchResultsRef.current?.scrollIntoView({ 
+        searchResultsRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'start'
         })
@@ -259,36 +259,81 @@ export default function Home() {
     }
   }
 
+  // Check if announcement is visible and if page is scrolled
+  const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(true)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  // Debounce function to delay execution
+  const debounce = (func: Function, wait: number) => {
+    let timeout: NodeJS.Timeout
+    return function executedFunction(...args: any[]) {
+      const later = () => {
+        clearTimeout(timeout)
+        func(...args)
+      }
+      clearTimeout(timeout)
+      timeout = setTimeout(later, wait)
+    }
+  }
+
+  useEffect(() => {
+    // Check if device is mobile
+    const isMobile = window.innerWidth < 768
+
+    // Listen for custom event when announcement is dismissed
+    const handleAnnouncementDismissed = () => {
+      setIsAnnouncementVisible(false)
+    }
+
+    // Handle scroll events
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+
+    // Apply debounce for mobile devices to handle momentum scrolling
+    const debouncedHandleScroll = isMobile
+      ? debounce(handleScroll, 150) // 150ms delay for mobile
+      : handleScroll
+
+    window.addEventListener("announcement-dismissed", handleAnnouncementDismissed)
+    window.addEventListener("scroll", debouncedHandleScroll)
+
+    return () => {
+      window.removeEventListener("announcement-dismissed", handleAnnouncementDismissed)
+      window.removeEventListener("scroll", debouncedHandleScroll)
+    }
+  }, [])
+
   return (
     <div className="flex flex-col min-h-screen w-full overflow-hidden">
       {/* Hero Section - improved responsive heights */}
-      <section className="relative min-h-[100vh] sm:min-h-screen max-h-[900px] bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10">
+      <section className="relative min-h-[100vh] sm:min-h-screen max-h-[900px] bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10 transition-all duration-500">
         {/* Background Image with Overlay - Mobile Only - improved for performance */}
         <div className="absolute inset-0 z-0 md:hidden">
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 hover:opacity-50 transition-opacity duration-1000"
-            style={{ 
+            style={{
               backgroundImage: "url('/images/alejandro-luengo-clllGLYtLRA-unsplash.jpg')",
               backgroundSize: "cover"
             }}
             aria-hidden="true"
           ></div>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-black/50 to-purple-900/40 z-10"></div>
-          
+
           {/* Smooth Gradient Overlay - reduced animation complexity for mobile */}
           <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-purple-700/20 animate-[pulse_6s_ease-in-out_infinite] z-10 opacity-70"></div>
-          
+
           {/* Reduced animations for better mobile performance */}
           <div className="absolute -inset-[10%] bg-[radial-gradient(circle_at_50%_50%,rgba(120,50,255,0.08),transparent_70%)] opacity-60 animate-[spin_40s_linear_infinite] z-10"></div>
-          
+
           {/* Simplified floating elements for mobile */}
           <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-[float_30s_ease-in-out_infinite] z-5"></div>
           <div className="absolute bottom-1/3 right-1/4 w-40 h-40 rounded-full bg-purple-500/5 blur-2xl animate-[float_35s_ease-in-out_infinite_1s] z-5"></div>
-          
+
           <div className="absolute top-0 left-0 w-full h-2/5 bg-gradient-to-b from-primary/5 to-transparent z-10"></div>
           <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-purple-900/10 to-transparent z-10"></div>
         </div>
-        
+
         {/* YouTube Video Background - Desktop Only */}
         <div className="absolute inset-0 w-full h-full hidden md:block">
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10"></div>
@@ -311,10 +356,10 @@ export default function Home() {
             {/* Credits - Only visible on desktop */}
             <p className="hidden md:block text-xs sm:text-sm text-white/50 mt-2 font-light">
               Video by{' '}
-              <a 
-                href="https://www.youtube.com/@ourawesomeplanet" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href="https://www.youtube.com/@ourawesomeplanet"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="hover:text-white/70 transition-colors underline underline-offset-2 decoration-white/30"
               >
                 Our Awesome Planet
@@ -344,7 +389,7 @@ export default function Home() {
         .animate-fade-in-up {
           animation: fadeInUp 0.8s ease-out forwards;
         }
-        
+
         @keyframes float {
           0%, 100% {
             transform: translateY(0) translateX(0);
@@ -359,7 +404,7 @@ export default function Home() {
             transform: translateY(-4px) translateX(4px);
           }
         }
-        
+
         /* Add mobile-specific keyframes */
         @media (max-width: 768px) {
           @keyframes float {
@@ -371,11 +416,11 @@ export default function Home() {
             }
           }
         }
-        
+
         .bg-noise-pattern {
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
-        
+
         /* Add styles to prevent content overflow on small screens */
         @media (max-width: 480px) {
           html, body {
@@ -383,7 +428,7 @@ export default function Home() {
             width: 100%;
           }
         }
-        
+
         /* Gradient animation for heading */
         @keyframes gradient-x {
           0% {
@@ -396,18 +441,18 @@ export default function Home() {
             background-position: 0% 50%;
           }
         }
-        
+
         .animate-gradient-x {
           background-size: 200% 100%;
           animation: gradient-x 15s ease infinite;
         }
-        
+
         /* For the enhanced hero heading */
         h1 span.animate-gradient-x {
           background-size: 300% 100%;
           animation: gradient-x 8s ease-in-out infinite;
         }
-        
+
         /* Animation for the Safety Tips section */
         @keyframes fadeIn {
           from {
@@ -417,14 +462,14 @@ export default function Home() {
             opacity: 1;
           }
         }
-        
+
         /* Optimize animations for mobile */
         @media (max-width: 768px) {
           /* Reduce animation complexity for mobile */
           .group:hover svg {
             transform: scale(1.05) !important;
           }
-          
+
           /* Optimize animation performance */
           .animate-fade-in-up,
           [class*='animate-[fadeIn'],
@@ -432,7 +477,7 @@ export default function Home() {
             will-change: opacity, transform;
           }
         }
-        
+
         /* Add hero heading animation */
         @keyframes heroScale {
           0%, 100% {
@@ -442,7 +487,7 @@ export default function Home() {
             transform: scale(1.02);
           }
         }
-        
+
         .hero-heading-animate {
           animation: heroScale 4s ease-in-out infinite;
         }
@@ -458,9 +503,9 @@ export default function Home() {
         }
 
         .bg-shimmer {
-          background: linear-gradient(90deg, 
-            rgba(255,255,255,0) 0%, 
-            rgba(255,255,255,0.05) 50%, 
+          background: linear-gradient(90deg,
+            rgba(255,255,255,0) 0%,
+            rgba(255,255,255,0.05) 50%,
             rgba(255,255,255,0) 100%);
           background-size: 200% 100%;
           animation: shimmer 2.5s infinite;
@@ -526,7 +571,7 @@ export default function Home() {
               <p className="text-gray-300">
                 Finding the perfect ride for you...
               </p>
-              
+
               {/* Loading skeleton cards - reduced animations */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mt-8">
                 {[1, 2, 3].map((i) => (
@@ -535,7 +580,7 @@ export default function Home() {
                     <div className="relative aspect-[16/9] bg-gray-800/50 overflow-hidden">
                       {/* Removed shimmer animation */}
                     </div>
-                    
+
                     {/* Skeleton content */}
                     <div className="p-4 sm:p-5 flex flex-col flex-grow space-y-3">
                       <div className="h-5 bg-gray-800/80 rounded-md w-2/3 relative overflow-hidden">
@@ -560,7 +605,7 @@ export default function Home() {
                 </svg>
               </div>
               <p className="text-red-400 mb-3">{error}</p>
-              <button 
+              <button
                 onClick={() => window.location.reload()}
                 className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
               >
@@ -577,7 +622,7 @@ export default function Home() {
                     </svg>
                   </div>
                   <p className="text-gray-300 mb-3">No shops found matching your criteria.</p>
-                  <button 
+                  <button
                     onClick={() => setSearchResults(null)}
                     className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
                   >
@@ -596,9 +641,9 @@ export default function Home() {
                               {/* Main image */}
                               <div className="w-2/3 h-full relative border-r border-white/5">
                                 {shop.images && shop.images[0] && (
-                                  <Image 
-                                    src={shop.images[0]} 
-                                    fill 
+                                  <Image
+                                    src={shop.images[0]}
+                                    fill
                                     alt={`${shop.name} vehicle`}
                                     className="object-cover transition-transform duration-700"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -609,9 +654,9 @@ export default function Home() {
                               <div className="w-1/3 h-full flex flex-col">
                                 {shop.images && shop.images.slice(1, 3).map((image, i) => (
                                   <div key={i} className="h-1/2 relative border-b last:border-b-0 border-white/5">
-                                    <Image 
-                                      src={image} 
-                                      fill 
+                                    <Image
+                                      src={image}
+                                      fill
                                       alt={`${shop.name} vehicle ${i+1}`}
                                       className="object-cover transition-transform duration-700"
                                       sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
@@ -631,13 +676,13 @@ export default function Home() {
                               From ₱{shop.startingPrice}/day
                             </div>
                           </div>
-                          
+
                           {/* Content Area - removed hover effects */}
                           <div className="p-4 sm:p-5 flex flex-col flex-grow">
                             <h3 className="text-lg sm:text-xl font-medium text-white mb-2 truncate">
                               {shop.name}
                             </h3>
-                            
+
                             {/* Rating */}
                             <div className="flex items-center mt-auto pt-3">
                               <div className="flex items-center">
@@ -645,10 +690,10 @@ export default function Home() {
                                   <>
                                     <div className="flex">
                                       {[1, 2, 3, 4, 5].map((star) => (
-                                        <svg 
-                                          key={star} 
-                                          className={`w-4 h-4 ${star <= Math.round(shop.rating) ? 'text-yellow-400' : 'text-gray-600'}`} 
-                                          fill="currentColor" 
+                                        <svg
+                                          key={star}
+                                          className={`w-4 h-4 ${star <= Math.round(shop.rating) ? 'text-yellow-400' : 'text-gray-600'}`}
+                                          fill="currentColor"
                                           viewBox="0 0 20 20"
                                         >
                                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -656,7 +701,7 @@ export default function Home() {
                                       ))}
                                     </div>
                                     <span className="ml-2 text-sm text-gray-400">
-                                      {shop.rating.toFixed(1)} 
+                                      {shop.rating.toFixed(1)}
                                       <span className="ml-1 text-gray-500">
                                         ({shop.reviewCount} {shop.reviewCount === 1 ? 'review' : 'reviews'})
                                       </span>
@@ -673,16 +718,16 @@ export default function Home() {
                                   </div>
                                 )}
                               </div>
-                              
+
                               {/* View button - simplified */}
                               <div className="ml-auto">
                                 <span className="inline-flex items-center text-xs text-blue-400">
                                   View shop
-                                  <svg 
-                                    xmlns="http://www.w3.org/2000/svg" 
-                                    className="h-3.5 w-3.5 ml-1" 
-                                    fill="none" 
-                                    viewBox="0 0 24 24" 
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3.5 w-3.5 ml-1"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
                                     stroke="currentColor"
                                   >
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -703,11 +748,11 @@ export default function Home() {
           {/* View All Button - simplified design */}
           {!searchResults && !loading && shops.length > 0 && (
             <div className="text-center mt-12 sm:mt-14">
-              <Link 
-                href="/browse" 
+              <Link
+                href="/browse"
                 className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg shadow-lg border border-gray-700 transition-colors duration-300 inline-flex items-center justify-center"
               >
-                View all rental shops 
+                View all rental shops
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
@@ -804,9 +849,9 @@ export default function Home() {
         .filter-shadow {
           filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.25));
         }
-        
+
         .filter-shadow-strong {
-          filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4)) 
+          filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4))
                  drop-shadow(0 0 20px rgba(56, 189, 248, 0.2));
           text-shadow: 0 0 20px rgba(186, 230, 253, 0.3);
         }

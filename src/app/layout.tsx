@@ -4,6 +4,7 @@ import "./globals.css";
 import "./calendar.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Providers } from './providers';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ export default function RootLayout({
         <Providers>
           <AuthProvider>
             <div className="relative flex min-h-screen flex-col">
+              <AnnouncementBar />
               <Navbar />
               <main className="flex-1">
                 {children}

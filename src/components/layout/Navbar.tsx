@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar, ShoppingBag, Info } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
@@ -61,14 +61,51 @@ const Navbar = () => {
     }
   }, [isAuthenticated, user])
 
+  // Debounce function to delay execution
+  const debounce = (func: Function, wait: number) => {
+    let timeout: NodeJS.Timeout
+    return function executedFunction(...args: any[]) {
+      const later = () => {
+        clearTimeout(timeout)
+        func(...args)
+      }
+      clearTimeout(timeout)
+      timeout = setTimeout(later, wait)
+    }
+  }
+
   // Change navbar style on scroll
   useEffect(() => {
+    // Check if device is mobile
+    const isMobile = window.innerWidth < 768
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
     }
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    // Apply debounce for mobile devices to handle momentum scrolling
+    const debouncedHandleScroll = isMobile
+      ? debounce(handleScroll, 150) // 150ms delay for mobile
+      : handleScroll
+
+    window.addEventListener("scroll", debouncedHandleScroll)
+    return () => window.removeEventListener("scroll", debouncedHandleScroll)
+  }, [])
+
+  // Check if announcement is visible
+  const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(true)
+
+  useEffect(() => {
+    // Listen for custom event when announcement is dismissed
+    const handleAnnouncementDismissed = () => {
+      setIsAnnouncementVisible(false)
+    }
+
+    window.addEventListener("announcement-dismissed", handleAnnouncementDismissed)
+
+    return () => {
+      window.removeEventListener("announcement-dismissed", handleAnnouncementDismissed)
+    }
   }, [])
 
   // Better scroll lock implementation
@@ -144,10 +181,10 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${
+        className={`fixed left-0 right-0 z-[1000] transition-all duration-500 ${
           scrolled
-            ? "py-3 bg-transparent backdrop-blur-md shadow-md border-b border-white/10"
-            : "py-5 bg-transparent"
+            ? "top-0 py-3 bg-transparent backdrop-blur-md shadow-md border-b border-white/10"
+            : `${isAnnouncementVisible ? 'top-[32px] sm:top-[36px]' : 'top-0'} py-5 bg-transparent`
         } ${isMenuOpen ? 'bg-black/90 backdrop-blur-md border-b border-white/10' : ''}`}
       >
         <div className="container mx-auto px-4 flex justify-between items-center">
@@ -324,9 +361,9 @@ const Navbar = () => {
 
       {/* Mobile Menu - Also update the mobile menu header */}
       {isMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-[998] bg-black/90 backdrop-blur-md flex flex-col">
+        <div className="md:hidden fixed inset-0 z-[999] bg-black/90 backdrop-blur-md flex flex-col">
           {/* Fixed header section - just padding */}
-          <div className="pt-20 px-6"></div>
+          <div className={`${scrolled ? 'pt-16' : (isAnnouncementVisible ? 'pt-24' : 'pt-20')} px-6 transition-all duration-500`}></div>
           {/* Scrollable content section */}
           <div className="flex-1 overflow-y-auto pb-8 px-6 mobile-menu-content" style={{ maxHeight: 'calc(100vh - 100px)' }}>
             {isAuthenticated && (
