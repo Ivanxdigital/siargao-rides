@@ -94,13 +94,14 @@ const AnnouncementBar = () => {
             }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, delay: 0.05 }}
-            className="fixed top-0 left-0 right-0 z-[1001] bg-gradient-to-r from-primary/20 via-blue-500/20 to-primary/20 backdrop-blur-md border-b border-white/10 text-white"
+            className="fixed top-0 left-0 right-0 z-[1001] bg-gradient-to-r from-primary/20 via-blue-500/20 to-primary/20 backdrop-blur-md border-b border-white/10 text-white md:block"
           >
-            <div className="container mx-auto px-4 py-2">
+            {/* Desktop version - full width with all content */}
+            <div className="hidden md:block container mx-auto px-4 py-2">
               <div className="flex items-center justify-center text-center text-sm">
                 <AlertCircle className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                 <p className="flex-1">
-                  <span className="font-semibold">BETA</span> - We're now open! Currently, only cash payments are accepted. We're continuously working to fix bugs and improve your experience.
+                  <span className="font-semibold">BETA</span> - We're currently in BETA so there may be bugs, but we're working on it! At this moment of time it's cash only for bookings, card payments coming soon!
                 </p>
                 <button
                   onClick={handleDismiss}
@@ -109,6 +110,25 @@ const AnnouncementBar = () => {
                 >
                   <X className="h-4 w-4" />
                 </button>
+              </div>
+            </div>
+
+            {/* Mobile version - compact floating pill */}
+            <div className="md:hidden">
+              <div className="fixed top-2 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-md border border-primary/30 rounded-full py-1.5 px-4 shadow-lg max-w-[95%] w-auto z-[1002]">
+                <div className="flex items-center justify-center text-center text-xs">
+                  <AlertCircle className="h-3 w-3 mr-1.5 text-primary flex-shrink-0" />
+                  <p className="truncate max-w-[200px]">
+                    <span className="font-semibold">Preview mode</span>
+                  </p>
+                  <button
+                    onClick={handleDismiss}
+                    className="ml-1.5 p-0.5 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+                    aria-label="Dismiss announcement"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

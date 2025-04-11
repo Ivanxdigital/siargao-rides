@@ -363,7 +363,7 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden fixed inset-0 z-[999] bg-black/90 backdrop-blur-md flex flex-col">
           {/* Fixed header section - just padding */}
-          <div className={`${scrolled ? 'pt-16' : (isAnnouncementVisible ? 'pt-24' : 'pt-20')} px-6 transition-all duration-500`}></div>
+          <div className={`${scrolled ? 'pt-16' : 'pt-20'} px-6 transition-all duration-500`}></div>
           {/* Scrollable content section */}
           <div className="flex-1 overflow-y-auto pb-8 px-6 mobile-menu-content" style={{ maxHeight: 'calc(100vh - 100px)' }}>
             {isAuthenticated && (
