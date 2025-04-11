@@ -51,6 +51,7 @@ export default function BookingForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [systemSettings, setSystemSettings] = useState<any>({
     enable_temporary_cash_payment: false,
+    enable_cash_with_deposit: true,
     require_deposit: true,
     enable_paymongo_card: true,
     enable_paymongo_gcash: true
@@ -609,31 +610,33 @@ export default function BookingForm({
           )}
 
           {/* Regular Cash option with deposit */}
-          <label
-            className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
-              paymentMethod === 'cash'
-                ? 'border-primary/50 bg-primary/5'
-                : 'border-white/10'
-            }`}
-          >
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="cash"
-              checked={paymentMethod === 'cash'}
-              onChange={() => setPaymentMethod('cash')}
-              className="mt-1"
-            />
-            <div>
-              <div className="font-medium">Cash Payment with Deposit</div>
-              <div className="text-sm text-white/70">Pay with cash when picking up or when the vehicle is delivered</div>
-              <div className="mt-2 p-2 bg-blue-900/30 border border-blue-500/30 rounded-md text-xs text-white/80">
-                <p className="font-medium text-blue-400 mb-1">₱300 Deposit Required</p>
-                <p>A ₱300 deposit is required to secure your booking and prevent ghost bookings. This deposit will be processed through our secure payment system.</p>
-                <p className="mt-1">If you don't show up for your booking, the deposit will be kept by the shop owner as compensation.</p>
-              </div>
+          {systemSettings.enable_cash_with_deposit && (
+            <label
+              className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
+                paymentMethod === 'cash'
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-white/10'
+              }`}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="cash"
+                checked={paymentMethod === 'cash'}
+                onChange={() => setPaymentMethod('cash')}
+                className="mt-1"
+              />
+              <div>
+                <div className="font-medium">Cash Payment with Deposit</div>
+                <div className="text-sm text-white/70">Pay with cash when picking up or when the vehicle is delivered</div>
+                <div className="mt-2 p-2 bg-blue-900/30 border border-blue-500/30 rounded-md text-xs text-white/80">
+                  <p className="font-medium text-blue-400 mb-1">₱300 Deposit Required</p>
+                  <p>A ₱300 deposit is required to secure your booking and prevent ghost bookings. This deposit will be processed through our secure payment system.</p>
+                  <p className="mt-1">If you don't show up for your booking, the deposit will be kept by the shop owner as compensation.</p>
+                </div>
             </div>
           </label>
+          )}
 
           {/* PayMongo Card option */}
           {systemSettings.enable_paymongo_card && (

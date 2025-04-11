@@ -15,6 +15,7 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState({
     enable_temporary_cash_payment: false,
+    enable_cash_with_deposit: true,
     require_deposit: true,
     enable_paymongo_card: true,
     enable_paymongo_gcash: true
@@ -204,6 +205,24 @@ export default function AdminSettingsPage() {
                 {/* Cash Payment Settings */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-white/90 border-b border-white/10 pb-2">Cash Payment Options</h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-medium text-white/90">Enable Cash Payment with Deposit</h3>
+                      <p className="text-sm text-white/60">
+                        Allow customers to pay with cash at pickup with a deposit payment
+                      </p>
+                    </div>
+                    <Switch
+                      checked={paymentSettings.enable_cash_with_deposit}
+                      onCheckedChange={(checked) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          enable_cash_with_deposit: checked
+                        })
+                      }
+                    />
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-base font-medium text-white/90">Enable Temporary Cash Payment</h3>
