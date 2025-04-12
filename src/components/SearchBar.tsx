@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Search, Calendar, MapPin, X, ChevronDown, Check } from "lucide-react"
+import { Search, Calendar, MapPin, X, ChevronDown, Check, Sparkles } from "lucide-react"
 import { Button } from "./ui/Button"
+import { Badge } from "./ui/Badge"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { motion, AnimatePresence } from "framer-motion"
 import { VehicleType } from "@/lib/types"
@@ -61,19 +62,19 @@ const budgetOptions = [
 // Animation variants - enhanced for smoother transitions
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
       duration: 0.3,
       ease: [0.4, 0, 0.2, 1] // Improved easing curve
-    } 
+    }
   }
 }
 
 const dropdownVariants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     scaleY: 0.95,
     y: -5,
     transformOrigin: 'top',
@@ -82,12 +83,12 @@ const dropdownVariants = {
       ease: [0.4, 0, 1, 1]
     }
   },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scaleY: 1,
     y: 0,
     transformOrigin: 'top',
-    transition: { 
+    transition: {
       type: "spring",
       stiffness: 300,
       damping: 30,
@@ -95,15 +96,15 @@ const dropdownVariants = {
       duration: 0.3
     }
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     scaleY: 0.95,
     y: -5,
     transformOrigin: 'top',
-    transition: { 
+    transition: {
       duration: 0.2,
       ease: [0.4, 0, 1, 1]
-    } 
+    }
   }
 }
 
@@ -116,7 +117,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [vehicleType, setVehicleType] = useState<VehicleType>('motorcycle')
   const [category, setCategory] = useState("scooter")
   const [selectedVehicleOption, setSelectedVehicleOption] = useState(vehicleOptions[0])
-  
+
   // UI state
   const [step, setStep] = useState(1) // Progressive disclosure steps
   const [isSearching, setIsSearching] = useState(false)
@@ -126,49 +127,49 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [filteredLocations, setFilteredLocations] = useState<string[]>(siargaoLocations)
   const [currentDate, setCurrentDate] = useState("")
   const [isMounted, setIsMounted] = useState(false)
-  
+
   // Refs for handling clicks outside dropdowns
   const locationInputRef = useRef<HTMLDivElement>(null)
   const locationsDropdownRef = useRef<HTMLDivElement>(null)
   const vehicleDropdownRef = useRef<HTMLDivElement>(null)
   const budgetDropdownRef = useRef<HTMLDivElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
-  
+
   // Detect if device is mobile
   const isMobile = useMediaQuery("(max-width: 640px)")
-  
+
   // Set initial dates when component mounts
   useEffect(() => {
     setIsMounted(true)
-    
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const formattedDate = today.toISOString().split('T')[0]
     setCurrentDate(formattedDate)
     setStartDate(formattedDate)
-    
+
     // Set end date to tomorrow by default
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
     setEndDate(tomorrow.toISOString().split('T')[0])
   }, [])
-  
+
   // Update filtered locations when typing
   useEffect(() => {
     if (location.trim() === '') {
       setFilteredLocations(siargaoLocations)
     } else {
-      const filtered = siargaoLocations.filter(loc => 
+      const filtered = siargaoLocations.filter(loc =>
         loc.toLowerCase().includes(location.toLowerCase())
       )
       setFilteredLocations(filtered)
     }
   }, [location])
-  
+
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartDate = e.target.value
     setStartDate(newStartDate)
-    
+
     // If end date is before new start date, update end date
     if (endDate && new Date(endDate) < new Date(newStartDate)) {
       setEndDate(newStartDate)
@@ -178,53 +179,53 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEndDate(e.target.value)
   }
-  
+
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation)
     setShowLocations(false)
-    
+
     // If we're on step 1, move to step 2 after location selection
     if (step === 1) {
       setTimeout(() => setStep(2), 300)
     }
   }
-  
+
   const handleVehicleSelect = (option: typeof vehicleOptions[0]) => {
     setSelectedVehicleOption(option);
     setVehicleType(option.vehicleType as VehicleType);
     // Set the default category based on vehicle type
     setCategory(defaultCategories[option.vehicleType as VehicleType]);
     setShowVehicleOptions(false);
-    
+
     // If we're on step 2, move to step 3 after vehicle selection
     if (step === 2) {
       setTimeout(() => setStep(3), 300);
     }
   };
-  
+
   const handleBudgetSelect = (value: number) => {
     setBudget(value)
     setShowBudgetOptions(false)
   }
-  
+
   const handleDateShortcut = (days: number) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
     // Set start date
     setStartDate(today.toISOString().split('T')[0])
-    
+
     // Set end date based on days
     const endDay = new Date(today)
     endDay.setDate(endDay.getDate() + days)
     setEndDate(endDay.toISOString().split('T')[0])
   }
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     setIsSearching(true)
-    
+
     // Simulate AI "thinking" with a brief delay
     setTimeout(() => {
       onSearch({
@@ -244,14 +245,14 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
     const handleClickOutside = (event: MouseEvent) => {
       // Location dropdown
       if (
-        locationInputRef.current && 
+        locationInputRef.current &&
         !locationInputRef.current.contains(event.target as Node) &&
-        locationsDropdownRef.current && 
+        locationsDropdownRef.current &&
         !locationsDropdownRef.current.contains(event.target as Node)
       ) {
         setShowLocations(false)
       }
-      
+
       // Vehicle dropdown
       if (
         vehicleDropdownRef.current &&
@@ -259,7 +260,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
       ) {
         setShowVehicleOptions(false)
       }
-      
+
       // Budget dropdown
       if (
         budgetDropdownRef.current &&
@@ -276,24 +277,35 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   }, [])
 
   return (
-    <motion.div 
+    <motion.div
       className="bg-black/30 backdrop-blur-xl rounded-2xl shadow-lg border border-white/10 p-5 transition-all duration-300 relative overflow-visible w-full max-w-md mx-auto"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
+      {/* BETA Badge */}
+      <div className="absolute -top-2 -right-2 z-20 transform rotate-3 sm:scale-100 scale-90">
+        <Badge
+          variant="beta"
+          className="px-2.5 py-1 text-xs flex items-center gap-1.5 animate-pulse-subtle shadow-lg"
+        >
+          <Sparkles size={12} className="text-primary-300" />
+          <span className="font-bold tracking-wide">BETA</span>
+        </Badge>
+      </div>
+
       {/* Subtle gradient accent */}
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-30 pointer-events-none" />
 
-      <motion.form 
-        ref={formRef} 
-        onSubmit={handleSubmit} 
+      <motion.form
+        ref={formRef}
+        onSubmit={handleSubmit}
         className="relative space-y-5 z-10"
       >
         {/* Step 1: Location */}
         <AnimatePresence>
           {(step >= 1) && (
-            <motion.div 
+            <motion.div
               className="space-y-2"
               initial={fadeIn.hidden}
               animate={fadeIn.visible}
@@ -314,7 +326,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   className="w-full p-3 px-10 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 text-white placeholder:text-white/40 transition-all duration-200"
                 />
                 <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary/60" />
-                
+
                 {/* Clear button */}
                 {location && (
                   <button
@@ -325,14 +337,14 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     <X size={14} className="hover:rotate-90 transition-transform duration-200" />
                   </button>
                 )}
-                
+
                 {/* Locations Dropdown - Enhanced animations */}
                 <AnimatePresence>
                   {showLocations && (
-                    <motion.div 
+                    <motion.div
                       ref={locationsDropdownRef}
                       className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-[9999] shadow-xl overflow-auto transition-[backdrop-filter] duration-200"
-                      style={{ 
+                      style={{
                         maxHeight: '60vh',
                         willChange: 'transform, opacity',
                         touchAction: 'pan-y' // Improved touch handling
@@ -345,7 +357,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     >
                       {filteredLocations.length > 0 ? (
                         filteredLocations.map((loc) => (
-                          <div 
+                          <div
                             key={loc}
                             className="p-2.5 cursor-pointer hover:bg-white/5 flex items-center transition-colors duration-150"
                             onClick={() => handleLocationSelect(loc)}
@@ -366,11 +378,11 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Step 2: Vehicle Type */}
         <AnimatePresence>
           {(step >= 2) && (
-            <motion.div 
+            <motion.div
               className="space-y-2"
               initial={fadeIn.hidden}
               animate={fadeIn.visible}
@@ -415,11 +427,11 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   </span>
                   <ChevronDown size={16} className={`text-white/60 transition-transform duration-200 ${showVehicleOptions ? 'rotate-180' : ''}`} />
                 </button>
-                
+
                 {/* Vehicle Options Dropdown - Enhanced animations */}
                 <AnimatePresence>
                   {showVehicleOptions && (
-                    <motion.div 
+                    <motion.div
                       className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-50 overflow-hidden transition-[backdrop-filter] duration-200"
                       style={{
                         willChange: 'transform, opacity',
@@ -432,7 +444,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                       layout
                     >
                       {vehicleOptions.map((option) => (
-                        <div 
+                        <div
                           key={`${option.vehicleType}-${option.label}`}
                           className={`p-2.5 cursor-pointer hover:bg-white/5 flex items-center justify-between ${
                             selectedVehicleOption.vehicleType === option.vehicleType ? 'bg-primary/10' : ''
@@ -469,7 +481,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                             </span>
                             <span className="text-sm text-white">{option.label}</span>
                           </span>
-                          
+
                           {selectedVehicleOption.vehicleType === option.vehicleType && (
                             <Check size={14} className="text-primary" />
                           )}
@@ -482,11 +494,11 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Step 3: Date & Budget */}
         <AnimatePresence>
           {(step >= 3) && (
-            <motion.div 
+            <motion.div
               className="space-y-1.5"
               initial={fadeIn.hidden}
               animate={fadeIn.visible}
@@ -518,7 +530,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2">
                 {/* Start Date */}
                 <div className="relative">
@@ -535,15 +547,15 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
                       <Calendar size={14} className="text-white/40 mr-2" />
                       <span className="text-sm text-white/80">
-                        {startDate ? new Date(startDate).toLocaleDateString('en-US', { 
-                          day: 'numeric', 
+                        {startDate ? new Date(startDate).toLocaleDateString('en-US', {
+                          day: 'numeric',
                           month: 'short'
                         }) : 'Start'}
                       </span>
                     </div>
                   )}
                 </div>
-                
+
                 {/* End Date */}
                 <div className="relative">
                   <input
@@ -559,8 +571,8 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
                       <Calendar size={14} className="text-white/40 mr-2" />
                       <span className="text-sm text-white/80">
-                        {endDate ? new Date(endDate).toLocaleDateString('en-US', { 
-                          day: 'numeric', 
+                        {endDate ? new Date(endDate).toLocaleDateString('en-US', {
+                          day: 'numeric',
                           month: 'short'
                         }) : 'End'}
                       </span>
@@ -568,7 +580,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   )}
                 </div>
               </div>
-              
+
               {/* Budget Selection */}
               <div className="mt-3">
                 <label className="text-xs font-medium text-white/80 mb-1.5 block">Daily budget</label>
@@ -583,11 +595,11 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     </span>
                     <ChevronDown size={16} className={`text-white/60 transition-transform duration-200 ${showBudgetOptions ? 'rotate-180' : ''}`} />
                   </button>
-                  
+
                   {/* Budget Options Dropdown - Enhanced animations */}
                   <AnimatePresence>
                     {showBudgetOptions && (
-                      <motion.div 
+                      <motion.div
                         className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-lg z-50 overflow-hidden transition-[backdrop-filter] duration-200"
                         style={{
                           willChange: 'transform, opacity',
@@ -600,7 +612,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                         layout
                       >
                         {budgetOptions.map((option) => (
-                          <div 
+                          <div
                             key={option.value}
                             className={`p-2.5 cursor-pointer hover:bg-white/5 flex items-center justify-between ${
                               budget === option.value ? 'bg-primary/10' : ''
@@ -621,7 +633,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Search Button - only shown when all required fields are completed */}
         <AnimatePresence>
           {((step === 3 && location && startDate && endDate) || step > 3) && (
@@ -651,7 +663,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Step Indicators */}
         <div className="flex items-center justify-center space-x-1 pt-1">
           {[1, 2, 3].map((stepNumber) => (
@@ -661,7 +673,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 stepNumber <= step ? 'bg-primary/70' : 'bg-white/10'
               } transition-all duration-300`}
               style={{ width: stepNumber <= step ? '24px' : '12px' }}
-              animate={{ 
+              animate={{
                 width: stepNumber <= step ? '24px' : '12px',
                 backgroundColor: stepNumber <= step ? 'rgb(139 92 246 / 0.7)' : 'rgb(255 255 255 / 0.1)'
               }}
@@ -669,7 +681,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           ))}
         </div>
       </motion.form>
-      
+
       {/* Custom date input styling for mobile */}
       <style jsx global>{`
         @media (max-width: 640px) {
@@ -682,7 +694,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             height: 100%;
             cursor: pointer;
           }
-          
+
           input[type="date"] {
             color: transparent;
           }
@@ -692,4 +704,4 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   )
 }
 
-export default SearchBar 
+export default SearchBar

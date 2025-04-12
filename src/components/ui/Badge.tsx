@@ -18,6 +18,7 @@ const badgeVariants = cva(
         motorcycle: "bg-primary/20 text-primary border border-primary/30 backdrop-blur-sm",
         car: "bg-blue-500/20 text-blue-400 border border-blue-500/30 backdrop-blur-sm",
         tuktuk: "bg-amber-500/20 text-amber-400 border border-amber-500/30 backdrop-blur-sm",
+        beta: "bg-gradient-to-r from-primary/40 to-blue-500/40 text-white border border-primary/50 shadow-sm backdrop-blur-md font-semibold ring-1 ring-white/10",
       },
     },
     defaultVariants: {
