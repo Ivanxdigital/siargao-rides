@@ -44,11 +44,14 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
       // Otherwise fetch the user data
       try {
         const supabase = createClientComponentClient();
+
+        // Use maybeSingle() instead of single() to avoid the PGRST116 error
+        // maybeSingle() returns null instead of throwing an error when no rows are found
         const { data, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', review.user_id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching user data:', JSON.stringify(error));
@@ -63,7 +66,7 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
         } else if (data) {
           setReviewUser(data as UserType);
         } else {
-          console.error('No user data found for ID:', review.user_id);
+          console.log('No user data found for ID:', review.user_id, '- Using fallback');
           // Set a fallback user object
           setReviewUser({
             id: review.user_id,
