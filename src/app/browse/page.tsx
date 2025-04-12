@@ -19,6 +19,7 @@ interface VehicleWithMetadata extends Vehicle {
   shopLogo?: string;
   shopLocation?: string;
   shopId: string;
+  shopIsShowcase?: boolean;
   is_available_for_dates?: boolean;
 }
 
@@ -42,16 +43,16 @@ interface StringDateRange {
 
 const BikeTypeCheckbox = ({ type, checked, onChange }: { type: string, checked: boolean, onChange: () => void }) => {
   return (
-    <motion.div 
+    <motion.div
       className="flex items-center space-x-2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
       whileTap={{ scale: 0.95 }}
     >
-      <input 
-        type="checkbox" 
-        id={`type-${type}`} 
+      <input
+        type="checkbox"
+        id={`type-${type}`}
         checked={checked}
         onChange={onChange}
         className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
@@ -62,9 +63,9 @@ const BikeTypeCheckbox = ({ type, checked, onChange }: { type: string, checked: 
 }
 
 // New component for vehicle type selection
-const VehicleTypeSelector = ({ selectedType, onChange }: { 
-  selectedType: VehicleType | 'all', 
-  onChange: (type: VehicleType | 'all') => void 
+const VehicleTypeSelector = ({ selectedType, onChange }: {
+  selectedType: VehicleType | 'all',
+  onChange: (type: VehicleType | 'all') => void
 }) => {
   const vehicleTypes: Array<{id: VehicleType | 'all', label: string, icon: any}> = [
     { id: 'all', label: 'All Vehicles', icon: BikeIcon },
@@ -82,8 +83,8 @@ const VehicleTypeSelector = ({ selectedType, onChange }: {
             key={type.id}
             onClick={() => onChange(type.id)}
             className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
-              selectedType === type.id 
-                ? 'bg-primary/20 text-primary border border-primary/30' 
+              selectedType === type.id
+                ? 'bg-primary/20 text-primary border border-primary/30'
                 : 'bg-gray-800/50 text-gray-300 border border-gray-700 hover:bg-gray-800'
             }`}
             whileHover={{ scale: 1.03 }}
@@ -113,14 +114,14 @@ export default function BrowsePage() {
     tuktuk: []
   })
   const [error, setError] = useState<string | null>(null)
-  
+
   // New filter states
   const [selectedLocation, setSelectedLocation] = useState<string>("")
   const [locations, setLocations] = useState<string[]>([])
   const [onlyShowAvailable, setOnlyShowAvailable] = useState<boolean>(false)
   const [engineSizeRange, setEngineSizeRange] = useState<[number, number]>([0, 1000])
   const [sortBy, setSortBy] = useState<string>("price_asc")
-  
+
   // Car-specific filters
   const [minSeats, setMinSeats] = useState<number>(0)
   const [transmission, setTransmission] = useState<string>("any")
@@ -147,26 +148,26 @@ export default function BrowsePage() {
     const handleLocalDatePickerChange = (newValue: DateRange | null) => {
       try {
         console.log("Date picker change:", newValue);
-        
+
         if (newValue && newValue.from) {
           // If both dates are selected
           if (newValue.to) {
             // Format dates consistently to YYYY-MM-DD
             const formattedStartDate = newValue.from.toISOString().split('T')[0];
             const formattedEndDate = newValue.to.toISOString().split('T')[0];
-            
+
             console.log(`Setting date range: ${formattedStartDate} to ${formattedEndDate}`);
-            
+
             setStartDate(formattedStartDate);
             setEndDate(formattedEndDate);
             setSelectedDates(newValue);
             setDateRangeSelected(true);
-          } 
+          }
           // If only start date is selected
           else {
             const formattedStartDate = newValue.from.toISOString().split('T')[0];
             console.log(`Setting start date only: ${formattedStartDate}`);
-            
+
             setStartDate(formattedStartDate);
             setEndDate('');
             setSelectedDates(newValue);
@@ -189,19 +190,19 @@ export default function BrowsePage() {
         setDateRangeSelected(false);
       }
     };
-    
+
     const handleLocalDateRangeChange = (range: StringDateRange | null) => {
       try {
         console.log("Date range change:", range);
-        
+
         if (range && range.from && range.to) {
           try {
             // Format dates consistently
             const formattedStartDate = new Date(range.from).toISOString().split('T')[0];
             const formattedEndDate = new Date(range.to).toISOString().split('T')[0];
-            
+
             console.log(`Setting formatted date range: ${formattedStartDate} to ${formattedEndDate}`);
-            
+
             setStartDate(formattedStartDate);
             setEndDate(formattedEndDate);
             setDateRangeSelected(true);
@@ -224,19 +225,19 @@ export default function BrowsePage() {
         setDateRangeSelected(false);
       }
     };
-    
+
     // Create a wrapper function that matches the window interface
     const globalHandleDateRangeChange = (range: StringDateRange | null) => {
       handleLocalDateRangeChange(range);
     };
-    
+
     // Expose the handler using the wrapper
     window.handleDateRangeChange = globalHandleDateRangeChange;
-    
+
     // Store references to the local handlers
     handleDateRangeChangeRef.current = handleLocalDateRangeChange;
     handleDatePickerChangeRef.current = handleLocalDatePickerChange;
-    
+
     return () => {
       delete window.handleDateRangeChange;
     };
@@ -248,10 +249,10 @@ export default function BrowsePage() {
     const loadInitialData = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const supabase = createClientComponentClient();
-        
+
         // Fetch all vehicles with joined shop data
         let vehicleQuery = supabase
           .from('vehicles')
@@ -259,23 +260,23 @@ export default function BrowsePage() {
             *,
             vehicle_images(*),
             vehicle_types(*),
-            rental_shops!inner(id, name, logo_url, location_area, is_active)
+            rental_shops!inner(id, name, logo_url, location_area, is_active, is_showcase)
           `)
           .order('price_per_day');
-        
+
         // We always fetch all available vehicles first, then filter by date if needed
         vehicleQuery = vehicleQuery.eq('is_available', true);
-        
+
         // Only show vehicles from active shops (with active subscriptions)
         vehicleQuery = vehicleQuery.eq('rental_shops.is_active', true);
-        
+
         // Only show verified vehicles
         vehicleQuery = vehicleQuery.eq('is_verified', true);
         vehicleQuery = vehicleQuery.eq('verification_status', 'approved');
-        
-        
+
+
         const { data: vehicleData, error: vehicleError } = await vehicleQuery;
-        
+
         // Added debugging - if any shops, check their active status
         if (vehicleData && vehicleData.length > 0) {
           console.log("All shops:", await supabase
@@ -290,11 +291,11 @@ export default function BrowsePage() {
             .eq('is_active', true)
           );
         }
-        
+
         if (vehicleError) {
           throw vehicleError;
         }
-        
+
         // Debug logs
         console.log("Vehicle query results (raw):", {
           count: vehicleData?.length || 0,
@@ -315,7 +316,7 @@ export default function BrowsePage() {
             verification_status: v.verification_status
           }))
         });
-        
+
         console.log("Vehicle query results:", {
           count: vehicleData?.length || 0,
           filters: {
@@ -326,30 +327,30 @@ export default function BrowsePage() {
           },
           vehicles: vehicleData
         });
-        
+
         // Also fetch bikes (legacy) with joined shop data
         const { data: bikeData, error: bikeError } = await supabase
           .from('bikes')
           .select(`
             *,
             bike_images(*),
-            rental_shops!inner(id, name, logo_url, location_area, is_active)
+            rental_shops!inner(id, name, logo_url, location_area, is_active, is_showcase)
           `)
           .eq('rental_shops.is_active', true)
           .order('price_per_day');
-        
+
         if (bikeError) {
           throw bikeError;
         }
-        
+
         // Process data
         if (bikeData && bikeData.length > 0) {
           // Process bike data
           // ... existing bike data processing ...
         }
-        
+
         let processedVehicles: VehicleWithMetadata[] = [];
-        
+
         if (vehicleData && vehicleData.length > 0) {
           // Process vehicle data
           const formattedVehicles = vehicleData?.map(vehicle => ({
@@ -358,51 +359,52 @@ export default function BrowsePage() {
             shopName: vehicle.rental_shops?.name || 'Unknown Shop',
             shopLogo: vehicle.rental_shops?.logo_url,
             shopLocation: vehicle.rental_shops?.location_area,
+            shopIsShowcase: vehicle.rental_shops?.is_showcase || false,
             vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
             images: vehicle.vehicle_images || [],
             is_available_for_dates: true // Default to true, will be updated if dates are selected
           })) as VehicleWithMetadata[];
-          
+
           processedVehicles = formattedVehicles;
         }
-        
+
         setVehicles(processedVehicles);
-        
+
         // Gather all categories by vehicle type
         const allCategories: Record<VehicleType, string[]> = {
           motorcycle: [],
           car: [],
           tuktuk: []
         }
-        
+
         // Get categories from vehicle types table
         const { data: categoryData } = await supabase
           .from('categories')
           .select('*')
-        
+
         if (categoryData) {
           categoryData.forEach((category) => {
             const vehicleType = category.vehicle_type_id === '1' ? 'motorcycle' :
                               category.vehicle_type_id === '2' ? 'car' :
                               category.vehicle_type_id === '3' ? 'tuktuk' : null
-                              
+
             if (vehicleType && !allCategories[vehicleType as VehicleType].includes(category.name)) {
               allCategories[vehicleType as VehicleType].push(category.name)
             }
           })
         }
-        
+
         // Get all unique locations from active shops
         const { data: shopData } = await supabase
           .from('rental_shops')
           .select('location_area')
           .eq('is_active', true)
           .order('location_area')
-        
+
         const allLocations = Array.from(
           new Set(shopData?.map(shop => shop.location_area).filter(Boolean) || [])
         ) as string[]
-        
+
         setAvailableCategories(allCategories)
         setLocations(allLocations)
       } catch (err) {
@@ -412,9 +414,9 @@ export default function BrowsePage() {
         setIsLoading(false)
       }
     };
-    
+
     loadInitialData();
-    
+
     return () => {
       // Clean up
       delete window.handleDateRangeChange;
@@ -429,40 +431,40 @@ export default function BrowsePage() {
         try {
           setIsLoading(true);
           const supabase = createClientComponentClient();
-          
+
           // Reset error
           setError(null);
-          
+
           console.log(`Checking availability between ${startDate} and ${endDate}`);
-          
+
           // Get current vehicles to check - capture this locally, don't use it from state in the dependency array
           const currentVehicles = [...vehicles]; // Create a local copy to avoid dependency issues
           const vehicleIds = currentVehicles.map(v => v.id);
           let availableVehicleIds: string[] = [];
-          
+
           if (vehicleIds.length === 0) {
             console.log("No vehicles to check availability for");
             setIsLoading(false);
             return;
           }
-          
+
           try {
             // Format dates for API
             const startDateFormatted = new Date(startDate).toISOString().split('T')[0];
             const endDateFormatted = new Date(endDate).toISOString().split('T')[0];
-            
+
             // Validate dates
             const start = new Date(startDateFormatted);
             const end = new Date(endDateFormatted);
-            
+
             if (isNaN(start.getTime()) || isNaN(end.getTime())) {
               throw new Error("Invalid date format");
             }
-            
+
             if (start >= end) {
               throw new Error("Start date must be before end date");
             }
-            
+
             // Check availability with API
             const response = await fetch('/api/vehicles/check-availability-batch', {
               method: 'POST',
@@ -473,14 +475,14 @@ export default function BrowsePage() {
                 endDate: endDateFormatted
               }),
             });
-            
+
             if (!response.ok) {
               const errorText = await response.text();
               throw new Error(`Failed to check availability: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
             }
-            
+
             const availabilityData = await response.json();
-            
+
             if (availabilityData && Array.isArray(availabilityData.availableVehicleIds)) {
               availableVehicleIds = availabilityData.availableVehicleIds;
               console.log(`Found ${availableVehicleIds.length} available vehicles for selected dates`);
@@ -492,7 +494,7 @@ export default function BrowsePage() {
             // Fallback - mark all vehicles as available
             availableVehicleIds = vehicleIds;
           }
-          
+
           // Update availability for all vehicles
           setVehicles(currentVehicles => {
             // First update all vehicles with their availability status
@@ -500,7 +502,7 @@ export default function BrowsePage() {
               ...vehicle,
               is_available_for_dates: availableVehicleIds.includes(vehicle.id)
             }));
-            
+
             // Return the updated vehicles without filtering
             return updatedVehicles;
           });
@@ -510,12 +512,12 @@ export default function BrowsePage() {
           setIsLoading(false);
         }
       };
-      
+
       // Prevent rapid sequential checks by adding a small timeout
       const timeoutId = setTimeout(() => {
         checkAvailabilityForDates();
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [startDate, endDate, dateRangeSelected]); // No vehicles dependency
@@ -533,7 +535,7 @@ export default function BrowsePage() {
     // When both dates are selected (as strings), trigger a fetch
     if (startDate && endDate && dateRangeSelected) {
       console.log("Complete date range detected, fetching data with filter:", { startDate, endDate });
-      // The main useEffect with [startDate, endDate, onlyShowAvailable] dependencies 
+      // The main useEffect with [startDate, endDate, onlyShowAvailable] dependencies
       // will handle the actual data fetching
     }
   }, [startDate, endDate, dateRangeSelected]);
@@ -557,7 +559,7 @@ export default function BrowsePage() {
   const handlePriceChange = (value: [number, number]) => {
     setPriceRange(value)
   }
-  
+
   const handleEngineSizeChange = (value: [number, number]) => {
     setEngineSizeRange(value)
   }
@@ -572,16 +574,23 @@ export default function BrowsePage() {
     // Find the vehicle to get its shop ID
     const vehicle = vehicles.find(v => v.id === vehicleId)
     if (vehicle && vehicle.shopId) {
+      // Check if this is a showcase shop
+      if (vehicle.shopIsShowcase) {
+        // Don't navigate to booking page for showcase shops
+        alert('This is a showcase shop for demonstration purposes only. Bookings are not available.');
+        return;
+      }
+
       // Navigate to the booking page with vehicle ID, shop ID, and dates
       const queryParams = new URLSearchParams();
       queryParams.append('shop', vehicle.shopId);
-      
+
       // Add date parameters if dates are selected
       if (startDate && endDate && dateRangeSelected) {
         queryParams.append('startDate', startDate);
         queryParams.append('endDate', endDate);
       }
-      
+
       router.push(`/booking/${vehicleId}?${queryParams.toString()}`);
     } else {
       console.error("Could not find shop ID for vehicle:", vehicleId)
@@ -596,49 +605,49 @@ export default function BrowsePage() {
     if (vehicle.price_per_day < priceRange[0] || vehicle.price_per_day > priceRange[1]) {
       return false
     }
-    
+
     // Vehicle type filter
     if (selectedVehicleType !== 'all' && vehicle.vehicle_type !== selectedVehicleType) {
       return false
     }
-    
+
     // Category filter - only apply if there are selected categories
     if (selectedCategories.length > 0) {
       if (!selectedCategories.includes(vehicle.category)) {
         return false
       }
     }
-    
+
     // Location filter
     if (selectedLocation && vehicle.shopLocation !== selectedLocation) {
       return false
     }
-    
+
     // Availability filter
     if (onlyShowAvailable) {
       if (!vehicle.is_available) {
         return false;
       }
-      
+
       // If dates are selected, also check date-specific availability
       if (startDate && endDate && dateRangeSelected && !vehicle.is_available_for_dates) {
         return false;
       }
     }
-    
+
     // Vehicle-specific filters
     if (vehicle.vehicle_type === 'car') {
       // Filter by minimum seats
       if (minSeats > 0 && (!vehicle.specifications?.seats || vehicle.specifications.seats < minSeats)) {
         return false
       }
-      
+
       // Filter by transmission
       if (transmission !== 'any' && (!vehicle.specifications?.transmission || vehicle.specifications.transmission !== transmission)) {
         return false
       }
     }
-    
+
     // Motorcycle-specific filters
     if (vehicle.vehicle_type === 'motorcycle') {
       // Engine size filter
@@ -647,7 +656,7 @@ export default function BrowsePage() {
         return false
       }
     }
-    
+
     return true
   }).sort((a, b) => {
     switch (sortBy) {
@@ -661,7 +670,7 @@ export default function BrowsePage() {
         return 0
     }
   });
-  
+
   // Log the filtered results for debugging
   console.log("After applying UI filters:", {
     originalCount: vehicles.length,
@@ -726,8 +735,8 @@ export default function BrowsePage() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    show: { 
-      opacity: 1, 
+    show: {
+      opacity: 1,
       y: 0,
       transition: {
         type: "spring",
@@ -738,18 +747,18 @@ export default function BrowsePage() {
   }
 
   const filterVariants = {
-    closed: { 
-      height: 0, 
+    closed: {
+      height: 0,
       opacity: 0,
-      transition: { 
+      transition: {
         duration: 0.3,
-        ease: "easeInOut" 
+        ease: "easeInOut"
       }
     },
-    open: { 
-      height: "auto", 
+    open: {
+      height: "auto",
       opacity: 1,
-      transition: { 
+      transition: {
         duration: 0.3,
         ease: "easeInOut"
       }
@@ -779,21 +788,21 @@ export default function BrowsePage() {
     setMinSeats(0);
     setTransmission("any");
     setEngineSizeRange([0, 1000]);
-    
+
     // Also clear dates
     clearDates();
   };
 
   return (
     <div className="min-h-screen">
-      <motion.section 
+      <motion.section
         className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
         {/* Background with overlay gradient */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 z-0 opacity-20"
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
@@ -801,13 +810,13 @@ export default function BrowsePage() {
         >
           <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
         </motion.div>
-        
+
         <div className="container mx-auto px-4 py-12 relative z-10 pt-24">
-          <motion.div 
+          <motion.div
             className="max-w-3xl mx-auto mb-8"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ 
+            transition={{
               duration: 0.6,
               delay: 0.2
             }}
@@ -821,10 +830,10 @@ export default function BrowsePage() {
               <Badge className="mb-4 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
                 Find Your Ride
               </Badge>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
+
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => window.location.reload()}
                 className="text-white/80 hover:text-white flex items-center gap-1"
               >
@@ -832,7 +841,7 @@ export default function BrowsePage() {
                 Refresh
               </Button>
             </motion.div>
-            <motion.h1 
+            <motion.h1
               className="text-3xl md:text-4xl font-bold mb-4 text-white"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -840,7 +849,7 @@ export default function BrowsePage() {
             >
               Browse Available Vehicles
             </motion.h1>
-            <motion.p 
+            <motion.p
               className="text-lg text-gray-300"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -851,7 +860,7 @@ export default function BrowsePage() {
           </motion.div>
         </div>
       </motion.section>
-      
+
       <section className="py-8 bg-gradient-to-b from-gray-900 to-black text-white">
         <div className="container mx-auto px-4">
           {/* Top bar with filters toggle and view options */}
@@ -866,15 +875,15 @@ export default function BrowsePage() {
               {showFilters ? "Hide Filters" : "Show Filters"}
             </Button>
           </div>
-          
+
           {/* Mobile Filters Toggle */}
-          <motion.div 
+          <motion.div
             className="md:hidden mb-4"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.7 }}
           >
-            <motion.button 
+            <motion.button
               className="w-full flex items-center justify-between bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-md p-3 text-white"
               onClick={() => setShowFilters(!showFilters)}
               whileTap={{ scale: 0.98 }}
@@ -897,10 +906,10 @@ export default function BrowsePage() {
               </motion.div>
             </motion.button>
           </motion.div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
             {/* Filters Panel (Desktop & Mobile) */}
-            <motion.div 
+            <motion.div
               className="md:col-span-1"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -912,7 +921,7 @@ export default function BrowsePage() {
                   <Filter size={18} className="mr-2 text-primary" />
                   Filters
                 </h2>
-                
+
                 {/* Vehicle Type Selector */}
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3 flex items-center">
@@ -924,7 +933,7 @@ export default function BrowsePage() {
                     onChange={setSelectedVehicleType}
                   />
                 </div>
-                
+
                 {/* Location Filter */}
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3 flex items-center">
@@ -944,7 +953,7 @@ export default function BrowsePage() {
                     ))}
                   </select>
                 </div>
-                
+
                 {/* Availability Filter */}
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3 flex items-center">
@@ -957,10 +966,10 @@ export default function BrowsePage() {
                       endDate={endDateObj}
                       onStartDateChange={(date) => {
                         console.log("Start date changed:", date);
-                        
+
                         // Update the Date object
                         setStartDateObj(date);
-                        
+
                         // Update the formatted string date
                         if (date) {
                           const formattedDate = date.toISOString().split('T')[0];
@@ -968,7 +977,7 @@ export default function BrowsePage() {
                         } else {
                           setStartDate('');
                         }
-                        
+
                         // If we're clearing the start date, also clear the end date
                         if (!date) {
                           setEndDateObj(null);
@@ -978,15 +987,15 @@ export default function BrowsePage() {
                       }}
                       onEndDateChange={(date) => {
                         console.log("End date changed:", date);
-                        
+
                         // Update the Date object
                         setEndDateObj(date);
-                        
+
                         // Update the formatted string date
                         if (date) {
                           const formattedDate = date.toISOString().split('T')[0];
                           setEndDate(formattedDate);
-                          
+
                           // If we now have both dates, mark selection as complete
                           if (startDateObj) {
                             setDateRangeSelected(true);
@@ -998,13 +1007,13 @@ export default function BrowsePage() {
                       }}
                     />
                     <p className="text-xs text-white/60 mt-1.5">
-                      {dateRangeSelected 
+                      {dateRangeSelected
                         ? `Found ${vehicles.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
-                        : startDateObj 
+                        : startDateObj
                           ? "Now select the end date (day you'll return the vehicle)"
                           : "Select the start date (day you'll pick up the vehicle)"}
                     </p>
-                    
+
                     {(startDateObj || endDateObj) && (
                       <button
                         onClick={clearDates}
@@ -1016,9 +1025,9 @@ export default function BrowsePage() {
                     )}
                   </div>
                   <div className="flex items-center space-x-2 mt-3">
-                    <input 
-                      type="checkbox" 
-                      id="available-vehicles" 
+                    <input
+                      type="checkbox"
+                      id="available-vehicles"
                       checked={onlyShowAvailable}
                       onChange={() => {
                         setOnlyShowAvailable(!onlyShowAvailable);
@@ -1030,13 +1039,13 @@ export default function BrowsePage() {
                       className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
                     />
                     <label htmlFor="available-vehicles" className="text-sm text-gray-300">
-                      {dateRangeSelected 
-                        ? "Only show available for selected dates" 
+                      {dateRangeSelected
+                        ? "Only show available for selected dates"
                         : "Only show available vehicles"}
                     </label>
                   </div>
                 </div>
-                
+
                 {/* Category Filter - show categories based on selected vehicle type */}
                 {selectedVehicleType !== 'all' && availableCategories[selectedVehicleType].length > 0 && (
                   <div className="mb-6">
@@ -1046,7 +1055,7 @@ export default function BrowsePage() {
                     </h3>
                     <div className="space-y-2">
                       {availableCategories[selectedVehicleType].map((type) => (
-                        <BikeTypeCheckbox 
+                        <BikeTypeCheckbox
                           key={type}
                           type={type.replace('_', ' ')}
                           checked={selectedCategories.includes(type)}
@@ -1056,12 +1065,12 @@ export default function BrowsePage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Car-specific filters - only show when 'car' is selected */}
                 {selectedVehicleType === 'car' && (
                   <div className="mb-6">
                     <h3 className="text-md font-bold mb-3">Car Options</h3>
-                    
+
                     {/* Seats filter */}
                     <div className="mb-4">
                       <h4 className="text-sm font-medium mb-2">Minimum Seats</h4>
@@ -1077,7 +1086,7 @@ export default function BrowsePage() {
                         <option value={7}>7+ seats</option>
                       </select>
                     </div>
-                    
+
                     {/* Transmission filter */}
                     <div>
                       <h4 className="text-sm font-medium mb-2">Transmission</h4>
@@ -1093,7 +1102,7 @@ export default function BrowsePage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Motorcycle-specific filters - only show when 'motorcycle' is selected */}
                 {selectedVehicleType === 'motorcycle' && (
                   <div className="mb-6">
@@ -1103,7 +1112,7 @@ export default function BrowsePage() {
                         <span>{engineSizeRange[0]}cc</span>
                         <span>{engineSizeRange[1]}cc</span>
                       </div>
-                      <input 
+                      <input
                         type="range"
                         min={0}
                         max={1000}
@@ -1111,7 +1120,7 @@ export default function BrowsePage() {
                         onChange={(e) => handleEngineSizeChange([parseInt(e.target.value), engineSizeRange[1]])}
                         className="w-full mb-2 accent-primary"
                       />
-                      <input 
+                      <input
                         type="range"
                         min={0}
                         max={1000}
@@ -1122,7 +1131,7 @@ export default function BrowsePage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Price Range Filter */}
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3">Price Range</h3>
@@ -1131,7 +1140,7 @@ export default function BrowsePage() {
                       <span>₱{priceRange[0]}</span>
                       <span>₱{priceRange[1]}</span>
                     </div>
-                    <input 
+                    <input
                       type="range"
                       min={100}
                       max={2000}
@@ -1139,7 +1148,7 @@ export default function BrowsePage() {
                       onChange={(e) => handlePriceChange([parseInt(e.target.value), priceRange[1]])}
                       className="w-full mb-2 accent-primary"
                     />
-                    <input 
+                    <input
                       type="range"
                       min={100}
                       max={2000}
@@ -1149,7 +1158,7 @@ export default function BrowsePage() {
                     />
                   </div>
                 </div>
-                
+
                 {/* Sort By Filter */}
                 <div className="mb-6">
                   <h3 className="text-md font-bold mb-3">Sort By</h3>
@@ -1162,11 +1171,11 @@ export default function BrowsePage() {
                     <option value="price_desc">Price: High to Low</option>
                   </select>
                 </div>
-                
+
                 {/* Reset Filters Button */}
                 {(selectedCategories.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 || selectedLocation || onlyShowAvailable) ? (
                   <div className="mt-4">
-                    <button 
+                    <button
                       onClick={resetAllFilters}
                       className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
                     >
@@ -1175,11 +1184,11 @@ export default function BrowsePage() {
                   </div>
                 ) : null}
               </div>
-              
+
               {/* Mobile filters (expandable) */}
               <AnimatePresence>
                 {showFilters && (
-                  <motion.div 
+                  <motion.div
                     key="mobile-filters"
                     variants={filterVariants}
                     initial="closed"
@@ -1198,7 +1207,7 @@ export default function BrowsePage() {
                         onChange={setSelectedVehicleType}
                       />
                     </div>
-                    
+
                     {/* Location Filter (Mobile) */}
                     <div className="mb-6">
                       <h3 className="text-md font-bold mb-3 flex items-center">
@@ -1218,7 +1227,7 @@ export default function BrowsePage() {
                         ))}
                       </select>
                     </div>
-                    
+
                     {/* Availability Filter (Mobile) */}
                     <div className="mb-6">
                       <h3 className="text-md font-bold mb-3 flex items-center">
@@ -1231,10 +1240,10 @@ export default function BrowsePage() {
                           endDate={endDateObj}
                           onStartDateChange={(date) => {
                             console.log("Start date changed (mobile):", date);
-                            
+
                             // Update the Date object
                             setStartDateObj(date);
-                            
+
                             // Update the formatted string date
                             if (date) {
                               const formattedDate = date.toISOString().split('T')[0];
@@ -1242,7 +1251,7 @@ export default function BrowsePage() {
                             } else {
                               setStartDate('');
                             }
-                            
+
                             // If we're clearing the start date, also clear the end date
                             if (!date) {
                               setEndDateObj(null);
@@ -1252,15 +1261,15 @@ export default function BrowsePage() {
                           }}
                           onEndDateChange={(date) => {
                             console.log("End date changed (mobile):", date);
-                            
+
                             // Update the Date object
                             setEndDateObj(date);
-                            
+
                             // Update the formatted string date
                             if (date) {
                               const formattedDate = date.toISOString().split('T')[0];
                               setEndDate(formattedDate);
-                              
+
                               // If we now have both dates, mark selection as complete
                               if (startDateObj) {
                                 setDateRangeSelected(true);
@@ -1272,13 +1281,13 @@ export default function BrowsePage() {
                           }}
                         />
                         <p className="text-xs text-white/60 mt-1.5">
-                          {dateRangeSelected 
+                          {dateRangeSelected
                             ? `Found ${vehicles.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
-                            : startDateObj 
+                            : startDateObj
                               ? "Now select the end date (day you'll return the vehicle)"
                               : "Select the start date (day you'll pick up the vehicle)"}
                         </p>
-                        
+
                         {(startDateObj || endDateObj) && (
                           <button
                             onClick={clearDates}
@@ -1290,9 +1299,9 @@ export default function BrowsePage() {
                         )}
                       </div>
                       <div className="flex items-center space-x-2 mt-3">
-                        <input 
-                          type="checkbox" 
-                          id="mobile-available-vehicles" 
+                        <input
+                          type="checkbox"
+                          id="mobile-available-vehicles"
                           checked={onlyShowAvailable}
                           onChange={() => {
                             setOnlyShowAvailable(!onlyShowAvailable);
@@ -1304,13 +1313,13 @@ export default function BrowsePage() {
                           className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
                         />
                         <label htmlFor="mobile-available-vehicles" className="text-sm text-gray-300">
-                          {dateRangeSelected 
-                            ? "Only show available for selected dates" 
+                          {dateRangeSelected
+                            ? "Only show available for selected dates"
                             : "Only show available vehicles"}
                         </label>
                       </div>
                     </div>
-                    
+
                     {/* Category Filter - Mobile */}
                     {selectedVehicleType !== 'all' && availableCategories[selectedVehicleType].length > 0 && (
                       <div className="mb-6">
@@ -1320,7 +1329,7 @@ export default function BrowsePage() {
                         </h3>
                         <div className="space-y-2">
                           {availableCategories[selectedVehicleType].map((type) => (
-                            <BikeTypeCheckbox 
+                            <BikeTypeCheckbox
                               key={type}
                               type={type.replace('_', ' ')}
                               checked={selectedCategories.includes(type)}
@@ -1330,7 +1339,7 @@ export default function BrowsePage() {
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Price Range (Mobile) */}
                     <div className="mb-6">
                       <h3 className="text-md font-bold mb-3">Price Range</h3>
@@ -1339,7 +1348,7 @@ export default function BrowsePage() {
                           <span>₱{priceRange[0]}</span>
                           <span>₱{priceRange[1]}</span>
                         </div>
-                        <input 
+                        <input
                           type="range"
                           min={100}
                           max={2000}
@@ -1347,7 +1356,7 @@ export default function BrowsePage() {
                           onChange={(e) => handlePriceChange([parseInt(e.target.value), priceRange[1]])}
                           className="w-full mb-2 accent-primary"
                         />
-                        <input 
+                        <input
                           type="range"
                           min={100}
                           max={2000}
@@ -1357,7 +1366,7 @@ export default function BrowsePage() {
                         />
                       </div>
                     </div>
-                    
+
                     {/* Mobile-specific filters */}
                     {selectedVehicleType === 'motorcycle' && (
                       <div className="mb-6">
@@ -1367,7 +1376,7 @@ export default function BrowsePage() {
                             <span>{engineSizeRange[0]}cc</span>
                             <span>{engineSizeRange[1]}cc</span>
                           </div>
-                          <input 
+                          <input
                             type="range"
                             min={0}
                             max={1000}
@@ -1375,7 +1384,7 @@ export default function BrowsePage() {
                             onChange={(e) => handleEngineSizeChange([parseInt(e.target.value), engineSizeRange[1]])}
                             className="w-full mb-2 accent-primary"
                           />
-                          <input 
+                          <input
                             type="range"
                             min={0}
                             max={1000}
@@ -1386,12 +1395,12 @@ export default function BrowsePage() {
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Car-specific filters - mobile */}
                     {selectedVehicleType === 'car' && (
                       <div className="mb-6">
                         <h3 className="text-md font-bold mb-3">Car Options</h3>
-                        
+
                         <div className="mb-4">
                           <h4 className="text-sm font-medium mb-2">Minimum Seats</h4>
                           <select
@@ -1406,7 +1415,7 @@ export default function BrowsePage() {
                             <option value={7}>7+ seats</option>
                           </select>
                         </div>
-                        
+
                         <div>
                           <h4 className="text-sm font-medium mb-2">Transmission</h4>
                           <select
@@ -1421,7 +1430,7 @@ export default function BrowsePage() {
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Sort By (Mobile) */}
                     <div className="mb-6">
                       <h3 className="text-md font-bold mb-3">Sort By</h3>
@@ -1434,11 +1443,11 @@ export default function BrowsePage() {
                         <option value="price_desc">Price: High to Low</option>
                       </select>
                     </div>
-                    
+
                     {/* Reset Filters Button (Mobile) */}
                     {(selectedCategories.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 || selectedLocation || onlyShowAvailable) ? (
                       <div className="mt-4">
-                        <button 
+                        <button
                           onClick={resetAllFilters}
                           className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
                         >
@@ -1450,7 +1459,7 @@ export default function BrowsePage() {
                 )}
               </AnimatePresence>
             </motion.div>
-            
+
             {/* Vehicle Listings */}
             <div className="md:col-span-3">
               {isLoading ? (
@@ -1461,7 +1470,7 @@ export default function BrowsePage() {
               ) : error ? (
                 <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-center">
                   <p className="text-red-400">{error}</p>
-                  <button 
+                  <button
                     onClick={() => window.location.reload()}
                     className="mt-3 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-md text-sm"
                   >
@@ -1472,7 +1481,7 @@ export default function BrowsePage() {
                 <div className="bg-gray-800/40 backdrop-blur-sm border border-gray-700 rounded-lg p-8 text-center">
                   <h3 className="text-xl font-semibold mb-2">No vehicles found</h3>
                   <p className="text-gray-400 mb-4">Try adjusting your filters to see more results</p>
-                  <button 
+                  <button
                     onClick={resetAllFilters}
                     className="px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded-md text-sm"
                   >
@@ -1486,19 +1495,19 @@ export default function BrowsePage() {
                       <span className="font-semibold">{filteredVehicles.length}</span> {filteredVehicles.length === 1 ? 'vehicle' : 'vehicles'} found
                     </p>
                     <Badge className="bg-primary/10 text-xs text-primary border-primary/20 py-1">
-                      {(selectedCategories.length > 0 || minRating > 0 || selectedLocation || onlyShowAvailable || selectedVehicleType !== 'all') 
-                        ? `Filters applied` 
+                      {(selectedCategories.length > 0 || minRating > 0 || selectedLocation || onlyShowAvailable || selectedVehicleType !== 'all')
+                        ? `Filters applied`
                         : 'No filters applied'}
                     </Badge>
                   </div>
-                  <motion.div 
+                  <motion.div
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
                     variants={containerVariants}
                     initial="hidden"
                     animate="show"
                   >
                     {filteredVehicles.map((vehicle) => (
-                      <motion.div 
+                      <motion.div
                         className="w-full"
                         key={vehicle.id}
                         variants={itemVariants}
@@ -1541,4 +1550,4 @@ export default function BrowsePage() {
       </section>
     </div>
   )
-} 
+}
