@@ -28,6 +28,7 @@ interface VehicleCardProps {
   specifications?: Record<string, any>
   onBookClick?: (vehicleId: string) => void
   onViewShopClick?: () => void
+  onImageClick?: () => void
   shop?: {
     id: string
     name: string
@@ -52,6 +53,7 @@ const VehicleCard = ({
   specifications,
   onBookClick,
   onViewShopClick,
+  onImageClick,
   shop,
   availabilityInfo,
 }: VehicleCardProps) => {
@@ -90,13 +92,19 @@ const VehicleCard = ({
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="bg-card rounded-lg overflow-hidden border border-border shadow-sm h-full flex flex-col"
       whileHover={{ y: -3 }}
       transition={{ duration: 0.2 }}
     >
       {/* Image Gallery */}
-      <div className="relative h-48 w-full">
+      <div
+        className="relative h-48 w-full cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          onImageClick?.();
+        }}
+      >
         {images.length > 0 ? (
           <Image
             src={images[currentImageIndex] || '/placeholder.jpg'}
@@ -123,7 +131,7 @@ const VehicleCard = ({
         {/* Navigation Arrows - only show if multiple images */}
         {images.length > 1 && (
           <>
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation()
                 prevImage()
@@ -133,7 +141,7 @@ const VehicleCard = ({
             >
               <ChevronLeft size={18} />
             </button>
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation()
                 nextImage()
@@ -143,15 +151,15 @@ const VehicleCard = ({
             >
               <ChevronRight size={18} />
             </button>
-            
+
             {/* Dots indicator */}
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
               {images.map((_, index) => (
-                <span 
-                  key={index} 
+                <span
+                  key={index}
                   className={`block w-1.5 h-1.5 rounded-full ${
-                    index === currentImageIndex 
-                      ? 'bg-primary' 
+                    index === currentImageIndex
+                      ? 'bg-primary'
                       : 'bg-background/50'
                   }`}
                 />
@@ -159,21 +167,21 @@ const VehicleCard = ({
             </div>
           </>
         )}
-        
+
         {/* Availability Badge */}
         <div className="absolute top-3 right-3 z-10">
           {availabilityInfo ? (
-            <Badge 
-              variant={availabilityInfo.isAvailableForDates ? 'available' : 'unavailable'} 
+            <Badge
+              variant={availabilityInfo.isAvailableForDates ? 'available' : 'unavailable'}
               className="px-3 py-1 text-xs font-bold shadow-lg"
             >
-              {availabilityInfo.isAvailableForDates 
-                ? 'Available' 
+              {availabilityInfo.isAvailableForDates
+                ? 'Available'
                 : 'Unavailable'}
             </Badge>
           ) : (
-            <Badge 
-              variant={isAvailable ? 'available' : 'unavailable'} 
+            <Badge
+              variant={isAvailable ? 'available' : 'unavailable'}
               className="px-3 py-1 text-xs font-bold shadow-lg"
             >
               {isAvailable ? 'Available' : 'Not Available'}
@@ -185,12 +193,12 @@ const VehicleCard = ({
       {/* Vehicle Details */}
       <div className="p-4 flex-grow flex flex-col">
         <h3 className="text-lg font-medium text-foreground mb-1">{model}</h3>
-        
+
         {/* Vehicle-specific details */}
         {specifications && (
           <div className="mb-3">
-            <VehicleDetailsDisplay 
-              vehicleType={vehicleType} 
+            <VehicleDetailsDisplay
+              vehicleType={vehicleType}
               specifications={specifications}
               size="sm"
               variant="grid"
@@ -205,14 +213,14 @@ const VehicleCard = ({
             <span className="text-sm text-muted-foreground">Daily:</span>
             <span className="font-medium">₱{prices.daily}</span>
           </div>
-          
+
           {prices.weekly && (
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Weekly:</span>
               <span className="font-medium">₱{prices.weekly}</span>
             </div>
           )}
-          
+
           {prices.monthly && (
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Monthly:</span>
@@ -241,10 +249,10 @@ const VehicleCard = ({
               <div className="flex items-center space-x-2 border-t border-border pt-3 rounded-md group-hover:bg-white/5 transition-colors duration-200 px-2 py-1 -mx-2 -my-1">
                 <div className="w-8 h-8 relative rounded-full overflow-hidden bg-muted flex-shrink-0 group-hover:ring-1 group-hover:ring-primary transition-all duration-200">
                   {shop.logo ? (
-                    <Image 
-                      src={shop.logo} 
-                      alt={shop.name} 
-                      fill 
+                    <Image
+                      src={shop.logo}
+                      alt={shop.name}
+                      fill
                       className="object-cover"
                     />
                   ) : (
@@ -266,7 +274,7 @@ const VehicleCard = ({
 
         {/* Actions */}
         <div className="p-4 border-t border-border mt-auto">
-          <Button 
+          <Button
             size="sm"
             className="w-full"
             onClick={() => onBookClick?.(id)}
@@ -280,4 +288,4 @@ const VehicleCard = ({
   )
 }
 
-export default VehicleCard 
+export default VehicleCard

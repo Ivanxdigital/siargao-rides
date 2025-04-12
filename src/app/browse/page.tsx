@@ -1537,6 +1537,7 @@ export default function BrowsePage() {
                             endDate: endDate
                           } : undefined}
                           onViewShopClick={() => handleViewShopClick(vehicle.shopId)}
+                          onImageClick={() => handleViewShopClick(vehicle.shopId)}
                           onBookClick={handleBookClick}
                         />
                       </motion.div>
