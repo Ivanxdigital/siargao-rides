@@ -31,6 +31,7 @@ interface CalendarDay {
   date: Date;
   isCurrentMonth: boolean;
   isDisabled: boolean;
+  isBooked?: boolean;
   isToday?: boolean;
   isSelected?: boolean;
   isInSelectedRange?: boolean;
@@ -182,12 +183,15 @@ export default function DateRangePicker({
     
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const isDisabled = date < today || isDateBooked(date);
+      const isPast = date < today;
+      const booked = isDateBooked(date);
+      const isDisabled = isPast || booked;
       
       days.push({
         date,
         isCurrentMonth: true,
         isDisabled,
+        isBooked: booked,
         isToday: isSameDay(date, today),
         isSelected: startDate && endDate 
           ? isWithinInterval(date, { start: startDate, end: endDate })
@@ -382,13 +386,14 @@ export default function DateRangePicker({
                       disabled={day.isDisabled}
                       className={cn(
                         "text-sm w-9 h-9 rounded-md flex items-center justify-center",
-                        day.isDisabled && "text-muted-foreground opacity-50 cursor-not-allowed",
-                        !day.isDisabled && "hover:bg-primary/10",
-                        day.isToday && !day.isSelected && "border border-primary",
-                        day.isSelected && "bg-primary text-white font-medium",
-                        day.isInSelectedRange && !day.isSelectionStart && !day.isSelectionEnd && "bg-primary/20",
-                        day.isSelectionStart && "bg-primary text-white font-medium rounded-l-md",
-                        day.isSelectionEnd && "bg-primary text-white font-medium rounded-r-md"
+                        day.isBooked && "bg-red-400/30 text-red-100 cursor-not-allowed",
+                        day.isDisabled && !day.isBooked && "text-muted-foreground opacity-50 cursor-not-allowed",
+                        !day.isDisabled && day.isSelected && "bg-primary text-white font-medium",
+                        !day.isDisabled && day.isInSelectedRange && !day.isSelectionStart && !day.isSelectionEnd && "bg-primary/20",
+                        !day.isDisabled && day.isSelectionStart && "bg-primary text-white font-medium rounded-l-md",
+                        !day.isDisabled && day.isSelectionEnd && "bg-primary text-white font-medium rounded-r-md",
+                        !day.isDisabled && !day.isSelected && !day.isInSelectedRange && day.isToday && "border border-primary",
+                        !day.isDisabled && !day.isSelected && !day.isInSelectedRange && "hover:bg-primary/10"
                       )}
                     >
                       {day.date.getDate()}
@@ -437,13 +442,14 @@ export default function DateRangePicker({
                       disabled={day.isDisabled}
                       className={cn(
                         "text-sm w-9 h-9 rounded-md flex items-center justify-center",
-                        day.isDisabled && "text-muted-foreground opacity-50 cursor-not-allowed",
-                        !day.isDisabled && "hover:bg-primary/10",
-                        day.isToday && !day.isSelected && "border border-primary",
-                        day.isSelected && "bg-primary text-white font-medium",
-                        day.isInSelectedRange && !day.isSelectionStart && !day.isSelectionEnd && "bg-primary/20",
-                        day.isSelectionStart && "bg-primary text-white font-medium rounded-l-md",
-                        day.isSelectionEnd && "bg-primary text-white font-medium rounded-r-md"
+                        day.isBooked && "bg-red-400/30 text-red-100 cursor-not-allowed",
+                        day.isDisabled && !day.isBooked && "text-muted-foreground opacity-50 cursor-not-allowed",
+                        !day.isDisabled && day.isSelected && "bg-primary text-white font-medium",
+                        !day.isDisabled && day.isInSelectedRange && !day.isSelectionStart && !day.isSelectionEnd && "bg-primary/20",
+                        !day.isDisabled && day.isSelectionStart && "bg-primary text-white font-medium rounded-l-md",
+                        !day.isDisabled && day.isSelectionEnd && "bg-primary text-white font-medium rounded-r-md",
+                        !day.isDisabled && !day.isSelected && !day.isInSelectedRange && day.isToday && "border border-primary",
+                        !day.isDisabled && !day.isSelected && !day.isInSelectedRange && "hover:bg-primary/10"
                       )}
                     >
                       {day.date.getDate()}
