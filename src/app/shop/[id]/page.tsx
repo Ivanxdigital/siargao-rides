@@ -370,27 +370,36 @@ export default function ShopPage() {
   // Error state
   if (error || !shop) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-semibold mb-4">
-          {shop ? shop.name : "Shop Not Found"}
-        </h1>
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 max-w-lg mx-auto border border-white/10">
-          <div className="text-amber-400 mb-4">
-            <AlertTriangle size={48} className="mx-auto" />
-          </div>
-          <p className="text-white mb-4">
-            {error || "The shop you're looking for doesn't exist or has been removed."}
-          </p>
-          {error && error.includes('inactive') && (
-            <div className="mt-2 mb-6 text-sm text-gray-400">
-              <p>This shop may have an expired subscription or may be temporarily unavailable.</p>
+      <div className="flex flex-col min-h-screen bg-gradient-to-b from-black to-gray-950 text-white relative">
+        {/* Background with enhanced overlay gradient */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-purple-900/15 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-blue-900/5 to-transparent"></div>
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5"></div>
+        </div>
+
+        <div className="container mx-auto px-4 pt-32 pb-12 text-center relative z-10">
+          <h1 className="text-2xl font-semibold mb-4">
+            {shop ? shop.name : "Shop Not Found"}
+          </h1>
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 max-w-lg mx-auto border border-white/10">
+            <div className="text-amber-400 mb-4">
+              <AlertTriangle size={48} className="mx-auto" />
             </div>
-          )}
-          <Button asChild className="mt-4">
-            <Link href="/browse">
-              Browse Available Vehicles
-            </Link>
-          </Button>
+            <p className="text-white mb-4">
+              {error || "The shop you're looking for doesn't exist or has been removed."}
+            </p>
+            {error && error.includes('inactive') && (
+              <div className="mt-2 mb-6 text-sm text-gray-400">
+                <p>This shop may have an expired subscription or may be temporarily unavailable.</p>
+              </div>
+            )}
+            <Button asChild className="mt-4">
+              <Link href="/browse">
+                Browse Available Vehicles
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
