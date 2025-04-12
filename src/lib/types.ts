@@ -88,6 +88,7 @@ export type RentalShop = {
   requires_id_deposit?: boolean
   requires_cash_deposit?: boolean
   cash_deposit_amount?: number
+  is_showcase?: boolean
   created_at: string
   updated_at: string
 }
@@ -257,4 +258,4 @@ export enum PaymentStatusEnum {
   Pending = 'pending',
   Paid = 'paid',
   Refunded = 'refunded'
-} 
+}

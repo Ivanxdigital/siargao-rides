@@ -112,6 +112,7 @@ interface RentalShop {
   facebook_url?: string | null;
   instagram_url?: string | null;
   sms_number?: string | null;
+  is_showcase?: boolean;
 }
 
 export default function ShopPage() {
@@ -341,6 +342,15 @@ export default function ShopPage() {
 
   const handleBookClick = (vehicleId: string) => {
     setSelectedVehicleId(vehicleId)
+
+    // Check if this is a showcase shop
+    if (shop.is_showcase) {
+      // Don't navigate to booking page for showcase shops
+      // Instead, show an alert or toast message
+      alert('This is a showcase shop for demonstration purposes only. Bookings are not available.')
+      return
+    }
+
     // Navigate to the booking page with vehicle ID and shop ID
     router.push(`/booking/${vehicleId}?shop=${id}`)
   }
@@ -502,6 +512,12 @@ export default function ShopPage() {
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                   </svg>
                   Verified Shop
+                </Badge>
+              }
+              {shop.is_showcase &&
+                <Badge variant="outline" className="ml-2 bg-purple-700/60 text-purple-100 border border-purple-500/30 px-2.5 py-1">
+                  <AlertTriangle size={14} className="mr-1" />
+                  Showcase Only
                 </Badge>
               }
             </div>
@@ -808,6 +824,33 @@ export default function ShopPage() {
                 <Truck size={14} className="mr-1.5" /> Tuktuks
               </Button>
             )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Showcase shop warning banner */}
+      {shop.is_showcase && (
+        <motion.div
+          className="container mx-auto px-4 mt-10 relative z-10"
+          variants={fadeIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="p-4 bg-purple-900/30 backdrop-blur-sm border border-purple-500/30 rounded-lg shadow-lg">
+            <div className="flex items-start gap-3">
+              <div className="text-purple-300 mt-1">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-purple-100 mb-1">Showcase Shop - No Bookings Available</h3>
+                <p className="text-purple-200/80">
+                  This is a showcase shop for demonstration purposes only. You cannot make real bookings from this shop.
+                  Please browse other shops to make actual vehicle rentals.
+                </p>
+              </div>
+            </div>
           </div>
         </motion.div>
       )}
