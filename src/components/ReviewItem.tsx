@@ -16,7 +16,7 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
   const canRespond = !!isShopOwner;
   const [reviewUser, setReviewUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     async function fetchUserData() {
       // If review already includes user data (ReviewWithDetails type), use that
@@ -25,7 +25,22 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
         setLoading(false);
         return;
       }
-      
+
+      // Check if user_id is valid
+      if (!review.user_id) {
+        console.error('Invalid user_id in review:', JSON.stringify(review));
+        // Set a fallback user object
+        setReviewUser({
+          id: 'unknown',
+          email: '',
+          role: 'tourist',
+          created_at: '',
+          updated_at: ''
+        } as UserType);
+        setLoading(false);
+        return;
+      }
+
       // Otherwise fetch the user data
       try {
         const supabase = createClientComponentClient();
@@ -34,22 +49,53 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
           .select('*')
           .eq('id', review.user_id)
           .single();
-        
+
         if (error) {
-          console.error('Error fetching user data:', error);
+          console.error('Error fetching user data:', JSON.stringify(error));
+          // Set a fallback user object
+          setReviewUser({
+            id: review.user_id,
+            email: '',
+            role: 'tourist',
+            created_at: '',
+            updated_at: ''
+          } as UserType);
         } else if (data) {
           setReviewUser(data as UserType);
+        } else {
+          console.error('No user data found for ID:', review.user_id);
+          // Set a fallback user object
+          setReviewUser({
+            id: review.user_id,
+            email: '',
+            role: 'tourist',
+            created_at: '',
+            updated_at: ''
+          } as UserType);
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Exception fetching user data:', error);
+        if (error instanceof Error) {
+          console.error('Error details:', error.message, error.stack);
+        } else {
+          console.error('Error details:', JSON.stringify(error));
+        }
+        // Set a fallback user object
+        setReviewUser({
+          id: review.user_id || 'unknown',
+          email: '',
+          role: 'tourist',
+          created_at: '',
+          updated_at: ''
+        } as UserType);
       } finally {
         setLoading(false);
       }
     }
-    
+
     fetchUserData();
   }, [review]);
-  
+
   // Function to get user's first name or a fallback
   const getUserName = () => {
     if (reviewUser?.first_name) {
@@ -57,18 +103,18 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
     }
     return "Customer";
   };
-  
+
   return (
     <div className="bg-black/60 backdrop-blur-sm border border-white/10 hover:border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center text-primary font-semibold">
             {reviewUser?.avatar_url ? (
-              <Image 
-                src={reviewUser.avatar_url} 
-                alt={getUserName()} 
-                width={40} 
-                height={40} 
+              <Image
+                src={reviewUser.avatar_url}
+                alt={getUserName()}
+                width={40}
+                height={40}
                 className="object-cover w-full h-full"
               />
             ) : (
@@ -88,20 +134,20 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
         </div>
         <div className="flex items-center bg-yellow-900/20 px-2 py-1.5 rounded-lg">
           {[...Array(5)].map((_, i) => (
-            <Star 
-              key={i} 
-              size={16} 
-              className={i < review.rating ? "text-amber-400 fill-amber-400" : "text-white/30"} 
+            <Star
+              key={i}
+              size={16}
+              className={i < review.rating ? "text-amber-400 fill-amber-400" : "text-white/30"}
             />
           ))}
         </div>
       </div>
-      
+
       <div className="bg-black/40 p-4 rounded-lg mb-4 relative">
         <div className="absolute -top-2 left-4 w-4 h-4 bg-black/40 rotate-45"></div>
         <p className="text-sm leading-relaxed">{review.comment || "No comment provided."}</p>
       </div>
-      
+
       {/* Reply from shop owner */}
       {review.reply && (
         <div className="flex gap-3 mt-5 bg-primary/5 p-4 rounded-lg border-l-3 border-primary">
@@ -119,7 +165,7 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
           </div>
         </div>
       )}
-      
+
       {/* Response button for shop owners */}
       {canRespond && (
         <div className="mt-4 flex justify-end">
@@ -132,4 +178,4 @@ export function ReviewItem({ review, isShopOwner, onResponseSubmitted }: ReviewI
       )}
     </div>
   )
-} 
+}
