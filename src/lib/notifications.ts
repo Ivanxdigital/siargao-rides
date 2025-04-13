@@ -319,3 +319,30 @@ export const subscribeToShopOwnerNotifications = (shopId: string) => {
   console.log('Shop owner notification subscription created successfully');
   return subscription;
 };
+
+/**
+ * Send an email notification to admins about a new shop application
+ * @param shopId The ID of the newly created shop
+ */
+export const sendAdminNotification = async (shopId: string): Promise<void> => {
+  try {
+    const response = await fetch('/api/send-admin-notification', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ shopId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to send admin notification: ${errorData.error || response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Admin notification sent successfully:', data);
+  } catch (error) {
+    console.error('Error sending admin notification:', error);
+    throw error; // Re-throw to allow the caller to handle it
+  }
+};

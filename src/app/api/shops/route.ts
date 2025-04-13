@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/admin';
+import { sendAdminNotification } from '@/lib/notifications';
 
 export async function POST(request: Request) {
   try {
     // Parse the request body
     const shopData = await request.json();
-    
+
     console.log('API: Creating shop with data:', JSON.stringify(shopData, null, 2));
 
     // Verify that the user exists
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
 
     // We're not checking email_confirmed_at since it doesn't exist in your schema
     // Instead, we'll trust that if the user is in the database, they're valid
-    
+
     // Insert the shop data
     const { data, error } = await supabaseAdmin
       .from('rental_shops')
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
       })
       .select()
       .single();
-    
+
     if (error) {
       console.error('API: Error creating shop:', error);
       console.error('API: Error details:', {
@@ -49,9 +50,18 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    
+
     console.log('API: Shop created successfully:', data);
-    
+
+    // Send notification to admins about the new shop
+    try {
+      await sendAdminNotification(data.id);
+      console.log('API: Admin notification sent for new shop');
+    } catch (notificationError) {
+      // Don't fail the request if notification fails
+      console.error('API: Error sending admin notification:', notificationError);
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('API: Unexpected error creating shop:', error);
@@ -67,4 +77,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
