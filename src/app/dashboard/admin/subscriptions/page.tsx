@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { CheckCircle, XCircle, Clock, Calendar, Calendar as CalendarIcon, Plus, RefreshCw, ExternalLink, MoreVertical, ArrowUpRight } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Calendar, Calendar as CalendarIcon, Plus, RefreshCw, ExternalLink, MoreVertical, ArrowUpRight, EyeOff, Eye } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ManageableSubscription } from "../types";
 import Image from "next/image";
@@ -64,7 +64,8 @@ export default function SubscriptionManagementPage() {
             email,
             first_name,
             last_name
-          )
+          ),
+          is_showcase
         `)
         .order("subscription_end_date", { ascending: true, nullsFirst: false });
 
@@ -256,7 +257,12 @@ export default function SubscriptionManagementPage() {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to refresh shop status');
+        console.error("API Error Response:", errorData);
+        throw new Error(
+          errorData.details ? 
+          `Failed to refresh shop status: ${errorData.details} (Code: ${errorData.code})` : 
+          errorData.error || `Failed to refresh shop status: ${response.status}`
+        );
       }
       
       const result = await response.json();
@@ -327,6 +333,74 @@ export default function SubscriptionManagementPage() {
     (shop.owner?.first_name && shop.owner.first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (shop.owner?.last_name && shop.owner.last_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Function to toggle showcase status
+  const handleToggleShowcase = async (shopId: string) => {
+    setStatusMessage(null);
+    
+    try {
+      // Call the toggle-showcase API endpoint
+      const response = await fetch('/api/shops/toggle-showcase-simple', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ shop_id: shopId }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API Error Response:", errorData);
+        throw new Error(
+          errorData.details ? 
+          `Failed to toggle showcase status: ${errorData.details} (Code: ${errorData.code})` : 
+          errorData.error || `Failed to toggle showcase status: ${response.status}`
+        );
+      }
+      
+      const result = await response.json();
+      console.log("Showcase toggle result:", result);
+      
+      // Get the new showcase status from result
+      let newShowcaseStatus: boolean | undefined;
+      
+      if (result && result.shop && typeof result.shop.is_showcase === 'boolean') {
+        newShowcaseStatus = result.shop.is_showcase;
+      } else if (result && typeof result.showcase_status === 'boolean') {
+        // Fallback to showcase_status if available
+        newShowcaseStatus = result.showcase_status;
+      }
+      
+      if (typeof newShowcaseStatus === 'boolean') {
+        // Update the shop in the local state with the new status
+        setShops(prevShops => 
+          prevShops.map(shop => 
+            shop.id === shopId 
+              ? { ...shop, is_showcase: newShowcaseStatus } 
+              : shop
+          )
+        );
+        
+        // Show success message
+        const message = result.message || `Shop showcase mode ${newShowcaseStatus ? 'enabled' : 'disabled'} successfully`;
+        toast.success(message);
+      } else {
+        console.error("Invalid response format - missing showcase status:", result);
+        toast.error("Could not determine the new showcase status");
+      }
+      
+      // Refresh data regardless of status to ensure UI is up-to-date
+      await fetchShops();
+      
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error("Error toggling showcase status:", errorMessage);
+      toast.error(`Failed to toggle showcase status: ${errorMessage}`);
+      
+      // Refresh data anyway to ensure UI state is consistent
+      await fetchShops();
+    }
+  };
 
   // Handler for direct activation button
   const handleDirectActivation = async (shopId: string, activate: boolean) => {
@@ -567,27 +641,44 @@ export default function SubscriptionManagementPage() {
   // Add this StatusBadge component
   const StatusBadge = ({ 
     status, 
-    isActive 
+    isActive,
+    isShowcase
   }: { 
     status: string | null; 
     isActive: boolean;
+    isShowcase?: boolean;
   }) => {
-    const color = status === "active" && isActive
-      ? "bg-green-500/20 text-green-500 border-green-500/30"
-      : status === "expired"
-      ? "bg-red-500/20 text-red-500 border-red-500/30"
-      : "bg-gray-500/20 text-gray-500 border-gray-700/30";
-
-    const label = status === "active" && isActive
-      ? "Active"
-      : status === "expired"
-      ? "Expired"
-      : "Inactive";
-
+    if (status === "active" && isActive) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-500 border border-green-500/30">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></div>
+          Active
+        </span>
+      );
+    }
+    
+    if (status === "trial" && isActive) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-500 border border-blue-500/30">
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5"></div>
+          Trial
+        </span>
+      );
+    }
+    
+    if (!isActive) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-500 border border-red-500/30">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></div>
+          Inactive
+        </span>
+      );
+    }
+    
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${color}`}>
-        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${status === "active" && isActive ? "bg-green-500" : status === "expired" ? "bg-red-500" : "bg-gray-500"}`}></span>
-        {label}
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400 border border-gray-700/30">
+        <div className="w-1.5 h-1.5 rounded-full bg-gray-500 mr-1.5"></div>
+        {status || "Unknown"}
       </span>
     );
   };
@@ -736,7 +827,14 @@ export default function SubscriptionManagementPage() {
                             )}
                           </div>
                           <div>
-                            <div className="font-medium">{shop.name}</div>
+                            <div className="font-medium flex items-center gap-2">
+                              {shop.name}
+                              {shop.is_showcase && (
+                                <span className="px-1.5 py-0.5 text-xs rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                  Showcase
+                                </span>
+                              )}
+                            </div>
                             <div className="text-sm text-muted-foreground">
                               {shop.owner?.first_name && shop.owner?.last_name
                                 ? `${shop.owner.first_name} ${shop.owner.last_name}`
@@ -746,7 +844,11 @@ export default function SubscriptionManagementPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={shop.subscription_status} isActive={shop.is_active} />
+                        <StatusBadge 
+                          status={shop.subscription_status} 
+                          isActive={shop.is_active}
+                          isShowcase={shop.is_showcase}
+                        />
                         
                         <div className="mt-3 flex items-center space-x-2">
                           <SimpleDropdown 
@@ -776,6 +878,24 @@ export default function SubscriptionManagementPage() {
                                 Force Deactivate
                               </DropdownItem>
                             )}
+                            
+                            {/* Add Showcase Toggle Button */}
+                            <DropdownItem 
+                              onClick={() => handleToggleShowcase(shop.id)}
+                              className={shop.is_showcase ? "text-purple-400" : "text-blue-400"}
+                            >
+                              {shop.is_showcase ? (
+                                <>
+                                  <Eye size={14} className="mr-1.5" />
+                                  Disable Showcase Mode
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff size={14} className="mr-1.5" />
+                                  Enable Showcase Mode
+                                </>
+                              )}
+                            </DropdownItem>
                             
                             <DropdownItem onClick={() => window.open(`/browse?shop=${shop.id}`, '_blank')}>
                               <ArrowUpRight size={14} className="mr-1.5" />
@@ -870,9 +990,22 @@ export default function SubscriptionManagementPage() {
                   <div className="text-sm font-medium text-right">
                     <StatusBadge 
                       status={selectedShop?.subscription_status || null} 
-                      isActive={selectedShop?.is_active || false} 
+                      isActive={selectedShop?.is_active || false}
+                      isShowcase={selectedShop?.is_showcase}
                     />
                   </div>
+                  
+                  {selectedShop?.is_showcase && (
+                    <>
+                      <div className="text-sm">Showcase Mode:</div>
+                      <div className="text-sm font-medium text-right">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                          <EyeOff size={10} className="mr-1.5" />
+                          Enabled
+                        </span>
+                      </div>
+                    </>
+                  )}
                   
                   <div className="text-sm">Start Date:</div>
                   <div className="text-sm text-right">

@@ -34,6 +34,7 @@ export interface ManageableSubscription {
   logo_url?: string | null;
   is_verified: boolean;
   is_active: boolean;
+  is_showcase?: boolean;
   subscription_status: string | null;
   subscription_start_date: string | null;
   subscription_end_date: string | null;
