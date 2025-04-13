@@ -11,13 +11,13 @@ export async function POST(req: Request) {
   try {
     // Parse request body
     const { shopId } = await req.json();
-    
+
     if (!shopId) {
-      return NextResponse.json({ 
-        error: 'Shop ID is required' 
+      return NextResponse.json({
+        error: 'Shop ID is required'
       }, { status: 400 });
     }
-    
+
     // Get shop details including owner
     const { data: shop, error: shopError } = await supabaseAdmin
       .from('rental_shops')
@@ -32,40 +32,40 @@ export async function POST(req: Request) {
       `)
       .eq('id', shopId)
       .single();
-    
+
     if (shopError) {
       console.error('Error fetching shop details:', shopError);
-      return NextResponse.json({ 
-        error: 'Failed to fetch shop details' 
+      return NextResponse.json({
+        error: 'Failed to fetch shop details'
       }, { status: 500 });
     }
-    
+
     if (!shop) {
-      return NextResponse.json({ 
-        error: 'Shop not found' 
+      return NextResponse.json({
+        error: 'Shop not found'
       }, { status: 404 });
     }
-    
+
     // Get owner email and name
     const ownerEmail = shop.owner.email;
     const ownerName = `${shop.owner.first_name || ''} ${shop.owner.last_name || ''}`.trim() || 'Shop Owner';
-    
+
     if (!ownerEmail) {
-      return NextResponse.json({ 
-        error: 'Owner email not found' 
+      return NextResponse.json({
+        error: 'Owner email not found'
       }, { status: 400 });
     }
-    
+
     // Send email using Resend
     const { data, error } = await resend.emails.send({
-      from: 'Siargao Rides <onboarding@resend.dev>', // Use Resend's onboarding email until domain verified
+      from: 'Siargao Rides <support@siargaorides.ph>',
       to: ownerEmail,
       subject: `Congratulations! Your ${shop.name} shop is now verified`,
       replyTo: 'siargaorides@gmail.com',
       headers: {
         'X-Entity-Ref-ID': uuid(), // For tracking/avoiding duplicates
       },
-      react: ShopVerificationEmail({ 
+      react: ShopVerificationEmail({
         shopName: shop.name,
         ownerName: ownerName,
         shopId: shop.id
@@ -78,16 +78,16 @@ export async function POST(req: Request) {
     }
 
     // Return success response
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'Verification email sent successfully',
-      data 
+      data
     }, { status: 200 });
-    
+
   } catch (error) {
     console.error('Error processing request:', error);
-    return NextResponse.json({ 
-      error: 'Failed to process request' 
+    return NextResponse.json({
+      error: 'Failed to process request'
     }, { status: 500 });
   }
-} 
+}

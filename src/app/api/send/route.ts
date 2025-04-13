@@ -19,19 +19,19 @@ export async function POST(req: Request) {
     // Parse and validate request body
     const body = await req.json();
     const result = contactFormSchema.safeParse(body);
-    
+
     if (!result.success) {
-      return NextResponse.json({ 
-        error: 'Validation failed', 
-        details: result.error.format() 
+      return NextResponse.json({
+        error: 'Validation failed',
+        details: result.error.format()
       }, { status: 400 });
     }
-    
+
     const { name, email, message } = result.data;
 
     // Send email using Resend
     const { data, error } = await resend.emails.send({
-      from: 'Siargao Rides <onboarding@resend.dev>', // Use Resend's onboarding email until domain verified
+      from: 'Siargao Rides <support@siargaorides.ph>',
       to: 'siargaorides@gmail.com',
       subject: 'New Contact Form Submission',
       replyTo: email,
@@ -47,16 +47,16 @@ export async function POST(req: Request) {
     }
 
     // Return success response
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'Email sent successfully',
-      data 
+      data
     }, { status: 200 });
-    
+
   } catch (error) {
     console.error('Error processing request:', error);
-    return NextResponse.json({ 
-      error: 'Failed to process request' 
+    return NextResponse.json({
+      error: 'Failed to process request'
     }, { status: 500 });
   }
-} 
+}

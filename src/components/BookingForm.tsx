@@ -12,6 +12,7 @@ import { User } from "@supabase/auth-helpers-nextjs";
 import { Info, AlertCircle, Clock, Phone } from "lucide-react";
 import { addDays, subDays, format, isWithinInterval } from "date-fns";
 import { TermsAndConditions } from "./TermsAndConditions";
+import { toast } from "react-hot-toast";
 
 interface BookingFormProps {
   bike?: Bike;
@@ -398,6 +399,83 @@ export default function BookingForm({
       }
 
       console.log("Booking created:", booking);
+
+      // Send booking confirmation emails
+      try {
+        console.log("Sending booking emails with data:", {
+          booking,
+          user: session?.user,
+          shop
+        });
+
+        const emailResponse = await fetch('/api/send-booking-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            booking,
+            user: session?.user,
+            shop
+          }),
+        });
+
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json();
+          console.error("Error sending booking emails:", errorData);
+
+          // Create a more detailed error log
+          const statusCode = emailResponse.status;
+          const statusText = emailResponse.statusText;
+          console.error("Email API response details:", {
+            status: statusCode,
+            statusText: statusText,
+            errorData
+          });
+
+          // Show a toast notification about the email issue but continue with booking
+          toast.error("Booking created, but confirmation email could not be sent.");
+
+          // Continue with the booking process even if email sending fails
+        } else {
+          console.log("Booking emails sent successfully");
+          const responseData = await emailResponse.json();
+
+          // Check response status
+          if (responseData.status === 'success') {
+            toast.success("Booking confirmation emails have been sent to you and the shop owner.");
+          } else if (responseData.status === 'dev_mode_redirect') {
+            // In development mode with Resend test limitations
+            toast({
+              title: "Booking created successfully",
+              description: `In development mode, emails are sent to ${responseData.fallbackEmail} instead of actual recipients due to Resend API test limitations.`,
+              duration: 6000
+            });
+          } else if (responseData.status === 'partial_success') {
+            toast.warning("Booking created, but there was an issue sending some confirmation emails.");
+          } else {
+            toast.success("Booking confirmation emails have been sent to you and the shop owner.");
+          }
+        }
+      } catch (emailError) {
+        console.error("Failed to send booking emails:", emailError);
+
+        // Log more details about the error
+        if (emailError instanceof Error) {
+          console.error("Email error details:", {
+            name: emailError.name,
+            message: emailError.message,
+            stack: emailError.stack
+          });
+        } else {
+          console.error("Non-Error object in email catch:", emailError);
+        }
+
+        // Show a toast notification about the email issue but continue with booking
+        toast.error("Booking created, but there was an issue sending confirmation emails.");
+
+        // Continue with the booking process even if email sending fails
+      }
 
       // Handle different payment methods
       if (paymentMethod === 'paymongo_card' || paymentMethod === 'paymongo_gcash') {
