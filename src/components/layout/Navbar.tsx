@@ -184,7 +184,7 @@ const Navbar = () => {
         className={`fixed left-0 right-0 z-[1000] transition-all duration-500 ${
           scrolled
             ? "top-0 py-3 bg-transparent backdrop-blur-md shadow-md border-b border-white/10"
-            : `${isAnnouncementVisible ? 'top-[32px] sm:top-[36px]' : 'top-0'} py-5 bg-transparent`
+            : `${isAnnouncementVisible ? 'md:top-[36px] top-0' : 'top-0'} py-5 bg-transparent`
         } ${isMenuOpen ? 'bg-black/90 backdrop-blur-md border-b border-white/10' : ''}`}
       >
         <div className="container mx-auto px-4 flex justify-between items-center">
@@ -363,7 +363,7 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden fixed inset-0 z-[999] bg-black/90 backdrop-blur-md flex flex-col">
           {/* Fixed header section - just padding */}
-          <div className={`${scrolled ? 'pt-16' : 'pt-20'} px-6 transition-all duration-500`}></div>
+          <div className="pt-16 px-6 transition-all duration-500"></div>
           {/* Scrollable content section */}
           <div className="flex-1 overflow-y-auto pb-8 px-6 mobile-menu-content" style={{ maxHeight: 'calc(100vh - 100px)' }}>
             {isAuthenticated && (
