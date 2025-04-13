@@ -168,9 +168,9 @@ export async function POST(request: Request) {
     // Update customer email sending
     let customerEmailResult;
     try {
-      // In development mode, always send to the fallback email
-      const customerEmail = isDevMode ? fallbackEmail : safeUser.email;
-      console.log(`Attempting to send customer email to: ${isDevMode ? customerEmail + ' (redirected from ' + safeUser.email + ' in dev mode)' : customerEmail}`);
+      // Send to the actual customer email since domain is verified
+      const customerEmail = safeUser.email;
+      console.log(`Sending customer email to: ${customerEmail}`);
 
       customerEmailResult = await resend.emails.send({
         from: 'Siargao Rides <support@siargaorides.ph>',
@@ -202,9 +202,9 @@ export async function POST(request: Request) {
     // Update shop email sending
     let shopEmailResult;
     try {
-      // In development mode, always send to the fallback email
-      const shopEmail = isDevMode ? fallbackEmail : safeShop.email;
-      console.log(`Attempting to send shop email to: ${isDevMode ? shopEmail + ' (redirected from ' + safeShop.email + ' in dev mode)' : shopEmail}`);
+      // Send to the actual shop email since domain is verified
+      const shopEmail = safeShop.email;
+      console.log(`Sending shop email to: ${shopEmail}`);
 
       shopEmailResult = await resend.emails.send({
         from: 'Siargao Rides <support@siargaorides.ph>',
@@ -241,16 +241,19 @@ export async function POST(request: Request) {
 
       console.error('Email sending errors:', errors);
 
-      // Check if this is just the development mode limitation
-      const isDevModeLimitation = isDevMode &&
-        errors.some(err => err.includes('You can only send testing emails to your own email address'));
+      // Check for common email sending issues
+      const isResendIssue = errors.some(err =>
+        err.includes('domain not verified') ||
+        err.includes('Recipient domain not allowed') ||
+        err.includes('You can only send testing emails to your own email address')
+      );
 
-      if (isDevModeLimitation) {
-        console.log('Development mode email limitation detected - emails redirected to fallback address');
+      if (isResendIssue) {
+        console.log('Resend configuration issue detected');
         return NextResponse.json({
-          status: 'dev_mode_redirect',
-          message: 'Emails redirected to fallback address in development mode',
-          fallbackEmail,
+          status: 'email_configuration_issue',
+          message: 'Emails failed due to Resend configuration issues.',
+          solution: 'Check that your domain is properly verified in Resend dashboard and that DNS records are correctly set up.',
           originalRecipients: {
             customer: safeUser.email,
             shop: safeShop.email
