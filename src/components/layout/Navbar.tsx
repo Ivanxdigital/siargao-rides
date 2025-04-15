@@ -373,9 +373,9 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden fixed inset-0 z-[999] bg-black/90 backdrop-blur-md flex flex-col">
           {/* Fixed header section - just padding */}
-          <div className="pt-16 px-6 transition-all duration-500"></div>
+          <div className="pt-20 px-6 transition-all duration-500"></div>
           {/* Scrollable content section */}
-          <div className="flex-1 overflow-y-auto pb-8 px-6 mobile-menu-content" style={{ maxHeight: 'calc(100vh - 100px)' }}>
+          <div className="flex-1 overflow-y-auto pb-8 px-6 mobile-menu-content" style={{ maxHeight: 'calc(100vh - 120px)' }}>
             {isAuthenticated && (
               <div className="mb-6 p-4 bg-black/40 rounded-lg border border-white/10 flex items-center gap-4">
                 <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-primary/40">
@@ -400,7 +400,7 @@ const Navbar = () => {
               </div>
             )}
 
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3 mb-6 mt-2">
               <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)} icon={<Home size={16} />}>
                 Home
               </MobileNavLink>
