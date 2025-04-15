@@ -1,4 +1,4 @@
-import { LayoutDashboard, Store, Car, Users, Settings } from "lucide-react";
+import { LayoutDashboard, Store, Car, Users, Settings, TestTube } from "lucide-react";
 
 export const adminItems = [
   {
@@ -26,5 +26,10 @@ export const adminItems = [
     href: "/dashboard/admin/settings",
     icon: <Settings className="h-5 w-5" />,
   },
+  {
+    title: "Test Accounts",
+    href: "/dashboard/admin/test-accounts",
+    icon: <TestTube className="h-5 w-5" />,
+  },
   // ... existing items ...
-] 
+]

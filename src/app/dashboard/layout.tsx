@@ -23,7 +23,8 @@ import {
   Shield,
   ChevronLeft,
   ChevronRight,
-  DollarSign
+  DollarSign,
+  TestTube
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -512,6 +513,15 @@ export default function DashboardLayout({
                         icon={<Settings size={18} />}
                         title="Admin Settings"
                         active={pathname === "/dashboard/admin/settings"}
+                        collapsed={isCollapsed}
+                      />
+                    </motion.div>
+                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                      <SidebarItem
+                        href="/dashboard/admin/test-accounts"
+                        icon={<TestTube size={18} />}
+                        title="Test Accounts"
+                        active={pathname === "/dashboard/admin/test-accounts"}
                         collapsed={isCollapsed}
                       />
                     </motion.div>
