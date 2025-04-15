@@ -14,6 +14,9 @@ import Image from "next/image"
 import ReCaptchaVerifier from "@/components/ReCaptchaVerifier"
 import { registerTranslations } from "@/translations/register"
 import { dashboardTranslations } from "@/translations/dashboard"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 
 // Add animation variants for components
 const fadeIn = {
@@ -78,6 +81,20 @@ const buttonVariants = {
   hover: { scale: 1.03, transition: { duration: 0.2 } },
   tap: { scale: 0.98, transition: { duration: 0.2 } }
 }
+
+// Define validation schema for the form
+const formSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
+  shopName: z.string().min(2, "Shop name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().regex(/^(\+?63|0)?[0-9]{10}$/, "Please enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)"),
+  address: z.string().min(5, "Address must be at least 5 characters"),
+  referral: z.string().optional(),
+  // File validation will be handled separately
+})
+
+// Type for the form data
+type FormData = z.infer<typeof formSchema>
 
 // Add the InteractiveDashboardShowcase component
 const InteractiveDashboardShowcase = ({ t, language, languageTransition }: { t: (key: string) => string, language: string, languageTransition?: any }) => {
@@ -367,16 +384,32 @@ function RegisterShopPageContent({
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    shopName: "",
-    email: "",
-    phone: "",
-    address: "",
-    referral: "",
-    governmentId: null as File | null,
-    businessPermit: null as File | null
+  // File state is managed separately from the form
+  const [governmentId, setGovernmentId] = useState<File | null>(null)
+  const [businessPermit, setBusinessPermit] = useState<File | null>(null)
+
+  // Form validation with React Hook Form
+  const {
+    register,
+    handleSubmit: hookFormSubmit,
+    formState: { errors, isValid, isDirty, isSubmitting: formSubmitting },
+    watch,
+    reset
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    mode: "onChange", // Validate on change
+    defaultValues: {
+      fullName: "",
+      shopName: "",
+      email: "",
+      phone: "",
+      address: "",
+      referral: ""
+    }
   })
+
+  // Watch form values for progress indicator
+  const watchedValues = watch()
 
   // We now check authentication only when accessing the form, not on initial page load
   // This allows non-authenticated users to view the landing page
@@ -424,20 +457,43 @@ function RegisterShopPageContent({
     }
   }, [showRegistrationForm, authLoading, isAuthenticated, router, user])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData({
-      ...formData,
-      [name]: value
-    })
-  }
+  // File validation function
+  const validateFile = (file: File | null, isRequired: boolean = false) => {
+    if (isRequired && !file) return "This file is required";
 
+    if (file) {
+      const validTypes = ["image/jpeg", "image/png", "image/gif", "application/pdf"];
+      if (!validTypes.includes(file.type)) {
+        return "File must be an image (JPEG, PNG, GIF) or PDF";
+      }
+
+      const fiveMB = 5 * 1024 * 1024;
+      if (file.size > fiveMB) {
+        return "File must be smaller than 5MB";
+      }
+    }
+
+    return true;
+  };
+
+  // Handle file changes with validation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'governmentId' | 'businessPermit') => {
     if (e.target.files && e.target.files[0]) {
-      setFormData({
-        ...formData,
-        [field]: e.target.files[0]
-      })
+      const file = e.target.files[0];
+      const validationResult = validateFile(file, field === 'governmentId');
+
+      if (validationResult === true) {
+        if (field === 'governmentId') {
+          setGovernmentId(file);
+        } else {
+          setBusinessPermit(file);
+        }
+      } else {
+        // Show validation error
+        setError(validationResult);
+        // Reset the file input
+        e.target.value = '';
+      }
     }
   }
 
@@ -446,25 +502,50 @@ function RegisterShopPageContent({
     setRecaptchaToken(token)
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+  // Calculate form completion percentage for progress indicator
+  const calculateFormProgress = () => {
+    const totalFields = Object.keys(formSchema.shape).length + 1; // +1 for governmentId
+    let filledFields = 0;
+
+    // Count filled text fields
+    Object.entries(watchedValues).forEach(([key, value]) => {
+      if (value && String(value).trim() !== '') {
+        filledFields++;
+      }
+    });
+
+    // Count files
+    if (governmentId) filledFields++;
+
+    return Math.round((filledFields / totalFields) * 100);
+  };
+
+  // Form submission handler with React Hook Form
+  const handleFormSubmit = hookFormSubmit(async (data) => {
+    setError(null);
 
     if (!user) {
-      setError("You must be logged in to register a shop")
-      return
+      setError("You must be logged in to register a shop");
+      return;
     }
 
     // Check if user already has a shop
     if (existingShop) {
-      setError("You already have a registered shop. Only one shop is allowed per account.")
-      return
+      setError("You already have a registered shop. Only one shop is allowed per account.");
+      return;
+    }
+
+    // Validate government ID
+    const governmentIdValidation = validateFile(governmentId, true);
+    if (governmentIdValidation !== true) {
+      setError(governmentIdValidation);
+      return;
     }
 
     // Check if reCAPTCHA verification was successful
     if (!recaptchaToken) {
-      setError("Please complete the reCAPTCHA verification")
-      return
+      setError("Please complete the reCAPTCHA verification");
+      return;
     }
 
     // Verify the reCAPTCHA token on the server
@@ -475,27 +556,27 @@ function RegisterShopPageContent({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ token: recaptchaToken }),
-      })
+      });
 
       if (!recaptchaResponse.ok) {
-        setError("reCAPTCHA verification failed. Please try again.")
-        return
+        setError("reCAPTCHA verification failed. Please try again.");
+        return;
       }
 
-      const recaptchaData = await recaptchaResponse.json()
+      const recaptchaData = await recaptchaResponse.json();
 
       if (!recaptchaData.success || !recaptchaData.isHuman) {
-        setError("reCAPTCHA verification failed. Please try again.")
-        return
+        setError("reCAPTCHA verification failed. Please try again.");
+        return;
       }
     } catch (recaptchaError) {
-      console.error("Error verifying reCAPTCHA:", recaptchaError)
-      setError("Error verifying reCAPTCHA. Please try again.")
-      return
+      console.error("Error verifying reCAPTCHA:", recaptchaError);
+      setError("Error verifying reCAPTCHA. Please try again.");
+      return;
     }
 
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
 
       // Check if we're using mock data mode
       const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
@@ -514,73 +595,73 @@ function RegisterShopPageContent({
       console.log('Starting shop registration process...');
 
       // Upload government ID
-      let governmentIdUrl: string | null = null
-      if (formData.governmentId) {
+      let governmentIdUrl: string | null = null;
+      if (governmentId) {
         console.log('Uploading government ID...');
         const { url, error: uploadError } = await uploadFile(
-          formData.governmentId,
+          governmentId,
           'shop-documents',
           `${user.id}/government-id`
-        )
+        );
 
         if (uploadError) {
           console.error('Government ID upload error:', uploadError);
-          throw new Error(`Failed to upload government ID: ${uploadError.message}`)
+          throw new Error(`Failed to upload government ID: ${uploadError.message}`);
         }
 
-        governmentIdUrl = url
+        governmentIdUrl = url;
         console.log('Government ID uploaded successfully:', governmentIdUrl);
       } else {
-        throw new Error("Government ID is required")
+        throw new Error("Government ID is required");
       }
 
       // Upload business permit (optional)
-      let businessPermitUrl: string | null = null
-      if (formData.businessPermit) {
+      let businessPermitUrl: string | null = null;
+      if (businessPermit) {
         console.log('Uploading business permit...');
         const { url, error: uploadError } = await uploadFile(
-          formData.businessPermit,
+          businessPermit,
           'shop-documents',
           `${user.id}/business-permit`
-        )
+        );
 
         if (uploadError) {
           console.error('Business permit upload error:', uploadError);
-          throw new Error(`Failed to upload business permit: ${uploadError.message}`)
+          throw new Error(`Failed to upload business permit: ${uploadError.message}`);
         }
 
-        businessPermitUrl = url
+        businessPermitUrl = url;
         console.log('Business permit uploaded successfully:', businessPermitUrl);
       }
 
       // Create the shop in the database
       console.log('Creating shop with data:', {
         owner_id: user.id,
-        name: formData.shopName,
-        address: formData.address,
+        name: data.shopName,
+        address: data.address,
         city: "Siargao",
-        phone_number: formData.phone,
-        email: formData.email,
+        phone_number: data.phone,
+        email: data.email,
       });
 
       try {
         const newShop = await createShop({
           owner_id: user.id,
-          name: formData.shopName,
-          description: `Motorbike rental shop in Siargao. ${formData.referral ? `Referred by: ${formData.referral}. ` : ''}Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
-          address: formData.address || "Siargao Island",
+          name: data.shopName,
+          description: `Motorbike rental shop in Siargao. ${data.referral ? `Referred by: ${data.referral}. ` : ''}Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+          address: data.address || "Siargao Island",
           city: "Siargao",
-          phone_number: formData.phone,
-          email: formData.email,
-        })
+          phone_number: data.phone,
+          email: data.email,
+        });
 
         if (!newShop) {
           console.error('Failed to create shop - no error thrown but returned null');
-          throw new Error("Failed to create shop")
+          throw new Error("Failed to create shop");
         }
 
         console.log('Shop created successfully:', newShop);
-        setIsSubmitted(true)
+        setIsSubmitted(true);
       } catch (shopError) {
         // Check if this is a "User not found" error
         if (shopError instanceof Error &&
@@ -600,12 +681,12 @@ function RegisterShopPageContent({
             console.log("Retrying shop creation after creating user record...");
             const newShop = await createShop({
               owner_id: user.id,
-              name: formData.shopName,
-              description: `Motorbike rental shop in Siargao. ${formData.referral ? `Referred by: ${formData.referral}. ` : ''}Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
-              address: formData.address || "Siargao Island",
+              name: data.shopName,
+              description: `Motorbike rental shop in Siargao. ${data.referral ? `Referred by: ${data.referral}. ` : ''}Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+              address: data.address || "Siargao Island",
               city: "Siargao",
-              phone_number: formData.phone,
-              email: formData.email,
+              phone_number: data.phone,
+              email: data.email,
             });
 
             if (!newShop) {
@@ -623,12 +704,12 @@ function RegisterShopPageContent({
         }
       }
     } catch (err) {
-      console.error("Error registering shop:", err)
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+      console.error("Error registering shop:", err);
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  });
 
   const handleResendVerification = async () => {
     if (!verificationEmail) {
@@ -946,17 +1027,17 @@ function RegisterShopPageContent({
                   variant="outline"
                   size="sm"
                   onClick={toggleLanguage}
-                  className="text-sm border-white/20 text-white hover:bg-white/10 relative overflow-hidden"
+                  className="text-sm border-white/20 text-white hover:bg-white/10 relative overflow-hidden px-2 py-1"
                 >
                   <AnimatePresence mode="wait">
                     <motion.span
                       key={language}
-                      className="block"
+                      className="flex items-center space-x-1"
                       initial={languageTransition.initial}
                       animate={languageTransition.animate}
                       exit={languageTransition.exit}
                     >
-                      {language === 'en' ? t('switch_to_tagalog') : t('switch_to_english')}
+                      <span className="text-base">{language === 'en' ? '🇵🇭' : '🇬🇧'}</span>
                     </motion.span>
                   </AnimatePresence>
                 </Button>
@@ -1574,15 +1655,34 @@ function RegisterShopPageContent({
                     <span className="ml-3">{t('creating_user')}</span>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={handleFormSubmit} className="space-y-6">
+                    {/* Form Progress Indicator */}
+                    <motion.div variants={slideUp} className="mb-6">
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>Form completion</span>
+                        <span>{calculateFormProgress()}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${calculateFormProgress()}%` }}
+                        ></div>
+                      </div>
+                    </motion.div>
+
                     {/* Display general errors */}
                     {error && (
                       <motion.div
-                        className="bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 rounded-md p-4 mb-6 flex items-start gap-3"
+                        className="bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 rounded-md p-4 mb-6"
                         variants={slideUp}
                       >
-                        <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
-                        <p>{error}</p>
+                        <div className="flex items-start gap-3">
+                          <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium">Error</p>
+                            <p className="text-sm">{error}</p>
+                          </div>
+                        </div>
                       </motion.div>
                     )}
 
@@ -1595,14 +1695,16 @@ function RegisterShopPageContent({
                             {t('full_name')}
                           </label>
                           <input
-                            type="text"
+                            {...register("fullName")}
                             id="fullName"
-                            name="fullName"
-                            value={formData.fullName}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                            required
+                            type="text"
+                            className={`w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${errors.fullName ? "border-red-500 dark:border-red-500" : "border-input"}`}
+                            aria-invalid={errors.fullName ? "true" : "false"}
+                            aria-describedby={errors.fullName ? "fullName-error" : ""}
                           />
+                          {errors.fullName && (
+                            <p id="fullName-error" className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.fullName.message}</p>
+                          )}
                         </div>
 
                         <div>
@@ -1610,14 +1712,16 @@ function RegisterShopPageContent({
                             {t('shop_name')}
                           </label>
                           <input
-                            type="text"
+                            {...register("shopName")}
                             id="shopName"
-                            name="shopName"
-                            value={formData.shopName}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                            required
+                            type="text"
+                            className={`w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${errors.shopName ? "border-red-500 dark:border-red-500" : "border-input"}`}
+                            aria-invalid={errors.shopName ? "true" : "false"}
+                            aria-describedby={errors.shopName ? "shopName-error" : ""}
                           />
+                          {errors.shopName && (
+                            <p id="shopName-error" className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.shopName.message}</p>
+                          )}
                         </div>
 
                         <div>
@@ -1625,15 +1729,17 @@ function RegisterShopPageContent({
                             {t('shop_address')}
                           </label>
                           <input
-                            type="text"
+                            {...register("address")}
                             id="address"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                            required
+                            type="text"
+                            className={`w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${errors.address ? "border-red-500 dark:border-red-500" : "border-input"}`}
                             placeholder="e.g., Tourism Road, General Luna"
+                            aria-invalid={errors.address ? "true" : "false"}
+                            aria-describedby={errors.address ? "address-error" : ""}
                           />
+                          {errors.address && (
+                            <p id="address-error" className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.address.message}</p>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -1647,29 +1753,36 @@ function RegisterShopPageContent({
                             {t('email_address')}
                           </label>
                           <input
-                            type="email"
+                            {...register("email")}
                             id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                            required
+                            type="email"
+                            className={`w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${errors.email ? "border-red-500 dark:border-red-500" : "border-input"}`}
+                            aria-invalid={errors.email ? "true" : "false"}
+                            aria-describedby={errors.email ? "email-error" : ""}
                           />
+                          {errors.email && (
+                            <p id="email-error" className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.email.message}</p>
+                          )}
                         </div>
 
                         <div>
                           <label htmlFor="phone" className="block text-sm font-medium mb-1">
                             {t('phone_number')}
                           </label>
-                          <input
-                            type="tel"
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                            required
-                          />
+                          <div className="relative">
+                            <input
+                              {...register("phone")}
+                              id="phone"
+                              type="tel"
+                              className={`w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${errors.phone ? "border-red-500 dark:border-red-500" : "border-input"}`}
+                              placeholder="e.g., +639123456789 or 09123456789"
+                              aria-invalid={errors.phone ? "true" : "false"}
+                              aria-describedby={errors.phone ? "phone-error" : ""}
+                            />
+                          </div>
+                          {errors.phone && (
+                            <p id="phone-error" className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.phone.message}</p>
+                          )}
                         </div>
 
                         <div>
@@ -1677,13 +1790,11 @@ function RegisterShopPageContent({
                             {t('referral')}
                           </label>
                           <input
-                            type="text"
+                            {...register("referral")}
                             id="referral"
-                            name="referral"
-                            value={formData.referral}
-                            onChange={handleChange}
-                            placeholder={t('who_referred')}
+                            type="text"
                             className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            placeholder={t('who_referred')}
                           />
                         </div>
                       </div>
@@ -1706,67 +1817,93 @@ function RegisterShopPageContent({
                         <motion.div
                           whileHover={{ borderColor: "rgba(var(--color-primary), 0.5)" }}
                         >
-                          <label htmlFor="governmentId" className="block text-sm font-medium mb-1">
-                            {t('government_id')}
-                          </label>
-                          <div className="flex items-center justify-center border border-dashed border-border rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50">
+                          <div className="flex justify-between items-center mb-1">
+                            <label htmlFor="governmentId" className="block text-sm font-medium">
+                              {t('government_id')} <span className="text-red-500">*</span>
+                            </label>
+                            <span className="text-xs text-muted-foreground">Required</span>
+                          </div>
+                          <div
+                            className={`flex items-center justify-center border border-dashed rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50 ${!governmentId ? "border-border" : "border-green-500/50 dark:border-green-700/50"}`}
+                          >
                             <input
                               type="file"
                               id="governmentId"
                               name="governmentId"
                               onChange={(e) => handleFileChange(e, 'governmentId')}
                               className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                              accept="image/*,.pdf"
-                              required
+                              accept="image/jpeg,image/png,image/gif,application/pdf"
+                              aria-required="true"
+                              aria-invalid={!governmentId ? "true" : "false"}
+                              aria-describedby="governmentId-description governmentId-error"
                             />
                             <div className="text-center">
-                              <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
+                              <Upload size={24} className={`mx-auto mb-2 ${!governmentId ? "text-muted-foreground" : "text-green-500 dark:text-green-400"}`} />
                               <p className="text-sm font-medium">{t('click_upload')}</p>
-                              <p className="text-xs text-muted-foreground">{t('accepted_formats')}</p>
+                              <p id="governmentId-description" className="text-xs text-muted-foreground">{t('accepted_formats')}</p>
+                              <p className="text-xs text-muted-foreground mt-1">Max size: 5MB</p>
                             </div>
 
-                            {formData.governmentId && (
+                            {governmentId && (
                               <motion.div
                                 className="absolute inset-0 flex items-center justify-center bg-card/90 z-0"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.3 }}
                               >
-                                <p className="text-sm font-medium">{formData.governmentId.name}</p>
+                                <div className="text-center">
+                                  <Check className="mx-auto mb-2 text-green-500 dark:text-green-400" size={24} />
+                                  <p className="text-sm font-medium">{governmentId.name}</p>
+                                  <p className="text-xs text-muted-foreground">{(governmentId.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                </div>
                               </motion.div>
                             )}
                           </div>
+                          {!governmentId && (
+                            <p id="governmentId-error" className="mt-1 text-sm text-red-500 dark:text-red-400">Government ID is required</p>
+                          )}
                         </motion.div>
 
                         <motion.div
                           whileHover={{ borderColor: "rgba(var(--color-primary), 0.5)" }}
                         >
-                          <label htmlFor="businessPermit" className="block text-sm font-medium mb-1">
-                            {t('business_permit')}
-                          </label>
-                          <div className="flex items-center justify-center border border-dashed border-border rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50">
+                          <div className="flex justify-between items-center mb-1">
+                            <label htmlFor="businessPermit" className="block text-sm font-medium">
+                              {t('business_permit')}
+                            </label>
+                            <span className="text-xs text-muted-foreground">Optional</span>
+                          </div>
+                          <div
+                            className={`flex items-center justify-center border border-dashed rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50 ${!businessPermit ? "border-border" : "border-green-500/50 dark:border-green-700/50"}`}
+                          >
                             <input
                               type="file"
                               id="businessPermit"
                               name="businessPermit"
                               onChange={(e) => handleFileChange(e, 'businessPermit')}
                               className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                              accept="image/*,.pdf"
+                              accept="image/jpeg,image/png,image/gif,application/pdf"
+                              aria-describedby="businessPermit-description"
                             />
                             <div className="text-center">
-                              <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
+                              <Upload size={24} className={`mx-auto mb-2 ${!businessPermit ? "text-muted-foreground" : "text-green-500 dark:text-green-400"}`} />
                               <p className="text-sm font-medium">{t('click_upload')}</p>
-                              <p className="text-xs text-muted-foreground">{t('accepted_formats')}</p>
+                              <p id="businessPermit-description" className="text-xs text-muted-foreground">{t('accepted_formats')}</p>
+                              <p className="text-xs text-muted-foreground mt-1">Max size: 5MB</p>
                             </div>
 
-                            {formData.businessPermit && (
+                            {businessPermit && (
                               <motion.div
                                 className="absolute inset-0 flex items-center justify-center bg-card/90 z-0"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.3 }}
                               >
-                                <p className="text-sm font-medium">{formData.businessPermit.name}</p>
+                                <div className="text-center">
+                                  <Check className="mx-auto mb-2 text-green-500 dark:text-green-400" size={24} />
+                                  <p className="text-sm font-medium">{businessPermit.name}</p>
+                                  <p className="text-xs text-muted-foreground">{(businessPermit.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                </div>
                               </motion.div>
                             )}
                           </div>
@@ -1800,15 +1937,18 @@ function RegisterShopPageContent({
                     >
                       <Button
                         type="submit"
-                        className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm flex items-center justify-center"
-                        disabled={isSubmitting || !!existingShop}
+                        className={`w-full shadow-sm flex items-center justify-center ${isValid && governmentId ? 'bg-primary hover:bg-primary/90 text-white' : 'bg-gray-900 hover:bg-gray-800 text-white border border-primary/40'}`}
+                        disabled={isSubmitting || !!existingShop || formSubmitting || (!isValid || !governmentId)}
                       >
-                        {isSubmitting ? (
-                          <>{t('processing')}</>
+                        {isSubmitting || formSubmitting ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                            {t('processing')}
+                          </div>
                         ) : (
                           <>
                             {t('submit_registration')}
-                            {!isSubmitting && !existingShop && (
+                            {isValid && governmentId && !isSubmitting && !existingShop && (
                               <motion.span
                                 animate={{ x: [0, 5, 0] }}
                                 transition={{
@@ -1824,6 +1964,11 @@ function RegisterShopPageContent({
                           </>
                         )}
                       </Button>
+                      {(!isValid || !governmentId) && (
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                          Please complete all required fields to submit
+                        </p>
+                      )}
                     </motion.div>
                   </form>
                 )}
