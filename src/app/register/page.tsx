@@ -12,6 +12,8 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import ReCaptchaVerifier from "@/components/ReCaptchaVerifier"
+import { registerTranslations } from "@/translations/register"
+import { dashboardTranslations } from "@/translations/dashboard"
 
 // Add animation variants for components
 const fadeIn = {
@@ -78,32 +80,32 @@ const buttonVariants = {
 }
 
 // Add the InteractiveDashboardShowcase component
-const InteractiveDashboardShowcase = () => {
+const InteractiveDashboardShowcase = ({ t, language, languageTransition }: { t: (key: string) => string, language: string, languageTransition?: any }) => {
   const [activeTab, setActiveTab] = useState('analytics')
 
   // Tab content configuration
   const tabContent = {
     analytics: {
-      title: "Performance Analytics",
-      description: "Track your business metrics with our powerful analytics dashboard. Monitor bookings, revenue streams, and customer trends in real time.",
+      title: t('performance_analytics'),
+      description: t('track_business'),
       image: "/images/dashboard-analytics.png",
       icon: <BarChart className="w-4 h-4" />
     },
     vehicles: {
-      title: "Vehicle Management",
-      description: "Easily manage your entire fleet in one place. Add new vehicles, update availability, and set dynamic pricing based on demand.",
+      title: t('vehicle_management'),
+      description: t('easily_manage'),
       image: "/images/dashboard-manage-vehicles.png",
       icon: <Rocket className="w-4 h-4" />
     },
     bookings: {
-      title: "Booking Management",
-      description: "Streamline your booking process with an intuitive interface. Track reservations, manage customer details, and optimize your schedule.",
+      title: t('booking_management'),
+      description: t('streamline_booking'),
       image: "/images/dashboard-manage-bookings.png",
       icon: <Calendar className="w-4 h-4" />
     },
     shop: {
-      title: "Shop Management",
-      description: "Customize your shop profile, update operating hours, and manage your business information all in one convenient dashboard.",
+      title: t('shop_management'),
+      description: t('customize_shop'),
       image: "/images/dashboard-manage-shop-listing.png",
       icon: <Users className="w-4 h-4" />
     }
@@ -231,12 +233,28 @@ const InteractiveDashboardShowcase = () => {
             transition={{ duration: 0.3 }}
             className="min-h-[6rem]"
           >
-            <h3 className="text-2xl font-bold text-white mb-3">
-              {tabContent[activeTab].title}
-            </h3>
-            <p className="text-gray-300 max-w-3xl mx-auto">
-              {tabContent[activeTab].description}
-            </p>
+            <AnimatePresence mode="wait">
+              <motion.h3
+                key={language + '-tab-title-' + activeTab}
+                className="text-2xl font-bold text-white mb-3"
+                initial={languageTransition?.initial}
+                animate={languageTransition?.animate}
+                exit={languageTransition?.exit}
+              >
+                {tabContent[activeTab].title}
+              </motion.h3>
+            </AnimatePresence>
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={language + '-tab-desc-' + activeTab}
+                className="text-gray-300 max-w-3xl mx-auto"
+                initial={languageTransition?.initial}
+                animate={languageTransition?.animate}
+                exit={languageTransition?.exit}
+              >
+                {tabContent[activeTab].description}
+              </motion.p>
+            </AnimatePresence>
           </motion.div>
         </AnimatePresence>
       </motion.div>
@@ -260,7 +278,16 @@ const InteractiveDashboardShowcase = () => {
           >
             <span className="flex items-center space-x-2">
               <span>{tab.icon}</span>
-              <span>{tab.title}</span>
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-tab-button-' + key}
+                  initial={languageTransition?.initial}
+                  animate={languageTransition?.animate}
+                  exit={languageTransition?.exit}
+                >
+                  {tab.title}
+                </motion.span>
+              </AnimatePresence>
             </span>
 
             {activeTab === key && (
@@ -288,7 +315,17 @@ const InteractiveDashboardShowcase = () => {
             href="/register/shop-owner"
             className="inline-flex items-center bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-600 transition duration-300 shadow-lg hover:shadow-blue-500/20"
           >
-            Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={language + '-get-started'}
+                className="flex items-center"
+                initial={languageTransition?.initial}
+                animate={languageTransition?.animate}
+                exit={languageTransition?.exit}
+              >
+                {t('get_started_now')} <ArrowRight className="ml-2 h-5 w-5" />
+              </motion.span>
+            </AnimatePresence>
           </Link>
         </motion.div>
       </motion.div>
@@ -296,7 +333,18 @@ const InteractiveDashboardShowcase = () => {
   )
 }
 
-export default function RegisterShopPage() {
+// Wrap the component with TranslationProvider
+function RegisterShopPageContent({
+  t,
+  language,
+  toggleLanguage,
+  languageTransition
+}: {
+  t: (key: string) => string,
+  language: string,
+  toggleLanguage: () => void,
+  languageTransition: any
+}) {
   const { user, isAuthenticated, isLoading: authLoading, resendVerificationEmail } = useAuth()
   const router = useRouter()
   const formRef = useRef<HTMLDivElement>(null)
@@ -825,7 +873,7 @@ export default function RegisterShopPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
             >
-              Registration Submitted!
+              {t('registration_submitted')}
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -835,7 +883,7 @@ export default function RegisterShopPage() {
             >
               <Badge variant="pending" className="text-sm px-3 py-1">
                 <span className="mr-1.5">●</span>
-                Pending Verification
+                {t('pending_verification')}
               </Badge>
             </motion.div>
             <motion.p
@@ -844,8 +892,7 @@ export default function RegisterShopPage() {
               animate={{ opacity: 1 }}
               transition={{ delay: 1.1 }}
             >
-              Thank you for registering your shop. Your application is now being reviewed.
-              We&apos;ll contact you via email once the verification process is complete.
+              {t('thank_you')}
             </motion.p>
             <motion.div
               whileHover="hover"
@@ -856,7 +903,7 @@ export default function RegisterShopPage() {
               transition={{ delay: 1.3 }}
             >
               <Button asChild className="bg-card hover:bg-card/80 border border-yellow-500/30 text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
-                <Link href="/">Return to Homepage</Link>
+                <Link href="/">{t('return_homepage')}</Link>
               </Button>
             </motion.div>
           </motion.div>
@@ -887,23 +934,70 @@ export default function RegisterShopPage() {
             viewport={{ once: true, amount: 0.3 }}
             variants={fadeIn}
           >
+            {/* Language Switcher */}
+            <div className="flex justify-end mb-4">
+              <motion.div
+                className=""
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleLanguage}
+                  className="text-sm border-white/20 text-white hover:bg-white/10 relative overflow-hidden"
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={language}
+                      className="block"
+                      initial={languageTransition.initial}
+                      animate={languageTransition.animate}
+                      exit={languageTransition.exit}
+                    >
+                      {language === 'en' ? t('switch_to_tagalog') : t('switch_to_english')}
+                    </motion.span>
+                  </AnimatePresence>
+                </Button>
+              </motion.div>
+            </div>
             <motion.div variants={slideUp}>
               <Badge className="mb-6 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
-                Become a Partner
+                {t('become_partner')}
               </Badge>
             </motion.div>
             <motion.h1
-              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight"
+              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight relative"
               variants={slideUp}
             >
-              Turn Your Motorbikes Into a <span className="text-primary">Profitable Business</span>
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-heading1'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('turn_motorbikes')} <span className="text-primary">{t('profitable_business')}</span>
+                </motion.span>
+              </AnimatePresence>
             </motion.h1>
             <motion.p
-              className="text-lg md:text-xl text-gray-300 mb-8"
+              className="text-lg md:text-xl text-gray-300 mb-8 relative"
               variants={slideUp}
             >
-              No physical store needed. Just your bikes and our platform.
-              Start earning today with Siargao's premier motorbike rental directory.
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-description'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('no_physical_store')}
+                </motion.span>
+              </AnimatePresence>
             </motion.p>
 
             <motion.div
@@ -921,7 +1015,7 @@ export default function RegisterShopPage() {
                     className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
                     onClick={showFormAndScroll}
                   >
-                    Register Your Shop <ArrowRight className="ml-2 h-4 w-4" />
+                    {t('register_shop')} <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </motion.div>
               ) : (
@@ -936,7 +1030,7 @@ export default function RegisterShopPage() {
                     asChild
                   >
                     <Link href="/sign-up?callback=/register">
-                      Create an Account <ArrowRight className="ml-2 h-4 w-4" />
+                      {t('create_account')} <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                 </motion.div>
@@ -952,7 +1046,7 @@ export default function RegisterShopPage() {
                   className="border-white/20 text-white hover:bg-white/10"
                   asChild
                 >
-                  <a href="#benefits">Learn More</a>
+                  <a href="#benefits">{t('learn_more')}</a>
                 </Button>
               </motion.div>
             </motion.div>
@@ -968,22 +1062,22 @@ export default function RegisterShopPage() {
           >
             <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">200+</p>
-              <p className="text-sm md:text-base text-gray-300">Active Tourists Daily</p>
+              <p className="text-sm md:text-base text-gray-300">{t('active_tourists')}</p>
             </motion.div>
             <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">10%</p>
               <p className="text-sm md:text-base text-gray-300">
-                Commission Fee<br />
-                <span className="text-primary font-semibold text-xs">(First 2 Months: 0%)</span>
+                {t('commission_fee')}<br />
+                <span className="text-primary font-semibold text-xs">{t('first_2_months')}</span>
               </p>
             </motion.div>
             <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">10+</p>
-              <p className="text-sm md:text-base text-gray-300">Partner Shops</p>
+              <p className="text-sm md:text-base text-gray-300">{t('partner_shops')}</p>
             </motion.div>
             <motion.div className="text-center p-2 md:p-3" variants={cardVariants}>
               <p className="text-3xl md:text-4xl font-bold text-primary">5 min</p>
-              <p className="text-sm md:text-base text-gray-300">Setup Time</p>
+              <p className="text-sm md:text-base text-gray-300">{t('setup_time')}</p>
             </motion.div>
           </motion.div>
         </div>
@@ -999,12 +1093,43 @@ export default function RegisterShopPage() {
             viewport={{ once: true, amount: 0.3 }}
             variants={fadeIn}
           >
-            <Badge className="mb-4 text-sm">Why Join Us</Badge>
+            <Badge className="mb-4 text-sm">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-why-join'}
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('why_join_us')}
+                </motion.span>
+              </AnimatePresence>
+            </Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
-              Benefits of Partnering With Siargao Rides
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-benefits'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('benefits_partnering')}
+                </motion.span>
+              </AnimatePresence>
             </h2>
             <p className="text-gray-300 text-lg">
-              Join dozens of successful motorbike rental shops already earning with us
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-join-dozens'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('join_dozens')}
+                </motion.span>
+              </AnimatePresence>
             </p>
           </motion.div>
 
@@ -1024,9 +1149,31 @@ export default function RegisterShopPage() {
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <MapPin className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">No Physical Store Required</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={language + '-no-store'}
+                    className="block"
+                    initial={languageTransition.initial}
+                    animate={languageTransition.animate}
+                    exit={languageTransition.exit}
+                  >
+                    {t('no_physical_store_required')}
+                  </motion.span>
+                </AnimatePresence>
+              </h3>
               <p className="text-gray-400">
-                Save on rent and operating costs. Manage your rentals from anywhere with just a smartphone.
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={language + '-save-rent'}
+                    className="block"
+                    initial={languageTransition.initial}
+                    animate={languageTransition.animate}
+                    exit={languageTransition.exit}
+                  >
+                    {t('save_on_rent')}
+                  </motion.span>
+                </AnimatePresence>
               </p>
             </motion.div>
 
@@ -1038,9 +1185,9 @@ export default function RegisterShopPage() {
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <BarChart className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Increased Visibility</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('increased_visibility')}</h3>
               <p className="text-gray-400">
-                Reach thousands of tourists looking for bike rentals in Siargao through our marketing efforts.
+                {t('reach_thousands')}
               </p>
             </motion.div>
 
@@ -1052,9 +1199,9 @@ export default function RegisterShopPage() {
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Built-in Customer Base</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('built_in_customer')}</h3>
               <p className="text-gray-400">
-                Access our growing network of tourists already using our platform to find rentals.
+                {t('access_network')}
               </p>
             </motion.div>
 
@@ -1066,9 +1213,9 @@ export default function RegisterShopPage() {
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <Calendar className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Simplified Booking Management</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('simplified_booking')}</h3>
               <p className="text-gray-400">
-                Our platform handles scheduling, availability, and booking confirmations automatically.
+                {t('platform_handles')}
               </p>
             </motion.div>
 
@@ -1080,9 +1227,9 @@ export default function RegisterShopPage() {
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <CreditCard className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Low Commission Fees</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('low_commission')}</h3>
               <p className="text-gray-400">
-                Just 15% commission on bookings - significantly lower than typical tourism platforms.
+                {t('just_10_percent')}
               </p>
             </motion.div>
 
@@ -1094,9 +1241,9 @@ export default function RegisterShopPage() {
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <ShieldCheck className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Verified Customers</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('verified_customers')}</h3>
               <p className="text-gray-400">
-                All renters are verified through our platform, reducing risks and ensuring safety.
+                {t('all_renters')}
               </p>
             </motion.div>
           </motion.div>
@@ -1113,12 +1260,43 @@ export default function RegisterShopPage() {
             viewport={{ once: true, amount: 0.3 }}
             variants={fadeIn}
           >
-            <Badge className="mb-4 text-sm">Simple Process</Badge>
+            <Badge className="mb-4 text-sm">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-simple-process'}
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('simple_process')}
+                </motion.span>
+              </AnimatePresence>
+            </Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
-              How To Get Started
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-how-to-start'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('how_to_start')}
+                </motion.span>
+              </AnimatePresence>
             </h2>
             <p className="text-gray-300 text-lg">
-              Setting up your shop takes just a few minutes
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-setting-up'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('setting_up')}
+                </motion.span>
+              </AnimatePresence>
             </p>
           </motion.div>
 
@@ -1136,9 +1314,31 @@ export default function RegisterShopPage() {
               </div>
               {/* Only show connector line on medium screens and up */}
               <div className="hidden md:block absolute top-8 left-1/2 w-full h-1 bg-gray-800 -z-0"></div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Create Account</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={language + '-create-account'}
+                    className="block"
+                    initial={languageTransition.initial}
+                    animate={languageTransition.animate}
+                    exit={languageTransition.exit}
+                  >
+                    {t('create_account_step')}
+                  </motion.span>
+                </AnimatePresence>
+              </h3>
               <p className="text-gray-400">
-                Sign up for a free account and verify your email.
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={language + '-sign-up'}
+                    className="block"
+                    initial={languageTransition.initial}
+                    animate={languageTransition.animate}
+                    exit={languageTransition.exit}
+                  >
+                    {t('sign_up')}
+                  </motion.span>
+                </AnimatePresence>
               </p>
             </motion.div>
 
@@ -1149,9 +1349,9 @@ export default function RegisterShopPage() {
               </div>
               {/* Only show connector line on medium screens and up */}
               <div className="hidden md:block absolute top-8 left-1/2 w-full h-1 bg-gray-800 -z-0"></div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Submit Documents</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('submit_documents')}</h3>
               <p className="text-gray-400">
-                Provide government ID and proof of bike ownership.
+                {t('provide_government')}
               </p>
             </motion.div>
 
@@ -1160,9 +1360,9 @@ export default function RegisterShopPage() {
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl font-bold text-primary">3</span>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Get Verified & Earn</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('get_verified')}</h3>
               <p className="text-gray-400">
-                After verification, start receiving bookings and revenue.
+                {t('after_verification')}
               </p>
             </motion.div>
           </motion.div>
@@ -1181,14 +1381,34 @@ export default function RegisterShopPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-6xl mx-auto text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Powerful Dashboard Experience
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-powerful-dashboard'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('powerful_dashboard')}
+                </motion.span>
+              </AnimatePresence>
             </h2>
             <p className="text-gray-300 text-lg max-w-3xl mx-auto mb-16">
-              Our intuitive interface gives you complete control over your rental business
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-intuitive-interface'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('intuitive_interface')}
+                </motion.span>
+              </AnimatePresence>
             </p>
 
             {/* Interactive Dashboard Showcase - Using Framer Motion */}
-            <InteractiveDashboardShowcase />
+            <InteractiveDashboardShowcase t={t} language={language} languageTransition={languageTransition} />
           </div>
         </div>
       </section>
@@ -1203,11 +1423,30 @@ export default function RegisterShopPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
-              Ready to Start Your Vehicle Rental Business?
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-ready-to-start'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('ready_to_start')}
+                </motion.span>
+              </AnimatePresence>
             </h2>
             <p className="text-lg text-gray-300 mb-8">
-              Join our growing network of successful shop owners on Siargao Rides.
-              Get started in minutes and turn your vehicle into a profitable business.
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={language + '-join-growing'}
+                  className="block"
+                  initial={languageTransition.initial}
+                  animate={languageTransition.animate}
+                  exit={languageTransition.exit}
+                >
+                  {t('join_growing')}
+                </motion.span>
+              </AnimatePresence>
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -1217,7 +1456,17 @@ export default function RegisterShopPage() {
                   className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-sm"
                   onClick={showFormAndScroll}
                 >
-                  Register Your Shop <ArrowRight className="ml-2 h-4 w-4" />
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={language + '-register-shop-btn'}
+                      className="flex items-center"
+                      initial={languageTransition.initial}
+                      animate={languageTransition.animate}
+                      exit={languageTransition.exit}
+                    >
+                      {t('register_shop')} <ArrowRight className="ml-2 h-4 w-4" />
+                    </motion.span>
+                  </AnimatePresence>
                 </Button>
               ) : (
                 <Button
@@ -1226,7 +1475,17 @@ export default function RegisterShopPage() {
                   asChild
                 >
                   <Link href="/sign-up?callback=/register">
-                    Create an Account <ArrowRight className="ml-2 h-4 w-4" />
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={language + '-create-account-btn'}
+                        className="flex items-center"
+                        initial={languageTransition.initial}
+                        animate={languageTransition.animate}
+                        exit={languageTransition.exit}
+                      >
+                        {t('create_account')} <ArrowRight className="ml-2 h-4 w-4" />
+                      </motion.span>
+                    </AnimatePresence>
                   </Link>
                 </Button>
               )}
@@ -1236,7 +1495,19 @@ export default function RegisterShopPage() {
                 className="border-white/20 text-white hover:bg-white/10"
                 asChild
               >
-                <Link href="/contact">Contact Us</Link>
+                <Link href="/contact">
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={language + '-contact-us'}
+                      className="block"
+                      initial={languageTransition.initial}
+                      animate={languageTransition.animate}
+                      exit={languageTransition.exit}
+                    >
+                      {t('contact_us')}
+                    </motion.span>
+                  </AnimatePresence>
+                </Link>
               </Button>
             </div>
           </div>
@@ -1258,9 +1529,31 @@ export default function RegisterShopPage() {
                 className="text-center mb-8"
                 variants={slideUp}
               >
-                <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white">Register Your Shop</h2>
+                <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white">
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={language + '-register-your-shop'}
+                      className="block"
+                      initial={languageTransition.initial}
+                      animate={languageTransition.animate}
+                      exit={languageTransition.exit}
+                    >
+                      {t('register_your_shop')}
+                    </motion.span>
+                  </AnimatePresence>
+                </h2>
                 <p className="text-gray-300">
-                  Fill out the form below to become a Siargao Rides partner
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={language + '-fill-out-form'}
+                      className="block"
+                      initial={languageTransition.initial}
+                      animate={languageTransition.animate}
+                      exit={languageTransition.exit}
+                    >
+                      {t('fill_out_form')}
+                    </motion.span>
+                  </AnimatePresence>
                 </p>
               </motion.div>
 
@@ -1271,14 +1564,14 @@ export default function RegisterShopPage() {
                 {existingShop ? (
                   <div className="text-center p-8">
                     <p className="mb-4 text-muted-foreground">
-                      Registration form is disabled as you already have a registered shop.
+                      {t('already_registered')}
                     </p>
                   </div>
                 ) : userRecordExists === false && creatingUserRecord ? (
                   // Show a loading indicator while automatically creating the user record
                   <div className="mb-6 p-4 flex justify-center items-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <span className="ml-3">Creating user record...</span>
+                    <span className="ml-3">{t('creating_user')}</span>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-6">
@@ -1295,11 +1588,11 @@ export default function RegisterShopPage() {
 
                     {/* Owner Information */}
                     <motion.div variants={slideUp}>
-                      <h2 className="text-xl font-semibold mb-4">Owner Information</h2>
+                      <h2 className="text-xl font-semibold mb-4">{t('owner_information')}</h2>
                       <div className="space-y-4">
                         <div>
                           <label htmlFor="fullName" className="block text-sm font-medium mb-1">
-                            Full Name
+                            {t('full_name')}
                           </label>
                           <input
                             type="text"
@@ -1314,7 +1607,7 @@ export default function RegisterShopPage() {
 
                         <div>
                           <label htmlFor="shopName" className="block text-sm font-medium mb-1">
-                            Shop Name
+                            {t('shop_name')}
                           </label>
                           <input
                             type="text"
@@ -1329,7 +1622,7 @@ export default function RegisterShopPage() {
 
                         <div>
                           <label htmlFor="address" className="block text-sm font-medium mb-1">
-                            Shop Address
+                            {t('shop_address')}
                           </label>
                           <input
                             type="text"
@@ -1347,11 +1640,11 @@ export default function RegisterShopPage() {
 
                     {/* Contact Information */}
                     <motion.div variants={slideUp}>
-                      <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
+                      <h2 className="text-xl font-semibold mb-4">{t('contact_information')}</h2>
                       <div className="space-y-4">
                         <div>
                           <label htmlFor="email" className="block text-sm font-medium mb-1">
-                            Email Address
+                            {t('email_address')}
                           </label>
                           <input
                             type="email"
@@ -1366,7 +1659,7 @@ export default function RegisterShopPage() {
 
                         <div>
                           <label htmlFor="phone" className="block text-sm font-medium mb-1">
-                            Phone Number
+                            {t('phone_number')}
                           </label>
                           <input
                             type="tel"
@@ -1381,7 +1674,7 @@ export default function RegisterShopPage() {
 
                         <div>
                           <label htmlFor="referral" className="block text-sm font-medium mb-1">
-                            Referral (optional)
+                            {t('referral')}
                           </label>
                           <input
                             type="text"
@@ -1389,7 +1682,7 @@ export default function RegisterShopPage() {
                             name="referral"
                             value={formData.referral}
                             onChange={handleChange}
-                            placeholder="Who referred you to Siargao Rides?"
+                            placeholder={t('who_referred')}
                             className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </div>
@@ -1398,15 +1691,13 @@ export default function RegisterShopPage() {
 
                     {/* Verification Documents */}
                     <motion.div variants={slideUp}>
-                      <h2 className="text-xl font-semibold mb-4">Verification Documents</h2>
+                      <h2 className="text-xl font-semibold mb-4">{t('verification_documents')}</h2>
 
                       <div className="bg-muted/30 border border-border rounded-md p-4 mb-6">
                         <div className="flex items-start gap-3">
                           <Info size={20} className="mt-0.5 flex-shrink-0" />
                           <p className="text-sm text-muted-foreground">
-                            For security and verification purposes, we require a government-issued ID.
-                            A business permit is recommended but optional. This helps us maintain
-                            a trusted marketplace for our users.
+                            {t('security_verification')}
                           </p>
                         </div>
                       </div>
@@ -1416,7 +1707,7 @@ export default function RegisterShopPage() {
                           whileHover={{ borderColor: "rgba(var(--color-primary), 0.5)" }}
                         >
                           <label htmlFor="governmentId" className="block text-sm font-medium mb-1">
-                            Government-issued ID (required)
+                            {t('government_id')}
                           </label>
                           <div className="flex items-center justify-center border border-dashed border-border rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50">
                             <input
@@ -1430,8 +1721,8 @@ export default function RegisterShopPage() {
                             />
                             <div className="text-center">
                               <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
-                              <p className="text-sm font-medium">Click to upload</p>
-                              <p className="text-xs text-muted-foreground">Accepted formats: JPG, PNG, PDF</p>
+                              <p className="text-sm font-medium">{t('click_upload')}</p>
+                              <p className="text-xs text-muted-foreground">{t('accepted_formats')}</p>
                             </div>
 
                             {formData.governmentId && (
@@ -1451,7 +1742,7 @@ export default function RegisterShopPage() {
                           whileHover={{ borderColor: "rgba(var(--color-primary), 0.5)" }}
                         >
                           <label htmlFor="businessPermit" className="block text-sm font-medium mb-1">
-                            Business/Municipal Permit (optional)
+                            {t('business_permit')}
                           </label>
                           <div className="flex items-center justify-center border border-dashed border-border rounded-md h-32 cursor-pointer relative overflow-hidden bg-background/50">
                             <input
@@ -1464,8 +1755,8 @@ export default function RegisterShopPage() {
                             />
                             <div className="text-center">
                               <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
-                              <p className="text-sm font-medium">Click to upload</p>
-                              <p className="text-xs text-muted-foreground">Accepted formats: JPG, PNG, PDF</p>
+                              <p className="text-sm font-medium">{t('click_upload')}</p>
+                              <p className="text-xs text-muted-foreground">{t('accepted_formats')}</p>
                             </div>
 
                             {formData.businessPermit && (
@@ -1489,10 +1780,10 @@ export default function RegisterShopPage() {
                         <div className="flex items-start gap-3">
                           <Info size={20} className="mt-0.5 flex-shrink-0" />
                           <p className="text-sm text-muted-foreground">
-                            This site is protected by reCAPTCHA and the Google
-                            {" "}<a href="https://policies.google.com/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a>{" "}
-                            and{" "}<a href="https://policies.google.com/terms" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Terms of Service</a>{" "}
-                            apply.
+                            {t('recaptcha_protected')}
+                            {" "}<a href="https://policies.google.com/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t('privacy_policy')}</a>{" "}
+                            and{" "}<a href="https://policies.google.com/terms" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t('terms_of_service')}</a>{" "}
+                            {t('apply')}.
                           </p>
                         </div>
                       </div>
@@ -1513,10 +1804,10 @@ export default function RegisterShopPage() {
                         disabled={isSubmitting || !!existingShop}
                       >
                         {isSubmitting ? (
-                          <>Processing...</>
+                          <>{t('processing')}</>
                         ) : (
                           <>
-                            Submit Registration
+                            {t('submit_registration')}
                             {!isSubmitting && !existingShop && (
                               <motion.span
                                 animate={{ x: [0, 5, 0] }}
@@ -1543,4 +1834,41 @@ export default function RegisterShopPage() {
       )}
     </motion.div>
   )
+}
+
+// Animation variants for language transitions
+const languageTransition = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+  exit: { opacity: 0, y: -10, transition: { duration: 0.2 } }
+};
+
+// Let's use a simpler approach without the context
+export default function RegisterShopPage() {
+  const [language, setLanguage] = useState('en');
+
+  // Merge translations
+  const translations = {
+    en: { ...registerTranslations.en, ...dashboardTranslations.en },
+    tl: { ...registerTranslations.tl, ...dashboardTranslations.tl }
+  };
+
+  // Translation function with animation key
+  const t = (key: string): string => {
+    return translations[language as 'en' | 'tl'][key] || key;
+  };
+
+  // Toggle language function with smooth transition
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'tl' : 'en');
+  };
+
+  return (
+    <RegisterShopPageContent
+      t={t}
+      language={language}
+      toggleLanguage={toggleLanguage}
+      languageTransition={languageTransition}
+    />
+  );
 }
