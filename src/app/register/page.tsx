@@ -319,33 +319,7 @@ const InteractiveDashboardShowcase = ({ t, language, languageTransition }: { t: 
         ))}
       </motion.div>
 
-      {/* Call to Action */}
-      <motion.div
-        className="text-center mt-10"
-        variants={itemVariants}
-      >
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Link
-            href="/register/shop-owner"
-            className="inline-flex items-center bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-600 transition duration-300 shadow-lg hover:shadow-blue-500/20"
-          >
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={language + '-get-started'}
-                className="flex items-center"
-                initial={languageTransition?.initial}
-                animate={languageTransition?.animate}
-                exit={languageTransition?.exit}
-              >
-                {t('get_started_now')} <ArrowRight className="ml-2 h-5 w-5" />
-              </motion.span>
-            </AnimatePresence>
-          </Link>
-        </motion.div>
-      </motion.div>
+
     </motion.div>
   )
 }
