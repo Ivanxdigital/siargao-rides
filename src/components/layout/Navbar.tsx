@@ -61,35 +61,45 @@ const Navbar = () => {
     }
   }, [isAuthenticated, user])
 
-  // Debounce function to delay execution
-  const debounce = (func: Function, wait: number) => {
-    let timeout: NodeJS.Timeout
-    return function executedFunction(...args: any[]) {
-      const later = () => {
-        clearTimeout(timeout)
-        func(...args)
+  // Throttle function to limit execution frequency
+  const throttle = (callback: Function, delay: number) => {
+    let lastCall = 0
+    return function (...args: any[]) {
+      const now = Date.now()
+      if (now - lastCall >= delay) {
+        lastCall = now
+        callback(...args)
       }
-      clearTimeout(timeout)
-      timeout = setTimeout(later, wait)
     }
   }
 
   // Change navbar style on scroll
   useEffect(() => {
-    // Check if device is mobile
-    const isMobile = window.innerWidth < 768
+    let isMobile = window.innerWidth < 768
 
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 20)
+      })
     }
 
-    // Apply debounce for mobile devices to handle momentum scrolling
-    const debouncedHandleScroll = isMobile
-      ? debounce(handleScroll, 150) // 150ms delay for mobile
-      : handleScroll
+    // Apply throttle with appropriate timing
+    const throttledScrollHandler = throttle(handleScroll, isMobile ? 50 : 16) // ~60fps for desktop
 
-    window.addEventListener("scroll", debouncedHandleScroll)
-    return () => window.removeEventListener("scroll", debouncedHandleScroll)
+    // Update isMobile on resize with throttle
+    const handleResize = throttle(() => {
+      isMobile = window.innerWidth < 768
+    }, 100)
+
+    // Use passive event listener for better performance
+    window.addEventListener("scroll", throttledScrollHandler, { passive: true })
+    window.addEventListener("resize", handleResize, { passive: true })
+
+    return () => {
+      window.removeEventListener("scroll", throttledScrollHandler)
+      window.removeEventListener("resize", handleResize)
+    }
   }, [])
 
   // Check if announcement is visible
@@ -181,7 +191,7 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`fixed left-0 right-0 z-[1000] transition-all duration-500 ${
+        className={`fixed left-0 right-0 z-[1000] transition-all duration-200 ${
           scrolled
             ? "top-0 py-3 bg-transparent backdrop-blur-md shadow-md border-b border-white/10"
             : `${isAnnouncementVisible ? 'md:top-[36px] top-0' : 'top-0'} py-5 bg-transparent`
