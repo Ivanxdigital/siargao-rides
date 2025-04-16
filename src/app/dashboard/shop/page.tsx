@@ -122,6 +122,36 @@ export default function ManageShopPage() {
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Function to save form state to localStorage
+  const saveFormToLocalStorage = (shopId: string, formData: ShopFormData, isEditing: boolean) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`shop_form_${shopId}`, JSON.stringify(formData));
+      localStorage.setItem(`shop_editing_${shopId}`, isEditing.toString());
+    }
+  };
+
+  // Function to save image previews to localStorage
+  const saveImagesToLocalStorage = (shopId: string, bannerPreview: string | null, logoPreview: string | null) => {
+    if (typeof window !== 'undefined') {
+      if (bannerPreview) {
+        localStorage.setItem(`shop_banner_preview_${shopId}`, bannerPreview);
+      }
+      if (logoPreview) {
+        localStorage.setItem(`shop_logo_preview_${shopId}`, logoPreview);
+      }
+    }
+  };
+
+  // Function to clear form data from localStorage
+  const clearFormFromLocalStorage = (shopId: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`shop_form_${shopId}`);
+      localStorage.removeItem(`shop_editing_${shopId}`);
+      localStorage.removeItem(`shop_banner_preview_${shopId}`);
+      localStorage.removeItem(`shop_logo_preview_${shopId}`);
+    }
+  };
+
   useEffect(() => {
     // Check if user is a shop owner
     if (user && user.user_metadata?.role !== "shop_owner") {
@@ -157,32 +187,84 @@ export default function ManageShopPage() {
         const shopData = data as RentalShop;
         setShop(shopData);
 
-        // Set form data for potential editing
-        setFormData({
-          name: shopData.name,
-          description: shopData.description || "",
-          address: shopData.address,
-          phone_number: shopData.phone_number || "",
-          whatsapp: shopData.whatsapp || "",
-          email: shopData.email || "",
-          location_area: shopData.location_area || "",
-          offers_delivery: shopData.offers_delivery || false,
-          delivery_fee: shopData.delivery_fee || 0,
-          requires_id_deposit: shopData.requires_id_deposit !== false,
-          requires_cash_deposit: shopData.requires_cash_deposit || false,
-          cash_deposit_amount: shopData.cash_deposit_amount || 0,
-          facebook_url: shopData.facebook_url || "",
-          instagram_url: shopData.instagram_url || "",
-          sms_number: shopData.sms_number || ""
-        });
+        // Check if we have saved form data in localStorage
+        if (typeof window !== 'undefined') {
+          const savedFormData = localStorage.getItem(`shop_form_${shopData.id}`);
+          const savedEditingState = localStorage.getItem(`shop_editing_${shopData.id}`);
+          const savedBannerPreview = localStorage.getItem(`shop_banner_preview_${shopData.id}`);
+          const savedLogoPreview = localStorage.getItem(`shop_logo_preview_${shopData.id}`);
 
-        // Set banner and logo preview if they exist
-        if (shopData.banner_url) {
-          setBannerPreview(shopData.banner_url);
-        }
+          if (savedFormData) {
+            // Restore form data from localStorage
+            setFormData(JSON.parse(savedFormData));
+            console.log('Restored form data from localStorage');
+          } else {
+            // Set form data from shop data if no saved data
+            setFormData({
+              name: shopData.name,
+              description: shopData.description || "",
+              address: shopData.address,
+              phone_number: shopData.phone_number || "",
+              whatsapp: shopData.whatsapp || "",
+              email: shopData.email || "",
+              location_area: shopData.location_area || "",
+              offers_delivery: shopData.offers_delivery || false,
+              delivery_fee: shopData.delivery_fee || 0,
+              requires_id_deposit: shopData.requires_id_deposit !== false,
+              requires_cash_deposit: shopData.requires_cash_deposit || false,
+              cash_deposit_amount: shopData.cash_deposit_amount || 0,
+              facebook_url: shopData.facebook_url || "",
+              instagram_url: shopData.instagram_url || "",
+              sms_number: shopData.sms_number || ""
+            });
+          }
 
-        if (shopData.logo_url) {
-          setLogoPreview(shopData.logo_url);
+          // Restore editing state if it exists
+          if (savedEditingState) {
+            setIsEditing(savedEditingState === 'true');
+            console.log('Restored editing state from localStorage:', savedEditingState === 'true');
+          }
+
+          // Set banner and logo preview from localStorage or from shop data
+          if (savedBannerPreview) {
+            setBannerPreview(savedBannerPreview);
+          } else if (shopData.banner_url) {
+            setBannerPreview(shopData.banner_url);
+          }
+
+          if (savedLogoPreview) {
+            setLogoPreview(savedLogoPreview);
+          } else if (shopData.logo_url) {
+            setLogoPreview(shopData.logo_url);
+          }
+        } else {
+          // Fallback if localStorage is not available
+          setFormData({
+            name: shopData.name,
+            description: shopData.description || "",
+            address: shopData.address,
+            phone_number: shopData.phone_number || "",
+            whatsapp: shopData.whatsapp || "",
+            email: shopData.email || "",
+            location_area: shopData.location_area || "",
+            offers_delivery: shopData.offers_delivery || false,
+            delivery_fee: shopData.delivery_fee || 0,
+            requires_id_deposit: shopData.requires_id_deposit !== false,
+            requires_cash_deposit: shopData.requires_cash_deposit || false,
+            cash_deposit_amount: shopData.cash_deposit_amount || 0,
+            facebook_url: shopData.facebook_url || "",
+            instagram_url: shopData.instagram_url || "",
+            sms_number: shopData.sms_number || ""
+          });
+
+          // Set banner and logo preview if they exist
+          if (shopData.banner_url) {
+            setBannerPreview(shopData.banner_url);
+          }
+
+          if (shopData.logo_url) {
+            setLogoPreview(shopData.logo_url);
+          }
         }
 
         // Fetch vehicle statistics
@@ -218,8 +300,20 @@ export default function ManageShopPage() {
       setLogoPreview(shop?.logo_url || null);
       setBannerFile(null);
       setLogoFile(null);
+
+      // Clear form data from localStorage when canceling edit
+      if (shop) {
+        clearFormFromLocalStorage(shop.id);
+      }
     }
-    setIsEditing(!isEditing);
+
+    const newEditingState = !isEditing;
+    setIsEditing(newEditingState);
+
+    // Save editing state to localStorage
+    if (shop && newEditingState) {
+      saveFormToLocalStorage(shop.id, formData, newEditingState);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -227,15 +321,33 @@ export default function ManageShopPage() {
 
     if (type === 'checkbox') {
       const { checked } = e.target as HTMLInputElement;
-      setFormData((prev: any) => ({
-        ...prev,
-        [name]: checked,
-      }));
+      setFormData((prev: any) => {
+        const updatedFormData = {
+          ...prev,
+          [name]: checked,
+        };
+
+        // Save updated form data to localStorage
+        if (shop && isEditing) {
+          saveFormToLocalStorage(shop.id, updatedFormData, isEditing);
+        }
+
+        return updatedFormData;
+      });
     } else {
-      setFormData((prev: any) => ({
-        ...prev,
-        [name]: value,
-      }));
+      setFormData((prev: any) => {
+        const updatedFormData = {
+          ...prev,
+          [name]: value,
+        };
+
+        // Save updated form data to localStorage
+        if (shop && isEditing) {
+          saveFormToLocalStorage(shop.id, updatedFormData, isEditing);
+        }
+
+        return updatedFormData;
+      });
     }
   };
 
@@ -260,7 +372,13 @@ export default function ManageShopPage() {
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
-      setBannerPreview(reader.result as string);
+      const previewUrl = reader.result as string;
+      setBannerPreview(previewUrl);
+
+      // Save banner preview to localStorage
+      if (shop && isEditing) {
+        saveImagesToLocalStorage(shop.id, previewUrl, logoPreview);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -285,24 +403,42 @@ export default function ManageShopPage() {
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
-      setLogoPreview(reader.result as string);
+      const previewUrl = reader.result as string;
+      setLogoPreview(previewUrl);
+
+      // Save logo preview to localStorage
+      if (shop && isEditing) {
+        saveImagesToLocalStorage(shop.id, bannerPreview, previewUrl);
+      }
     };
     reader.readAsDataURL(file);
   };
 
   const handleBannerRemove = () => {
     setBannerFile(null);
-    setBannerPreview(shop?.banner_url || null);
+    const defaultPreview = shop?.banner_url || null;
+    setBannerPreview(defaultPreview);
     if (bannerInputRef.current) {
       bannerInputRef.current.value = '';
+    }
+
+    // Update localStorage
+    if (shop && isEditing) {
+      saveImagesToLocalStorage(shop.id, defaultPreview, logoPreview);
     }
   };
 
   const handleLogoRemove = () => {
     setLogoFile(null);
-    setLogoPreview(shop?.logo_url || null);
+    const defaultPreview = shop?.logo_url || null;
+    setLogoPreview(defaultPreview);
     if (logoInputRef.current) {
       logoInputRef.current.value = '';
+    }
+
+    // Update localStorage
+    if (shop && isEditing) {
+      saveImagesToLocalStorage(shop.id, bannerPreview, defaultPreview);
     }
   };
 
@@ -427,6 +563,11 @@ export default function ManageShopPage() {
 
       if (updateData.logo_url) {
         setLogoPreview(updateData.logo_url);
+      }
+
+      // Clear form data from localStorage after successful save
+      if (shop) {
+        clearFormFromLocalStorage(shop.id);
       }
 
     } catch (error) {
