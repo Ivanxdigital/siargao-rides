@@ -108,6 +108,28 @@ const dropdownVariants = {
   }
 }
 
+const steps = [
+  {
+    label: 'Location',
+    icon: <MapPin size={22} className="" />,
+  },
+  {
+    label: 'Vehicle',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.6-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"></path>
+        <circle cx="7" cy="17" r="2"></circle>
+        <path d="M9 17h6"></path>
+        <circle cx="17" cy="17" r="2"></circle>
+      </svg>
+    ),
+  },
+  {
+    label: 'Dates',
+    icon: <Calendar size={22} className="" />,
+  },
+]
+
 const SearchBar = ({ onSearch }: SearchBarProps) => {
   // Search state
   const [location, setLocation] = useState("")
@@ -278,11 +300,49 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
 
   return (
     <motion.div
-      className="bg-black/30 backdrop-blur-xl rounded-2xl shadow-lg border border-white/10 p-5 transition-all duration-300 relative overflow-visible w-full max-w-md mx-auto"
+      className="bg-black/30 backdrop-blur-xl rounded-2xl shadow-lg border border-white/10 p-5 transition-all duration-300 relative w-full max-w-md mx-auto"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
+      {/* Stepper: Horizontal clickable steps */}
+      <nav aria-label="Search steps" className="mb-6">
+        <ol className="flex items-center justify-between gap-2 sm:gap-4">
+          {steps.map((stepObj, idx) => {
+            const stepIndex = idx + 1;
+            const isActive = step === stepIndex;
+            const isCompleted = step > stepIndex;
+            const isClickable = isCompleted;
+            return (
+              <li key={stepObj.label} className="flex-1 min-w-0">
+                <button
+                  type="button"
+                  className={`w-full flex flex-col items-center focus:outline-none group transition-all
+                    ${isActive ? 'bg-primary-900 text-white shadow-lg border-2 border-primary-800' : 'bg-black/40 text-white/70 border border-white/20'}
+                    rounded-xl px-2 py-3 sm:px-3 sm:py-4
+                    ${isClickable ? 'hover:bg-primary/20 cursor-pointer' : 'cursor-default'}`}
+                  aria-current={isActive ? 'step' : undefined}
+                  onClick={() => {
+                    if (isClickable) setStep(stepIndex)
+                  }}
+                  tabIndex={isClickable || isActive ? 0 : -1}
+                >
+                  <span className={`flex items-center justify-center w-9 h-9 mb-1
+                    ${isActive ? 'text-white' : 'text-white'}
+                    transition-all`}>
+                    {stepObj.icon}
+                  </span>
+                  <span className={`text-xs sm:text-sm font-medium tracking-wide ${isActive ? 'text-white font-semibold' : 'text-white/80'}`}>
+                    {stepObj.label}
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ol>
+      </nav>
+      {/* End Stepper */}
+
       {/* BETA Badge */}
       <div className="absolute -top-2 -right-2 z-20 transform rotate-3 sm:scale-100 scale-90">
         <Badge
@@ -300,7 +360,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
       <motion.form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="relative space-y-5 z-10"
+        className="relative space-y-5 z-10 pb-6"
       >
         {/* Step 1: Location */}
         <AnimatePresence>
@@ -663,23 +723,6 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Step Indicators */}
-        <div className="flex items-center justify-center space-x-1 pt-1">
-          {[1, 2, 3].map((stepNumber) => (
-            <motion.div
-              key={stepNumber}
-              className={`h-1 rounded-full ${
-                stepNumber <= step ? 'bg-primary/70' : 'bg-white/10'
-              } transition-all duration-300`}
-              style={{ width: stepNumber <= step ? '24px' : '12px' }}
-              animate={{
-                width: stepNumber <= step ? '24px' : '12px',
-                backgroundColor: stepNumber <= step ? 'rgb(139 92 246 / 0.7)' : 'rgb(255 255 255 / 0.1)'
-              }}
-            />
-          ))}
-        </div>
       </motion.form>
 
       {/* Custom date input styling for mobile */}
