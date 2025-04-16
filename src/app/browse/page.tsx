@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation"
 import DateRangePicker from "@/components/DateRangePicker"
 import { parseISO } from "date-fns"
 import { Button } from "@/components/ui/Button"
+import { useQuery } from '@tanstack/react-query'
+import { fetchVehicles } from '@/lib/queries/vehicles'
 
 // Interface for vehicle data with additional calculated fields
 interface VehicleWithMetadata extends Vehicle {
@@ -106,18 +108,10 @@ export default function BrowsePage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [minRating, setMinRating] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [vehicles, setVehicles] = useState<VehicleWithMetadata[]>([])
-  const [availableCategories, setAvailableCategories] = useState<Record<VehicleType, string[]>>({
-    motorcycle: [],
-    car: [],
-    tuktuk: []
-  })
   const [error, setError] = useState<string | null>(null)
 
   // New filter states
   const [selectedLocation, setSelectedLocation] = useState<string>("")
-  const [locations, setLocations] = useState<string[]>([])
   const [onlyShowAvailable, setOnlyShowAvailable] = useState<boolean>(false)
   const [engineSizeRange, setEngineSizeRange] = useState<[number, number]>([0, 1000])
   const [sortBy, setSortBy] = useState<string>("price_asc")
@@ -141,6 +135,120 @@ export default function BrowsePage() {
 
   // Add this somewhere near the other state variables
   const [selectedDates, setSelectedDates] = useState<DateRange | null>(null);
+
+  // New: vehicles with date availability
+  const [vehiclesWithAvailability, setVehiclesWithAvailability] = useState<VehicleWithMetadata[] | null>(null);
+
+  // React Query for initial vehicle/shop data
+  const {
+    data: initialData,
+    isLoading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['vehicles-initial'],
+    queryFn: fetchVehicles,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Use the data from React Query
+  const vehicles = initialData?.vehicles || [];
+  const locations = initialData?.locations || [];
+  const availableCategories = initialData?.availableCategories || {
+    motorcycle: [],
+    car: [],
+    tuktuk: []
+  };
+
+  // New useEffect specifically for date range filtering
+  useEffect(() => {
+    // Only check availability if both dates are present and dateRangeSelected is true
+    if (startDate && endDate && dateRangeSelected) {
+      const checkAvailabilityForDates = async () => {
+        try {
+          const supabase = createClientComponentClient();
+
+          // Reset error
+          setError(null);
+
+          // Get current vehicles to check
+          const currentVehicles = [...vehicles];
+          const vehicleIds = currentVehicles.map(v => v.id);
+          let availableVehicleIds: string[] = [];
+
+          if (vehicleIds.length === 0) {
+            return;
+          }
+
+          try {
+            // Format dates for API
+            const startDateFormatted = new Date(startDate).toISOString().split('T')[0];
+            const endDateFormatted = new Date(endDate).toISOString().split('T')[0];
+
+            // Validate dates
+            const start = new Date(startDateFormatted);
+            const end = new Date(endDateFormatted);
+
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+              throw new Error("Invalid date format");
+            }
+
+            if (start >= end) {
+              throw new Error("Start date must be before end date");
+            }
+
+            // Check availability with API
+            const response = await fetch('/api/vehicles/check-availability-batch', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                vehicleIds,
+                startDate: startDateFormatted,
+                endDate: endDateFormatted
+              }),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Failed to check availability: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
+            }
+
+            const availabilityData = await response.json();
+
+            if (availabilityData && Array.isArray(availabilityData.availableVehicleIds)) {
+              availableVehicleIds = availabilityData.availableVehicleIds;
+            } else {
+              throw new Error('Invalid response format from availability check');
+            }
+          } catch (fetchError) {
+            // Fallback - mark all vehicles as available
+            availableVehicleIds = vehicleIds;
+          }
+
+          // Update availability for all vehicles
+          const updatedVehicles = currentVehicles.map(vehicle => ({
+            ...vehicle,
+            is_available_for_dates: availableVehicleIds.includes(vehicle.id)
+          }));
+          setVehiclesWithAvailability(updatedVehicles);
+        } catch (error) {
+          // Optionally set error state
+        }
+      };
+
+      // Prevent rapid sequential checks by adding a small timeout
+      const timeoutId = setTimeout(() => {
+        checkAvailabilityForDates();
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      // If no date range, reset to null
+      setVehiclesWithAvailability(null);
+    }
+  }, [startDate, endDate, dateRangeSelected, vehicles]);
+
+  // Use vehiclesWithAvailability if present, otherwise vehicles from React Query
+  const vehiclesToDisplay = vehiclesWithAvailability || vehicles;
 
   // Store functions in refs
   useEffect(() => {
@@ -243,289 +351,10 @@ export default function BrowsePage() {
     };
   }, []);
 
-  // Replace the previous useEffect with a better implementation
-  useEffect(() => {
-    // Define the event handler
-    const loadInitialData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const supabase = createClientComponentClient();
-
-        // Fetch all vehicles with joined shop data
-        let vehicleQuery = supabase
-          .from('vehicles')
-          .select(`
-            *,
-            vehicle_images(*),
-            vehicle_types(*),
-            rental_shops!inner(id, name, logo_url, location_area, is_active, is_showcase)
-          `)
-          .order('price_per_day');
-
-        // We always fetch all available vehicles first, then filter by date if needed
-        vehicleQuery = vehicleQuery.eq('is_available', true);
-
-        // Only show vehicles from active shops (with active subscriptions)
-        vehicleQuery = vehicleQuery.eq('rental_shops.is_active', true);
-
-        // Only show verified vehicles
-        vehicleQuery = vehicleQuery.eq('is_verified', true);
-        vehicleQuery = vehicleQuery.eq('verification_status', 'approved');
-
-
-        const { data: vehicleData, error: vehicleError } = await vehicleQuery;
-
-        // Added debugging - if any shops, check their active status
-        if (vehicleData && vehicleData.length > 0) {
-          console.log("All shops:", await supabase
-            .from('rental_shops')
-            .select('id, name, is_active, subscription_status')
-            .in('id', vehicleData.map(v => v.shop_id))
-          );
-        } else {
-          console.log("No vehicles found, checking for shops with is_active=true:", await supabase
-            .from('rental_shops')
-            .select('id, name, is_active, subscription_status')
-            .eq('is_active', true)
-          );
-        }
-
-        if (vehicleError) {
-          throw vehicleError;
-        }
-
-        // Debug logs
-        console.log("Vehicle query results (raw):", {
-          count: vehicleData?.length || 0,
-          filters: {
-            is_available: true,
-            is_active: true,
-            is_verified: true,
-            verification_status: 'approved'
-          },
-          samples: vehicleData?.slice(0, 2).map(v => ({
-            id: v.id,
-            name: v.name,
-            shop_id: v.shop_id,
-            shop_name: v.rental_shops?.name,
-            shop_is_active: v.rental_shops?.is_active,
-            is_available: v.is_available,
-            is_verified: v.is_verified,
-            verification_status: v.verification_status
-          }))
-        });
-
-        console.log("Vehicle query results:", {
-          count: vehicleData?.length || 0,
-          filters: {
-            is_available: true,
-            is_active: true,
-            is_verified: true,
-            verification_status: 'approved'
-          },
-          vehicles: vehicleData
-        });
-
-        // Also fetch bikes (legacy) with joined shop data
-        const { data: bikeData, error: bikeError } = await supabase
-          .from('bikes')
-          .select(`
-            *,
-            bike_images(*),
-            rental_shops!inner(id, name, logo_url, location_area, is_active, is_showcase)
-          `)
-          .eq('rental_shops.is_active', true)
-          .order('price_per_day');
-
-        if (bikeError) {
-          throw bikeError;
-        }
-
-        // Process data
-        if (bikeData && bikeData.length > 0) {
-          // Process bike data
-          // ... existing bike data processing ...
-        }
-
-        let processedVehicles: VehicleWithMetadata[] = [];
-
-        if (vehicleData && vehicleData.length > 0) {
-          // Process vehicle data
-          const formattedVehicles = vehicleData?.map(vehicle => ({
-            ...vehicle,
-            shopId: vehicle.shop_id,
-            shopName: vehicle.rental_shops?.name || 'Unknown Shop',
-            shopLogo: vehicle.rental_shops?.logo_url,
-            shopLocation: vehicle.rental_shops?.location_area,
-            shopIsShowcase: vehicle.rental_shops?.is_showcase || false,
-            vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
-            images: vehicle.vehicle_images || [],
-            is_available_for_dates: true // Default to true, will be updated if dates are selected
-          })) as VehicleWithMetadata[];
-
-          processedVehicles = formattedVehicles;
-        }
-
-        setVehicles(processedVehicles);
-
-        // Gather all categories by vehicle type
-        const allCategories: Record<VehicleType, string[]> = {
-          motorcycle: [],
-          car: [],
-          tuktuk: []
-        }
-
-        // Get categories from vehicle types table
-        const { data: categoryData } = await supabase
-          .from('categories')
-          .select('*')
-
-        if (categoryData) {
-          categoryData.forEach((category) => {
-            const vehicleType = category.vehicle_type_id === '1' ? 'motorcycle' :
-                              category.vehicle_type_id === '2' ? 'car' :
-                              category.vehicle_type_id === '3' ? 'tuktuk' : null
-
-            if (vehicleType && !allCategories[vehicleType as VehicleType].includes(category.name)) {
-              allCategories[vehicleType as VehicleType].push(category.name)
-            }
-          })
-        }
-
-        // Get all unique locations from active shops
-        const { data: shopData } = await supabase
-          .from('rental_shops')
-          .select('location_area')
-          .eq('is_active', true)
-          .order('location_area')
-
-        const allLocations = Array.from(
-          new Set(shopData?.map(shop => shop.location_area).filter(Boolean) || [])
-        ) as string[]
-
-        setAvailableCategories(allCategories)
-        setLocations(allLocations)
-      } catch (err) {
-        console.error('Error fetching vehicle data:', err)
-        setError('Failed to load vehicles. Please try again later.')
-      } finally {
-        setIsLoading(false)
-      }
-    };
-
-    loadInitialData();
-
-    return () => {
-      // Clean up
-      delete window.handleDateRangeChange;
-    }
-  }, []); // Empty dependency array - only runs once on mount
-
-  // New useEffect specifically for date range filtering
-  useEffect(() => {
-    // Only check availability if both dates are present and dateRangeSelected is true
-    if (startDate && endDate && dateRangeSelected) {
-      const checkAvailabilityForDates = async () => {
-        try {
-          setIsLoading(true);
-          const supabase = createClientComponentClient();
-
-          // Reset error
-          setError(null);
-
-          console.log(`Checking availability between ${startDate} and ${endDate}`);
-
-          // Get current vehicles to check - capture this locally, don't use it from state in the dependency array
-          const currentVehicles = [...vehicles]; // Create a local copy to avoid dependency issues
-          const vehicleIds = currentVehicles.map(v => v.id);
-          let availableVehicleIds: string[] = [];
-
-          if (vehicleIds.length === 0) {
-            console.log("No vehicles to check availability for");
-            setIsLoading(false);
-            return;
-          }
-
-          try {
-            // Format dates for API
-            const startDateFormatted = new Date(startDate).toISOString().split('T')[0];
-            const endDateFormatted = new Date(endDate).toISOString().split('T')[0];
-
-            // Validate dates
-            const start = new Date(startDateFormatted);
-            const end = new Date(endDateFormatted);
-
-            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-              throw new Error("Invalid date format");
-            }
-
-            if (start >= end) {
-              throw new Error("Start date must be before end date");
-            }
-
-            // Check availability with API
-            const response = await fetch('/api/vehicles/check-availability-batch', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                vehicleIds,
-                startDate: startDateFormatted,
-                endDate: endDateFormatted
-              }),
-            });
-
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`Failed to check availability: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
-            }
-
-            const availabilityData = await response.json();
-
-            if (availabilityData && Array.isArray(availabilityData.availableVehicleIds)) {
-              availableVehicleIds = availabilityData.availableVehicleIds;
-              console.log(`Found ${availableVehicleIds.length} available vehicles for selected dates`);
-            } else {
-              throw new Error('Invalid response format from availability check');
-            }
-          } catch (fetchError) {
-            console.error('Error with availability check:', fetchError);
-            // Fallback - mark all vehicles as available
-            availableVehicleIds = vehicleIds;
-          }
-
-          // Update availability for all vehicles
-          setVehicles(currentVehicles => {
-            // First update all vehicles with their availability status
-            const updatedVehicles = currentVehicles.map(vehicle => ({
-              ...vehicle,
-              is_available_for_dates: availableVehicleIds.includes(vehicle.id)
-            }));
-
-            // Return the updated vehicles without filtering
-            return updatedVehicles;
-          });
-        } catch (error) {
-          console.error('Error in date availability check:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      // Prevent rapid sequential checks by adding a small timeout
-      const timeoutId = setTimeout(() => {
-        checkAvailabilityForDates();
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [startDate, endDate, dateRangeSelected]); // No vehicles dependency
-
   // Add a separate effect for when onlyShowAvailable changes
   useEffect(() => {
     // Update filtered view when onlyShowAvailable changes without re-fetching data
-    if (startDate && endDate && dateRangeSelected && vehicles.length > 0) {
+    if (startDate && endDate && dateRangeSelected && vehiclesToDisplay.length > 0) {
       console.log(`Updating vehicle filter based on availability status. Only show available: ${onlyShowAvailable}`);
     }
   }, [onlyShowAvailable]);
@@ -572,7 +401,7 @@ export default function BrowsePage() {
   // Handle Book Now button click
   const handleBookClick = (vehicleId: string) => {
     // Find the vehicle to get its shop ID
-    const vehicle = vehicles.find(v => v.id === vehicleId)
+    const vehicle = vehiclesToDisplay.find(v => v.id === vehicleId)
     if (vehicle && vehicle.shopId) {
       // Check if this is a showcase shop
       if (vehicle.shopIsShowcase) {
@@ -600,7 +429,7 @@ export default function BrowsePage() {
   }
 
   // Apply filters
-  const filteredVehicles = vehicles.filter(vehicle => {
+  const filteredVehicles = vehiclesToDisplay.filter(vehicle => {
     // Price filter
     if (vehicle.price_per_day < priceRange[0] || vehicle.price_per_day > priceRange[1]) {
       return false
@@ -673,7 +502,7 @@ export default function BrowsePage() {
 
   // Log the filtered results for debugging
   console.log("After applying UI filters:", {
-    originalCount: vehicles.length,
+    originalCount: vehiclesToDisplay.length,
     filteredCount: filteredVehicles.length,
     filters: {
       priceRange,
@@ -686,13 +515,13 @@ export default function BrowsePage() {
 
   // After getting query results but before filtering
   console.log('Vehicle query results:', {
-    vehicleCount: vehicles?.length || 0,
+    vehicleCount: vehiclesToDisplay?.length || 0,
     filters: {
       is_available: true,
       is_verified: true,
       verification_status: 'approved'
     },
-    shops: vehicles?.map(v => ({
+    shops: vehiclesToDisplay?.map(v => ({
       shop_id: v.shop_id,
       shop_name: v.shopName || 'N/A',
       shop_location: v.shopLocation || 'N/A',
@@ -703,7 +532,7 @@ export default function BrowsePage() {
 
   // At the end of filter function before returning filtered vehicles
   console.log('Filtered vehicles:', {
-    originalCount: vehicles?.length || 0,
+    originalCount: vehiclesToDisplay?.length || 0,
     filteredCount: filteredVehicles.length,
     filters: {
       priceRange,
@@ -792,6 +621,9 @@ export default function BrowsePage() {
     // Also clear dates
     clearDates();
   };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (queryError) return <div>Error loading vehicles.</div>;
 
   return (
     <div className="min-h-screen">
@@ -1008,7 +840,7 @@ export default function BrowsePage() {
                     />
                     <p className="text-xs text-white/60 mt-1.5">
                       {dateRangeSelected
-                        ? `Found ${vehicles.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
+                        ? `Found ${vehiclesToDisplay.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
                         : startDateObj
                           ? "Now select the end date (day you'll return the vehicle)"
                           : "Select the start date (day you'll pick up the vehicle)"}
@@ -1282,7 +1114,7 @@ export default function BrowsePage() {
                         />
                         <p className="text-xs text-white/60 mt-1.5">
                           {dateRangeSelected
-                            ? `Found ${vehicles.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
+                            ? `Found ${vehiclesToDisplay.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
                             : startDateObj
                               ? "Now select the end date (day you'll return the vehicle)"
                               : "Select the start date (day you'll pick up the vehicle)"}
