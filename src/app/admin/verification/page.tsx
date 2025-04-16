@@ -600,22 +600,29 @@ export default function ShopVerificationPage() {
                             </div>
                             
                             {/* Add document preview section */}
-                            {shop.description && (
-                              <div>
-                                <h4 className="text-sm font-medium mb-3">Uploaded Documents</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  {extractDocuments(shop.description).length > 0 ? (
-                                    extractDocuments(shop.description).map((doc, index) => (
+                            <div>
+                              <h4 className="text-sm font-medium mb-3">Uploaded Documents</h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Prefer new verification_documents field, fallback to legacy description extraction */}
+                                {(() => {
+                                  const docs = shop.verification_documents
+                                    ? [
+                                        shop.verification_documents.government_id && { type: 'id', url: shop.verification_documents.government_id },
+                                        shop.verification_documents.business_permit && { type: 'permit', url: shop.verification_documents.business_permit }
+                                      ].filter(Boolean)
+                                    : (shop.description ? extractDocuments(shop.description) : []);
+                                  return docs.length > 0 ? (
+                                    docs.map((doc, index) => (
                                       <DocumentPreview key={index} type={doc.type} url={doc.url} />
                                     ))
                                   ) : (
                                     <div className="col-span-2 p-4 rounded-lg bg-muted/30 border border-border text-sm text-muted-foreground">
-                                      No documents were uploaded or document URLs couldn't be extracted from the description.
+                                      No documents were uploaded or document URLs couldn't be found.
                                     </div>
-                                  )}
-                                </div>
+                                  );
+                                })()}
                               </div>
-                            )}
+                            </div>
                           </div>
                           
                           {/* Actions */}

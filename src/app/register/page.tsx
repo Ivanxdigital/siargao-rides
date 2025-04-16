@@ -622,11 +622,16 @@ function RegisterShopPageContent({
         const newShop = await createShop({
           owner_id: user.id,
           name: data.shopName,
-          description: `Motorbike rental shop in Siargao. ${data.referral ? `Referred by: ${data.referral}. ` : ''}Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+          description: `Motorbike rental shop in Siargao.${data.referral ? ` Referred by: ${data.referral}.` : ''}`,
           address: data.address || "Siargao Island",
           city: "Siargao",
           phone_number: data.phone,
           email: data.email,
+          // New private field for admin use only
+          verification_documents: {
+            government_id: governmentIdUrl,
+            business_permit: businessPermitUrl
+          }
         });
 
         if (!newShop) {
@@ -656,11 +661,16 @@ function RegisterShopPageContent({
             const newShop = await createShop({
               owner_id: user.id,
               name: data.shopName,
-              description: `Motorbike rental shop in Siargao. ${data.referral ? `Referred by: ${data.referral}. ` : ''}Documents: ${governmentIdUrl ? `ID:${governmentIdUrl}` : ''} ${businessPermitUrl ? `Permit:${businessPermitUrl}` : ''}`,
+              description: `Motorbike rental shop in Siargao.${data.referral ? ` Referred by: ${data.referral}.` : ''}`,
               address: data.address || "Siargao Island",
               city: "Siargao",
               phone_number: data.phone,
               email: data.email,
+              // New private field for admin use only
+              verification_documents: {
+                government_id: governmentIdUrl,
+                business_permit: businessPermitUrl
+              }
             });
 
             if (!newShop) {

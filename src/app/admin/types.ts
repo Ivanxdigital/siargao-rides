@@ -25,4 +25,8 @@ export interface VerifiableRentalShop {
     avatar_url?: string | null;
     phone_number?: string | null;
   };
+  verification_documents?: {
+    government_id?: string;
+    business_permit?: string;
+  };
 } 

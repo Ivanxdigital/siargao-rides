@@ -91,6 +91,11 @@ export type RentalShop = {
   is_showcase?: boolean
   created_at: string
   updated_at: string
+  // Private field for admin use only: stores verification document URLs
+  verification_documents?: {
+    government_id?: string
+    business_permit?: string
+  }
 }
 
 export type OpeningHours = {
