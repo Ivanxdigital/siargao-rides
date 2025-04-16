@@ -111,12 +111,12 @@ const dropdownVariants = {
 const steps = [
   {
     label: 'Location',
-    icon: <MapPin size={22} className="" />,
+    icon: <MapPin size={16} className="" />,
   },
   {
     label: 'Vehicle',
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.6-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"></path>
         <circle cx="7" cy="17" r="2"></circle>
         <path d="M9 17h6"></path>
@@ -126,7 +126,7 @@ const steps = [
   },
   {
     label: 'Dates',
-    icon: <Calendar size={22} className="" />,
+    icon: <Calendar size={16} className="" />,
   },
 ]
 
@@ -319,7 +319,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   type="button"
                   className={`w-full flex flex-col items-center focus:outline-none group transition-all
                     ${isActive ? 'bg-primary-900 text-white shadow-lg border-2 border-primary-800' : 'bg-black/40 text-white/70 border border-white/20'}
-                    rounded-xl px-2 py-3 sm:px-3 sm:py-4
+                    rounded-xl px-1.5 py-1 sm:px-2 sm:py-1.5
                     ${isClickable ? 'hover:bg-primary/20 cursor-pointer' : 'cursor-default'}`}
                   aria-current={isActive ? 'step' : undefined}
                   onClick={() => {
@@ -327,12 +327,12 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                   }}
                   tabIndex={isClickable || isActive ? 0 : -1}
                 >
-                  <span className={`flex items-center justify-center w-9 h-9 mb-1
+                  <span className={`flex items-center justify-center w-7 h-7 mb-0.5
                     ${isActive ? 'text-white' : 'text-white'}
                     transition-all`}>
                     {stepObj.icon}
                   </span>
-                  <span className={`text-xs sm:text-sm font-medium tracking-wide ${isActive ? 'text-white font-semibold' : 'text-white/80'}`}>
+                  <span className={`text-xs font-medium tracking-wide ${isActive ? 'text-white font-semibold' : 'text-white/80'}`}>
                     {stepObj.label}
                   </span>
                 </button>
