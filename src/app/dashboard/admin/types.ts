@@ -17,6 +17,10 @@ export interface VerifiableRentalShop {
   is_verified: boolean;
   created_at: string;
   updated_at: string;
+  verification_documents?: {
+    government_id?: string;
+    business_permit?: string;
+  };
   owner?: {
     id: string;
     email: string;
@@ -46,4 +50,4 @@ export interface ManageableSubscription {
     first_name?: string | null;
     last_name?: string | null;
   };
-} 
+}

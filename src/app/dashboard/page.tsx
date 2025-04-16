@@ -439,10 +439,10 @@ export default function DashboardPage() {
         className="pt-2 md:pt-4 mb-6 md:mb-8"
         variants={slideUp}
       >
-        <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 text-white inline-flex items-center gap-2">
+        <h1 className="text-xl sm:text-2xl md:text-4xl font-bold mb-2 md:mb-3 text-white inline-flex items-center gap-2">
           Welcome, <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-blue-500">{user?.user_metadata?.first_name || "Rider"}!</span>
         </h1>
-        <p className="text-white/70 text-sm md:text-base">
+        <p className="text-base sm:text-lg text-white/70">
           {isShopOwner
             ? "Manage your shop, vehicles, and bookings from your dashboard."
             : "Manage your bookings, favorites, and account settings."}
@@ -453,7 +453,7 @@ export default function DashboardPage() {
         {/* Error message if any */}
         {error && (
           <motion.div
-            className="bg-red-900/20 border border-red-700/50 text-red-400 px-4 py-3 rounded-lg mb-6"
+            className="bg-red-900/20 border border-red-700/50 text-red-400 px-4 py-3 rounded-lg mb-6 text-base"
             variants={slideUp}
           >
             {error}
@@ -496,7 +496,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-lg md:text-xl font-semibold text-white/90">Subscription Status</h2>
+                  <h2 className="text-base sm:text-lg md:text-xl font-semibold text-white/90">Subscription Status</h2>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -560,7 +560,7 @@ export default function DashboardPage() {
             )}
 
             <motion.h2
-              className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90"
+              className="text-base sm:text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
@@ -568,7 +568,7 @@ export default function DashboardPage() {
               Shop Overview
             </motion.h2>
             <motion.div
-              className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
               variants={containerVariants}
             >
               <motion.div
@@ -577,8 +577,8 @@ export default function DashboardPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Vehicles</h2>
-                    <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    <h2 className="text-sm md:text-base font-medium text-white/60 mb-1">Total Vehicles</h2>
+                    <div className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                       {isDataLoading ? (
                         <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
                       ) : (
@@ -592,7 +592,7 @@ export default function DashboardPage() {
                 </div>
                 <Link
                   href="/dashboard/vehicles"
-                  className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+                  className="text-sm text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
                 >
                   View all vehicles
                   <ChevronRight size={12} />
@@ -605,8 +605,8 @@ export default function DashboardPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Available</h2>
-                    <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    <h2 className="text-sm md:text-base font-medium text-white/60 mb-1">Available</h2>
+                    <div className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                       {isDataLoading ? (
                         <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
                       ) : (
@@ -618,7 +618,7 @@ export default function DashboardPage() {
                     <Clock size={18} className="text-green-400" />
                   </div>
                 </div>
-                <p className="text-xs text-white/60 mt-1">
+                <p className="text-sm text-white/60 mt-1">
                   {Math.round((shopStats.availableVehicles / (shopStats.totalVehicles || 1)) * 100) || 0}% of your fleet
                 </p>
               </motion.div>
@@ -629,8 +629,8 @@ export default function DashboardPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Active Bookings</h2>
-                    <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    <h2 className="text-sm md:text-base font-medium text-white/60 mb-1">Active Bookings</h2>
+                    <div className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                       {isDataLoading ? (
                         <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
                       ) : (
@@ -644,7 +644,7 @@ export default function DashboardPage() {
                 </div>
                 <Link
                   href="/dashboard/bookings"
-                  className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+                  className="text-sm text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
                 >
                   View all bookings
                   <ChevronRight size={12} />
@@ -657,8 +657,8 @@ export default function DashboardPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Total Revenue</h2>
-                    <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                    <h2 className="text-sm md:text-base font-medium text-white/60 mb-1">Total Revenue</h2>
+                    <div className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                       {isDataLoading ? (
                         <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
                       ) : (
@@ -672,7 +672,7 @@ export default function DashboardPage() {
                 </div>
                 <Link
                   href="/dashboard/analytics"
-                  className="text-xs text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
+                  className="text-sm text-white/60 hover:text-primary transition-colors inline-flex items-center gap-1 mt-1"
                 >
                   View analytics
                   <ChevronRight size={12} />
@@ -682,7 +682,7 @@ export default function DashboardPage() {
           </motion.div>
         ) : (
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -693,8 +693,8 @@ export default function DashboardPage() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Active Bookings</h2>
-                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                  <h2 className="text-sm md:text-base font-medium text-white/60 mb-1">Active Bookings</h2>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                     {isDataLoading ? (
                       <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
                     ) : (
@@ -706,7 +706,7 @@ export default function DashboardPage() {
                   <CalendarRange size={18} className="text-blue-400" />
                 </div>
               </div>
-              <p className="text-xs text-white/60 mt-1">
+              <p className="text-sm text-white/60 mt-1">
                 {userStats.activeBookings === 0
                   ? "No vehicles currently rented"
                   : userStats.activeBookings === 1
@@ -722,8 +722,8 @@ export default function DashboardPage() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Saved Vehicles</h2>
-                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                  <h2 className="text-sm md:text-base font-medium text-white/60 mb-1">Saved Vehicles</h2>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                     {isDataLoading ? (
                       <div className="h-8 w-12 bg-white/10 rounded animate-pulse"></div>
                     ) : (
@@ -735,7 +735,7 @@ export default function DashboardPage() {
                   <Heart size={18} className="text-pink-400" />
                 </div>
               </div>
-              <p className="text-xs text-white/60 mt-1">
+              <p className="text-sm text-white/60 mt-1">
                 {userStats.savedVehicles === 0
                   ? "No vehicles saved to favorites"
                   : userStats.savedVehicles === 1
@@ -751,8 +751,8 @@ export default function DashboardPage() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-xs md:text-sm font-medium text-white/60 mb-1">Profile Completion</h2>
-                  <div className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
+                  <h2 className="text-sm md:text-base font-medium text-white/60 mb-1">Profile Completion</h2>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-white">
                     {isDataLoading ? (
                       <div className="h-8 w-16 bg-white/10 rounded animate-pulse"></div>
                     ) : (
@@ -777,7 +777,7 @@ export default function DashboardPage() {
                   transition={{ delay: 0.8, duration: 0.8, ease: "easeOut" }}
                 />
               </motion.div>
-              <p className="text-xs text-white/60 mt-1">
+              <p className="text-sm text-white/60 mt-1">
                 {userStats.profileCompletionPercentage < 100
                   ? "Add more details to complete your profile"
                   : "Your profile is complete"
@@ -794,7 +794,7 @@ export default function DashboardPage() {
           transition={{ delay: 0.3, duration: 0.5 }}
         >
           <motion.h2
-            className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90"
+            className="text-base sm:text-lg md:text-xl font-semibold mb-3 md:mb-4 text-white/90"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
@@ -802,7 +802,7 @@ export default function DashboardPage() {
             Quick Actions
           </motion.h2>
           <motion.div
-            className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -906,8 +906,8 @@ export default function DashboardPage() {
             transition={{ delay: 0.8, duration: 0.5 }}
           >
             <div className="flex justify-between items-center mb-3 md:mb-4">
-              <h2 className="text-lg md:text-xl font-semibold text-white/90">Recent Bookings</h2>
-              <Button asChild variant="outline" size="sm" className="border-white/10 hover:border-primary/30 bg-black/40 hover:bg-black/60">
+              <h2 className="text-base sm:text-lg md:text-xl font-semibold text-white/90">Recent Bookings</h2>
+              <Button asChild variant="outline" size="sm" className="border-white/10 hover:border-primary/30 bg-black/40 hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="View all bookings">
                 <Link href="/dashboard/bookings">View All</Link>
               </Button>
             </div>
@@ -930,94 +930,156 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : recentBookings.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-white/10">
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                          Vehicle
-                        </th>
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider hidden sm:table-cell">
-                          Customer
-                        </th>
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                          Dates
-                        </th>
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10">
-                      {recentBookings.map((booking, index) => (
-                        <motion.tr
-                          key={booking.id}
-                          className="hover:bg-white/5 transition-colors"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 1 + (index * 0.1), duration: 0.3 }}
-                        >
-                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-7 w-7 md:h-8 md:w-8 bg-primary/20 rounded-full flex items-center justify-center mr-2">
-                                <Bike size={14} className="text-primary" />
+                <>
+                  {/* Table for md+ screens */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                            Vehicle
+                          </th>
+                          <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                            Customer
+                          </th>
+                          <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                            Dates
+                          </th>
+                          <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {recentBookings.map((booking, index) => (
+                          <motion.tr
+                            key={booking.id}
+                            className="hover:bg-white/5 transition-colors"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 1 + (index * 0.1), duration: 0.3 }}
+                          >
+                            <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="h-7 w-7 md:h-8 md:w-8 bg-primary/20 rounded-full flex items-center justify-center mr-2">
+                                  <Bike size={14} className="text-primary" />
+                                </div>
+                                <span className="font-medium text-white/90 text-sm">{booking.vehicleName}</span>
                               </div>
-                              <span className="font-medium text-white/90 text-sm">{booking.vehicleName}</span>
-                            </div>
-                          </td>
-                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap hidden sm:table-cell">
-                            <div className="flex items-center">
-                              <div className="h-7 w-7 md:h-8 md:w-8 bg-white/10 rounded-full flex items-center justify-center mr-2">
-                                <Users size={14} className="text-white/70" />
+                            </td>
+                            <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="h-7 w-7 md:h-8 md:w-8 bg-white/10 rounded-full flex items-center justify-center mr-2">
+                                  <Users size={14} className="text-white/70" />
+                                </div>
+                                <span className="text-white/80 text-sm">{booking.customerName}</span>
                               </div>
-                              <span className="text-white/80 text-sm">{booking.customerName}</span>
-                            </div>
-                          </td>
-                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                            <div className="text-xs md:text-sm text-white/80">
-                              {new Date(booking.startDate).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
-                              {" - "}
-                              {new Date(booking.endDate).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </div>
-                          </td>
-                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                booking.status === "active"
-                                  ? "bg-green-500/20 text-green-400"
-                                  : booking.status === "confirmed" || booking.status === "upcoming"
-                                  ? "bg-blue-500/20 text-blue-400"
-                                  : booking.status === "completed"
-                                  ? "bg-white/20 text-white/70"
-                                  : booking.status === "cancelled"
-                                  ? "bg-red-500/20 text-red-400"
-                                  : ""
-                              }`}
-                            >
-                              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                            </span>
-                          </td>
-                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                            <Button asChild variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary text-xs md:text-sm py-1">
-                              <Link href={`/dashboard/bookings/${booking.id}`}>
-                                View Details
-                              </Link>
-                            </Button>
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            </td>
+                            <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                              <div className="text-xs md:text-sm text-white/80">
+                                {new Date(booking.startDate).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                                {" - "}
+                                {new Date(booking.endDate).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </div>
+                            </td>
+                            <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                              <span
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  booking.status === "active"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : booking.status === "confirmed" || booking.status === "upcoming"
+                                    ? "bg-blue-500/20 text-blue-400"
+                                    : booking.status === "completed"
+                                    ? "bg-white/20 text-white/70"
+                                    : booking.status === "cancelled"
+                                    ? "bg-red-500/20 text-red-400"
+                                    : ""
+                                }`}
+                              >
+                                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                              </span>
+                            </td>
+                            <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                              <Button asChild variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary text-xs md:text-sm py-1 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="View booking details">
+                                <Link href={`/dashboard/bookings/${booking.id}`}>
+                                  View Details
+                                </Link>
+                              </Button>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Card list for mobile screens */}
+                  <div className="md:hidden flex flex-col gap-3 p-3">
+                    {recentBookings.map((booking, index) => (
+                      <motion.div
+                        key={booking.id}
+                        className="bg-black/60 border border-white/10 rounded-lg p-4 flex flex-col gap-2 shadow-md"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1 + (index * 0.1), duration: 0.3 }}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="h-8 w-8 bg-primary/20 rounded-full flex items-center justify-center">
+                            <Bike size={16} className="text-primary" />
+                          </div>
+                          <span className="font-medium text-white/90 text-base">{booking.vehicleName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 bg-white/10 rounded-full flex items-center justify-center">
+                            <Users size={14} className="text-white/70" />
+                          </div>
+                          <span className="text-white/80 text-sm">{booking.customerName}</span>
+                        </div>
+                        <div className="text-sm text-white/80">
+                          <span className="font-medium">Dates: </span>
+                          {new Date(booking.startDate).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                          {" - "}
+                          {new Date(booking.endDate).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              booking.status === "active"
+                                ? "bg-green-500/20 text-green-400"
+                                : booking.status === "confirmed" || booking.status === "upcoming"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : booking.status === "completed"
+                                ? "bg-white/20 text-white/70"
+                                : booking.status === "cancelled"
+                                ? "bg-red-500/20 text-red-400"
+                                : ""
+                            }`}
+                          >
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </span>
+                          <Button asChild variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary text-xs py-1 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="View booking details">
+                            <Link href={`/dashboard/bookings/${booking.id}`}>
+                              Details
+                            </Link>
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 md:py-12 px-4">
                   <div className="bg-white/10 rounded-full p-3 md:p-4 mb-3 md:mb-4">
@@ -1043,7 +1105,7 @@ export default function DashboardPage() {
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
               <div>
-                <h2 className="text-lg md:text-xl font-semibold mb-2 text-white">
+                <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-2 text-white">
                   Own a Vehicle Rental Shop?
                 </h2>
                 <p className="text-white/70 text-xs md:text-sm max-w-xl">
@@ -1051,7 +1113,7 @@ export default function DashboardPage() {
                   manage your rentals easily.
                 </p>
               </div>
-              <Button asChild size="lg" className="shrink-0 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-lg hover:shadow-primary/10 font-medium text-sm md:text-base transition-all duration-300">
+              <Button asChild size="lg" className="shrink-0 bg-gray-900 hover:bg-gray-800 text-white border border-primary/40 shadow-lg hover:shadow-primary/10 font-medium text-sm md:text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Register your shop">
                 <Link href="/register">Register Your Shop</Link>
               </Button>
             </div>

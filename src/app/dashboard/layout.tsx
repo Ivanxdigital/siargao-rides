@@ -197,6 +197,18 @@ export default function DashboardLayout({
   const isShopOwner = user?.user_metadata?.role === "shop_owner";
   const isAdmin = user?.user_metadata?.role === "admin";
 
+  // Add scroll lock effect for mobile sidebar
+  useEffect(() => {
+    if (sidebarOpen && window.innerWidth < 768) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [sidebarOpen]);
+
   return (
     <motion.div
       className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white relative"
@@ -230,9 +242,9 @@ export default function DashboardLayout({
         {/* Sidebar Navigation */}
         <motion.aside
           className={cn(
-            "fixed md:relative z-20 top-[60px] md:top-0 left-0 h-[calc(100vh-60px)] md:h-full bg-black/70 border-r border-white/10 backdrop-blur-md transition-all duration-300 ease-in-out",
+            "fixed md:relative z-50 top-[60px] md:top-0 left-0 h-[calc(100vh-60px)] md:h-full bg-black border-r border-white/10 backdrop-blur-md transition-all duration-300 ease-in-out",
             isCollapsed ? "md:w-20" : "md:w-64",
-            sidebarOpen ? "w-72 translate-x-0" : "-translate-x-full md:translate-x-0"
+            sidebarOpen ? "w-4/5 max-w-xs translate-x-0" : "-translate-x-full md:translate-x-0"
           )}
           variants={itemVariants}
         >
@@ -341,7 +353,10 @@ export default function DashboardLayout({
               )}
             </motion.div>
 
-            <div className="flex-1 space-y-5 overflow-y-auto">
+            <div className={cn(
+              "flex-1 space-y-5 overflow-y-auto",
+              "sm:space-y-5 space-y-7"
+            )}>
               {/* Dashboard Navigation */}
               <div>
                 {!isCollapsed && (
@@ -352,7 +367,7 @@ export default function DashboardLayout({
                     Dashboard
                   </motion.h2>
                 )}
-                <div className={cn("space-y-1", isCollapsed && "flex flex-col items-center")}>
+                <div className={cn("space-y-1", isCollapsed && "flex flex-col items-center", "sm:space-y-1 space-y-2")}>
                   <motion.div onClick={handleLinkClick} variants={itemVariants}>
                     <SidebarItem
                       href="/dashboard"
@@ -567,8 +582,11 @@ export default function DashboardLayout({
         {/* Overlay for mobile sidebar */}
         {sidebarOpen && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-10 md:hidden"
-            onClick={toggleSidebar}
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => {
+              console.log('Overlay clicked, closing sidebar'); // Debug log
+              toggleSidebar();
+            }}
             aria-hidden="true"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -580,7 +598,7 @@ export default function DashboardLayout({
         {/* Main Content */}
         <motion.main
           className={cn(
-            "flex-1 p-6 transition-all duration-300 overflow-auto",
+            "flex-1 p-3 sm:p-6 transition-all duration-300 overflow-auto",
             !isCollapsed ? "md:pl-8" : "md:pl-6"
           )}
           variants={contentVariants}

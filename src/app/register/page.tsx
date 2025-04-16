@@ -17,6 +17,7 @@ import { dashboardTranslations } from "@/translations/dashboard"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { verificationDocumentsSchema } from "@/lib/validation"
 
 // Add animation variants for components
 const fadeIn = {
@@ -609,15 +610,16 @@ function RegisterShopPageContent({
       }
 
       // Create the shop in the database
-      console.log('Creating shop with data:', {
-        owner_id: user.id,
-        name: data.shopName,
-        address: data.address,
-        city: "Siargao",
-        phone_number: data.phone,
-        email: data.email,
-      });
-
+      const verificationDocuments = {
+        government_id: governmentIdUrl,
+        business_permit: businessPermitUrl
+      };
+      const validation = verificationDocumentsSchema.safeParse(verificationDocuments);
+      if (!validation.success) {
+        setError(validation.error.errors[0]?.message || "Invalid document URLs");
+        setIsSubmitting(false);
+        return;
+      }
       try {
         const newShop = await createShop({
           owner_id: user.id,
@@ -627,11 +629,7 @@ function RegisterShopPageContent({
           city: "Siargao",
           phone_number: data.phone,
           email: data.email,
-          // New private field for admin use only
-          verification_documents: {
-            government_id: governmentIdUrl,
-            business_permit: businessPermitUrl
-          }
+          verification_documents: validation.data
         });
 
         if (!newShop) {
@@ -666,11 +664,7 @@ function RegisterShopPageContent({
               city: "Siargao",
               phone_number: data.phone,
               email: data.email,
-              // New private field for admin use only
-              verification_documents: {
-                government_id: governmentIdUrl,
-                business_permit: businessPermitUrl
-              }
+              verification_documents: validation.data
             });
 
             if (!newShop) {

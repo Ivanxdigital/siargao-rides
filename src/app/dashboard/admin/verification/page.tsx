@@ -27,6 +27,10 @@ type RentalShopWithUser = {
   is_verified: boolean;
   created_at: string;
   updated_at: string;
+  verification_documents?: {
+    government_id?: string;
+    business_permit?: string;
+  };
   owner: {
     id: string;
     email: string;
@@ -37,35 +41,69 @@ type RentalShopWithUser = {
   };
 };
 
-// Add this helper function at the top level
-const extractDocuments = (description: string) => {
+// Function to get documents from shop data
+const getShopDocuments = (shop: VerifiableRentalShop) => {
   const documents: { type: 'id' | 'permit', url: string }[] = [];
-  
+
+  // First try to get documents from verification_documents field (new approach)
+  if (shop.verification_documents) {
+    console.log('Found verification_documents in shop data:', shop.verification_documents);
+
+    if (shop.verification_documents.government_id) {
+      documents.push({
+        type: 'id',
+        url: shop.verification_documents.government_id
+      });
+      console.log('Added government ID from verification_documents:', shop.verification_documents.government_id);
+    }
+
+    if (shop.verification_documents.business_permit) {
+      documents.push({
+        type: 'permit',
+        url: shop.verification_documents.business_permit
+      });
+      console.log('Added business permit from verification_documents:', shop.verification_documents.business_permit);
+    }
+
+    // If we found documents, return them
+    if (documents.length > 0) {
+      return documents;
+    }
+  }
+
+  // Fallback to legacy approach: extract from description
+  return extractDocumentsFromDescription(shop.description);
+};
+
+// Legacy helper function to extract documents from description (kept for backward compatibility)
+const extractDocumentsFromDescription = (description: string | null) => {
+  const documents: { type: 'id' | 'permit', url: string }[] = [];
+
   if (!description || !description.includes('Documents:')) {
     console.log('No documents section found in description:', description);
     return documents;
   }
-  
-  console.log('Extracting documents from:', description);
-  
+
+  console.log('Extracting documents from description (legacy method):', description);
+
   try {
     // Extract the Documents section for easier processing
     const documentsSection = description.split('Documents:')[1] || '';
     console.log('Documents section:', documentsSection);
-    
+
     // Extract ID URL with improved pattern matching
     // Look for ID: followed by a URL until space, end of string, or other marker
     const idPattern = /ID:(https:\/\/[^\s"]+)(?:\s|"|$)/;
     const idMatch = documentsSection.match(idPattern);
-    
+
     if (idMatch) {
       const url = idMatch[1].trim();
       console.log('Raw ID URL found:', url);
-      
+
       // Clean the URL by removing any trailing punctuation or whitespace
       const cleanedUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]$/g, "").trim();
       console.log('Cleaned ID URL:', cleanedUrl);
-      
+
       // Only add if it looks like a valid URL
       if (cleanedUrl.startsWith('https://')) {
         documents.push({ type: 'id', url: cleanedUrl });
@@ -76,19 +114,19 @@ const extractDocuments = (description: string) => {
     } else {
       console.log('No ID document found with pattern:', idPattern);
     }
-    
+
     // Extract Permit URL with improved pattern matching
     const permitPattern = /Permit:(https:\/\/[^\s"]+)(?:\s|"|$)/;
     const permitMatch = documentsSection.match(permitPattern);
-    
+
     if (permitMatch) {
       const url = permitMatch[1].trim();
       console.log('Raw Permit URL found:', url);
-      
+
       // Clean the URL by removing any trailing punctuation or whitespace
       const cleanedUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]$/g, "").trim();
       console.log('Cleaned Permit URL:', cleanedUrl);
-      
+
       // Only add if it looks like a valid URL
       if (cleanedUrl.startsWith('https://')) {
         documents.push({ type: 'permit', url: cleanedUrl });
@@ -100,66 +138,66 @@ const extractDocuments = (description: string) => {
       console.log('No Permit document found with pattern:', permitPattern);
     }
   } catch (error) {
-    console.error('Error extracting documents:', error);
+    console.error('Error extracting documents from description:', error);
   }
-  
-  console.log('Extracted documents:', documents);
+
+  console.log('Extracted documents from description:', documents);
   return documents;
 };
 
 // Add this helper function to extract referral information
 const extractReferral = (description: string): string | null => {
   if (!description) return null;
-  
+
   const referralPattern = /Referred by: ([^.]+)\./i;
   const referralMatch = description.match(referralPattern);
-  
+
   if (referralMatch && referralMatch[1]) {
     return referralMatch[1].trim();
   }
-  
+
   return null;
 };
 
 // Add this helper function to detect file type
 const getFileType = (url: string): 'image' | 'pdf' | 'unknown' => {
   if (!url) return 'unknown';
-  
+
   // Log the URL to help with debugging
   console.log('Detecting file type for URL:', url);
-  
+
   const lowercaseUrl = url.toLowerCase();
-  
+
   // Check file extension first
   if (lowercaseUrl.endsWith('.pdf')) {
     console.log('Detected PDF by extension');
     return 'pdf';
   } else if (
-    lowercaseUrl.endsWith('.jpg') || 
-    lowercaseUrl.endsWith('.jpeg') || 
-    lowercaseUrl.endsWith('.png') || 
-    lowercaseUrl.endsWith('.gif') || 
+    lowercaseUrl.endsWith('.jpg') ||
+    lowercaseUrl.endsWith('.jpeg') ||
+    lowercaseUrl.endsWith('.png') ||
+    lowercaseUrl.endsWith('.gif') ||
     lowercaseUrl.endsWith('.webp')
   ) {
     console.log('Detected image by extension');
     return 'image';
   }
-  
+
   // If no extension, try to guess from URL content
   if (lowercaseUrl.includes('/pdf') || lowercaseUrl.includes('application/pdf')) {
     console.log('Detected PDF by URL content');
     return 'pdf';
   } else if (
-    lowercaseUrl.includes('/image') || 
-    lowercaseUrl.includes('jpg') || 
-    lowercaseUrl.includes('jpeg') || 
+    lowercaseUrl.includes('/image') ||
+    lowercaseUrl.includes('jpg') ||
+    lowercaseUrl.includes('jpeg') ||
     lowercaseUrl.includes('png') ||
     lowercaseUrl.includes('.supabase.co') // Most Supabase storage URLs are images in this app
   ) {
     console.log('Detected image by URL content');
     return 'image';
   }
-  
+
   // Default to image since that's most common in this application
   console.log('Could not detect file type, defaulting to image');
   return 'image';
@@ -170,7 +208,7 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Make sure we have a valid URL before proceeding
   if (!url || !url.startsWith('http')) {
     console.error('Invalid URL provided to DocumentPreview:', url);
@@ -180,85 +218,85 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
       </div>
     );
   }
-  
+
   // Clean the URL by removing any trailing punctuation or whitespace
   const cleanUrl = url.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()"]$/g, "").trim();
   console.log('DocumentPreview using URL:', cleanUrl);
-  
+
   const fileType = getFileType(cleanUrl);
-  
+
   // Extract file path and name from URL
   const getFilePath = (url: string) => {
     const match = url.match(/\/storage\/v1\/object\/public\/shop-documents\/(.+)/);
     if (!match || !match[1]) return null;
     return match[1];
   };
-  
+
   const filePath = getFilePath(cleanUrl);
   const fileName = filePath ? filePath.split('/').pop() || 'document' : 'document';
-  
+
   // Function to open document in a new window
   const downloadAndOpenFile = async () => {
     setIsLoading(true);
-    
+
     try {
       if (!filePath) {
         throw new Error('Could not extract file path from URL');
       }
-      
+
       console.log('Downloading file:', filePath);
-      
+
       // Try to get the file from Supabase
       const { data, error } = await supabase
         .storage
         .from('shop-documents')
         .download(filePath);
-      
+
       if (error) {
         console.error('Error downloading file from Supabase:', error);
         throw error;
       }
-      
+
       if (!data) {
         throw new Error('No data received from Supabase');
       }
-      
+
       // Create a blob URL and trigger download
       const blobUrl = URL.createObjectURL(data);
-      
+
       // Create a link and trigger the download
       const downloadLink = document.createElement('a');
       downloadLink.href = blobUrl;
       downloadLink.download = fileName;
       downloadLink.target = '_blank';
-      
+
       // Append to the body, click it, and remove it
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
-      
+
       // Clean up
       setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
       console.error('Error accessing document:', error);
       setLoadError(true);
-      
+
       // Fallback to direct URL as a last resort
       window.open(url, '_blank');
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   // Function to view document in dialog
   const handleOpenPreview = () => {
     console.log('Opening preview for:', type, cleanUrl);
     setIsPreviewOpen(true);
-    
+
     // Reset error state when opening
     setLoadError(false);
   };
-  
+
   return (
     <>
       <div className="relative group">
@@ -302,14 +340,14 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
                 {fileType === 'image' && <span className="ml-2 text-xs bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">Image</span>}
               </h4>
               <div className="flex items-center gap-2 mt-1">
-                <button 
+                <button
                   onClick={handleOpenPreview}
                   className="text-xs text-primary hover:underline flex items-center gap-1 group px-2 py-1 rounded hover:bg-primary/10 relative z-10"
                 >
                   {fileType === 'pdf' ? 'View PDF' : 'View Image'}
                   <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
                 </button>
-                <button 
+                <button
                   onClick={downloadAndOpenFile}
                   className="text-xs text-muted-foreground hover:text-primary hover:underline flex items-center gap-1 group px-2 py-1 rounded hover:bg-primary/10 relative z-10"
                   disabled={isLoading}
@@ -343,7 +381,7 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
           <DialogTitle className="sr-only">
             {type === 'id' ? 'Government ID' : 'Business Permit'} Document Preview
           </DialogTitle>
-          
+
           {loadError ? (
             <div className="flex flex-col items-center justify-center h-[80vh] p-6 text-center">
               <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
@@ -351,7 +389,7 @@ const DocumentPreview = ({ type, url }: { type: 'id' | 'permit', url: string }) 
               <p className="text-muted-foreground mb-4">
                 The document could not be loaded. This might be due to the file being removed or insufficient permissions.
               </p>
-              <button 
+              <button
                 onClick={downloadAndOpenFile}
                 className="text-primary hover:underline flex items-center gap-1 px-4 py-2 rounded-md border border-primary/20 hover:bg-primary/5"
               >
@@ -422,11 +460,12 @@ export default function ShopVerificationPage() {
   const fetchShops = async () => {
     setIsLoadingShops(true);
     try {
-      // Fetch all shops
+      // Fetch all shops including verification_documents
       const { data, error } = await supabase
         .from("rental_shops")
         .select(`
           *,
+          verification_documents,
           owner:owner_id (
             id,
             email,
@@ -443,11 +482,11 @@ export default function ShopVerificationPage() {
       } else {
         // Cast the data to unknown first to avoid TypeScript errors
         const typedData = data as unknown as Array<VerifiableRentalShop>;
-        
+
         // Split shops into pending and verified
         const pending = typedData?.filter(shop => !shop.is_verified) || [];
         const verified = typedData?.filter(shop => shop.is_verified) || [];
-        
+
         setPendingShops(pending);
         setVerifiedShops(verified);
       }
@@ -462,7 +501,7 @@ export default function ShopVerificationPage() {
   const handleApprove = async (shopId: string) => {
     setProcessingId(shopId);
     setStatusMessage(null);
-    
+
     try {
       // Check if it's a mock ID
       if (shopId.startsWith('mock-')) {
@@ -470,8 +509,8 @@ export default function ShopVerificationPage() {
         const shop = pendingShops.find(s => s.id === shopId);
         if (shop) {
           setPendingShops(pendingShops.filter(s => s.id !== shopId));
-          setVerifiedShops([{ 
-            ...shop, 
+          setVerifiedShops([{
+            ...shop,
             is_verified: true,
             updated_at: new Date().toISOString()
           }, ...verifiedShops]);
@@ -489,34 +528,34 @@ export default function ShopVerificationPage() {
             approve: true
           })
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to approve shop');
         }
-        
+
         // Get response data
         const responseData = await response.json();
-        
+
         // Move shop from pending to verified list in the UI
         const shop = pendingShops.find(s => s.id === shopId);
         if (shop) {
           setPendingShops(pendingShops.filter(s => s.id !== shopId));
           setVerifiedShops([{ ...shop, is_verified: true }, ...verifiedShops]);
-          
+
           // Update status message to include information about the email
           let successMessage = `Shop "${shop.name}" has been approved.`;
-          
+
           if (responseData.user_role_updated) {
             successMessage += " Owner now has shop_owner role.";
           }
-          
+
           if (responseData.email_sent) {
             successMessage += " A verification email has been sent to the shop owner.";
           }
-          
-          setStatusMessage({ 
-            type: 'success', 
+
+          setStatusMessage({
+            type: 'success',
             text: successMessage
           });
         }
@@ -534,10 +573,10 @@ export default function ShopVerificationPage() {
     if (!confirm('Are you sure you want to reject this shop application? This action cannot be undone.')) {
       return;
     }
-    
+
     setProcessingId(shopId);
     setStatusMessage(null);
-    
+
     try {
       // Check if it's a mock ID
       if (shopId.startsWith('mock-')) {
@@ -559,12 +598,12 @@ export default function ShopVerificationPage() {
             approve: false
           })
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to reject shop');
         }
-        
+
         // Remove shop from pending list in the UI
         const shop = pendingShops.find(s => s.id === shopId);
         if (shop) {
@@ -610,12 +649,12 @@ export default function ShopVerificationPage() {
           Verify new shop applications and manage existing shops
         </p>
       </div>
-      
+
       {/* Status message */}
       {statusMessage && (
         <div className={`mb-6 p-4 rounded-lg ${
-          statusMessage.type === 'success' 
-            ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+          statusMessage.type === 'success'
+            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
             : 'bg-red-500/20 text-red-400 border border-red-500/30'
         }`}>
           <p className="flex items-center gap-2">
@@ -685,8 +724,8 @@ export default function ShopVerificationPage() {
                           <div className="p-6 md:col-span-3">
                             <div className="flex items-center mb-4">
                               <div className="mr-4">
-                                <Avatar 
-                                  src={shop.logo_url || shop.owner?.avatar_url} 
+                                <Avatar
+                                  src={shop.logo_url || shop.owner?.avatar_url}
                                   alt={shop.name}
                                   size="md"
                                 />
@@ -698,7 +737,7 @@ export default function ShopVerificationPage() {
                                 </p>
                               </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                               <div>
                                 <h4 className="text-sm font-medium mb-2">Shop Details</h4>
@@ -707,7 +746,7 @@ export default function ShopVerificationPage() {
                                   <p><span className="font-medium">Phone:</span> {shop.phone_number}</p>
                                   <p><span className="font-medium">Email:</span> {shop.email}</p>
                                   <p><span className="font-medium">WhatsApp:</span> {shop.whatsapp || 'Not provided'}</p>
-                                  
+
                                   {/* Add referral information */}
                                   {shop.description && extractReferral(shop.description) && (
                                     <p>
@@ -717,7 +756,7 @@ export default function ShopVerificationPage() {
                                   )}
                                 </div>
                               </div>
-                              
+
                               <div>
                                 <h4 className="text-sm font-medium mb-2">Owner Information</h4>
                                 <div className="space-y-2 text-sm">
@@ -727,40 +766,38 @@ export default function ShopVerificationPage() {
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="mb-4">
                               <h4 className="text-sm font-medium mb-2">Description</h4>
                               <p className="text-sm">
-                                {shop.description 
+                                {shop.description
                                   ? shop.description.replace(/Documents:.*$/, '').trim() || 'No description provided.'
                                   : 'No description provided.'
                                 }
                               </p>
                             </div>
-                            
-                            {/* Add document preview section */}
-                            {shop.description && (
-                              <div>
-                                <h4 className="text-sm font-medium mb-3">Uploaded Documents</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  {extractDocuments(shop.description).length > 0 ? (
-                                    extractDocuments(shop.description).map((doc, index) => (
-                                      <DocumentPreview key={index} type={doc.type} url={doc.url} />
-                                    ))
-                                  ) : (
-                                    <div className="col-span-2 p-4 rounded-lg bg-muted/30 border border-border text-sm text-muted-foreground">
-                                      No documents were uploaded or document URLs couldn't be extracted from the description.
-                                    </div>
-                                  )}
-                                </div>
+
+                            {/* Document preview section */}
+                            <div>
+                              <h4 className="text-sm font-medium mb-3">Uploaded Documents</h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {getShopDocuments(shop).length > 0 ? (
+                                  getShopDocuments(shop).map((doc, index) => (
+                                    <DocumentPreview key={index} type={doc.type} url={doc.url} />
+                                  ))
+                                ) : (
+                                  <div className="col-span-2 p-4 rounded-lg bg-muted/30 border border-border text-sm text-muted-foreground">
+                                    No documents were uploaded or document URLs couldn't be found.
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </div>
                           </div>
-                          
+
                           {/* Actions */}
                           <div className="bg-muted/30 p-6 border-t md:border-t-0 md:border-l border-border flex flex-col justify-between">
                             <div className="space-y-3">
-                              <Button 
+                              <Button
                                 className="w-full justify-center"
                                 onClick={() => handleApprove(shop.id)}
                                 disabled={processingId === shop.id}
@@ -768,8 +805,8 @@ export default function ShopVerificationPage() {
                                 <CheckCircle className="mr-2 h-4 w-4" />
                                 Approve
                               </Button>
-                              
-                              <Button 
+
+                              <Button
                                 variant="outline"
                                 className="w-full justify-center"
                                 onClick={() => handleReject(shop.id)}
@@ -779,10 +816,10 @@ export default function ShopVerificationPage() {
                                 Reject
                               </Button>
                             </div>
-                            
+
                             <div className="mt-6">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 className="w-full justify-center text-muted-foreground"
                                 asChild
                               >
@@ -800,7 +837,7 @@ export default function ShopVerificationPage() {
                 )}
               </>
             )}
-            
+
             {activeTab === 'verified' && (
               <>
                 {verifiedShops.length === 0 ? (
@@ -828,8 +865,8 @@ export default function ShopVerificationPage() {
                           <tr key={shop.id}>
                             <td className="px-4 py-3">
                               <div className="flex items-center">
-                                <Avatar 
-                                  src={shop.logo_url || shop.owner?.avatar_url} 
+                                <Avatar
+                                  src={shop.logo_url || shop.owner?.avatar_url}
                                   alt={shop.name}
                                   size="sm"
                                   className="mr-3"
@@ -847,8 +884,8 @@ export default function ShopVerificationPage() {
                               {new Date(shop.updated_at).toLocaleDateString()}
                             </td>
                             <td className="px-4 py-3">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 asChild
                               >
