@@ -150,6 +150,10 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [currentDate, setCurrentDate] = useState("")
   const [isMounted, setIsMounted] = useState(false)
 
+  // Dropdown positioning state
+  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom');
+  const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number>(300);
+
   // Refs for handling clicks outside dropdowns
   const locationInputRef = useRef<HTMLDivElement>(null)
   const locationsDropdownRef = useRef<HTMLDivElement>(null)
@@ -187,6 +191,27 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
       setFilteredLocations(filtered)
     }
   }, [location])
+
+  // Dynamically position the dropdown so it never gets cut off
+  useEffect(() => {
+    if (showLocations && locationInputRef.current) {
+      const inputRect = locationInputRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - inputRect.bottom;
+      const spaceAbove = inputRect.top;
+      // Minimum dropdown height (in px)
+      const minDropdownHeight = 180;
+      // Preferred max height
+      const preferredMaxHeight = 300;
+      // If not enough space below, but enough above, show above
+      if (spaceBelow < minDropdownHeight && spaceAbove > spaceBelow) {
+        setDropdownPosition('top');
+        setDropdownMaxHeight(Math.max(Math.min(spaceAbove - 16, preferredMaxHeight), minDropdownHeight));
+      } else {
+        setDropdownPosition('bottom');
+        setDropdownMaxHeight(Math.max(Math.min(spaceBelow - 16, preferredMaxHeight), minDropdownHeight));
+      }
+    }
+  }, [showLocations]);
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartDate = e.target.value
@@ -411,16 +436,16 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     </button>
                   )}
 
-                  {/* Locations Dropdown - Enhanced animations */}
+                  {/* Locations Dropdown - Enhanced animations, never cut off */}
                   <AnimatePresence>
                     {showLocations && (
                       <motion.div
                         ref={locationsDropdownRef}
-                        className="absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-[9999] shadow-xl overflow-auto transition-[backdrop-filter] duration-200"
+                        className={`absolute left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl z-[9999] shadow-xl overflow-auto transition-[backdrop-filter] duration-200 ${dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full'}`}
                         style={{
-                          maxHeight: '60vh',
+                          maxHeight: dropdownMaxHeight,
                           willChange: 'transform, opacity',
-                          touchAction: 'pan-y' // Improved touch handling
+                          touchAction: 'pan-y'
                         }}
                         variants={dropdownVariants}
                         initial="hidden"
