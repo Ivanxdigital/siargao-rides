@@ -11,7 +11,9 @@ import {
   VehicleType,
   VehicleCategory,
   BikeImage,
-  VehicleImage
+  VehicleImage,
+  Referral,
+  ReferralStatus
 } from './types';
 import { 
   mockBikes, 
@@ -19,6 +21,7 @@ import {
   mockReviews,
   mockUsers
 } from './mock-data';
+import { createReferral as apiCreateReferral, getUserReferrals as apiGetUserReferrals, updateReferralStatus as apiUpdateReferralStatus, getReferralStats as apiGetReferralStats } from './api';
 
 // Environment variable to control whether to use mock data or real API
 const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
@@ -320,6 +323,36 @@ export async function getShopVehiclesByType(shopId: string, vehicleType?: Vehicl
   };
   
   return getVehicles(filters);
+}
+
+// Referral-related service functions
+export async function createReferral(referral: {
+  referrer_id: string;
+  shop_id: string;
+}): Promise<{ id: string } | null> {
+  return apiCreateReferral(referral);
+}
+
+export async function getUserReferrals(userId: string): Promise<Referral[]> {
+  return apiGetUserReferrals(userId);
+}
+
+export async function updateReferralStatus(
+  referralId: string,
+  updates: Partial<Omit<Referral, 'id' | 'referrer_id' | 'shop_id' | 'created_at'>>
+): Promise<boolean> {
+  return apiUpdateReferralStatus(referralId, updates);
+}
+
+export async function getReferralStats(): Promise<{
+  total: number;
+  pending: number;
+  completed: number;
+  paid: number;
+  totalAmount: number;
+  pendingAmount: number;
+}> {
+  return apiGetReferralStats();
 }
 
 // Add other functions as needed... 

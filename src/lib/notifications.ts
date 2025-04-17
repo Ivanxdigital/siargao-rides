@@ -346,3 +346,34 @@ export const sendAdminNotification = async (shopId: string): Promise<void> => {
     throw error; // Re-throw to allow the caller to handle it
   }
 };
+
+export const sendReferralNotification = async (
+  userId: string,
+  shopName: string,
+  eventType: 'shop_verified' | 'vehicle_added' | 'payout_ready' | 'payout_sent'
+) => {
+  let message = '';
+  let title = '';
+
+  switch (eventType) {
+    case 'shop_verified':
+      title = 'Shop Verification Update';
+      message = `The shop "${shopName}" you referred has been verified! They now need to add a verified vehicle to complete the referral.`;
+      break;
+    case 'vehicle_added':
+      title = 'Referral Update';
+      message = `Great news! The shop "${shopName}" you referred has added a verified vehicle. Your referral is now complete and eligible for payout.`;
+      break;
+    case 'payout_ready':
+      title = 'Referral Payout Ready';
+      message = `Your referral payout for "${shopName}" of 500 PHP is ready to be claimed. Please check your dashboard for details.`;
+      break;
+    case 'payout_sent':
+      title = 'Referral Payout Sent';
+      message = `Your referral payout for "${shopName}" of 500 PHP has been sent. Check your payment method for details.`;
+      break;
+  }
+
+  // Placeholder: Replace with actual notification logic (e.g., toast, email, in-app)
+  console.log(`[Notification] ${title}: ${message} (to user ${userId})`);
+};

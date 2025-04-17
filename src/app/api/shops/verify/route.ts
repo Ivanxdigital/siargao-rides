@@ -27,6 +27,28 @@ export async function POST(request: Request) {
       );
     }
 
+    // After shop is verified, update referral if applicable
+    if (data && data.referrer_id) {
+      // Check if the shop has at least one verified vehicle
+      const { data: vehicles, error: vehicleError } = await supabaseAdmin
+        .from('vehicles')
+        .select('id')
+        .eq('shop_id', shopId)
+        .eq('is_verified', true);
+      const hasVerifiedVehicle = vehicles && vehicles.length > 0;
+
+      // Update the referral record
+      await supabaseAdmin
+        .from('referrals')
+        .update({
+          shop_verified: true,
+          status: hasVerifiedVehicle ? 'completed' : 'pending',
+          updated_at: new Date().toISOString()
+        })
+        .eq('referrer_id', data.referrer_id)
+        .eq('shop_id', shopId);
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('Unexpected error:', error);
@@ -165,6 +187,28 @@ export async function PATCH(request: Request) {
     } catch (emailError) {
       console.error('Error sending verification email:', emailError);
       // Continue execution even if email fails - the shop is still approved
+    }
+
+    // After shop is verified, update referral if applicable
+    if (data && data.referrer_id) {
+      // Check if the shop has at least one verified vehicle
+      const { data: vehicles, error: vehicleError } = await supabaseAdmin
+        .from('vehicles')
+        .select('id')
+        .eq('shop_id', shopId)
+        .eq('is_verified', true);
+      const hasVerifiedVehicle = vehicles && vehicles.length > 0;
+
+      // Update the referral record
+      await supabaseAdmin
+        .from('referrals')
+        .update({
+          shop_verified: true,
+          status: hasVerifiedVehicle ? 'completed' : 'pending',
+          updated_at: new Date().toISOString()
+        })
+        .eq('referrer_id', data.referrer_id)
+        .eq('shop_id', shopId);
     }
 
     return NextResponse.json({

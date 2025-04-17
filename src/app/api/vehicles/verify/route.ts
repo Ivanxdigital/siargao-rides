@@ -80,6 +80,27 @@ export async function PATCH(request: NextRequest) {
         );
       }
       
+      // After vehicle is verified, update referral if applicable
+      if (vehicleData && vehicleData.shop_id) {
+        // Get the shop's referrer_id and is_verified status
+        const { data: shop, error: shopError } = await supabase
+          .from('rental_shops')
+          .select('referrer_id, is_verified')
+          .eq('id', vehicleData.shop_id)
+          .single();
+        if (shop && shop.referrer_id) {
+          await supabase
+            .from('referrals')
+            .update({
+              vehicle_added: true,
+              status: shop.is_verified ? 'completed' : 'pending',
+              updated_at: new Date().toISOString()
+            })
+            .eq('referrer_id', shop.referrer_id)
+            .eq('shop_id', vehicleData.shop_id);
+        }
+      }
+      
       return NextResponse.json({
         success: true,
         message: 'Vehicle has been approved successfully'

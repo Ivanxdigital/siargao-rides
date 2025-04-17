@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { useAuth } from "@/contexts/AuthContext"
 import { uploadFile } from "@/lib/storage"
-import { createShop, getShops } from "@/lib/service"
+import { createShop, getShops, createReferral } from "@/lib/service"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { verificationDocumentsSchema } from "@/lib/validation"
+import { getCurrentUser } from '@/lib/api'
 
 // Add animation variants for components
 const fadeIn = {
@@ -358,6 +359,8 @@ function RegisterShopPageContent({
   const [checkingExistingShop, setCheckingExistingShop] = useState(false)
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
+  const [referralError, setReferralError] = useState<string | null>(null)
+  const [referrerId, setReferrerId] = useState<string | null>(null)
 
   // File state is managed separately from the form
   const [governmentId, setGovernmentId] = useState<File | null>(null)
@@ -495,8 +498,37 @@ function RegisterShopPageContent({
     return Math.round((filledFields / totalFields) * 100);
   };
 
+  // Validate referral code or email before submit
+  const validateReferral = async (referralValue: string): Promise<string | null> => {
+    if (!referralValue) return null;
+    // Try to treat as user ID first
+    if (referralValue.length >= 10) {
+      // Optionally, add more robust UUID validation
+      return referralValue;
+    }
+    // Otherwise, try to look up by email
+    const user = await getCurrentUser(); // Replace with actual user lookup by email if available
+    if (user && user.email === referralValue) {
+      return user.id;
+    }
+    return null;
+  };
+
   // Form submission handler with React Hook Form
   const handleFormSubmit = hookFormSubmit(async (data) => {
+    setIsSubmitting(true);
+    setReferralError(null);
+    let resolvedReferrerId: string | null = null;
+    if (data.referral) {
+      resolvedReferrerId = await validateReferral(data.referral.trim());
+      if (!resolvedReferrerId) {
+        setReferralError('Invalid referral code or email.');
+        setIsSubmitting(false);
+        return;
+      }
+      setReferrerId(resolvedReferrerId);
+    }
+
     setError(null);
 
     if (!user) {
@@ -629,7 +661,8 @@ function RegisterShopPageContent({
           city: "Siargao",
           phone_number: data.phone,
           email: data.email,
-          verification_documents: validation.data
+          verification_documents: validation.data,
+          referrer_id: resolvedReferrerId || undefined // Pass to DB if present
         });
 
         if (!newShop) {
@@ -639,6 +672,14 @@ function RegisterShopPageContent({
 
         console.log('Shop created successfully:', newShop);
         setIsSubmitted(true);
+
+        // If referral, create referral record
+        if (resolvedReferrerId && newShop.id) {
+          await createReferral({
+            referrer_id: resolvedReferrerId,
+            shop_id: newShop.id
+          });
+        }
       } catch (shopError) {
         // Check if this is a "User not found" error
         if (shopError instanceof Error &&
@@ -664,7 +705,8 @@ function RegisterShopPageContent({
               city: "Siargao",
               phone_number: data.phone,
               email: data.email,
-              verification_documents: validation.data
+              verification_documents: validation.data,
+              referrer_id: resolvedReferrerId || undefined // Pass to DB if present
             });
 
             if (!newShop) {
@@ -1948,6 +1990,9 @@ function RegisterShopPageContent({
                         </p>
                       )}
                     </motion.div>
+                    {referralError && (
+                      <p className="mt-1 text-sm text-red-500 dark:text-red-400">{referralError}</p>
+                    )}
                   </form>
                 )}
               </motion.div>

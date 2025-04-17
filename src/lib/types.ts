@@ -96,6 +96,7 @@ export type RentalShop = {
     government_id?: string
     business_permit?: string
   }
+  referrer_id?: string
 }
 
 export type OpeningHours = {
@@ -264,3 +265,21 @@ export enum PaymentStatusEnum {
   Paid = 'paid',
   Refunded = 'refunded'
 }
+
+export type ReferralStatus = 'pending' | 'completed' | 'paid';
+
+export type Referral = {
+  id: string;
+  referrer_id: string;
+  shop_id: string;
+  status: ReferralStatus;
+  payout_amount: number;
+  vehicle_added: boolean;
+  shop_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  paid_at?: string;
+  payment_reference?: string;
+  payment_method?: string;
+  notes?: string;
+};
