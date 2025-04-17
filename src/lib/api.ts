@@ -13,8 +13,11 @@ import {
   BikeImage,
   VehicleType,
   Vehicle,
-  VehicleCategory
+  VehicleCategory,
+  Referral,
+  ReferralStatus
 } from './types'
+import { CreateReferralSchema, UpdateReferralStatusSchema, ReferralIdSchema } from './validation'
 
 // User-related functions
 export async function getCurrentUser(): Promise<User | null> {
@@ -648,4 +651,119 @@ export async function searchBikes(query: string): Promise<Bike[]> {
     ...bike,
     images: bike.bike_images
   }))
+}
+
+// Referral-related functions
+export async function createReferral(referral: {
+  referrer_id: string;
+  shop_id: string;
+}): Promise<{ id: string } | null> {
+  // Validate input using Zod
+  const parseResult = CreateReferralSchema.safeParse(referral);
+  if (!parseResult.success) {
+    console.error('Invalid referral payload:', parseResult.error.format());
+    return null;
+  }
+  const { data, error } = await supabase
+    .from('referrals')
+    .insert({
+      referrer_id: referral.referrer_id,
+      shop_id: referral.shop_id,
+      status: 'pending',
+      payout_amount: 500
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('Error creating referral:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function getUserReferrals(userId: string): Promise<Referral[]> {
+  // Validate userId as UUID
+  const parseResult = ReferralIdSchema.safeParse(userId);
+  if (!parseResult.success) {
+    console.error('Invalid userId for getUserReferrals:', parseResult.error.format());
+    return [];
+  }
+  const { data, error } = await supabase
+    .from('referrals')
+    .select('*')
+    .eq('referrer_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching user referrals:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export async function updateReferralStatus(
+  referralId: string,
+  updates: Partial<Omit<Referral, 'id' | 'referrer_id' | 'shop_id' | 'created_at'>>
+): Promise<boolean> {
+  // Validate referralId as UUID
+  const idParse = ReferralIdSchema.safeParse(referralId);
+  if (!idParse.success) {
+    console.error('Invalid referralId for updateReferralStatus:', idParse.error.format());
+    return false;
+  }
+  // Validate updates object
+  const updatesParse = UpdateReferralStatusSchema.safeParse(updates);
+  if (!updatesParse.success) {
+    console.error('Invalid updates payload for updateReferralStatus:', updatesParse.error.format());
+    return false;
+  }
+  const { error } = await supabase
+    .from('referrals')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', referralId);
+
+  if (error) {
+    console.error('Error updating referral status:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function getReferralStats(): Promise<{
+  total: number;
+  pending: number;
+  completed: number;
+  paid: number;
+  totalAmount: number;
+  pendingAmount: number;
+}> {
+  const { data, error } = await supabase
+    .from('referrals')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching referral stats:', error);
+    return {
+      total: 0,
+      pending: 0,
+      completed: 0,
+      paid: 0,
+      totalAmount: 0,
+      pendingAmount: 0
+    };
+  }
+  const stats = {
+    total: data?.length || 0,
+    pending: data?.filter(r => r.status === 'pending').length || 0,
+    completed: data?.filter(r => r.status === 'completed').length || 0,
+    paid: data?.filter(r => r.status === 'paid').length || 0,
+    totalAmount: data?.reduce((sum, r) => sum + (r.payout_amount || 0), 0) || 0,
+    pendingAmount: data?.filter(r => r.status === 'completed')
+      .reduce((sum, r) => sum + (r.payout_amount || 0), 0) || 0
+  };
+  return stats;
 } 
