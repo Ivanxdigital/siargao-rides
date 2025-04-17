@@ -341,7 +341,7 @@ export default function ShopPage() {
   }, [id, user])
 
   const handleBookClick = (vehicleId: string) => {
-    setSelectedVehicleId(vehicleId)
+    if (!shop) return; // Prevents null access
 
     // Check if this is a showcase shop
     if (shop.is_showcase) {
