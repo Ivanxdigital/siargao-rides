@@ -382,7 +382,8 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                 exit={fadeIn.hidden}
                 layout // Animate position/height within parent
               >
-                <label className="text-xs font-medium text-white/80 ml-1">Where are you staying?</label>
+                {/* Location label - responsive font size for mobile */}
+                <label className="text-xs sm:text-sm font-medium text-white/80 ml-1 truncate max-w-full block sm:inline">Where are you staying?</label>
                 <div className="relative z-50" ref={locationInputRef}>
                   <input
                     type="text"
@@ -394,7 +395,8 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
                     }}
                     onClick={() => setShowLocations(true)}
                     onFocus={() => setShowLocations(true)}
-                    className="w-full p-3 px-10 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 text-white placeholder:text-white/40 transition-all duration-200"
+                    className="w-full p-3 px-10 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 text-white placeholder:text-white/40 transition-all duration-200 text-sm sm:text-base truncate"
+                    // Responsive font size and truncate for mobile
                   />
                   <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary/60" />
 
