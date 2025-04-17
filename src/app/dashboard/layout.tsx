@@ -24,7 +24,8 @@ import {
   ChevronLeft,
   ChevronRight,
   DollarSign,
-  TestTube
+  TestTube,
+  Gift
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -388,6 +389,15 @@ export default function DashboardLayout({
                   </motion.div>
                   <motion.div onClick={handleLinkClick} variants={itemVariants}>
                     <SidebarItem
+                      href="/dashboard/referrals"
+                      icon={<Gift size={18} />}
+                      title="Referrals"
+                      active={pathname === "/dashboard/referrals"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
                       href="/profile"
                       icon={<Settings size={18} />}
                       title="Profile Settings"
@@ -519,6 +529,15 @@ export default function DashboardLayout({
                         icon={<DollarSign size={18} />}
                         title="Deposit Payouts"
                         active={pathname === "/dashboard/admin/deposit-payouts"}
+                        collapsed={isCollapsed}
+                      />
+                    </motion.div>
+                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                      <SidebarItem
+                        href="/dashboard/admin/referrals"
+                        icon={<Gift size={18} />}
+                        title="Referrals"
+                        active={pathname === "/dashboard/admin/referrals"}
                         collapsed={isCollapsed}
                       />
                     </motion.div>
