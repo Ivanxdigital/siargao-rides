@@ -690,9 +690,17 @@ function RegisterShopPageContent({
 
       // Create the shop in the database
       const verificationDocuments = {
-        government_id: governmentIdUrl,
-        business_permit: businessPermitUrl
+        government_id: governmentIdUrl || '',  // Ensure it's always a string, never null
+        business_permit: businessPermitUrl || ''  // Ensure it's always a string, never null
       };
+      
+      // Ensure we have a valid government ID URL
+      if (!governmentIdUrl) {
+        setError("Government ID upload failed. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+      
       const validation = verificationDocumentsSchema.safeParse(verificationDocuments);
       if (!validation.success) {
         setError(validation.error.errors[0]?.message || "Invalid document URLs");

@@ -30,6 +30,14 @@ export async function POST(request: Request) {
 
     // Validate verification_documents if present
     if (shopData.verification_documents) {
+      // Ensure all properties are strings, not null
+      if (shopData.verification_documents.government_id === null) {
+        shopData.verification_documents.government_id = '';
+      }
+      if (shopData.verification_documents.business_permit === null) {
+        shopData.verification_documents.business_permit = '';
+      }
+
       const validation = verificationDocumentsSchema.safeParse(shopData.verification_documents);
       if (!validation.success) {
         return NextResponse.json(
