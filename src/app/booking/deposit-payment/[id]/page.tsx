@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { format } from "date-fns";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import DepositPayMongoForm from "@/components/DepositPayMongoForm";
 import { ArrowLeft, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
 

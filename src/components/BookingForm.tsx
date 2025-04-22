@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import DateRangePicker from "@/components/DateRangePicker";
 import TimeSlotPicker from "@/components/TimeSlotPicker";
 import ContactInfoInput, { ContactInfo } from "@/components/ContactInfoInput";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Bike, RentalShop, Vehicle } from "@/lib/types";
 import { User } from "@supabase/auth-helpers-nextjs";

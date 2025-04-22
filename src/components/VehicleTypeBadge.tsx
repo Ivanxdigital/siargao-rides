@@ -1,7 +1,7 @@
 "use client"
 
 import { Bike, Car, Truck } from "lucide-react"
-import { Badge } from "@/components/ui/Badge"
+import { Badge } from "@/components/ui/badge"
 import { VehicleType } from "@/lib/types"
 import { cn } from "@/lib/utils"
 

@@ -25,7 +25,7 @@ import {
   SidebarLink,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 
 interface AceternityDashboardLayoutProps {
   children: React.ReactNode;

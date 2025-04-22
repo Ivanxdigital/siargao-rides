@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-import { Badge } from "@/components/ui/Badge"
-import { Button } from "@/components/ui/Button"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ChevronRight, MapPin, Calendar, Bike, Star, Heart, CheckCircle, XCircle } from "lucide-react"
 
 // Animation variants

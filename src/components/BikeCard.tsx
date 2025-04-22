@@ -4,8 +4,8 @@ import Image from "next/image"
 import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
-import { Badge } from "./ui/Badge"
-import { Button } from "./ui/Button"
+import { Badge } from "./ui/badge"
+import { Button } from "./ui/button"
 
 interface BikeCardProps {
   id: string

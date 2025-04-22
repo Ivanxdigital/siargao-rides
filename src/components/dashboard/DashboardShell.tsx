@@ -4,6 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bike, BarChart2, Store, User, Settings, LogOut, Calendar } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { RegistrationPromptBanner } from "@/components/ui/RegistrationPromptBanner";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -11,6 +13,7 @@ interface DashboardShellProps {
 
 const DashboardShell: React.FC<DashboardShellProps> = ({ children }) => {
   const pathname = usePathname();
+  const { signOut } = useAuth();
 
   const navigationItems = [
     {
@@ -52,13 +55,15 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children }) => {
   ];
 
   const handleSignOut = async () => {
-    // Sign out functionality (to be implemented)
-    console.log("Signing out...");
+    await signOut();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
       <div className="flex h-full">
+        {/* Registration Prompt Banner */}
+        <RegistrationPromptBanner />
+        
         {/* Sidebar */}
         <div className="fixed inset-y-0 left-0 hidden w-64 overflow-y-auto border-r border-white/10 bg-black/20 backdrop-blur-md px-6 py-6 sm:flex flex-col">
           <div className="mb-8">

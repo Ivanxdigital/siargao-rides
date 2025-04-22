@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/Button';
-import { Switch } from '@/components/ui/Switch';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Settings, Save, RefreshCw, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 

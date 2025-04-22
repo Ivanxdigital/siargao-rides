@@ -3,7 +3,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import DatePicker from "react-datepicker"; 
 import { format } from "date-fns";
 import { X, Calendar as CalendarIcon, Loader, Info, Check, XCircle } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import "react-datepicker/dist/react-datepicker.css";
 
 interface BlockDatesModalProps {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import VehicleCard from "@/components/VehicleCard"
 import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon, CheckCircle, XCircle, Star, Check, List, LayoutGrid, Bike, Car, Map, Calendar as CalendarIcon, ArrowRight, RefreshCw } from "lucide-react"
-import { Badge } from "@/components/ui/Badge"
+import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { getShops, getBikes, getVehicles, getVehicleTypes } from "@/lib/api"
 import { RentalShop, Vehicle, VehicleType, VehicleCategory, BikeCategory, CarCategory, TuktukCategory } from "@/lib/types"
@@ -11,7 +11,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
 import DateRangePicker from "@/components/DateRangePicker"
 import { parseISO } from "date-fns"
-import { Button } from "@/components/ui/Button"
+import { Button } from "@/components/ui/button"
 import { useQuery } from '@tanstack/react-query'
 import { fetchVehicles } from '@/lib/queries/vehicles'
 

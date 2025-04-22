@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { ChevronLeft, Calendar, User, Bike, MapPin, CreditCard, CheckCircle, XCircle, Clock, AlertTriangle, Eye } from "lucide-react";
 import AutoCancellationOverride from "@/components/AutoCancellationOverride";
 import { format } from "date-fns";
@@ -16,9 +16,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle
-} from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Separator } from "@/components/ui/Separator";
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { notifyBookingStatusChange } from '@/lib/notifications';
 import { toast } from 'sonner';
 

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Search, Calendar, MapPin, X, ChevronDown, Check, Sparkles } from "lucide-react"
-import { Button } from "./ui/Button"
-import { Badge } from "./ui/Badge"
+import { Button } from "./ui/button"
+import { Badge } from "./ui/badge"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { motion, AnimatePresence } from "framer-motion"
 import { VehicleType } from "@/lib/types"

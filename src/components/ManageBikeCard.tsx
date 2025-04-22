@@ -3,13 +3,13 @@
 import Image from "next/image";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Edit, Trash, ToggleLeft, ToggleRight } from "lucide-react";
-import { Badge } from "./ui/Badge";
-import { Button } from "./ui/Button";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
-} from "./ui/Card";
+} from "./ui/card";
 
 interface ManageBikeCardProps {
   id: string;

@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { format, isWithinInterval, addDays } from "date-fns";
-import { Calendar } from "@/components/ui/Calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { CalendarIcon, AlertCircle } from "lucide-react";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface VehicleAvailabilityCalendarProps {
   vehicleId: string;

@@ -6,7 +6,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar as CalendarIcon, List, Grid, Filter, Loader, Clock, Ban } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

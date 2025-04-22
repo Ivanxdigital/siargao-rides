@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Bike, Store } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
@@ -15,8 +15,8 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  // Always set role to "tourist" by default, no longer changeable by user
-  const role: "tourist" = "tourist";
+  // Add user intent toggle (tourist or shop_owner)
+  const [userIntent, setUserIntent] = useState<"tourist" | "shop_owner">("tourist");
   const [formError, setFormError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -53,10 +53,16 @@ export default function SignUpPage() {
     }
 
     try {
-      // Always register with "tourist" role
-      const { error } = await register(email, password, firstName, lastName, role);
+      // Use the selected user intent/role
+      const { error } = await register(email, password, firstName, lastName, userIntent);
       if (error) {
         setApiError(error.message || "An error occurred during registration");
+      } else {
+        // If registration is successful and user is shop_owner, redirect to shop registration
+        if (userIntent === "shop_owner") {
+          router.push("/register");
+        }
+        // For tourists, the default redirect in the register function will be used
       }
     } catch (err) {
       setApiError("An unexpected error occurred. Please try again.");
@@ -172,6 +178,49 @@ export default function SignUpPage() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.8 }}
               >
+                {/* User Intent Toggle */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.85 }}
+                  className="mb-6"
+                >
+                  <label className="block text-sm font-medium mb-3 text-gray-200 text-center">
+                    I want to:
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setUserIntent("tourist")}
+                      className={`p-4 rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
+                        userIntent === "tourist"
+                          ? "bg-primary/20 border-primary border-2 ring-1 ring-primary/50"
+                          : "bg-gray-800/50 border border-gray-700 hover:bg-gray-700/30"
+                      }`}
+                    >
+                      <Bike className={`w-8 h-8 mb-2 ${userIntent === "tourist" ? "text-primary" : "text-gray-400"}`} />
+                      <span className={`font-medium ${userIntent === "tourist" ? "text-primary" : "text-gray-300"}`}>
+                        Rent Vehicles
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setUserIntent("shop_owner")}
+                      className={`p-4 rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
+                        userIntent === "shop_owner"
+                          ? "bg-primary/20 border-primary border-2 ring-1 ring-primary/50"
+                          : "bg-gray-800/50 border border-gray-700 hover:bg-gray-700/30"
+                      }`}
+                    >
+                      <Store className={`w-8 h-8 mb-2 ${userIntent === "shop_owner" ? "text-primary" : "text-gray-400"}`} />
+                      <span className={`font-medium ${userIntent === "shop_owner" ? "text-primary" : "text-gray-300"}`}>
+                        List My Vehicles
+                      </span>
+                    </button>
+                  </div>
+                </motion.div>
+
                 <div className="space-y-4">
                   <motion.div
                     className="grid grid-cols-2 gap-4"
@@ -274,7 +323,9 @@ export default function SignUpPage() {
                     transition={{ duration: 0.5, delay: 1.3 }}
                   >
                     <p className="text-sm text-gray-400">
-                      Create an account to rent motorbikes. Want to list your bikes? You can register as a shop owner from your dashboard after signing up.
+                      {userIntent === "tourist" 
+                        ? "Create an account to rent motorbikes in Siargao." 
+                        : "Create an account to list your vehicles for rent in Siargao."}
                     </p>
                   </motion.div>
                 </div>

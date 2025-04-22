@@ -3,8 +3,8 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Star, MapPin, Bike, Car, Truck } from "lucide-react"
-import { Badge } from "./ui/Badge"
-import { Button } from "./ui/Button"
+import { Badge } from "./ui/badge"
+import { Button } from "./ui/button"
 import { motion } from "framer-motion"
 import { VehicleType } from "@/lib/types"
 

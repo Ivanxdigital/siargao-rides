@@ -17,7 +17,7 @@ import {
   ChevronRight,
   CalendarClock
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
 import { notifyBookingStatusChange } from '@/lib/notifications';
 import {
@@ -28,14 +28,14 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter
-} from "@/components/ui/Dialog";
+} from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
-} from "@/components/ui/Popover";
-import { Calendar as CalendarComponent } from "@/components/ui/Calendar";
-import { Input } from "@/components/ui/Input";
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export default function MyBookingsPage() {

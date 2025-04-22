@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { format, addMinutes, isPast } from "date-fns";
 

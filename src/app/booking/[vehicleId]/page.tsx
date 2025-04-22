@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Vehicle, RentalShop, VehicleType } from "@/lib/types";
 import { ArrowLeft, Bike, Car, Truck } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import BookingForm from "@/components/BookingForm";
 import BookingSummary from "@/components/BookingSummary";
 

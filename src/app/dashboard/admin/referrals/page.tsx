@@ -5,7 +5,7 @@ import { getReferralStats, updateReferralStatus } from "@/lib/service";
 import { Referral } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 import { Loader2, CheckCircle, Gift, Filter, Search, BadgeCheck } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 
 export default function AdminReferralPage() {
   const [referrals, setReferrals] = useState<Referral[]>([]);

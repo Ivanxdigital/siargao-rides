@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, SearchIcon, Filter, AlertCircle, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import ManageVehicleCard from "@/components/ManageVehicleCard";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useShopAccess } from "@/utils/shopAccess";
@@ -16,7 +16,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/Select";
+} from "@/components/ui/select";
 import Link from "next/link";
 
 type VehicleType = "motorcycle" | "car" | "tuktuk";

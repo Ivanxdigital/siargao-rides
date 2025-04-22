@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Phone, MessageCircle } from "lucide-react";
-import { Label } from "@/components/ui/Label";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 // Common country codes with flags
 const countryCodes = [

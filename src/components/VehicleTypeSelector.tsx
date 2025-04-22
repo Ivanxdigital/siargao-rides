@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Bike, Car, Truck } from "lucide-react"
-import { Button } from "@/components/ui/Button"
+import { Button } from "@/components/ui/button"
 import { VehicleType } from "@/lib/types"
 import { motion } from "framer-motion"
 

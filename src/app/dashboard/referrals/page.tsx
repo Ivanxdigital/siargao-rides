@@ -5,7 +5,7 @@ import { getUserReferrals } from "@/lib/service";
 import { generateReferralLink } from "@/lib/referral";
 import { Referral } from "@/lib/types";
 import { Copy, Gift, CheckCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function ReferralDashboardPage() {

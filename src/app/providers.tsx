@@ -2,7 +2,7 @@
 
 import { ThemeProvider } from 'next-themes';
 import { ReactNode } from 'react';
-import { ToastProvider } from '@/components/ui/ToastProvider';
+import { ToastProvider } from '@/components/ui/toastprovider';
 import { Toaster } from 'react-hot-toast';
 import ReCaptchaProvider from '@/components/ReCaptchaProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
