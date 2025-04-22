@@ -648,6 +648,32 @@ function RegisterShopPageContent({
 
       console.log('Starting shop registration process...');
 
+      // Update user role to shop_owner before proceeding
+      console.log('Updating user role to shop_owner...');
+      try {
+        const updateRoleResponse = await fetch('/api/users/update-role', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            role: 'shop_owner'
+          })
+        });
+
+        if (!updateRoleResponse.ok) {
+          const errorData = await updateRoleResponse.json();
+          throw new Error(`Failed to update user role: ${errorData.error || 'Unknown error'}`);
+        }
+        
+        console.log('User role updated successfully to shop_owner');
+      } catch (roleError) {
+        console.error('Error updating user role:', roleError);
+        setError(`Failed to update user role: ${roleError instanceof Error ? roleError.message : 'Unknown error'}`);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Upload government ID
       let governmentIdUrl: string | null = null;
       if (governmentId) {
