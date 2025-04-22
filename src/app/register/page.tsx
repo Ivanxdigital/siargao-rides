@@ -268,7 +268,7 @@ const InteractiveDashboardShowcase = ({ t, language, languageTransition }: { t: 
                 key={language + '-tab-desc-' + activeTab}
                 className="text-gray-300 max-w-3xl mx-auto"
                 initial={languageTransition?.initial}
-                animate={languageTransition?.animate}
+                animate={languageTransition.animate}
                 exit={languageTransition?.exit}
               >
                 {tabContent[activeTab].description}
@@ -341,9 +341,68 @@ function RegisterShopPageContent({
   const { user, isAuthenticated, isLoading: authLoading, resendVerificationEmail } = useAuth()
   const router = useRouter()
   const formRef = useRef<HTMLDivElement>(null)
-
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [governmentId, setGovernmentId] = useState<File | null>(null)
+  const [businessPermit, setBusinessPermit] = useState<File | null>(null)
+  const [showReferralField, setShowReferralField] = useState(false)
+  const [referralCode, setReferralCode] = useState('')
+  const [referralStatus, setReferralStatus] = useState<'idle' | 'valid' | 'invalid' | 'validating'>('idle')
+  const [progress, setProgress] = useState(0)
+  const [shopExists, setShopExists] = useState(false)
+  const [shopExistenceChecked, setShopExistenceChecked] = useState(false)
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false)
+  const [verificationRequested, setVerificationRequested] = useState(false)
+  const [captchaVerified, setCaptchaVerified] = useState(false)
+  const [checkingUserRecord, setCheckingUserRecord] = useState(false)
+  const [userRecordExists, setUserRecordExists] = useState<boolean | null>(null)
+  const [existingShop, setExistingShop] = useState<any>(null)
+  const [checkingExistingShop, setCheckingExistingShop] = useState(false)
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false)
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
+  const [referralError, setReferralError] = useState<string | null>(null)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  
+  // Check for form=true query parameter to auto-show the registration form
+  useEffect(() => {
+    // Check if we have a 'form=true' query parameter
+    const queryParams = new URLSearchParams(window.location.search);
+    const showForm = queryParams.get('form') === 'true';
+    
+    if (showForm) {
+      // Immediately show the form and scroll to it
+      setShowRegistrationForm(true);
+      
+      // Small delay to ensure the component is rendered
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
+  }, []);
+
+  // Check existing shop
+  const checkExistingShop = async () => {
+    if (isAuthenticated && user?.id && !checkingExistingShop && !existingShop) {
+      try {
+        setCheckingExistingShop(true)
+
+        // Get all shops and filter by owner ID
+        const allShops = await getShops()
+        const userShops = allShops.filter(shop => shop.owner_id === user.id)
+
+        if (userShops && userShops.length > 0) {
+          // User already has at least one shop
+          setExistingShop(userShops[0])
+        }
+      } catch (err) {
+        console.error("Error checking for existing shops:", err)
+      } finally {
+        setCheckingExistingShop(false)
+      }
+    }
+  }
+
+  // Rest of the function remains unchanged
   const [error, setError] = useState<string | null>(null)
   const [isResending, setIsResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
@@ -353,18 +412,7 @@ function RegisterShopPageContent({
   const [manualVerificationRequested, setManualVerificationRequested] = useState(false)
   const [creatingUserRecord, setCreatingUserRecord] = useState(false)
   const [userRecordCreated, setUserRecordCreated] = useState(false)
-  const [checkingUserRecord, setCheckingUserRecord] = useState(false)
-  const [userRecordExists, setUserRecordExists] = useState<boolean | null>(null)
-  const [existingShop, setExistingShop] = useState<any>(null)
-  const [checkingExistingShop, setCheckingExistingShop] = useState(false)
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false)
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
-  const [referralError, setReferralError] = useState<string | null>(null)
   const [referrerId, setReferrerId] = useState<string | null>(null)
-
-  // File state is managed separately from the form
-  const [governmentId, setGovernmentId] = useState<File | null>(null)
-  const [businessPermit, setBusinessPermit] = useState<File | null>(null)
 
   // Form validation with React Hook Form
   const {
@@ -402,27 +450,6 @@ function RegisterShopPageContent({
 
   // Check if user already has a shop
   useEffect(() => {
-    const checkExistingShop = async () => {
-      if (isAuthenticated && user?.id && !checkingExistingShop && !existingShop) {
-        try {
-          setCheckingExistingShop(true)
-
-          // Get all shops and filter by owner ID
-          const allShops = await getShops()
-          const userShops = allShops.filter(shop => shop.owner_id === user.id)
-
-          if (userShops && userShops.length > 0) {
-            // User already has at least one shop
-            setExistingShop(userShops[0])
-          }
-        } catch (err) {
-          console.error("Error checking for existing shops:", err)
-        } finally {
-          setCheckingExistingShop(false)
-        }
-      }
-    }
-
     checkExistingShop()
   }, [isAuthenticated, user, checkingExistingShop, existingShop])
 
@@ -434,6 +461,26 @@ function RegisterShopPageContent({
       }
     }
   }, [showRegistrationForm, authLoading, isAuthenticated, router, user])
+
+  // NEW: Check for query parameter to auto-display the form
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const queryParams = new URLSearchParams(window.location.search);
+      const showForm = queryParams.get('form') === 'true';
+      
+      if (showForm) {
+        // Immediately show the form and scroll to it
+        setShowRegistrationForm(true);
+        
+        // Small delay to ensure the component is rendered
+        setTimeout(() => {
+          if (formRef.current) {
+            formRef.current.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 300);
+      }
+    }
+  }, []);
 
   // File validation function
   const validateFile = (file: File | null, isRequired: boolean = false) => {
