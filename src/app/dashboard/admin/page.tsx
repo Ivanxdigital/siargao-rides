@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { Car, Users, Store, Settings, Plus, Trash2, X, Loader2 } from "lucide-react";
+import { Car, Users, Store, Settings, Plus, Trash2, X, Loader2, CheckSquare, Search, FilterIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/Checkbox";
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -34,6 +35,17 @@ export default function AdminDashboardPage() {
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [showDeleteMultipleDialog, setShowDeleteMultipleDialog] = useState(false);
+  const [isDeletingMultipleUsers, setIsDeletingMultipleUsers] = useState(false);
+  
+  // User view/filter state
+  const [viewMode, setViewMode] = useState<"recent" | "all">("recent");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [totalFilteredCount, setTotalFilteredCount] = useState<number>(0);
   
   // New user form state
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
@@ -56,17 +68,45 @@ export default function AdminDashboardPage() {
     if (isAuthenticated && isAdmin) {
       fetchUsers();
     }
-  }, [isAuthenticated, isAdmin]);
+  }, [isAuthenticated, isAdmin, viewMode, currentPage, pageSize, searchTerm, roleFilter]);
 
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
     try {
-      // Fetch recent users for the table
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10);
+      // Create a base query
+      let query = supabase.from("users").select("*");
+      
+      // Build filter conditions that we'll apply to both queries
+      const filterConditions: any = {};
+      
+      // Apply filters if any
+      if (searchTerm) {
+        query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        // Save the filter condition for count query
+        filterConditions.searchTerm = searchTerm;
+      }
+      
+      if (roleFilter && roleFilter !== "all") {
+        query = query.eq("role", roleFilter);
+        // Save the filter condition for count query
+        filterConditions.roleFilter = roleFilter;
+      }
+      
+      // Always sort by recent creation date
+      query = query.order("created_at", { ascending: false });
+      
+      // Pagination - only apply for "all" view mode
+      if (viewMode === "all") {
+        const from = (currentPage - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+      } else {
+        // For recent mode, just get the most recent 10
+        query = query.limit(10);
+      }
+      
+      // Execute main query for users list
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching users:", error.message || error);
@@ -74,8 +114,30 @@ export default function AdminDashboardPage() {
       } else {
         setUsers(data || []);
       }
+      
+      // Execute count query for filtered total - using a separate new query with same filters
+      if (viewMode === "all" || filterConditions.searchTerm || filterConditions.roleFilter) {
+        let countQuery = supabase.from("users").select("id");
+        
+        // Apply the same filters to count query
+        if (filterConditions.searchTerm) {
+          countQuery = countQuery.or(`first_name.ilike.%${filterConditions.searchTerm}%,last_name.ilike.%${filterConditions.searchTerm}%,email.ilike.%${filterConditions.searchTerm}%`);
+        }
+        
+        if (filterConditions.roleFilter) {
+          countQuery = countQuery.eq("role", filterConditions.roleFilter);
+        }
+        
+        const { data: filteredData, error: filteredError } = await countQuery;
+        if (!filteredError && filteredData) {
+          setTotalFilteredCount(filteredData.length);
+        }
+      } else {
+        // If no filters, use the total count
+        setTotalFilteredCount(totalUsersCount);
+      }
 
-      // Fetch total count of all users
+      // Fetch total count of all users regardless of filters
       const { data: allUserIds, error: countError } = await supabase
         .from('users')
         .select('id');
@@ -93,6 +155,21 @@ export default function AdminDashboardPage() {
       setIsLoadingUsers(false);
     }
   };
+
+  // Reset filters
+  const resetFilters = () => {
+    setSearchTerm("");
+    setRoleFilter("all");
+    setCurrentPage(1);
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalFilteredCount / pageSize);
 
   // Create a new user
   const createUser = async () => {
@@ -181,6 +258,83 @@ export default function AdminDashboardPage() {
   const handleDeleteClick = (user: any) => {
     setUserToDelete(user);
     setShowDeleteDialog(true);
+  };
+
+  // Handle checkbox selection
+  const handleSelectUser = (userId: string) => {
+    setSelectedUsers(prev => {
+      if (prev.includes(userId)) {
+        return prev.filter(id => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  };
+
+  // Handle select all checkbox
+  const handleSelectAll = () => {
+    if (selectedUsers.length === users.length) {
+      // If all are selected, unselect all
+      setSelectedUsers([]);
+    } else {
+      // Otherwise, select all non-admin users
+      const nonAdminUserIds = users
+        .filter(user => user.role !== "admin")
+        .map(user => user.id);
+      setSelectedUsers(nonAdminUserIds);
+    }
+  };
+
+  // Delete multiple users
+  const deleteMultipleUsers = async () => {
+    if (selectedUsers.length === 0) return;
+
+    setIsDeletingMultipleUsers(true);
+    try {
+      // Sequentially delete each user
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const userId of selectedUsers) {
+        try {
+          const response = await fetch('/api/admin/delete-user', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              userId
+            })
+          });
+
+          if (response.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (error) {
+          console.error(`Error deleting user ${userId}:`, error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`Successfully deleted ${successCount} user${successCount !== 1 ? 's' : ''}`);
+      }
+
+      if (errorCount > 0) {
+        toast.error(`Failed to delete ${errorCount} user${errorCount !== 1 ? 's' : ''}`);
+      }
+
+      fetchUsers(); // Refresh the user list
+      setShowDeleteMultipleDialog(false);
+      setSelectedUsers([]);
+    } catch (error) {
+      console.error("Error during mass deletion:", error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete users');
+    } finally {
+      setIsDeletingMultipleUsers(false);
+    }
   };
 
   // Fetch shops
@@ -408,15 +562,102 @@ export default function AdminDashboardPage() {
       {/* Recent Users */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-white/90">Recent Users</h2>
-          <Button 
-            onClick={() => setShowAddUserDialog(true)} 
-            size="sm" 
-            className="gap-1 flex items-center"
-          >
-            <Plus className="h-4 w-4" />
-            Add User
-          </Button>
+          <h2 className="text-xl font-semibold text-white/90">
+            {viewMode === "recent" ? "Recent Users" : "All Users"}
+          </h2>
+          <div className="flex items-center gap-2">
+            {selectedUsers.length > 0 && (
+              <Button 
+                onClick={() => setShowDeleteMultipleDialog(true)} 
+                variant="destructive" 
+                size="sm" 
+                className="gap-1 flex items-center"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Selected ({selectedUsers.length})
+              </Button>
+            )}
+            <Button 
+              onClick={() => setShowAddUserDialog(true)} 
+              size="sm" 
+              className="gap-1 flex items-center"
+            >
+              <Plus className="h-4 w-4" />
+              Add User
+            </Button>
+          </div>
+        </div>
+
+        {/* View mode toggle and filters */}
+        <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl p-4 mb-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
+            <div className="flex gap-2">
+              <Button 
+                variant={viewMode === "recent" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => {
+                  setViewMode("recent");
+                  setCurrentPage(1);
+                }}
+                className="text-sm"
+              >
+                Recent Users
+              </Button>
+              <Button 
+                variant={viewMode === "all" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => {
+                  setViewMode("all");
+                  setCurrentPage(1);
+                }}
+                className="text-sm"
+              >
+                All Users
+              </Button>
+            </div>
+            
+            <div className="flex gap-2 w-full sm:w-auto">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                <Input
+                  placeholder="Search by name or email"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 py-1 h-9 bg-black/30 border-white/10"
+                />
+              </div>
+
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-[130px] h-9 py-1 bg-black/30 border-white/10">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90 border-white/10">
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="shop_owner">Shop Owner</SelectItem>
+                  <SelectItem value="tourist">Tourist</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(searchTerm || roleFilter !== "all") && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetFilters}
+                  className="h-9 px-2 text-white/70 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {viewMode === "all" && (
+            <div className="text-sm text-white/60">
+              Showing {users.length} of {totalFilteredCount} users
+              {(searchTerm || roleFilter !== "all") && " (filtered)"}
+            </div>
+          )}
         </div>
 
         <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg">
@@ -424,6 +665,13 @@ export default function AdminDashboardPage() {
             <table className="w-full">
               <thead className="bg-black/70">
                 <tr>
+                  <th className="px-4 py-3 text-left">
+                    <Checkbox 
+                      checked={selectedUsers.length > 0 && selectedUsers.length === users.filter(user => user.role !== "admin").length}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all users"
+                    />
+                  </th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-white/70">Name</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-white/70">Email</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-white/70">Role</th>
@@ -434,19 +682,28 @@ export default function AdminDashboardPage() {
               <tbody className="divide-y divide-white/10">
                 {isLoadingUsers ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-3 text-center text-white/60">
+                    <td colSpan={6} className="px-4 py-3 text-center text-white/60">
                       Loading users...
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-3 text-center text-white/60">
+                    <td colSpan={6} className="px-4 py-3 text-center text-white/60">
                       No users found
                     </td>
                   </tr>
                 ) : (
                   users.map((user) => (
                     <tr key={user.id} className="hover:bg-white/5">
+                      <td className="px-4 py-3">
+                        {user.role !== "admin" && (
+                          <Checkbox 
+                            checked={selectedUsers.includes(user.id)}
+                            onCheckedChange={() => handleSelectUser(user.id)}
+                            aria-label={`Select ${user.first_name || ""} ${user.last_name || ""}`}
+                          />
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-white/90">
                         {user.first_name || user.last_name
                           ? `${user.first_name || ""} ${user.last_name || ""}`
@@ -489,6 +746,64 @@ export default function AdminDashboardPage() {
             </table>
           </div>
         </div>
+
+        {/* Pagination controls */}
+        {viewMode === "all" && totalPages > 1 && (
+          <div className="flex justify-between items-center mt-4">
+            <div className="text-sm text-white/60">
+              Page {currentPage} of {totalPages}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8 p-0 flex items-center justify-center"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                // Show 5 page buttons max
+                let pageNum = currentPage;
+                if (totalPages <= 5) {
+                  // If 5 or fewer pages, show all
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  // Near start
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  // Near end
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  // Middle - show current and 2 on each side
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0 flex items-center justify-center"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Recent Shops */}
@@ -674,6 +989,46 @@ export default function AdminDashboardPage() {
             >
               {isDeletingUser && <Loader2 className="h-4 w-4 animate-spin" />}
               Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Multiple Users Dialog */}
+      <Dialog open={showDeleteMultipleDialog} onOpenChange={setShowDeleteMultipleDialog}>
+        <DialogContent className="sm:max-w-[425px] bg-black/90 border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white">Delete Multiple Users</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedUsers.length} selected user{selectedUsers.length !== 1 ? 's' : ''}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-red-900/20 border border-red-500/20 rounded-md p-4 my-2">
+            <p className="text-white mb-2">
+              <span className="font-medium">You are about to delete {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''}:</span>
+            </p>
+            <div className="max-h-32 overflow-y-auto">
+              {users
+                .filter(user => selectedUsers.includes(user.id))
+                .map(user => (
+                  <div key={user.id} className="text-sm text-white/80 mb-1">
+                    • {user.first_name || ""} {user.last_name || ""} ({user.email})
+                  </div>
+                ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteMultipleDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={deleteMultipleUsers} 
+              disabled={isDeletingMultipleUsers}
+              className="gap-2"
+            >
+              {isDeletingMultipleUsers && <Loader2 className="h-4 w-4 animate-spin" />}
+              Delete {selectedUsers.length} User{selectedUsers.length !== 1 ? 's' : ''}
             </Button>
           </DialogFooter>
         </DialogContent>
