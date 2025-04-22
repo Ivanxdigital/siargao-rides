@@ -6,18 +6,43 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { Car, Users, Store, Settings } from "lucide-react";
+import { Car, Users, Store, Settings, Plus, Trash2, X, Loader2 } from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/Dialog";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { toast } from "sonner";
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
+  const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
   const [shops, setShops] = useState<any[]>([]);
   const [pendingShops, setPendingShops] = useState<number>(0);
   const [pendingVehicles, setPendingVehicles] = useState<number>(0);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isLoadingShops, setIsLoadingShops] = useState(false);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+  
+  // New user form state
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserFirstName, setNewUserFirstName] = useState("");
+  const [newUserLastName, setNewUserLastName] = useState("");
+  const [newUserRole, setNewUserRole] = useState("tourist");
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -29,31 +54,134 @@ export default function AdminDashboardPage() {
   // Fetch users
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
-      const fetchUsers = async () => {
-        setIsLoadingUsers(true);
-        try {
-          const { data, error } = await supabase
-            .from("users")
-            .select("*")
-            .order("created_at", { ascending: false })
-            .limit(10);
-
-          if (error) {
-            console.error("Error fetching users:", error.message || error);
-          } else {
-            setUsers(data || []);
-          }
-        } catch (error: any) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error("Error fetching users:", errorMessage);
-        } finally {
-          setIsLoadingUsers(false);
-        }
-      };
-
       fetchUsers();
     }
   }, [isAuthenticated, isAdmin]);
+
+  const fetchUsers = async () => {
+    setIsLoadingUsers(true);
+    try {
+      // Fetch recent users for the table
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error("Error fetching users:", error.message || error);
+        toast.error("Failed to load users");
+      } else {
+        setUsers(data || []);
+      }
+
+      // Fetch total count of all users
+      const { data: allUserIds, error: countError } = await supabase
+        .from('users')
+        .select('id');
+      
+      if (countError) {
+        console.error("Error fetching user count:", countError.message || countError);
+      } else {
+        setTotalUsersCount(allUserIds?.length || 0);
+      }
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error("Error fetching users:", errorMessage);
+      toast.error("An error occurred while fetching users");
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  // Create a new user
+  const createUser = async () => {
+    if (!newUserEmail || !newUserPassword || !newUserFirstName || !newUserLastName) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    setIsCreatingUser(true);
+    try {
+      // Call the API endpoint to create a user
+      const response = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: newUserEmail,
+          password: newUserPassword,
+          firstName: newUserFirstName,
+          lastName: newUserLastName,
+          role: newUserRole
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create user');
+      }
+
+      toast.success("User created successfully");
+      fetchUsers(); // Refresh the user list
+      
+      // Reset form and close dialog
+      setNewUserEmail("");
+      setNewUserPassword("");
+      setNewUserFirstName("");
+      setNewUserLastName("");
+      setNewUserRole("tourist");
+      setShowAddUserDialog(false);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create user');
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  // Delete a user
+  const deleteUser = async () => {
+    if (!userToDelete) return;
+
+    setIsDeletingUser(true);
+    try {
+      // Call the API endpoint to delete a user
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: userToDelete.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete user');
+      }
+
+      toast.success("User deleted successfully");
+      fetchUsers(); // Refresh the user list
+      setShowDeleteDialog(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete user');
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
+  // Handle opening delete dialog
+  const handleDeleteClick = (user: any) => {
+    setUserToDelete(user);
+    setShowDeleteDialog(true);
+  };
 
   // Fetch shops
   useEffect(() => {
@@ -159,7 +287,7 @@ export default function AdminDashboardPage() {
             </div>
             <h2 className="text-lg font-semibold text-white/90">Users</h2>
           </div>
-          <div className="text-4xl font-bold mb-2 text-primary">{users.length}</div>
+          <div className="text-4xl font-bold mb-2 text-primary">{totalUsersCount}</div>
           <p className="text-sm text-white/60">
             {isLoadingUsers ? "Loading..." : "Registered users on the platform"}
           </p>
@@ -281,6 +409,14 @@ export default function AdminDashboardPage() {
       <div className="mb-12">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-white/90">Recent Users</h2>
+          <Button 
+            onClick={() => setShowAddUserDialog(true)} 
+            size="sm" 
+            className="gap-1 flex items-center"
+          >
+            <Plus className="h-4 w-4" />
+            Add User
+          </Button>
         </div>
 
         <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg">
@@ -292,18 +428,19 @@ export default function AdminDashboardPage() {
                   <th className="text-left px-4 py-3 text-sm font-medium text-white/70">Email</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-white/70">Role</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-white/70">Joined</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-white/70">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
                 {isLoadingUsers ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-3 text-center text-white/60">
+                    <td colSpan={5} className="px-4 py-3 text-center text-white/60">
                       Loading users...
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-3 text-center text-white/60">
+                    <td colSpan={5} className="px-4 py-3 text-center text-white/60">
                       No users found
                     </td>
                   </tr>
@@ -329,6 +466,21 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className="px-4 py-3 text-white/70 text-sm">
                         {new Date(user.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(user)}
+                          disabled={user.role === "admin"} // Prevent deleting admin users
+                          className={
+                            user.role === "admin" 
+                              ? "opacity-30 cursor-not-allowed" 
+                              : "text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -403,6 +555,129 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Add User Dialog */}
+      <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
+        <DialogContent className="sm:max-w-[425px] bg-black/90 border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white">Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account on the platform.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                placeholder="user@example.com"
+                className="bg-black/50 border-white/10"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+                placeholder="••••••••"
+                className="bg-black/50 border-white/10"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={newUserFirstName}
+                  onChange={(e) => setNewUserFirstName(e.target.value)}
+                  placeholder="John"
+                  className="bg-black/50 border-white/10"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={newUserLastName}
+                  onChange={(e) => setNewUserLastName(e.target.value)}
+                  placeholder="Doe"
+                  className="bg-black/50 border-white/10"
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="role">Role</Label>
+              <Select value={newUserRole} onValueChange={setNewUserRole}>
+                <SelectTrigger className="bg-black/50 border-white/10">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90 border-white/10">
+                  <SelectItem value="tourist">Tourist</SelectItem>
+                  <SelectItem value="shop_owner">Shop Owner</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddUserDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={createUser} 
+              disabled={isCreatingUser || !newUserEmail || !newUserPassword || !newUserFirstName || !newUserLastName}
+              className="gap-2"
+            >
+              {isCreatingUser && <Loader2 className="h-4 w-4 animate-spin" />}
+              Create User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[425px] bg-black/90 border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white">Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {userToDelete && (
+            <div className="bg-red-900/20 border border-red-500/20 rounded-md p-4 my-2">
+              <p className="mb-1 text-white">
+                <span className="font-medium">Name:</span> {userToDelete.first_name || ''} {userToDelete.last_name || ''}
+              </p>
+              <p className="mb-1 text-white">
+                <span className="font-medium">Email:</span> {userToDelete.email}
+              </p>
+              <p className="text-white">
+                <span className="font-medium">Role:</span> {userToDelete.role}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={deleteUser} 
+              disabled={isDeletingUser}
+              className="gap-2"
+            >
+              {isDeletingUser && <Loader2 className="h-4 w-4 animate-spin" />}
+              Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
