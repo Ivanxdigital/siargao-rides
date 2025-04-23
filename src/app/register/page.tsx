@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
-import ReCaptchaVerifier from "@/components/ReCaptchaVerifier"
 import { registerTranslations } from "@/translations/register"
 import { dashboardTranslations } from "@/translations/dashboard"
 import { useForm, Controller } from "react-hook-form"
@@ -360,9 +359,18 @@ function RegisterShopPageContent({
   const [existingShop, setExistingShop] = useState<any>(null)
   const [checkingExistingShop, setCheckingExistingShop] = useState(false)
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
   const [referralError, setReferralError] = useState<string | null>(null)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [formStep, setFormStep] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [emailVerificationSent, setEmailVerificationSent] = useState(false)
+  const [userRecordCreated, setUserRecordCreated] = useState(false)
+  const [emailVerificationError, setEmailVerificationError] = useState<string | null>(null)
+  const [emailVerificationSuccess, setEmailVerificationSuccess] = useState<string | null>(null)
+  const [manualVerificationRequested, setManualVerificationRequested] = useState(false)
+  const [verificationStatus, setVerificationStatus] = useState<'unverified' | 'pending' | 'verified'>('unverified')
+  const [userRecordError, setUserRecordError] = useState<string | null>(null)
   
   // Check for form=true query parameter to auto-show the registration form
   useEffect(() => {
@@ -404,15 +412,12 @@ function RegisterShopPageContent({
   }
 
   // Rest of the function remains unchanged
-  const [error, setError] = useState<string | null>(null)
   const [isResending, setIsResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState(user?.email || "")
   const [showDebugInfo, setShowDebugInfo] = useState(false)
   const [debugDetails, setDebugDetails] = useState<any>(null)
-  const [manualVerificationRequested, setManualVerificationRequested] = useState(false)
   const [creatingUserRecord, setCreatingUserRecord] = useState(false)
-  const [userRecordCreated, setUserRecordCreated] = useState(false)
   const [referrerId, setReferrerId] = useState<string | null>(null)
 
   // Form validation with React Hook Form
@@ -523,11 +528,6 @@ function RegisterShopPageContent({
     }
   }
 
-  // Handle reCAPTCHA verification
-  const handleReCaptchaVerify = useCallback((token: string | null) => {
-    setRecaptchaToken(token)
-  }, [])
-
   // Calculate form completion percentage for progress indicator
   const calculateFormProgress = () => {
     const totalFields = Object.keys(formSchema.shape).length + 1; // +1 for governmentId
@@ -597,45 +597,13 @@ function RegisterShopPageContent({
       return;
     }
 
-    // Check if reCAPTCHA verification was successful
-    if (!recaptchaToken) {
-      setError("Please complete the reCAPTCHA verification");
-      return;
-    }
-
-    // Verify the reCAPTCHA token on the server
-    try {
-      const recaptchaResponse = await fetch('/api/recaptcha/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: recaptchaToken }),
-      });
-
-      if (!recaptchaResponse.ok) {
-        setError("reCAPTCHA verification failed. Please try again.");
-        return;
-      }
-
-      const recaptchaData = await recaptchaResponse.json();
-
-      if (!recaptchaData.success || !recaptchaData.isHuman) {
-        setError("reCAPTCHA verification failed. Please try again.");
-        return;
-      }
-    } catch (recaptchaError) {
-      console.error("Error verifying reCAPTCHA:", recaptchaError);
-      setError("Error verifying reCAPTCHA. Please try again.");
-      return;
-    }
-
+    // Remove reCAPTCHA verification check and always proceed
     try {
       setIsSubmitting(true);
 
       // Check if we're using mock data mode
       const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
-
+      
       if (useMockData) {
         // In mock data mode, we can skip the actual API calls
         console.log('Using mock data mode - skipping actual API calls');
@@ -2050,24 +2018,6 @@ function RegisterShopPageContent({
                           </div>
                         </motion.div>
                       </div>
-                    </motion.div>
-
-                    {/* reCAPTCHA Verification */}
-                    <motion.div variants={slideUp} className="mb-6">
-                      <div className="p-4 bg-muted/30 border border-border rounded-md">
-                        <div className="flex items-start gap-3">
-                          <Info size={20} className="mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-muted-foreground">
-                            {t('recaptcha_protected')}
-                            {" "}<a href="https://policies.google.com/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t('privacy_policy')}</a>{" "}
-                            and{" "}<a href="https://policies.google.com/terms" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t('terms_of_service')}</a>{" "}
-                            {t('apply')}.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Hidden reCAPTCHA verifier */}
-                      <ReCaptchaVerifier onVerify={handleReCaptchaVerify} action="register_shop" />
                     </motion.div>
 
                     {/* Submit Button */}
