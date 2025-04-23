@@ -202,6 +202,13 @@ export default function DashboardPage() {
     try {
       const supabase = createClientComponentClient();
 
+      if (!user) {
+        console.error("Cannot fetch dashboard data: No authenticated user");
+        setError("Please sign in to view your dashboard");
+        setIsDataLoading(false);
+        return;
+      }
+
       if (user?.user_metadata?.role === "shop_owner") {
         // Fetch shop data for shop owners
         await fetchShopOwnerData(supabase);
@@ -210,8 +217,15 @@ export default function DashboardPage() {
         await fetchRegularUserData(supabase);
       }
     } catch (err) {
-      console.error("Error fetching dashboard data:", err);
-      setError("Failed to load dashboard data. Please try again later.");
+      // More detailed error logging
+      console.error("Error fetching dashboard data:", {
+        error: err,
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        userRole: user?.user_metadata?.role || 'unknown'
+      });
+      
+      setError("Failed to load dashboard data. Please refresh the page or try again later.");
     } finally {
       setIsDataLoading(false);
     }
@@ -220,18 +234,34 @@ export default function DashboardPage() {
   // Fetch data specific to shop owners
   const fetchShopOwnerData = async (supabase: any) => {
     try {
+      // Check if user ID is defined
+      if (!user || !user.id) {
+        console.error("Cannot fetch shop owner data: User ID is undefined");
+        setError("Unable to identify your account. Please try signing out and signing in again.");
+        return;
+      }
+
       // 1. Get the user's shop with subscription data
       const { data: shopWithSubscription, error: shopError } = await supabase
         .from("rental_shops")
         .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, sms_number, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
-        .eq("owner_id", user!.id)
+        .eq("owner_id", user.id)
         .single();
 
-      console.log("User ID:", user!.id); // Debug log
+      console.log("User ID:", user.id); // Debug log
       console.log("Shop data:", shopWithSubscription); // Debug log
 
-      if (shopError) {
-        console.error("Error fetching shop:", shopError);
+      // Enhanced error handling for shopError
+      if (shopError || !shopWithSubscription) {
+        // Log detailed error information
+        console.error("Error fetching shop:", {
+          error: shopError,
+          errorMessage: shopError?.message || "No error message",
+          errorCode: shopError?.code || "No error code",
+          userId: user?.id || "No user ID",
+          hasData: !!shopWithSubscription
+        });
+
         // Set specific error message for shop owners who haven't registered their shop yet
         setError("Could not find your shop. Please ensure you have completed registration by visiting the /register page and submit your shop application form.");
         return;
@@ -371,8 +401,14 @@ export default function DashboardPage() {
         totalRevenue
       });
     } catch (err) {
+      // Enhanced catch block with more detailed error logging
       console.error("Error in fetchShopOwnerData:", err);
-      throw err;
+      
+      // Set a user-friendly error message
+      setError("An error occurred while fetching your shop data. Please try refreshing the page or contact support if the problem persists.");
+      
+      // Don't rethrow the error so we can handle it here
+      return;
     }
   };
 
