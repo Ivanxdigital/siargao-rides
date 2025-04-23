@@ -587,6 +587,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         setIsLoading(false);
+        // Redirect to email verification page
         router.push("/verify-email");
         return { error: null };
       } else {

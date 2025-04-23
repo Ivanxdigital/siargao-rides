@@ -168,6 +168,25 @@ export default function DashboardPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
+  // Redirect shop owners without a shop to registration page
+  useEffect(() => {
+    // Check if user is shop owner and there's an error about registration
+    if (
+      !isLoading && 
+      isAuthenticated && 
+      user?.user_metadata?.role === "shop_owner" && 
+      error && 
+      error.includes("registration")
+    ) {
+      // Redirect to register page after a brief delay to allow user to see the error
+      const redirectTimer = setTimeout(() => {
+        router.push("/register");
+      }, 3000);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isLoading, isAuthenticated, user, error, router]);
+
   // Fetch dashboard data when authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -213,7 +232,8 @@ export default function DashboardPage() {
 
       if (shopError) {
         console.error("Error fetching shop:", shopError);
-        setError("Could not find your shop. Please ensure you have completed registration.");
+        // Set specific error message for shop owners who haven't registered their shop yet
+        setError("Could not find your shop. Please ensure you have completed registration by visiting the /register page and submit your shop application form.");
         return;
       }
 
@@ -456,13 +476,18 @@ export default function DashboardPage() {
             className="bg-red-900/20 border border-red-700/50 text-red-400 px-4 py-3 rounded-lg mb-6 text-base"
             variants={slideUp}
           >
-            {error}
+            {error}{' '}
+            {error.includes('registration') && (
+              <Button asChild variant="link" className="text-red-400 underline p-0 h-auto font-normal hover:text-red-300">
+                <Link href="/register">Complete registration here</Link>
+              </Button>
+            )}
           </motion.div>
         )}
 
-        {/* Shop Setup Guide with toggle functionality - only for shop owners */}
+        {/* Shop Setup Guide with toggle functionality - only for shop owners with existing shops */}
         <AnimatePresence mode="wait">
-          {isShopOwner && (
+          {isShopOwner && shopData && (
             <motion.div
               key="shop-setup-guide"
               initial={{ opacity: 0, y: 20 }}

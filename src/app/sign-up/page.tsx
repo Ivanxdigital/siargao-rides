@@ -53,6 +53,11 @@ export default function SignUpPage() {
     }
 
     try {
+      // Store the user's intent in localStorage for redirect after email verification
+      if (userIntent === "shop_owner") {
+        localStorage.setItem("pending_shop_registration", "true");
+      }
+      
       // Use the selected user intent/role
       const { error } = await register(email, password, firstName, lastName, userIntent);
       if (error) {
@@ -80,11 +85,8 @@ export default function SignUpPage() {
             console.error('Error sending onboarding email:', emailError);
             // Don't block the registration flow on email error
           }
-          
-          // Redirect to shop registration
-          router.push("/register");
         }
-        // For tourists, the default redirect in the register function will be used
+        // The redirect happens in the register function in AuthContext
       }
     } catch (err) {
       setApiError("An unexpected error occurred. Please try again.");

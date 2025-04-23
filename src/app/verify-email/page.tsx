@@ -1,9 +1,41 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function VerifyEmailPage() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+  const [isPendingShopRegistration, setIsPendingShopRegistration] = useState(false);
+
+  useEffect(() => {
+    // Check if user has pending shop registration
+    if (typeof window !== 'undefined') {
+      const pendingRegistration = localStorage.getItem("pending_shop_registration") === "true";
+      setIsPendingShopRegistration(pendingRegistration);
+    }
+
+    // If user is authenticated, redirect to dashboard or registration page
+    if (!isLoading && isAuthenticated) {
+      if (isPendingShopRegistration) {
+        // Clear the flag and redirect to shop registration
+        localStorage.removeItem("pending_shop_registration");
+        router.push("/register");
+      } else {
+        router.push("/dashboard");
+      }
+    }
+  }, [isAuthenticated, isLoading, router, isPendingShopRegistration]);
+
+  // Function to handle proceeding to registration
+  const handleProceedToRegistration = () => {
+    localStorage.removeItem("pending_shop_registration");
+    router.push("/register");
+  };
+
   return (
     <div className="pt-24">
       <div className="container mx-auto px-4 py-8">
@@ -39,6 +71,20 @@ export default function VerifyEmailPage() {
           </div>
           
           <div className="flex flex-col gap-4">
+            {isPendingShopRegistration && (
+              <div className="bg-primary/10 rounded-md p-4 mb-4">
+                <p className="text-sm mb-2">
+                  After verifying your email, you'll need to complete shop registration to list your vehicles.
+                </p>
+                <Button 
+                  onClick={handleProceedToRegistration}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Proceed to Shop Registration
+                </Button>
+              </div>
+            )}
+            
             <Button asChild>
               <Link href="/sign-in">
                 Return to Sign In
