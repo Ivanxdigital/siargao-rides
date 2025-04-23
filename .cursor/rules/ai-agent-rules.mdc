@@ -1,0 +1,79 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: >
+  Core engineering standards for any modern full‑stack web application
+  (Next.js / React / TypeScript / Supabase back‑end).  Applies to **all**
+  files and every AI interaction in this project.  Use these guidelines
+  when generating, refactoring, reviewing, or commenting on code.
+globs:
+alwaysApply: true
+---
+
+# Universal Web‑App Best‑Practices
+
+## 1. Code style & organisation
+- Prefer **functional, modular** design; minimise classes and side‑effects.
+- Keep every file < 250 LOC; extract helpers into `lib/` when a file grows.
+- Follow naming conventions:
+  - `kebab-case/` for folders.
+  - `PascalCase` React components.
+  - `camelCase` variables and functions.
+- Auto‑format with Prettier; lint with ESLint strict rules.
+
+## 2. Type safety
+- All code **must** be TypeScript in `strict` mode.
+- Use `interface` for public contracts, `type` for unions & aliases.
+- Never use `any`; if unavoidable, wrap in a typed helper and add a `TODO`.
+
+## 3. Error handling
+- Validate all external input with **Zod** (frontend) or **Supabase row‑level policies** (backend).
+- Use **guard clauses**; return early on invalid state.
+- Surface errors via typed `Result<T, E>` or HTTP error objects—never raw strings.
+
+## 4. Testing & CI
+- Generate a Jest/Testing‑Library unit test for every exported function or component.
+- Include at least one happy‑path and one edge‑case test.
+- Ensure `npm run test` passes before suggesting a commit.
+
+## 5. Performance
+- Apply code‑splitting (`dynamic(() => import(...))`) for any chunk > 30 KB.
+- Optimise images with `next/image` + WebP/AVIF.
+- Use Prisma `select`/`include` to fetch only required columns.
+
+## 6. Security
+- Escape user‑provided content; never build SQL via template strings.
+- Enforce HTTPS, secure cookies, and Content‑Security‑Policy headers.
+- Use JWT or Supabase Auth; limit scopes via RLS.
+
+## 7. Git workflow
+- Commit messages follow **Conventional Commits** (`feat:`, `fix:`…).
+- One logical change per commit; reference issue IDs when present.
+
+## 8. Documentation
+- For every new module, generate an updated `README.md` snippet
+  explaining purpose, API surface, and usage examples.
+
+## 9. AI agent behaviour
+- If the request is **ambiguous**, ask up to two clarifying questions before coding.
+- If output exceeds 300 LOC, split into smaller PR‑ready chunks.
+- Do **not** apologise for mistakes—just fix them.
+- Leave `TODO:` comments where further human input is required.
+
+---
+
+### Examples
+
+<example>
+You are asked to “add authentication”.
+✓ Ask: “Which provider do you prefer (Email, Google OAuth, etc.)?”
+✓ Generate Supabase schema migration + React context + tests, following rules above.
+</example>
+
+<example type="invalid">
+Adding authentication without asking which provider, mixing JS and TS,
+and returning raw errors violates these rules.
+</example>

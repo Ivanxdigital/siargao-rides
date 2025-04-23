@@ -58,8 +58,30 @@ export default function SignUpPage() {
       if (error) {
         setApiError(error.message || "An error occurred during registration");
       } else {
-        // If registration is successful and user is shop_owner, redirect to shop registration
+        // If registration is successful and user is shop_owner, send onboarding email
         if (userIntent === "shop_owner") {
+          try {
+            // Send onboarding email
+            const response = await fetch('/api/send-onboarding-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                email,
+                firstName,
+              }),
+            });
+            
+            if (!response.ok) {
+              console.error('Failed to send onboarding email:', await response.text());
+            }
+          } catch (emailError) {
+            console.error('Error sending onboarding email:', emailError);
+            // Don't block the registration flow on email error
+          }
+          
+          // Redirect to shop registration
           router.push("/register");
         }
         // For tourists, the default redirect in the register function will be used

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { Upload, Info, Check, AlertCircle, ArrowRight, BarChart, Calendar, ShieldCheck, CreditCard, Users, Rocket, MapPin, Gift, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,11 +14,12 @@ import Image from "next/image"
 import ReCaptchaVerifier from "@/components/ReCaptchaVerifier"
 import { registerTranslations } from "@/translations/register"
 import { dashboardTranslations } from "@/translations/dashboard"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { verificationDocumentsSchema } from "@/lib/validation"
 import { getCurrentUser } from '@/lib/api'
+import { supabase } from "@/lib/supabase"
 
 // Add animation variants for components
 const fadeIn = {
@@ -998,6 +999,45 @@ function RegisterShopPageContent({
       formRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, 100)
   }
+
+  // Add this useEffect near the beginning of the component after other useEffects
+  useEffect(() => {
+    // Skip if user is not available yet
+    if (!user) return;
+    
+    const checkAndSendOnboardingEmail = async () => {
+      try {
+        // Check if this user is a shop_owner and hasn't received an onboarding email
+        const { data } = await supabase
+          .from('users')
+          .select('role, onboarding_email_sent')
+          .eq('id', user.id)
+          .single();
+        
+        // If the user is a shop_owner and hasn't received an onboarding email, send one
+        if (data?.role === 'shop_owner' && data?.onboarding_email_sent !== true) {
+          const response = await fetch('/api/send-onboarding-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: user.email,
+              firstName: user.user_metadata?.first_name || '',
+            }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to send fallback onboarding email:', await response.text());
+          }
+        }
+      } catch (error) {
+        console.error('Error checking or sending onboarding email:', error);
+      }
+    };
+    
+    checkAndSendOnboardingEmail();
+  }, [user]);
 
   if (isSubmitted) {
     return (
