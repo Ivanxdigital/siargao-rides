@@ -48,12 +48,13 @@ export async function POST(request: Request) {
       shopData.verification_documents = validation.data;
     }
 
-    // Insert the shop data
+    // Insert the shop data with status = pending_verification
     const { data, error } = await supabaseAdmin
       .from('rental_shops')
       .insert({
         ...shopData,
-        is_verified: false
+        is_verified: false,
+        status: 'pending_verification'
       })
       .select()
       .single();
@@ -73,6 +74,36 @@ export async function POST(request: Request) {
     }
 
     console.log('API: Shop created successfully:', data);
+
+    // Update the user's has_shop field to true
+    const { error: userUpdateError } = await supabaseAdmin
+      .from('users')
+      .update({ has_shop: true })
+      .eq('id', shopData.owner_id);
+
+    if (userUpdateError) {
+      console.error('API: Error updating user has_shop status:', userUpdateError);
+      // Don't fail the request if user update fails
+    } else {
+      console.log('API: User has_shop status updated to true');
+
+      // Update the user's metadata in auth
+      const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
+        shopData.owner_id,
+        {
+          user_metadata: {
+            has_shop: true
+          }
+        }
+      );
+
+      if (authUpdateError) {
+        console.error('API: Error updating user metadata:', authUpdateError);
+        // Don't fail the request if metadata update fails
+      } else {
+        console.log('API: User metadata updated with has_shop = true');
+      }
+    }
 
     // Send notification to admins about the new shop
     try {

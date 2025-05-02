@@ -198,13 +198,24 @@ export default function DashboardLayout({
   const isShopOwner = user?.user_metadata?.role === "shop_owner";
   const isAdmin = user?.user_metadata?.role === "admin";
 
+  // This useEffect ensures consistent hook execution order
+  useEffect(() => {
+    // This is an empty effect that runs on every render
+    // to ensure consistent hook execution order
+  }, []);
+
   // Add scroll lock effect for mobile sidebar
   useEffect(() => {
-    if (sidebarOpen && window.innerWidth < 768) {
-      document.body.classList.add('overflow-hidden');
-    } else {
-      document.body.classList.remove('overflow-hidden');
-    }
+    const handleScrollLock = () => {
+      if (sidebarOpen && window.innerWidth < 768) {
+        document.body.classList.add('overflow-hidden');
+      } else {
+        document.body.classList.remove('overflow-hidden');
+      }
+    };
+
+    handleScrollLock();
+
     return () => {
       document.body.classList.remove('overflow-hidden');
     };
@@ -285,7 +296,7 @@ export default function DashboardLayout({
               </Link>
             </motion.div>
 
-            {/* User Profile */}
+            {/* User Profile - Always render both versions but conditionally show */}
             <motion.div
               className={cn(
                 "mb-5 pb-4 border-b border-white/10",
@@ -293,7 +304,8 @@ export default function DashboardLayout({
               )}
               variants={itemVariants}
             >
-              {isCollapsed ? (
+              {/* Collapsed version with tooltip - always render but conditionally show */}
+              <div className={isCollapsed ? "block" : "hidden"}>
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -323,7 +335,10 @@ export default function DashboardLayout({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              ) : (
+              </div>
+
+              {/* Expanded version - always render but conditionally show */}
+              <div className={isCollapsed ? "hidden" : "block"}>
                 <div className="flex items-center gap-3 px-2 py-1">
                   <div className="h-10 w-10 rounded-full border-2 border-primary/50 overflow-hidden shadow-md">
                     {user?.user_metadata?.profile_picture ? (
@@ -351,7 +366,7 @@ export default function DashboardLayout({
                     </p>
                   </div>
                 </div>
-              )}
+              </div>
             </motion.div>
 
             <div className={cn(
@@ -360,14 +375,15 @@ export default function DashboardLayout({
             )}>
               {/* Dashboard Navigation */}
               <div>
-                {!isCollapsed && (
-                  <motion.h2
-                    className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4"
-                    variants={itemVariants}
-                  >
-                    Dashboard
-                  </motion.h2>
-                )}
+                <motion.h2
+                  className={cn(
+                    "text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4",
+                    isCollapsed ? "hidden" : "block"
+                  )}
+                  variants={itemVariants}
+                >
+                  Dashboard
+                </motion.h2>
                 <div className={cn("space-y-1", isCollapsed && "flex flex-col items-center", "sm:space-y-1 space-y-2")}>
                   <motion.div onClick={handleLinkClick} variants={itemVariants}>
                     <SidebarItem
@@ -408,165 +424,165 @@ export default function DashboardLayout({
                 </div>
               </div>
 
-              {/* Shop Owner Section */}
-              {isShopOwner && (
-                <div>
-                  {!isCollapsed && (
-                    <motion.h2
-                      className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4"
-                      variants={itemVariants}
-                    >
-                      Shop Management
-                    </motion.h2>
+              {/* Shop Owner Section - Always render but conditionally show */}
+              <div className={isShopOwner ? "block" : "hidden"}>
+                <motion.h2
+                  className={cn(
+                    "text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4",
+                    isCollapsed || !isShopOwner ? "hidden" : "block"
                   )}
-                  <div className={cn("space-y-1", isCollapsed && "flex flex-col items-center")}>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/shop"
-                        icon={<ShoppingBag size={18} />}
-                        title="My Shop"
-                        active={pathname === "/dashboard/shop"}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/bookings"
-                        icon={<Calendar size={18} />}
-                        title="Manage Bookings"
-                        active={pathname.startsWith("/dashboard/bookings")}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                    {!isCollapsed && pathname.startsWith("/dashboard/bookings") && (
-                      <motion.div
-                        className="pl-8 space-y-1 mb-1"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Link
-                          href="/dashboard/bookings"
-                          className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${
-                            pathname === "/dashboard/bookings"
-                              ? "bg-primary/20 text-primary"
-                              : "text-white/70 hover:text-white hover:bg-white/10"
-                          }`}
-                          onClick={handleLinkClick}
-                        >
-                          <List size={16} />
-                          <span>List View</span>
-                        </Link>
-                        <Link
-                          href="/dashboard/bookings/calendar"
-                          className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${
-                            pathname === "/dashboard/bookings/calendar"
-                              ? "bg-primary/20 text-primary"
-                              : "text-white/70 hover:text-white hover:bg-white/10"
-                          }`}
-                          onClick={handleLinkClick}
-                        >
-                          <CalendarDays size={16} />
-                          <span>Calendar View</span>
-                        </Link>
-                      </motion.div>
+                  variants={itemVariants}
+                >
+                  Shop Management
+                </motion.h2>
+                <div className={cn("space-y-1", isCollapsed && "flex flex-col items-center")}>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/shop"
+                      icon={<ShoppingBag size={18} />}
+                      title="My Shop"
+                      active={pathname === "/dashboard/shop"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/bookings"
+                      icon={<Calendar size={18} />}
+                      title="Manage Bookings"
+                      active={pathname.startsWith("/dashboard/bookings")}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div
+                    className={cn(
+                      "pl-8 space-y-1 mb-1",
+                      (!isCollapsed && pathname.startsWith("/dashboard/bookings")) ? "block" : "hidden"
                     )}
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/vehicles"
-                        icon={<Car size={18} />}
-                        title="Manage Vehicles"
-                        active={pathname.startsWith("/dashboard/vehicles") || pathname.startsWith("/dashboard/bikes")}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/analytics"
-                        icon={<BarChart size={18} />}
-                        title="Analytics"
-                        active={pathname === "/dashboard/analytics"}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                  </div>
-                </div>
-              )}
-
-              {/* Admin Section */}
-              {isAdmin && (
-                <div>
-                  {!isCollapsed && (
-                    <motion.h2
-                      className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4"
-                      variants={itemVariants}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link
+                      href="/dashboard/bookings"
+                      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${
+                        pathname === "/dashboard/bookings"
+                          ? "bg-primary/20 text-primary"
+                          : "text-white/70 hover:text-white hover:bg-white/10"
+                      }`}
+                      onClick={handleLinkClick}
                     >
-                      Administration
-                    </motion.h2>
-                  )}
-                  <div className={cn("space-y-1", isCollapsed && "flex flex-col items-center")}>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/admin"
-                        icon={<Shield size={18} />}
-                        title="Admin Dashboard"
-                        active={pathname === "/dashboard/admin"}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/admin/verification"
-                        icon={<CheckCircle size={18} />}
-                        title="Shop Verification"
-                        active={pathname === "/dashboard/admin/verification"}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/admin/deposit-payouts"
-                        icon={<DollarSign size={18} />}
-                        title="Deposit Payouts"
-                        active={pathname === "/dashboard/admin/deposit-payouts"}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/admin/referrals"
-                        icon={<Gift size={18} />}
-                        title="Referrals"
-                        active={pathname === "/dashboard/admin/referrals"}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/admin/settings"
-                        icon={<Settings size={18} />}
-                        title="Admin Settings"
-                        active={pathname === "/dashboard/admin/settings"}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                    <motion.div onClick={handleLinkClick} variants={itemVariants}>
-                      <SidebarItem
-                        href="/dashboard/admin/test-accounts"
-                        icon={<TestTube size={18} />}
-                        title="Test Accounts"
-                        active={pathname === "/dashboard/admin/test-accounts"}
-                        collapsed={isCollapsed}
-                      />
-                    </motion.div>
-                  </div>
+                      <List size={16} />
+                      <span>List View</span>
+                    </Link>
+                    <Link
+                      href="/dashboard/bookings/calendar"
+                      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${
+                        pathname === "/dashboard/bookings/calendar"
+                          ? "bg-primary/20 text-primary"
+                          : "text-white/70 hover:text-white hover:bg-white/10"
+                      }`}
+                      onClick={handleLinkClick}
+                    >
+                      <CalendarDays size={16} />
+                      <span>Calendar View</span>
+                    </Link>
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/vehicles"
+                      icon={<Car size={18} />}
+                      title="Manage Vehicles"
+                      active={pathname.startsWith("/dashboard/vehicles") || pathname.startsWith("/dashboard/bikes")}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/analytics"
+                      icon={<BarChart size={18} />}
+                      title="Analytics"
+                      active={pathname === "/dashboard/analytics"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
                 </div>
-              )}
+              </div>
+
+              {/* Admin Section - Always render but conditionally show */}
+              <div className={isAdmin ? "block" : "hidden"}>
+                <motion.h2
+                  className={cn(
+                    "text-xs font-semibold uppercase tracking-wider text-white/50 mb-2 px-4",
+                    isCollapsed || !isAdmin ? "hidden" : "block"
+                  )}
+                  variants={itemVariants}
+                >
+                  Administration
+                </motion.h2>
+                <div className={cn("space-y-1", isCollapsed && "flex flex-col items-center")}>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/admin"
+                      icon={<Shield size={18} />}
+                      title="Admin Dashboard"
+                      active={pathname === "/dashboard/admin"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/admin/verification"
+                      icon={<CheckCircle size={18} />}
+                      title="Shop Verification"
+                      active={pathname === "/dashboard/admin/verification"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/admin/deposit-payouts"
+                      icon={<DollarSign size={18} />}
+                      title="Deposit Payouts"
+                      active={pathname === "/dashboard/admin/deposit-payouts"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/admin/referrals"
+                      icon={<Gift size={18} />}
+                      title="Referrals"
+                      active={pathname === "/dashboard/admin/referrals"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/admin/settings"
+                      icon={<Settings size={18} />}
+                      title="Admin Settings"
+                      active={pathname === "/dashboard/admin/settings"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                  <motion.div onClick={handleLinkClick} variants={itemVariants}>
+                    <SidebarItem
+                      href="/dashboard/admin/test-accounts"
+                      icon={<TestTube size={18} />}
+                      title="Test Accounts"
+                      active={pathname === "/dashboard/admin/test-accounts"}
+                      collapsed={isCollapsed}
+                    />
+                  </motion.div>
+                </div>
+              </div>
             </div>
 
-            {/* Sign Out Button */}
+            {/* Sign Out Button - Always render both versions but conditionally show */}
             <div className={cn("pt-3 mt-auto", isCollapsed && "flex justify-center")}>
-              {isCollapsed ? (
+              {/* Collapsed version with tooltip - always render but conditionally show */}
+              <div className={isCollapsed ? "block" : "hidden"}>
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -584,7 +600,10 @@ export default function DashboardLayout({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              ) : (
+              </div>
+
+              {/* Expanded version - always render but conditionally show */}
+              <div className={isCollapsed ? "hidden" : "block"}>
                 <Button
                   variant="ghost"
                   className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-2.5"
@@ -593,26 +612,26 @@ export default function DashboardLayout({
                   <LogOut size={18} />
                   <span>Sign Out</span>
                 </Button>
-              )}
+              </div>
             </div>
           </div>
         </motion.aside>
 
-        {/* Overlay for mobile sidebar */}
-        {sidebarOpen && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40 md:hidden"
-            onClick={() => {
-              console.log('Overlay clicked, closing sidebar'); // Debug log
-              toggleSidebar();
-            }}
-            aria-hidden="true"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          />
-        )}
+        {/* Overlay for mobile sidebar - always render but conditionally show/hide */}
+        <motion.div
+          className={cn(
+            "fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40 md:hidden",
+            sidebarOpen ? "block" : "hidden"
+          )}
+          onClick={() => {
+            console.log('Overlay clicked, closing sidebar'); // Debug log
+            toggleSidebar();
+          }}
+          aria-hidden="true"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: sidebarOpen ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+        />
 
         {/* Main Content */}
         <motion.main

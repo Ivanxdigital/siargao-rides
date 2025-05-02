@@ -40,7 +40,6 @@ export const ShopOwnerOnboardingEmail: React.FC<ShopOwnerOnboardingEmailProps> =
               </Text>
               <ul className="list-disc pl-5 text-gray-700">
                 <li>Shop information (name, address, etc.)</li>
-                <li>Business permit upload</li>
                 <li>ID verification</li>
                 <li>Contact details</li>
               </ul>
@@ -49,7 +48,7 @@ export const ShopOwnerOnboardingEmail: React.FC<ShopOwnerOnboardingEmailProps> =
             <Section className="text-center mt-8">
               <Button 
                 className="bg-blue-600 text-white py-3 px-6 rounded text-sm font-bold no-underline"
-                href="https://siargaorides.com/register"
+                href="https://siargaorides.com/dashboard"
               >
                 Complete Registration
               </Button>

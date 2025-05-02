@@ -11,23 +11,10 @@ import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/SubscriptionStatus";
 import { Badge } from "@/components/ui/badge";
+import { SIARGAO_LOCATIONS } from "@/lib/constants";
 
-// Predefined Siargao locations (same as in SearchBar.tsx)
-const siargaoLocations = [
-  "General Luna",
-  "Cloud 9",
-  "Pacifico",
-  "Dapa",
-  "Union",
-  "Pilar",
-  "Santa Monica",
-  "San Isidro",
-  "Del Carmen",
-  "Burgos",
-  "Maasin River",
-  "Sugba Lagoon",
-  "Magpupungko Rock Pools"
-];
+// Use the shared locations from constants
+const siargaoLocations = SIARGAO_LOCATIONS;
 
 // Define a proper type for the shop data
 interface RentalShop {

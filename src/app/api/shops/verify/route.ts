@@ -86,15 +86,15 @@ export async function PATCH(request: Request) {
       }
 
       return NextResponse.json({ success: true, message: 'Shop application rejected' });
-    } 
-    
+    }
+
     // Get the shop data with owner information
     const { data: shopData, error: shopError } = await supabaseAdmin
       .from('rental_shops')
       .select('*, users:owner_id(*)')
       .eq('id', shopId)
       .single();
-    
+
     if (shopError) {
       console.error('Error fetching shop data:', shopError);
       return NextResponse.json(
@@ -102,12 +102,12 @@ export async function PATCH(request: Request) {
         { status: 500 }
       );
     }
-    
+
     // If approving, update is_verified to true
     // NOTE: We're not setting is_active here - that happens when first vehicle is added
     const { data, error } = await supabaseAdmin
       .from('rental_shops')
-      .update({ 
+      .update({
         is_verified: true,
         // Subscription will be activated when shop adds first vehicle
         subscription_status: 'inactive'
@@ -123,45 +123,46 @@ export async function PATCH(request: Request) {
         { status: 500 }
       );
     }
-    
+
     // Get the owner's id
     const ownerId = shopData.owner_id;
-    
+
     // Update the role in the users table if it's not already set
     const { error: userUpdateError } = await supabaseAdmin
       .from('users')
       .update({ role: 'shop_owner' })
       .eq('id', ownerId);
-    
+
     if (userUpdateError) {
       console.error('Error updating user role in database:', userUpdateError);
       // We'll continue despite this error since the shop is already approved
     }
-    
+
     // Update the owner's user metadata in auth
     const { data: userData, error: userGetError } = await supabaseAdmin.auth.admin.getUserById(
       ownerId
     );
-    
+
     if (userGetError) {
       console.error('Error fetching user data:', userGetError);
       // Continue despite this error
     }
-    
+
     // Get existing metadata or empty object if none exists
     const existingMetadata = userData?.user?.user_metadata || {};
-    
+
     // Update the owner's user metadata in auth, preserving existing fields
     const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
       ownerId,
-      { 
-        user_metadata: { 
+      {
+        user_metadata: {
           ...existingMetadata,  // Preserve existing metadata
-          role: 'shop_owner'    // Add or update role field
-        } 
+          role: 'shop_owner',   // Add or update role field
+          has_shop: true        // Set has_shop flag to true
+        }
       }
     );
-    
+
     if (authUpdateError) {
       console.error('Error updating user metadata in auth:', authUpdateError);
       // We'll continue despite this error since the shop is already approved
@@ -178,7 +179,7 @@ export async function PATCH(request: Request) {
           shopId
         })
       });
-      
+
       if (!emailResponse.ok) {
         console.error('Error sending verification email:', await emailResponse.text());
       } else {
@@ -231,4 +232,4 @@ export async function PATCH(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

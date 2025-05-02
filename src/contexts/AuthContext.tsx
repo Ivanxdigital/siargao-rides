@@ -29,7 +29,7 @@ interface AuthContextType {
   isSettingUp: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  register: (email: string, password: string, firstName: string, lastName: string, role: string) => Promise<{ error: any }>;
+  register: (email: string, password: string, firstName: string, lastName: string, role: string, intent?: string) => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
   resendVerificationEmail: (email: string) => Promise<VerificationResult>;
@@ -110,29 +110,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // If user is a shop owner, subscribe to shop notifications
           if (role === 'shop_owner' && !shopNotificationSubscription) {
             console.log('User is a shop owner, setting up shop notification subscription');
-            // Get the shop ID for this owner
-            const getShopId = async () => {
+
+            // Check if user has a shop before trying to subscribe
+            if (session.user.user_metadata?.has_shop) {
+              // Get the shop ID for this owner using a synchronous approach
               console.log('Fetching shop ID for owner:', session.user.id);
-              const { data, error } = await supabase
+              supabase
                 .from('rental_shops')
                 .select('id')
                 .eq('owner_id', session.user.id)
-                .single();
+                .single()
+                .then(({ data, error }) => {
+                  if (error) {
+                    console.error('Error fetching shop ID:', error);
+                    return;
+                  }
 
-              if (error) {
-                console.error('Error fetching shop ID:', error);
-              }
-
-              if (!error && data) {
-                console.log('Found shop ID for owner:', data.id);
-                const shopSubscription = subscribeToShopOwnerNotifications(data.id);
-                setShopNotificationSubscription(shopSubscription);
-              } else {
-                console.log('No shop found for this owner');
-              }
-            };
-
-            getShopId();
+                  if (data) {
+                    console.log('Found shop ID for owner:', data.id);
+                    const shopSubscription = subscribeToShopOwnerNotifications(data.id);
+                    setShopNotificationSubscription(shopSubscription);
+                  } else {
+                    console.log('No shop found for this owner');
+                  }
+                })
+                .catch(err => {
+                  console.error('Unexpected error fetching shop ID:', err);
+                });
+            } else {
+              console.log('Shop owner does not have a shop yet (has_shop = false)');
+            }
           } else if (role === 'shop_owner') {
             console.log('Shop owner already has notification subscription');
           } else {
@@ -286,8 +293,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // If user is a shop owner, subscribe to shop notifications
             if (user.user_metadata?.role === 'shop_owner' && !shopNotificationSubscription) {
               console.log('User is a shop owner (auth change), setting up shop notification subscription');
-              // Get the shop ID for this owner
-              const getShopId = async () => {
+
+              // Check if user has a shop before trying to subscribe
+              if (user.user_metadata?.has_shop) {
+                // Get the shop ID for this owner
                 console.log('Fetching shop ID for owner (auth change):', session.user.id);
                 const { data, error } = await supabase
                   .from('rental_shops')
@@ -306,9 +315,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 } else {
                   console.log('No shop found for this owner (auth change)');
                 }
-              };
-
-              getShopId();
+              } else {
+                console.log('Shop owner does not have a shop yet (has_shop = false)');
+              }
             } else if (user.user_metadata?.role === 'shop_owner') {
               console.log('Shop owner already has notification subscription (auth change)');
             }
@@ -483,12 +492,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     password: string,
     firstName: string,
     lastName: string,
-    role: string
+    role: string,
+    intent?: string
   ) => {
     setIsLoading(true);
 
     try {
-      console.log(`Attempting to register user with email: ${email}, role: ${role}`);
+      console.log(`Attempting to register user with email: ${email}, role: ${role}, intent: ${intent || role}`);
+
+      // Determine if this is a shop owner based on intent or role
+      const isShopOwner = intent === "shop_owner" || role === "shop_owner";
+
+      // Set has_shop to false for shop owners
+      const hasShop = false;
 
       // Sign up the user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -498,7 +514,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           data: {
             first_name: firstName,
             last_name: lastName,
-            role: role,
+            role: isShopOwner ? "shop_owner" : role,
+            intent: intent || role,
+            has_shop: hasShop,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },

@@ -53,13 +53,9 @@ export default function SignUpPage() {
     }
 
     try {
-      // Store the user's intent in localStorage for redirect after email verification
-      if (userIntent === "shop_owner") {
-        localStorage.setItem("pending_shop_registration", "true");
-      }
-      
-      // Use the selected user intent/role
-      const { error } = await register(email, password, firstName, lastName, userIntent);
+      // No need to store in localStorage anymore since we're using metadata
+      // Pass the intent to the register function
+      const { error } = await register(email, password, firstName, lastName, userIntent, userIntent);
       if (error) {
         setApiError(error.message || "An error occurred during registration");
       } else {
@@ -77,7 +73,7 @@ export default function SignUpPage() {
                 firstName,
               }),
             });
-            
+
             if (!response.ok) {
               console.error('Failed to send onboarding email:', await response.text());
             }
@@ -347,8 +343,8 @@ export default function SignUpPage() {
                     transition={{ duration: 0.5, delay: 1.3 }}
                   >
                     <p className="text-sm text-gray-400">
-                      {userIntent === "tourist" 
-                        ? "Create an account to rent motorbikes in Siargao." 
+                      {userIntent === "tourist"
+                        ? "Create an account to rent motorbikes in Siargao."
                         : "Create an account to list your vehicles for rent in Siargao."}
                     </p>
                   </motion.div>

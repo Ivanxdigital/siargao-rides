@@ -19,6 +19,7 @@ import { z } from "zod"
 import { verificationDocumentsSchema } from "@/lib/validation"
 import { getCurrentUser } from '@/lib/api'
 import { supabase } from "@/lib/supabase"
+import { isFeatureEnabled } from "@/lib/featureFlags"
 
 // Add animation variants for components
 const fadeIn = {
@@ -371,17 +372,17 @@ function RegisterShopPageContent({
   const [manualVerificationRequested, setManualVerificationRequested] = useState(false)
   const [verificationStatus, setVerificationStatus] = useState<'unverified' | 'pending' | 'verified'>('unverified')
   const [userRecordError, setUserRecordError] = useState<string | null>(null)
-  
+
   // Check for form=true query parameter to auto-show the registration form
   useEffect(() => {
     // Check if we have a 'form=true' query parameter
     const queryParams = new URLSearchParams(window.location.search);
     const showForm = queryParams.get('form') === 'true';
-    
+
     if (showForm) {
       // Immediately show the form and scroll to it
       setShowRegistrationForm(true);
-      
+
       // Small delay to ensure the component is rendered
       setTimeout(() => {
         formRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -464,6 +465,10 @@ function RegisterShopPageContent({
     if (showRegistrationForm && !authLoading) {
       if (!isAuthenticated) {
         router.push("/sign-in?callback=/register")
+      } else if (user?.user_metadata?.role === "shop_owner" && isFeatureEnabled('ONBOARDING_V2')) {
+        // If user is a shop owner and ONBOARDING_V2 is enabled, redirect to dashboard
+        // The dashboard will show the ShopOnboardingBanner component
+        router.push("/dashboard")
       }
     }
   }, [showRegistrationForm, authLoading, isAuthenticated, router, user])
@@ -473,11 +478,11 @@ function RegisterShopPageContent({
     if (typeof window !== 'undefined') {
       const queryParams = new URLSearchParams(window.location.search);
       const showForm = queryParams.get('form') === 'true';
-      
+
       if (showForm) {
         // Immediately show the form and scroll to it
         setShowRegistrationForm(true);
-        
+
         // Small delay to ensure the component is rendered
         setTimeout(() => {
           if (formRef.current) {
@@ -603,7 +608,7 @@ function RegisterShopPageContent({
 
       // Check if we're using mock data mode
       const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
-      
+
       if (useMockData) {
         // In mock data mode, we can skip the actual API calls
         console.log('Using mock data mode - skipping actual API calls');
@@ -634,7 +639,7 @@ function RegisterShopPageContent({
           const errorData = await updateRoleResponse.json();
           throw new Error(`Failed to update user role: ${errorData.error || 'Unknown error'}`);
         }
-        
+
         console.log('User role updated successfully to shop_owner');
       } catch (roleError) {
         console.error('Error updating user role:', roleError);
@@ -688,14 +693,14 @@ function RegisterShopPageContent({
         government_id: governmentIdUrl || '',  // Ensure it's always a string, never null
         business_permit: businessPermitUrl || ''  // Ensure it's always a string, never null
       };
-      
+
       // Ensure we have a valid government ID URL
       if (!governmentIdUrl) {
         setError("Government ID upload failed. Please try again.");
         setIsSubmitting(false);
         return;
       }
-      
+
       const validation = verificationDocumentsSchema.safeParse(verificationDocuments);
       if (!validation.success) {
         setError(validation.error.errors[0]?.message || "Invalid document URLs");
@@ -972,7 +977,7 @@ function RegisterShopPageContent({
   useEffect(() => {
     // Skip if user is not available yet
     if (!user) return;
-    
+
     const checkAndSendOnboardingEmail = async () => {
       try {
         // Check if this user is a shop_owner and hasn't received an onboarding email
@@ -981,7 +986,7 @@ function RegisterShopPageContent({
           .select('role, onboarding_email_sent')
           .eq('id', user.id)
           .single();
-        
+
         // If the user is a shop_owner and hasn't received an onboarding email, send one
         if (data?.role === 'shop_owner' && data?.onboarding_email_sent !== true) {
           const response = await fetch('/api/send-onboarding-email', {
@@ -994,7 +999,7 @@ function RegisterShopPageContent({
               firstName: user.user_metadata?.first_name || '',
             }),
           });
-          
+
           if (!response.ok) {
             console.error('Failed to send fallback onboarding email:', await response.text());
           }
@@ -1003,7 +1008,7 @@ function RegisterShopPageContent({
         console.error('Error checking or sending onboarding email:', error);
       }
     };
-    
+
     checkAndSendOnboardingEmail();
   }, [user]);
 

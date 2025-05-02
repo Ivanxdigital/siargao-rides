@@ -7,6 +7,7 @@ import { Badge } from "./ui/badge"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { motion, AnimatePresence } from "framer-motion"
 import { VehicleType } from "@/lib/types"
+import { SIARGAO_LOCATIONS, VEHICLE_TYPES, DEFAULT_CATEGORIES, BUDGET_OPTIONS } from "@/lib/constants"
 
 interface SearchBarProps {
   onSearch: (searchParams: SearchParams) => void
@@ -21,43 +22,11 @@ export interface SearchParams {
   category: string
 }
 
-// Replace the vehicle combinations with simplified options
-const vehicleOptions = [
-  { vehicleType: 'motorcycle', label: 'Motorbike', icon: 'bike' },
-  { vehicleType: 'car', label: 'Car', icon: 'car' },
-  { vehicleType: 'tuktuk', label: 'TukTuk', icon: 'truck' }
-];
-
-// Default categories for each vehicle type
-const defaultCategories = {
-  motorcycle: 'scooter',
-  car: 'sedan',
-  tuktuk: 'standard'
-};
-
-// Predefined Siargao locations
-const siargaoLocations = [
-  "General Luna",
-  "Cloud 9",
-  "Pacifico",
-  "Dapa",
-  "Union",
-  "Pilar",
-  "Santa Monica",
-  "San Isidro",
-  "Del Carmen",
-  "Burgos",
-  "Maasin River",
-  "Sugba Lagoon",
-  "Magpupungko Rock Pools"
-]
-
-// Budget options as presets
-const budgetOptions = [
-  { label: "Budget (< ₱500)", value: 500 },
-  { label: "Mid-range (₱500-1000)", value: 1000 },
-  { label: "Premium (₱1000+)", value: 1500 }
-]
+// Using shared constants from src/lib/constants.ts
+const vehicleOptions = VEHICLE_TYPES;
+const defaultCategories = DEFAULT_CATEGORIES;
+const siargaoLocations = SIARGAO_LOCATIONS;
+const budgetOptions = BUDGET_OPTIONS;
 
 // Animation variants - enhanced for smoother transitions
 const fadeIn = {
