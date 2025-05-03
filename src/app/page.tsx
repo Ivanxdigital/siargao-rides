@@ -5,8 +5,9 @@ import Image from "next/image"
 import Link from "next/link"
 import SearchBar, { SearchParams } from "@/components/SearchBar"
 import RentalShopCard from "@/components/RentalShopCard"
+import VehicleCard from "@/components/VehicleCard"
 import * as service from "@/lib/service"
-import { RentalShop, Bike, BikeCategory } from "@/lib/types"
+import { RentalShop, Bike, BikeCategory, Vehicle, VehicleType, VehicleCategory } from "@/lib/types"
 import { ArrowRight } from "lucide-react"
 import FAQSection from '@/components/FAQSection'
 
@@ -20,12 +21,35 @@ interface ShopCardData {
   reviewCount: number
 }
 
+// Transformed vehicle data for the VehicleCard
+interface VehicleCardData {
+  id: string
+  model: string
+  vehicleType: VehicleType
+  category?: VehicleCategory | string
+  images: string[]
+  prices: {
+    daily: number
+    weekly?: number
+    monthly?: number
+  }
+  isAvailable: boolean
+  specifications?: Record<string, any>
+  shop?: {
+    id: string
+    name: string
+    logo?: string
+    location?: string
+  }
+}
+
 export default function Home() {
   const [shops, setShops] = useState<ShopCardData[]>([])
   const [bikes, setBikes] = useState<Bike[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<ShopCardData[] | null>(null)
+  const [vehicleSearchResults, setVehicleSearchResults] = useState<VehicleCardData[] | null>(null)
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [videoError, setVideoError] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -192,102 +216,96 @@ export default function Home() {
         category = categoryMap[params.category]
       }
 
-      console.log("Searching bikes with filters:", { category, maxPrice: params.budget })
-
-      // Filter bikes based on search parameters using Supabase API
-      // Only fetch verified vehicles for public display
-      const filteredBikes = await service.getBikes({
-        category: category,
-        max_price: params.budget
-        // We would add location filtering here if the bikes table had a location field
-        // For now, we'll filter by shop location after getting the bikes
+      console.log("Searching vehicles with filters:", { 
+        vehicleType: params.vehicleType, 
+        category, 
+        maxPrice: params.budget,
+        location: params.location
       })
 
-      console.log(`Found ${filteredBikes.length} bikes matching price and category criteria`)
+      // Get all vehicles matching the search criteria - directly pass vehicle_type
+      const filteredVehicles = await service.getVehicles({
+        vehicle_type: params.vehicleType as VehicleType,
+        category: category as string,
+        max_price: params.budget,
+        is_available: true,
+      });
 
-      // Get unique shop IDs from filtered bikes
-      const shopIds = [...new Set(filteredBikes.map(bike => bike.shop_id))]
-      console.log(`These bikes belong to ${shopIds.length} different shops`)
+      console.log(`Found ${filteredVehicles.length} vehicles matching criteria`);
 
-      // Get shops with these IDs
-      const shopsData = await Promise.all(
-        shopIds.map(async (shopId) => {
-          const shop = await service.getShopById(shopId)
-
-          // Skip if shop not found or not verified
-          if (!shop || !shop.is_verified) return null
-
-          // Check location match if a location is specified
-          if (params.location) {
-            const shopAddress = shop.address?.toLowerCase() || ""
-            const shopCity = shop.city?.toLowerCase() || ""
-            const searchLocation = params.location.toLowerCase()
-
-            console.log(`Checking location for shop ${shop.name}:`, {
-              searchLocation,
-              shopAddress,
-              shopCity,
-              addressMatch: shopAddress.includes(searchLocation),
-              cityMatch: shopCity.includes(searchLocation)
+      // Additional location filtering since it's not supported directly by the API
+      const locationFilteredVehicles = params.location
+        ? await Promise.all(
+            filteredVehicles.map(async (vehicle) => {
+              const shop = await service.getShopById(vehicle.shop_id);
+              if (!shop) return null;
+              
+              const shopAddress = shop.address?.toLowerCase() || "";
+              const shopCity = shop.city?.toLowerCase() || "";
+              const searchLocation = params.location.toLowerCase();
+              
+              if (shopAddress.includes(searchLocation) || shopCity.includes(searchLocation)) {
+                return { vehicle, shop };
+              }
+              return null;
             })
+          )
+        : filteredVehicles.map(vehicle => ({ vehicle, shop: null }));
 
-            // Skip if neither address nor city contains the search location
-            if (!shopAddress.includes(searchLocation) && !shopCity.includes(searchLocation)) {
-              console.log(`Shop ${shop.name} excluded due to location mismatch`)
-              return null
-            }
-          }
+      // Filter out nulls and transform data for VehicleCard component
+      const vehicleResults = (await Promise.all(
+        locationFilteredVehicles
+          .filter((item): item is { vehicle: Vehicle; shop: RentalShop | null } => item !== null)
+          .map(async ({ vehicle, shop }) => {
+            // If shop is null (in case we didn't filter by location), fetch it
+            const vehicleShop = shop || await service.getShopById(vehicle.shop_id);
+            if (!vehicleShop || !vehicleShop.is_verified) return null;
 
-          // Get shop bikes that passed our filters
-          const shopBikes = filteredBikes.filter(bike => bike.shop_id === shopId)
+            // Get vehicle images
+            const imageUrls = vehicle.images 
+              ? vehicle.images.map(img => img.image_url)
+              : [];
 
-          // Skip if no bikes left after location filtering
-          if (shopBikes.length === 0) return null
+            return {
+              id: vehicle.id,
+              model: vehicle.name,
+              vehicleType: vehicle.vehicle_type,
+              category: vehicle.category,
+              images: imageUrls,
+              prices: {
+                daily: vehicle.price_per_day,
+                weekly: vehicle.price_per_week,
+                monthly: vehicle.price_per_month
+              },
+              isAvailable: vehicle.is_available,
+              specifications: vehicle.specifications || {},
+              shop: vehicleShop ? {
+                id: vehicleShop.id,
+                name: vehicleShop.name,
+                logo: vehicleShop.logo_url,
+                location: `${vehicleShop.city}${vehicleShop.address ? ', ' + vehicleShop.address : ''}`
+              } : undefined
+            } as VehicleCardData;
+          })
+      )).filter((result): result is VehicleCardData => result !== null);
 
-          // Calculate starting price
-          const startingPrice = Math.min(...shopBikes.map(bike => bike.price_per_day))
-
-          // Get shop reviews
-          const reviews = await service.getShopReviews(shopId)
-          const reviewCount = reviews.length
-          const averageRating = reviewCount > 0
-            ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
-            : 0
-
-          // Get bike images for thumbnails
-          const bikeImages = shopBikes.flatMap(bike => bike.images?.map(img => img.image_url) || [])
-
-          return {
-            id: shop.id,
-            name: shop.name,
-            images: bikeImages.length > 0
-              ? bikeImages.slice(0, 3)
-              : [shop.logo_url || 'https://placehold.co/600x400/1e3b8a/white?text=Shop+Image'],
-            startingPrice,
-            rating: averageRating || 4.5,
-            reviewCount: reviewCount || 0
-          }
-        })
-      )
-
-      // Filter out any null results
-      const filteredShops = shopsData.filter(shop => shop !== null) as ShopCardData[]
-      console.log(`Final search results: ${filteredShops.length} shops with matching bikes`)
-
-      setSearchResults(filteredShops)
+      console.log(`Final search results: ${vehicleResults.length} vehicles`);
+      
+      setVehicleSearchResults(vehicleResults);
+      setSearchResults(null); // Clear shop results since we're now showing vehicles
 
       // Scroll to search results after a short delay to allow rendering
       setTimeout(() => {
         searchResultsRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'start'
-        })
-      }, 500)
+        });
+      }, 500);
     } catch (error: any) {
-      console.error("Error searching bikes:", error)
-      setError("Failed to search bikes. Please try again.")
+      console.error("Error searching vehicles:", error);
+      setError("Failed to search vehicles. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -601,12 +619,17 @@ export default function Home() {
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="inline-block text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 relative">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white">
-                {searchResults ? "Search Results" : "Featured Rental Shops"}
+                {vehicleSearchResults ? "Search Results" : "Featured Rental Shops"}
               </span>
             </h2>
-            {!searchResults && (
+            {!vehicleSearchResults && !searchResults && (
               <p className="text-gray-400 max-w-md mx-auto text-sm sm:text-base">
                 Discover top-rated rental shops with quality vehicles and exceptional service
+              </p>
+            )}
+            {vehicleSearchResults && (
+              <p className="text-gray-400 max-w-md mx-auto text-sm sm:text-base">
+                Browse available vehicles that match your search criteria
               </p>
             )}
           </div>
@@ -660,139 +683,190 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {(searchResults || shops).length === 0 ? (
-                <div className="text-center py-12 sm:py-16 max-w-md mx-auto">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/50 mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-300 mb-3">No shops found matching your criteria.</p>
-                  <button
-                    onClick={() => setSearchResults(null)}
-                    className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
-                  >
-                    View Featured Shops
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                  {(searchResults || shops).map((shop, index) => (
-                    <div key={shop.id} className="group animate-[fadeInUp_0.6s_ease-out_forwards] opacity-0" style={{ animationDelay: `${index * 0.1}s` }}>
-                      <Link href={`/shop/${shop.id}`}>
-                        <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-xl hover:shadow-black/40 hover:border-gray-700 transition-all duration-300 h-full flex flex-col">
-                          {/* Image Gallery with better layout */}
-                          <div className="relative aspect-[16/9] overflow-hidden">
-                            <div className="flex h-full">
-                              {/* Main image */}
-                              <div className="w-2/3 h-full relative border-r border-white/5">
-                                {shop.images && shop.images[0] && (
-                                  <Image
-                                    src={shop.images[0]}
-                                    fill
-                                    alt={`${shop.name} vehicle`}
-                                    className="object-cover transition-transform duration-700"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                  />
-                                )}
-                              </div>
-                              {/* Side thumbnails */}
-                              <div className="w-1/3 h-full flex flex-col">
-                                {shop.images && shop.images.slice(1, 3).map((image, i) => (
-                                  <div key={i} className="h-1/2 relative border-b last:border-b-0 border-white/5">
-                                    <Image
-                                      src={image}
-                                      fill
-                                      alt={`${shop.name} vehicle ${i+1}`}
-                                      className="object-cover transition-transform duration-700"
-                                      sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
-                                    />
-                                  </div>
-                                ))}
-                                {/* If not enough images, show placeholder */}
-                                {(!shop.images || shop.images.length < 3) && Array.from({ length: 3 - (shop.images?.length || 0) }).map((_, i) => (
-                                  <div key={i + (shop.images?.length || 0)} className="h-1/2 relative bg-gray-800/50 border-b last:border-b-0 border-white/5 flex items-center justify-center">
-                                    <span className="text-xs text-gray-500">No image</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            {/* Price badge - simpler hover */}
-                            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 text-white font-medium shadow-lg text-sm">
-                              From ₱{shop.startingPrice}/day
-                            </div>
-                          </div>
-
-                          {/* Content Area - removed hover effects */}
-                          <div className="p-4 sm:p-5 flex flex-col flex-grow">
-                            <h3 className="text-lg sm:text-xl font-medium text-white mb-2 truncate">
-                              {shop.name}
-                            </h3>
-
-                            {/* Rating */}
-                            <div className="flex items-center mt-auto pt-3">
-                              <div className="flex items-center">
-                                {shop.reviewCount > 0 ? (
-                                  <>
-                                    <div className="flex">
-                                      {[1, 2, 3, 4, 5].map((star) => (
-                                        <svg
-                                          key={star}
-                                          className={`w-4 h-4 ${star <= Math.round(shop.rating) ? 'text-yellow-400' : 'text-gray-600'}`}
-                                          fill="currentColor"
-                                          viewBox="0 0 20 20"
-                                        >
-                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                      ))}
-                                    </div>
-                                    <span className="ml-2 text-sm text-gray-400">
-                                      {shop.rating.toFixed(1)}
-                                      <span className="ml-1 text-gray-500">
-                                        ({shop.reviewCount} {shop.reviewCount === 1 ? 'review' : 'reviews'})
-                                      </span>
-                                    </span>
-                                  </>
-                                ) : (
-                                  <div className="flex items-center">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-300 border border-blue-800/50">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                      </svg>
-                                      New Shop
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* View button - simplified */}
-                              <div className="ml-auto">
-                                <span className="inline-flex items-center text-xs text-blue-400">
-                                  View shop
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3.5 w-3.5 ml-1"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
+              {/* Vehicle Search Results */}
+              {vehicleSearchResults && (
+                <>
+                  {vehicleSearchResults.length === 0 ? (
+                    <div className="text-center py-12 sm:py-16 max-w-md mx-auto">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/50 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6 text-gray-400">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-300 mb-3">No vehicles found matching your criteria.</p>
+                      <button
+                        onClick={() => {
+                          setVehicleSearchResults(null);
+                          setSearchResults(null);
+                        }}
+                        className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
+                      >
+                        View Featured Shops
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                      {vehicleSearchResults.map((vehicle, index) => (
+                        <div key={vehicle.id} className="group animate-[fadeInUp_0.6s_ease-out_forwards] opacity-0" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <VehicleCard
+                            id={vehicle.id}
+                            model={vehicle.model}
+                            vehicleType={vehicle.vehicleType}
+                            category={vehicle.category}
+                            images={vehicle.images}
+                            prices={vehicle.prices}
+                            isAvailable={vehicle.isAvailable}
+                            specifications={vehicle.specifications}
+                            shop={vehicle.shop}
+                            onBookClick={(id) => {
+                              window.location.href = `/booking/${id}`;
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Shop Results or Default Shop Display */}
+              {!vehicleSearchResults && (
+                <>
+                  {(searchResults || shops).length === 0 ? (
+                    <div className="text-center py-12 sm:py-16 max-w-md mx-auto">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/50 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6 text-gray-400">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-300 mb-3">No shops found matching your criteria.</p>
+                      <button
+                        onClick={() => setSearchResults(null)}
+                        className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
+                      >
+                        View Featured Shops
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                      {(searchResults || shops).map((shop, index) => (
+                        <div key={shop.id} className="group animate-[fadeInUp_0.6s_ease-out_forwards] opacity-0" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Link href={`/shop/${shop.id}`}>
+                            <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-xl hover:shadow-black/40 hover:border-gray-700 transition-all duration-300 h-full flex flex-col">
+                              {/* Image Gallery with better layout */}
+                              <div className="relative aspect-[16/9] overflow-hidden">
+                                <div className="flex h-full">
+                                  {/* Main image */}
+                                  <div className="w-2/3 h-full relative border-r border-white/5">
+                                    {shop.images && shop.images[0] && (
+                                      <Image
+                                        src={shop.images[0]}
+                                        fill
+                                        alt={`${shop.name} vehicle`}
+                                        className="object-cover transition-transform duration-700"
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                      />
+                                    )}
+                                  </div>
+                                  {/* Side thumbnails */}
+                                  <div className="w-1/3 h-full flex flex-col">
+                                    {shop.images && shop.images.slice(1, 3).map((image, i) => (
+                                      <div key={i} className="h-1/2 relative border-b last:border-b-0 border-white/5">
+                                        <Image
+                                          src={image}
+                                          fill
+                                          alt={`${shop.name} vehicle ${i+1}`}
+                                          className="object-cover transition-transform duration-700"
+                                          sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
+                                        />
+                                      </div>
+                                    ))}
+                                    {/* If not enough images, show placeholder */}
+                                    {(!shop.images || shop.images.length < 3) && Array.from({ length: 3 - (shop.images?.length || 0) }).map((_, i) => (
+                                      <div key={i + (shop.images?.length || 0)} className="h-1/2 relative bg-gray-800/50 border-b last:border-b-0 border-white/5 flex items-center justify-center">
+                                        <span className="text-xs text-gray-500">No image</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                {/* Price badge - simpler hover */}
+                                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 text-white font-medium shadow-lg text-sm">
+                                  From ₱{shop.startingPrice}/day
+                                </div>
+                              </div>
+
+                              {/* Content Area - removed hover effects */}
+                              <div className="p-4 sm:p-5 flex flex-col flex-grow">
+                                <h3 className="text-lg sm:text-xl font-medium text-white mb-2 truncate">
+                                  {shop.name}
+                                </h3>
+
+                                {/* Rating */}
+                                <div className="flex items-center mt-auto pt-3">
+                                  <div className="flex items-center">
+                                    {shop.reviewCount > 0 ? (
+                                      <>
+                                        <div className="flex">
+                                          {[1, 2, 3, 4, 5].map((star) => (
+                                            <svg
+                                              key={star}
+                                              className={`w-4 h-4 ${star <= Math.round(shop.rating) ? 'text-yellow-400' : 'text-gray-600'}`}
+                                              fill="currentColor"
+                                              viewBox="0 0 20 20"
+                                            >
+                                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                            </svg>
+                                          ))}
+                                        </div>
+                                        <span className="ml-2 text-sm text-gray-400">
+                                          {shop.rating.toFixed(1)}
+                                          <span className="ml-1 text-gray-500">
+                                            ({shop.reviewCount} {shop.reviewCount === 1 ? 'review' : 'reviews'})
+                                          </span>
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <div className="flex items-center">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-300 border border-blue-800/50">
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                          </svg>
+                                          New Shop
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* View button - simplified */}
+                                  <div className="ml-auto">
+                                    <span className="inline-flex items-center text-xs text-blue-400">
+                                      View shop
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3.5 w-3.5 ml-1"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
 
-          {/* View All Button - simplified design */}
-          {!searchResults && !loading && shops.length > 0 && (
+          {/* View All Button - simplified design - only show when not showing search results */}
+          {!vehicleSearchResults && !searchResults && !loading && shops.length > 0 && (
             <div className="text-center mt-12 sm:mt-14">
               <Link
                 href="/browse"

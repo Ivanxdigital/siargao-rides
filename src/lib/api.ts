@@ -147,15 +147,16 @@ export async function getVehicleTypes(): Promise<{id: string, name: VehicleType,
 }
 
 export async function getVehicles(filters?: {
-  vehicle_type?: VehicleType
-  shop_id?: string
-  category?: string
-  min_price?: number
-  max_price?: number
-  is_available?: boolean
-  seats?: number
-  transmission?: string
-  includeUnverified?: boolean
+  vehicle_type?: VehicleType | string;
+  vehicle_type_id?: string;
+  shop_id?: string;
+  category?: string;
+  min_price?: number;
+  max_price?: number;
+  is_available?: boolean;
+  seats?: number;
+  transmission?: string;
+  includeUnverified?: boolean;
 }): Promise<Vehicle[]> {
   try {
     if (!supabase) {
@@ -173,8 +174,14 @@ export async function getVehicles(filters?: {
       query = query.eq('shop_id', filters.shop_id)
     }
 
-    if (filters?.vehicle_type) {
-      query = query.eq('vehicle_type_id', filters.vehicle_type)
+    // We can either filter by vehicle_type_id or by the vehicle_type name
+    if (filters?.vehicle_type_id) {
+      // Direct use of the UUID
+      query = query.eq('vehicle_type_id', filters.vehicle_type_id);
+    } else if (filters?.vehicle_type) {
+      // First get the vehicle type ID based on the name
+      // This will be handled through the vehicle_types relation
+      // We'll filter the results after querying
     }
 
     if (filters?.category) {
@@ -217,7 +224,8 @@ export async function getVehicles(filters?: {
         message: error.message,
         code: error.code,
         details: error.details,
-        hint: error.hint
+        hint: error.hint,
+        filters // Log the filters being used
       })
       throw error
     }
@@ -232,7 +240,13 @@ export async function getVehicles(filters?: {
       ...vehicle,
       vehicle_type: vehicle.vehicle_types?.name || 'motorcycle',
       images: vehicle.vehicle_images
-    }))
+    })).filter((vehicle: Vehicle) => {
+      // Additional filtering for vehicle_type if it was provided
+      if (filters?.vehicle_type && !filters?.vehicle_type_id) {
+        return vehicle.vehicle_type === filters.vehicle_type;
+      }
+      return true;
+    })
   } catch (e: any) {
     console.error('Exception caught in getVehicles:', {
       name: e?.name || 'Unknown Error',
