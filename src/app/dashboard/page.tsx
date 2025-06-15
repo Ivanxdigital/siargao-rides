@@ -25,8 +25,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/SubscriptionStatus";
 import { OnboardingGuide } from "@/components/shop/OnboardingGuide";
 import { checkShopSetupStatus } from "@/utils/shopSetupStatus";
-import { ShopSetupGuide } from "@/components/shop/ShopSetupGuide";
-import { ShopOnboardingBanner } from "@/components/shop/ShopOnboardingBanner";
+import { ProgressiveSetupCard } from "@/components/shop/ProgressiveSetupCard";
+import { QuickStartOnboarding } from "@/components/shop/QuickStartOnboarding";
 import { isFeatureEnabled } from "@/lib/featureFlags";
 
 // Types for our dashboard data
@@ -197,13 +197,21 @@ export default function DashboardPage() {
 
       if (user?.user_metadata?.role === "shop_owner") {
         // Check if the user has a shop before trying to fetch shop data
-        if (user.user_metadata?.has_shop === true) {
+        const hasShop = user.user_metadata?.has_shop;
+        console.log("Shop owner has_shop status:", hasShop);
+        
+        if (hasShop === true) {
           // Fetch shop data for shop owners who have a shop
           await fetchShopOwnerData(supabase);
-        } else {
-          console.log("Shop owner doesn't have a shop yet (has_shop is not true)");
+        } else if (hasShop === false) {
+          console.log("Shop owner doesn't have a shop yet (has_shop = false)");
           // Don't try to fetch shop data, but don't show an error either
           setIsDataLoading(false);
+        } else {
+          // has_shop is undefined - this might be an old user or metadata is not synced
+          console.log("Shop owner has_shop status is undefined, checking if shop exists in database");
+          // Try to fetch shop data anyway - if it exists, the user has a shop even if metadata is stale
+          await fetchShopOwnerData(supabase);
         }
       } else {
         // Fetch user data for regular users
@@ -255,27 +263,21 @@ export default function DashboardPage() {
           hasData: !!shopWithSubscription
         });
 
-        // Update user metadata to reflect that they don't actually have a shop
-        if (user.user_metadata?.has_shop === true) {
-          try {
-            const { error: updateError } = await supabase.auth.updateUser({
-              data: {
-                has_shop: false
-              }
-            });
+        // Don't automatically reset has_shop - this causes issues after shop creation
+        // Instead, just log the issue and let the user try to refresh
+        console.log("Shop not found but user metadata indicates has_shop = true. This may be a temporary sync issue.");
 
-            if (updateError) {
-              console.error("Error updating user metadata:", updateError);
-            } else {
-              console.log("Updated user metadata: has_shop set to false");
-            }
-          } catch (updateErr) {
-            console.error("Error updating user metadata:", updateErr);
-          }
+        // Only show error for actual database errors, not missing data
+        if (shopError && shopError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          setError(`Error loading shop data: ${shopError.message}. Please refresh the page.`);
+        } else if (!shopWithSubscription) {
+          // For missing shop data, don't show an error immediately - the user might be mid-onboarding
+          console.log("No shop found for user. They may need to complete onboarding or data is still syncing.");
+          // Don't set an error - let the onboarding component show instead
         }
-
-        // Set specific error message for shop owners who haven't registered their shop yet
-        setError("Could not find your shop. Please ensure you have completed registration by visiting the /register page and submit your shop application form.");
+        
+        // IMPORTANT: Set loading to false even when returning early
+        setIsDataLoading(false);
         return;
       }
 
@@ -412,12 +414,18 @@ export default function DashboardPage() {
         activeBookings: activeBookings?.length || 0,
         totalRevenue
       });
+      
+      // Set loading to false on successful completion
+      setIsDataLoading(false);
     } catch (err) {
       // Enhanced catch block with more detailed error logging
       console.error("Error in fetchShopOwnerData:", err);
 
       // Set a user-friendly error message
       setError("An error occurred while fetching your shop data. Please try refreshing the page or contact support if the problem persists.");
+
+      // Set loading to false even on error
+      setIsDataLoading(false);
 
       // Don't rethrow the error so we can handle it here
       return;
@@ -528,37 +536,36 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {/* Shop Onboarding Banner: Show if user is shop owner and hasn't completed initial registration */}
+        {/* Quick Start Onboarding: Show if user is shop owner and hasn't completed initial registration */}
         {isFeatureEnabled('ONBOARDING_V2') && isShopOwner && user?.user_metadata?.has_shop === false && (
           <motion.div
-            key="shop-onboarding-banner"
-            initial={{ opacity: 0, y: 20, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: -20, height: 0 }}
+            key="quick-start-onboarding"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.4 }}
-            className="w-full overflow-hidden"
+            className="w-full flex justify-center mb-8"
           >
-            <ShopOnboardingBanner
+            <QuickStartOnboarding
               onComplete={fetchDashboardData} // Refreshes data, including user.user_metadata.has_shop
             />
           </motion.div>
         )}
 
-        {/* Shop Setup Guide: Show if user is shop owner, has completed initial registration, guide is enabled, and setup isn't fully complete */}
-        {isFeatureEnabled('ONBOARDING_V2') && isShopOwner && user?.user_metadata?.has_shop === true && isGuideVisible && !isDataLoading && shopSetupStatus.shouldShowGuide && (
+        {/* Progressive Setup Card: Show if user is shop owner and has completed initial registration */}
+        {isFeatureEnabled('ONBOARDING_V2') && isShopOwner && user?.user_metadata?.has_shop === true && !isDataLoading && (
           <motion.div
-            key="shop-setup-guide"
-            initial={{ opacity: 0, y: 20, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: -20, height: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }} // Slight delay if banner is exiting
-            className="w-full overflow-hidden"
+            key="progressive-setup-card"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="w-full mb-6"
           >
-            <ShopSetupGuide
+            <ProgressiveSetupCard
               shopId={shopData?.id}
-              vehicleCount={shopStats.totalVehicles} // Pass vehicle count if available
-              isVisible={isGuideVisible}
-              onToggleVisibility={() => setIsGuideVisible(prev => !prev)}
+              vehicleCount={shopStats.totalVehicles}
+              shopData={shopData}
             />
           </motion.div>
         )}

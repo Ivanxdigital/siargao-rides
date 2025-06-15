@@ -76,23 +76,14 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate required documents
-    if (!vehicleData.documents || !Array.isArray(vehicleData.documents) || vehicleData.documents.length < 2) {
-      return NextResponse.json(
-        { error: 'Vehicle registration and insurance documents are required' },
-        { status: 400 }
-      );
-    }
+    // Validate documents if provided (now optional for quick listing)
+    const documents = vehicleData.documents || [];
+    let hasRequiredDocs = false;
     
-    // Check if registration and insurance documents are present
-    const hasRegistration = vehicleData.documents.some((doc: VehicleDocument) => doc.type === 'registration');
-    const hasInsurance = vehicleData.documents.some((doc: VehicleDocument) => doc.type === 'insurance');
-    
-    if (!hasRegistration || !hasInsurance) {
-      return NextResponse.json(
-        { error: 'Both vehicle registration and insurance documents are required' },
-        { status: 400 }
-      );
+    if (documents && Array.isArray(documents) && documents.length >= 2) {
+      const hasRegistration = documents.some((doc: VehicleDocument) => doc.type === 'registration');
+      const hasInsurance = documents.some((doc: VehicleDocument) => doc.type === 'insurance');
+      hasRequiredDocs = hasRegistration && hasInsurance;
     }
     
     // Check if vehicle type exists
@@ -158,10 +149,10 @@ export async function POST(request: NextRequest) {
       specifications: {
         features: vehicleData.features || []
       },
-      // Add document data and verification status
-      documents: vehicleData.documents,
+      // Add document data and set verification status based on documents
+      documents: documents,
       is_verified: false,
-      verification_status: 'pending'
+      verification_status: hasRequiredDocs ? 'pending' : 'documents_needed'
     };
     
     // Add vehicle-specific data

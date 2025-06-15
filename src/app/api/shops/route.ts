@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     // We're not checking email_confirmed_at since it doesn't exist in your schema
     // Instead, we'll trust that if the user is in the database, they're valid
 
-    // Validate verification_documents if present
+    // Handle verification_documents if present
     if (shopData.verification_documents) {
       // Ensure all properties are strings, not null
       if (shopData.verification_documents.government_id === null) {
@@ -38,6 +38,7 @@ export async function POST(request: Request) {
         shopData.verification_documents.business_permit = '';
       }
 
+      // For initial onboarding, allow empty documents
       const validation = verificationDocumentsSchema.safeParse(shopData.verification_documents);
       if (!validation.success) {
         return NextResponse.json(
@@ -48,7 +49,8 @@ export async function POST(request: Request) {
       shopData.verification_documents = validation.data;
     }
 
-    // Insert the shop data with status = pending_verification
+    // Insert the shop data with default status (pending_verification)
+    // The badge system will handle showing different UI based on document presence
     const { data, error } = await supabaseAdmin
       .from('rental_shops')
       .insert({
@@ -67,9 +69,16 @@ export async function POST(request: Request) {
         details: error.details,
         hint: error.hint
       });
+      
+      // Return more specific error codes based on the error type
+      const status = error.code === '23505' ? 409 : // Duplicate key constraint
+                    error.code === '23503' ? 400 : // Foreign key constraint
+                    error.code === '42501' ? 403 : // Insufficient privileges 
+                    500; // General server error
+      
       return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
+        { error: error.message, code: error.code },
+        { status }
       );
     }
 
@@ -99,7 +108,12 @@ export async function POST(request: Request) {
 
       if (authUpdateError) {
         console.error('API: Error updating user metadata:', authUpdateError);
-        // Don't fail the request if metadata update fails
+        console.error('API: Auth update error details:', {
+          code: authUpdateError.code,
+          message: authUpdateError.message,
+          status: authUpdateError.status
+        });
+        // Don't fail the request if metadata update fails, but log it for debugging
       } else {
         console.log('API: User metadata updated with has_shop = true');
       }

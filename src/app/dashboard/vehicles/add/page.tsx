@@ -270,17 +270,10 @@ export default function AddVehiclePage() {
         throw new Error("Category is required");
       }
 
-      // Validate required documents
+      // Check for documents (now optional for quick listing)
       const registrationDoc = documents.find(doc => doc.type === 'registration');
       const insuranceDoc = documents.find(doc => doc.type === 'insurance');
-      
-      if (!registrationDoc?.file) {
-        throw new Error("Vehicle registration document is required");
-      }
-      
-      if (!insuranceDoc?.file) {
-        throw new Error("Vehicle insurance document is required");
-      }
+      const hasRequiredDocs = registrationDoc?.file && insuranceDoc?.file;
 
       // Validate vehicle-specific fields
       if (vehicleTypeId === 1) { // Motorcycle
@@ -1160,7 +1153,7 @@ export default function AddVehiclePage() {
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
-                  <p>Vehicle registration and insurance documents are required for verification. Your vehicle will not be publicly visible until an admin has verified these documents.</p>
+                  <p>Vehicle registration and insurance documents are <strong>optional for quick listing</strong> but required for verification. Upload them now to get verified faster, or add them later to get your verified badge!</p>
                 </div>
               </div>
             </div>

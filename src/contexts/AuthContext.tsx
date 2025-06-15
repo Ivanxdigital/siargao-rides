@@ -112,7 +112,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             console.log('User is a shop owner, setting up shop notification subscription');
 
             // Check if user has a shop before trying to subscribe
-            if (session.user.user_metadata?.has_shop) {
+            // Note: we check has_shop from user metadata, but it might be stale after shop creation
+            const userHasShop = session.user.user_metadata?.has_shop;
+            console.log('Checking if user has shop:', userHasShop);
+            
+            if (userHasShop) {
               // Get the shop ID for this owner using a synchronous approach
               console.log('Fetching shop ID for owner:', session.user.id);
               supabase
@@ -123,6 +127,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 .then(({ data, error }) => {
                   if (error) {
                     console.error('Error fetching shop ID:', error);
+                    // If has_shop is true but no shop found, the metadata might be stale
+                    if (error.code === 'PGRST116') {
+                      console.log('No shop found despite has_shop = true. This may indicate stale metadata.');
+                    }
                     return;
                   }
 
@@ -138,7 +146,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   console.error('Unexpected error fetching shop ID:', err);
                 });
             } else {
-              console.log('Shop owner does not have a shop yet (has_shop = false)');
+              console.log('Shop owner does not have a shop yet (has_shop = false or undefined)');
             }
           } else if (role === 'shop_owner') {
             console.log('Shop owner already has notification subscription');
@@ -295,7 +303,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
               console.log('User is a shop owner (auth change), setting up shop notification subscription');
 
               // Check if user has a shop before trying to subscribe
-              if (user.user_metadata?.has_shop) {
+              const userHasShop = user.user_metadata?.has_shop;
+              console.log('Checking if user has shop (auth change):', userHasShop);
+              
+              if (userHasShop) {
                 // Get the shop ID for this owner
                 console.log('Fetching shop ID for owner (auth change):', session.user.id);
                 const { data, error } = await supabase
@@ -306,6 +317,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                 if (error) {
                   console.error('Error fetching shop ID (auth change):', error);
+                  // If has_shop is true but no shop found, the metadata might be stale
+                  if (error.code === 'PGRST116') {
+                    console.log('No shop found despite has_shop = true (auth change). This may indicate stale metadata.');
+                  }
                 }
 
                 if (!error && data) {
@@ -316,7 +331,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   console.log('No shop found for this owner (auth change)');
                 }
               } else {
-                console.log('Shop owner does not have a shop yet (has_shop = false)');
+                console.log('Shop owner does not have a shop yet (has_shop = false or undefined)');
               }
             } else if (user.user_metadata?.role === 'shop_owner') {
               console.log('Shop owner already has notification subscription (auth change)');

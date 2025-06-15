@@ -1,6 +1,12 @@
 import { z } from "zod";
 
 export const verificationDocumentsSchema = z.object({
+  government_id: z.string().optional(),
+  business_permit: z.string().optional(),
+});
+
+// Schema for when documents are actually being submitted for verification
+export const requiredVerificationDocumentsSchema = z.object({
   government_id: z.string().min(1, "Government ID URL is required"),
   business_permit: z.string().optional(),
 });
