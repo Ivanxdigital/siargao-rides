@@ -144,11 +144,11 @@ export function ProgressiveSetupCard({
 
   // Determine level based on completion
   const getLevel = (percentage: number) => {
-    if (percentage >= 90) return { name: "Expert", icon: "🏆", color: "text-yellow-600" };
-    if (percentage >= 70) return { name: "Pro", icon: "⭐", color: "text-purple-600" };
-    if (percentage >= 50) return { name: "Advanced", icon: "🚀", color: "text-blue-600" };
-    if (percentage >= 25) return { name: "Getting Started", icon: "📈", color: "text-green-600" };
-    return { name: "Beginner", icon: "🌱", color: "text-gray-600" };
+    if (percentage >= 90) return { name: "Expert", icon: "🏆", color: "text-yellow-400" };
+    if (percentage >= 70) return { name: "Pro", icon: "⭐", color: "text-orange-400" };
+    if (percentage >= 50) return { name: "Advanced", icon: "🚀", color: "text-teal-400" };
+    if (percentage >= 25) return { name: "Getting Started", icon: "📈", color: "text-green-400" };
+    return { name: "Beginner", icon: "🌱", color: "text-gray-400" };
   };
 
   const currentLevel = getLevel(completionPercentage);
@@ -167,7 +167,7 @@ export function ProgressiveSetupCard({
 
   return (
     <motion.div
-      className={`bg-gradient-to-br from-indigo-900/90 to-purple-900/90 rounded-xl border border-indigo-700/30 shadow-lg overflow-hidden ${className}`}
+      className={`bg-gradient-to-br from-teal-900/90 to-orange-900/90 rounded-xl border border-teal-700/30 shadow-lg overflow-hidden backdrop-blur-md ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -280,7 +280,7 @@ export function ProgressiveSetupCard({
                           <div className={`p-2 rounded-lg ${
                             task.priority === 'high' ? 'bg-red-500/20 text-red-400' :
                             task.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-blue-500/20 text-blue-400'
+                            'bg-orange-500/20 text-orange-400'
                           }`}>
                             {task.icon}
                           </div>
@@ -304,7 +304,7 @@ export function ProgressiveSetupCard({
                             <Link href={task.href}>
                               <Button
                                 size="sm"
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                className="bg-teal-600 hover:bg-teal-700 text-white transition-all duration-300 hover:shadow-lg hover:scale-105"
                               >
                                 {task.action}
                               </Button>
@@ -320,10 +320,10 @@ export function ProgressiveSetupCard({
 
             {/* Completion celebration */}
             {completionPercentage >= 70 && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-purple-700/30 rounded-lg">
+              <div className="mt-4 p-4 bg-gradient-to-r from-teal-900/50 to-orange-900/50 border border-teal-700/30 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <Star className="h-5 w-5 text-yellow-400" />
-                  <span className="text-purple-200 font-medium">
+                  <span className="text-white font-medium">
                     Almost there! Your shop is looking great 🎉
                   </span>
                 </div>

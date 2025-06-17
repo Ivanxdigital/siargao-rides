@@ -454,13 +454,13 @@ export default function ShopPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/10 backdrop-blur-[2px]"></div>
       </motion.div>
 
-      {/* Shop Info with better positioning and card styling */}
-      <div className="container mx-auto px-4 -mt-32 md:-mt-36 relative z-10">
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-          {/* Profile Image with improved styling */}
+      {/* Simplified Shop Info */}
+      <div className="container mx-auto px-4 -mt-24 md:-mt-28 relative z-10">
+        <div className="flex flex-col md:flex-row gap-8 items-start">
+          {/* Clean Profile Image */}
           <motion.div
-            className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-black shadow-xl bg-gradient-to-br from-gray-900 to-black relative group"
-            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+            className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-card relative group"
+            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
           >
             <Image
               src={shop.logo_url || 'https://placehold.co/400x400/1e3b8a/white?text=Logo'}
@@ -468,24 +468,23 @@ export default function ShopPage() {
               fill
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
           </motion.div>
 
-          {/* Shop Details with better typography */}
+          {/* Cleaner Shop Details */}
           <motion.div
-            className="flex-1 backdrop-blur-md bg-white/5 rounded-2xl p-5 md:p-7 border border-white/10 shadow-lg"
+            className="flex-1 bg-card/30 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-border/30"
             variants={slideUpFadeIn}
           >
-            <div className="flex justify-between items-start flex-wrap gap-3">
-              <h1 className="text-2xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80">{shop.name}</h1>
+            <div className="flex justify-between items-start flex-wrap gap-4 mb-4">
+              <h1 className="text-3xl md:text-4xl font-bold text-white">{shop.name}</h1>
 
-              {/* Add Edit Shop button for shop owners */}
+              {/* Edit Shop button for shop owners */}
               {isShopOwner && (
                 <Button
                   asChild
                   variant="outline"
                   size="sm"
-                  className="border-primary/30 hover:bg-primary/10 hover:text-primary transition-all"
+                  className="border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary"
                 >
                   <Link href="/dashboard/shop">
                     <Edit size={16} className="mr-2" />
@@ -494,78 +493,75 @@ export default function ShopPage() {
                 </Button>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <div className="flex items-center bg-amber-400/10 px-3 py-1.5 rounded-full">
-                <Star
-                  size={16}
-                  className="text-amber-400 fill-amber-400"
-                />
-                <span className="ml-1.5 font-medium">{averageRating.toFixed(1)}</span>
+
+            {/* Rating and badges */}
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <div className="flex items-center bg-amber-400/15 px-4 py-2 rounded-lg">
+                <Star size={16} className="text-amber-400 fill-amber-400 mr-2" />
+                <span className="font-semibold text-white">{averageRating.toFixed(1)}</span>
+                <span className="text-sm text-white/70 ml-1">({reviews.length})</span>
               </div>
-              <span className="text-sm text-white/70">({reviews.length} reviews)</span>
-              {shop.is_verified &&
-                <Badge variant="verified" className="ml-2 bg-emerald-700/60 text-emerald-100 border border-emerald-500/30 px-2.5 py-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mr-1"
-                  >
+              
+              {shop.is_verified && (
+                <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 px-3 py-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1.5">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                   </svg>
-                  Verified Shop
+                  Verified
                 </Badge>
-              }
-              {shop.is_showcase &&
-                <Badge variant="outline" className="ml-2 bg-purple-700/60 text-purple-100 border border-purple-500/30 px-2.5 py-1">
-                  <AlertTriangle size={14} className="mr-1" />
-                  Showcase Only
+              )}
+              
+              {shop.is_showcase && (
+                <Badge variant="outline" className="bg-purple-500/15 text-purple-300 border-purple-500/30 px-3 py-1.5">
+                  <AlertTriangle size={14} className="mr-1.5" />
+                  Showcase
                 </Badge>
-              }
+              )}
             </div>
-            <p className="text-white/80 mt-5 max-w-2xl text-sm md:text-base leading-relaxed">{shop.description || "No description available."}</p>
 
-            {/* Vehicle type badges */}
-            <div className="flex flex-wrap gap-2 mt-5">
+            {/* Description */}
+            {shop.description && (
+              <p className="text-white/80 text-base leading-relaxed mb-6">{shop.description}</p>
+            )}
+
+            {/* Vehicle types */}
+            <div className="flex flex-wrap gap-3 mb-6">
               {hasMotorcycles && (
-                <Badge className="bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 px-3 py-1.5 transition-colors">
-                  <Bike size={14} className="mr-1.5" /> Motorcycles
-                </Badge>
+                <div className="flex items-center bg-primary/15 text-primary px-4 py-2 rounded-lg">
+                  <Bike size={16} className="mr-2" />
+                  <span className="font-medium">Motorcycles</span>
+                </div>
               )}
               {hasCars && (
-                <Badge className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/30 px-3 py-1.5 transition-colors">
-                  <Car size={14} className="mr-1.5" /> Cars
-                </Badge>
+                <div className="flex items-center bg-blue-500/15 text-blue-400 px-4 py-2 rounded-lg">
+                  <Car size={16} className="mr-2" />
+                  <span className="font-medium">Cars</span>
+                </div>
               )}
               {hasTuktuks && (
-                <Badge className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border-amber-500/30 px-3 py-1.5 transition-colors">
-                  <Truck size={14} className="mr-1.5" /> Tuktuks
-                </Badge>
+                <div className="flex items-center bg-amber-500/15 text-amber-400 px-4 py-2 rounded-lg">
+                  <Truck size={16} className="mr-2" />
+                  <span className="font-medium">Tuktuks</span>
+                </div>
               )}
             </div>
 
-            {/* Delivery information with improved styling */}
+            {/* Delivery info */}
             {shop.offers_delivery && (
-              <div className="bg-primary/10 backdrop-blur-sm border border-primary/20 rounded-xl p-4 mt-6 shadow-sm">
+              <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  <div className="text-primary bg-primary/20 p-2 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div className="text-primary bg-primary/20 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="8 12 12 16 16 12"></polyline>
                       <line x1="12" y1="8" x2="12" y2="16"></line>
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-primary font-medium text-sm">Delivery Available</h3>
-                    <p className="text-white/90 text-xs mt-0.5">
-                      This shop offers delivery to your accommodation for ₱{shop.delivery_fee}
+                    <h3 className="text-primary font-semibold">Delivery Available</h3>
+                    <p className="text-white/80 text-sm">
+                      We deliver to your accommodation for ₱{shop.delivery_fee}
                     </p>
                   </div>
                 </div>
@@ -573,206 +569,128 @@ export default function ShopPage() {
             )}
           </motion.div>
 
-          {/* Contact Info Card with improved styling */}
+          {/* Clean Contact Info */}
           <motion.div
-            className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg w-full md:w-auto md:min-w-80 mt-4 md:mt-0"
+            className="bg-card/30 backdrop-blur-xl border border-border/30 rounded-2xl p-6 w-full md:w-80"
             variants={slideUpFadeIn}
           >
-            <h3 className="font-semibold mb-5 text-lg text-white/90">Contact Information</h3>
-            <div className="space-y-5">
-              <motion.div
-                className="flex items-start gap-3 group"
-                whileHover={{ x: 3, transition: { duration: 0.2 } }}
-              >
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <MapPin size={18} className="text-primary" />
+            <h3 className="font-semibold mb-6 text-xl text-white">Contact</h3>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <MapPin size={20} className="text-primary mt-0.5" />
+                <div className="text-sm text-white/80 leading-relaxed">
+                  {shop.address}<br/>{shop.city}
                 </div>
-                <span className="text-sm text-white/80 group-hover:text-white transition-colors pt-1.5">
-                  {shop.address}, <br/>{shop.city}
-                </span>
-              </motion.div>
+              </div>
 
               {shop.phone_number && (
-                <motion.div
-                  className="flex items-center gap-3 group"
-                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
-                >
-                  <div className="bg-blue-500/10 p-2 rounded-full">
-                    <Phone size={18} className="text-blue-400" />
-                  </div>
-                  <a href={`tel:${shop.phone_number}`} className="text-sm text-white/80 hover:text-white transition-colors pt-1.5">
+                <div className="flex items-center gap-3">
+                  <Phone size={20} className="text-blue-400" />
+                  <a href={`tel:${shop.phone_number}`} className="text-sm text-white/80 hover:text-white transition-colors">
                     {shop.phone_number}
                   </a>
-                </motion.div>
+                </div>
               )}
 
               {shop.email && (
-                <motion.div
-                  className="flex items-center gap-3 group"
-                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
-                >
-                  <div className="bg-amber-500/10 p-2 rounded-full">
-                    <Mail size={18} className="text-amber-400" />
-                  </div>
-                  <a href={`mailto:${shop.email}`} className="text-sm text-white/80 hover:text-white transition-colors pt-1.5">
+                <div className="flex items-center gap-3">
+                  <Mail size={20} className="text-amber-400" />
+                  <a href={`mailto:${shop.email}`} className="text-sm text-white/80 hover:text-white transition-colors">
                     {shop.email}
                   </a>
-                </motion.div>
+                </div>
               )}
 
-              {/* Facebook link */}
-              {shop.facebook_url && (
-                <motion.div
-                  className="flex items-center gap-3 group"
-                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
-                >
-                  <div className="bg-blue-600/10 p-2 rounded-full">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-blue-400"
-                    >
-                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                    </svg>
+              {/* Social Links */}
+              {(shop.facebook_url || shop.instagram_url) && (
+                <div className="pt-2">
+                  <div className="flex gap-3">
+                    {shop.facebook_url && (
+                      <a
+                        href={shop.facebook_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-10 h-10 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 rounded-lg transition-colors"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                        </svg>
+                      </a>
+                    )}
+                    {shop.instagram_url && (
+                      <a
+                        href={shop.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-10 h-10 bg-pink-600/15 hover:bg-pink-600/25 text-pink-400 rounded-lg transition-colors"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                      </a>
+                    )}
                   </div>
-                  <a
-                    href={shop.facebook_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors pt-1.5"
-                  >
-                    Facebook Page
-                  </a>
-                </motion.div>
+                </div>
               )}
 
-              {/* Instagram link */}
-              {shop.instagram_url && (
-                <motion.div
-                  className="flex items-center gap-3 group"
-                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
-                >
-                  <div className="bg-pink-600/10 p-2 rounded-full">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-pink-400"
-                    >
-                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                    </svg>
-                  </div>
-                  <a
-                    href={shop.instagram_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-pink-400 hover:text-pink-300 transition-colors pt-1.5"
-                  >
-                    Instagram Profile
-                  </a>
-                </motion.div>
-              )}
-
-              {/* SMS Number */}
-              {shop.sms_number && (
-                <motion.div
-                  className="flex items-center gap-3 group"
-                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
-                >
-                  <div className="bg-green-600/10 p-2 rounded-full">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-green-400"
-                    >
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                  </div>
-                  <a
-                    href={`sms:${shop.sms_number}`}
-                    className="text-sm text-green-400 hover:text-green-300 transition-colors pt-1.5"
-                  >
-                    Send SMS
-                  </a>
-                </motion.div>
-              )}
-
+              {/* WhatsApp CTA */}
               {shop.whatsapp && (
-                <Button
-                  className="w-full mt-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-none shadow-md"
-                  onClick={() => window.open(`https://wa.me/${shop.whatsapp?.replace(/\+/g, '').replace(/\s/g, '')}`, '_blank')}
-                >
-                  <MessageCircle size={18} className="mr-2" />
-                  Contact via WhatsApp
-                </Button>
+                <div className="pt-4">
+                  <Button
+                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium"
+                    onClick={() => window.open(`https://wa.me/${shop.whatsapp?.replace(/\+/g, '').replace(/\s/g, '')}`, '_blank')}
+                  >
+                    <MessageCircle size={18} className="mr-2" />
+                    WhatsApp
+                  </Button>
+                </div>
               )}
             </div>
           </motion.div>
         </div>
       </div>
 
-      {/* Notice about ID requirements with improved glass morphism */}
+      {/* Simplified notice section */}
       <motion.div
-        className="container mx-auto px-4 mt-10 mb-4 relative z-10"
+        className="container mx-auto px-4 mt-12 mb-8 relative z-10"
         variants={fadeIn}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
         transition={{ delay: 0.2 }}
       >
-        <div className="backdrop-blur-md bg-gradient-to-r from-yellow-900/20 to-yellow-900/10 border border-yellow-500/20 rounded-xl p-5 shadow-md">
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-6">
           <div className="flex items-start gap-4">
-            <div className="text-yellow-400 bg-yellow-500/10 p-3 rounded-full shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="text-yellow-400 mt-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </div>
             <div>
-              <h3 className="text-yellow-400 font-medium text-base md:text-lg">Important Rental Information</h3>
-              <p className="text-white/90 text-xs md:text-sm mt-2 leading-relaxed">
+              <h3 className="text-yellow-400 font-semibold text-lg mb-2">Rental Requirements</h3>
+              <p className="text-white/80 leading-relaxed">
                 {shop.requires_id_deposit && shop.requires_cash_deposit ? (
                   <>
-                    This shop requires a valid ID and a cash deposit of <span className="font-medium text-yellow-300">₱{shop.cash_deposit_amount}</span> when renting vehicles.
-                    Both will be safely returned to you when you bring back the vehicle in good condition.
+                    Valid ID and cash deposit of <span className="font-semibold text-yellow-300">₱{shop.cash_deposit_amount}</span> required.
+                    Both returned when vehicle is returned in good condition.
                   </>
                 ) : shop.requires_id_deposit ? (
                   <>
-                    This shop requires a <span className="font-medium text-yellow-300">valid ID</span> as a deposit when renting vehicles.
-                    Your ID will be safely returned to you when you bring back the vehicle in good condition.
+                    <span className="font-semibold text-yellow-300">Valid ID</span> required as deposit.
+                    Returned when vehicle is brought back in good condition.
                   </>
                 ) : shop.requires_cash_deposit ? (
                   <>
-                    This shop requires a cash deposit of <span className="font-medium text-yellow-300">₱{shop.cash_deposit_amount}</span> when renting vehicles.
-                    The deposit will be fully refunded when you bring back the vehicle in good condition.
+                    Cash deposit of <span className="font-semibold text-yellow-300">₱{shop.cash_deposit_amount}</span> required.
+                    Fully refunded when vehicle is returned in good condition.
                   </>
                 ) : (
                   <>
-                    Most rental shops in Siargao will request some form of deposit. Please check with this shop
-                    directly about their specific requirements.
+                    Please check with the shop about their specific rental requirements.
                   </>
                 )}
               </p>
@@ -781,56 +699,56 @@ export default function ShopPage() {
         </div>
       </motion.div>
 
-      {/* Vehicle Type Tabs with improved styling */}
+      {/* Clean vehicle type tabs */}
       {vehicles.length > 0 && (
         <motion.div
-          className="container mx-auto px-4 mt-10 relative z-10"
+          className="container mx-auto px-4 mb-8 relative z-10"
           variants={fadeIn}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
         >
-          <div className="bg-white/5 backdrop-blur-md p-1.5 rounded-2xl flex flex-wrap justify-center sm:justify-start gap-2 border border-white/10 shadow-md w-full overflow-hidden">
+          <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
             <Button
-              variant={selectedVehicleType === 'all' ? 'default' : 'ghost'}
-              size="sm"
+              variant={selectedVehicleType === 'all' ? 'default' : 'outline'}
+              size="lg"
               onClick={() => setSelectedVehicleType('all')}
-              className={`rounded-full px-3 text-sm ${selectedVehicleType === 'all' ? 'bg-white/10 text-white shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+              className={`px-6 ${selectedVehicleType === 'all' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border-border/50 text-foreground hover:bg-card'}`}
             >
               All Vehicles
             </Button>
 
             {hasMotorcycles && (
               <Button
-                variant={selectedVehicleType === 'motorcycle' ? 'default' : 'ghost'}
-                size="sm"
+                variant={selectedVehicleType === 'motorcycle' ? 'default' : 'outline'}
+                size="lg"
                 onClick={() => setSelectedVehicleType('motorcycle')}
-                className={`rounded-full px-3 text-sm ${selectedVehicleType === 'motorcycle' ? 'bg-primary/20 text-primary shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+                className={`px-6 ${selectedVehicleType === 'motorcycle' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border-border/50 text-foreground hover:bg-card'}`}
               >
-                <Bike size={14} className="mr-1.5" /> Motorcycles
+                <Bike size={16} className="mr-2" /> Motorcycles
               </Button>
             )}
 
             {hasCars && (
               <Button
-                variant={selectedVehicleType === 'car' ? 'default' : 'ghost'}
-                size="sm"
+                variant={selectedVehicleType === 'car' ? 'default' : 'outline'}
+                size="lg"
                 onClick={() => setSelectedVehicleType('car')}
-                className={`rounded-full px-3 text-sm ${selectedVehicleType === 'car' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+                className={`px-6 ${selectedVehicleType === 'car' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border-border/50 text-foreground hover:bg-card'}`}
               >
-                <Car size={14} className="mr-1.5" /> Cars
+                <Car size={16} className="mr-2" /> Cars
               </Button>
             )}
 
             {hasTuktuks && (
               <Button
-                variant={selectedVehicleType === 'tuktuk' ? 'default' : 'ghost'}
-                size="sm"
+                variant={selectedVehicleType === 'tuktuk' ? 'default' : 'outline'}
+                size="lg"
                 onClick={() => setSelectedVehicleType('tuktuk')}
-                className={`rounded-full px-3 text-sm ${selectedVehicleType === 'tuktuk' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+                className={`px-6 ${selectedVehicleType === 'tuktuk' ? 'bg-primary text-primary-foreground' : 'bg-card/50 border-border/50 text-foreground hover:bg-card'}`}
               >
-                <Truck size={14} className="mr-1.5" /> Tuktuks
+                <Truck size={16} className="mr-2" /> Tuktuks
               </Button>
             )}
           </div>

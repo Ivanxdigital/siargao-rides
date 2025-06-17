@@ -87,7 +87,7 @@ export function VehicleVerificationBadge({
           <TooltipTrigger asChild>
             <Badge 
               variant="secondary" 
-              className={`bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 ${config.padding} ${className}`}
+              className={`bg-teal-100 text-teal-800 border-teal-300 hover:bg-teal-200 ${config.padding} ${className}`}
             >
               <Clock className={`${config.icon} mr-1.5`} />
               {showText && <span className={config.text}>Pending Review</span>}
@@ -193,7 +193,7 @@ export function VehicleStatusIndicator({
 
   if (verificationStatus === 'pending') {
     return (
-      <div className={`flex items-center text-blue-600 ${className}`}>
+      <div className={`flex items-center text-teal-600 ${className}`}>
         <Clock className="h-4 w-4 mr-1" />
         <span className="text-sm">Under Review</span>
       </div>

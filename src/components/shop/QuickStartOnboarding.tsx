@@ -184,9 +184,9 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-gradient-to-br from-teal-900/90 to-blue-900/90 rounded-xl overflow-hidden shadow-xl border border-teal-700/30">
+    <div className="w-full max-w-md mx-auto bg-gradient-to-br from-teal-900/90 to-orange-900/90 rounded-xl overflow-hidden shadow-xl border border-teal-700/30 backdrop-blur-md">
       {/* Header */}
-      <div className="px-6 py-4 bg-gradient-to-r from-teal-600 to-blue-600">
+      <div className="px-6 py-4 bg-gradient-to-r from-teal-600 to-orange-600">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-white/20 rounded-lg">
             <Store className="h-5 w-5 text-white" />
@@ -284,8 +284,8 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
               className="space-y-6"
             >
               <div className="text-center mb-6">
-                <div className="mx-auto w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mb-3">
-                  <MapPin className="h-6 w-6 text-blue-400" />
+                <div className="mx-auto w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mb-3">
+                  <MapPin className="h-6 w-6 text-orange-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2">Where are you located?</h3>
                 <p className="text-white/70 text-sm">Help customers find you easily</p>
@@ -298,7 +298,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
                   </Label>
                   <select
                     id="location_area"
-                    className="mt-1 w-full bg-white/10 border-white/20 text-white rounded-md h-10 px-3 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                    className="mt-1 w-full bg-white/10 border-white/20 text-white rounded-md h-10 px-3 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
                     {...step2Form.register("location_area")}
                   >
                     <option value="" className="bg-gray-900">Select your area</option>
@@ -320,7 +320,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
                   <Textarea
                     id="description"
                     placeholder="Rent motorcycles and cars for exploring Siargao..."
-                    className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-blue-400 min-h-[80px] resize-none"
+                    className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-orange-400 min-h-[80px] resize-none"
                     {...step2Form.register("description")}
                   />
                   {step2Form.formState.errors.description && (
@@ -342,7 +342,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
                   
                   <Button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white font-medium"
+                    className="flex-1 bg-gradient-to-r from-teal-600 to-orange-600 hover:from-teal-700 hover:to-orange-700 text-white font-medium transition-all duration-300 hover:shadow-lg hover:scale-105"
                     disabled={!step2Form.formState.isValid || isSubmitting}
                   >
                     {isSubmitting ? (

@@ -70,29 +70,29 @@ const VehicleTypeSelector = ({ selectedType, onChange }: {
   onChange: (type: VehicleType | 'all') => void
 }) => {
   const vehicleTypes: Array<{id: VehicleType | 'all', label: string, icon: any}> = [
-    { id: 'all', label: 'All Vehicles', icon: BikeIcon },
+    { id: 'all', label: 'All', icon: BikeIcon },
     { id: 'motorcycle', label: 'Motorcycles', icon: BikeIcon },
     { id: 'car', label: 'Cars', icon: CarIcon },
     { id: 'tuktuk', label: 'Tuktuks', icon: TruckIcon }
   ];
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-2 gap-3">
       {vehicleTypes.map((type) => {
         const Icon = type.icon;
         return (
           <motion.button
             key={type.id}
             onClick={() => onChange(type.id)}
-            className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
+            className={`flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
               selectedType === type.id
-                ? 'bg-primary/20 text-primary border border-primary/30'
-                : 'bg-gray-800/50 text-gray-300 border border-gray-700 hover:bg-gray-800'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card/50 text-white/80 border border-border/50 hover:bg-card hover:text-white'
             }`}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <Icon size={14} />
+            <Icon size={16} />
             <span>{type.label}</span>
           </motion.button>
         );
@@ -748,16 +748,14 @@ export default function BrowsePage() {
               transition={{ duration: 0.5, delay: 0.6 }}
             >
               {/* Desktop filters (always visible) */}
-              <div className="hidden md:block sticky top-20 p-4 bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700">
-                <h2 className="text-xl font-bold mb-4 flex items-center">
-                  <Filter size={18} className="mr-2 text-primary" />
+              <div className="hidden md:block sticky top-20 p-6 bg-card/30 backdrop-blur-xl rounded-xl border border-border/30">
+                <h2 className="text-xl font-semibold mb-6 text-white">
                   Filters
                 </h2>
 
                 {/* Vehicle Type Selector */}
-                <div className="mb-6">
-                  <h3 className="text-md font-bold mb-3 flex items-center">
-                    <BikeIcon size={16} className="mr-1.5 text-primary/70" />
+                <div className="mb-8">
+                  <h3 className="text-sm font-semibold mb-4 text-white/90">
                     Vehicle Type
                   </h3>
                   <VehicleTypeSelector
@@ -767,15 +765,14 @@ export default function BrowsePage() {
                 </div>
 
                 {/* Location Filter */}
-                <div className="mb-6">
-                  <h3 className="text-md font-bold mb-3 flex items-center">
-                    <MapPin size={16} className="mr-1.5 text-primary/70" />
+                <div className="mb-8">
+                  <h3 className="text-sm font-semibold mb-4 text-white/90">
                     Location
                   </h3>
                   <select
                     value={selectedLocation}
                     onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-md p-2 text-sm"
+                    className="w-full bg-card/50 text-white border border-border/50 rounded-lg p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   >
                     <option value="">All Locations</option>
                     {locations.map((location) => (
@@ -786,31 +783,23 @@ export default function BrowsePage() {
                   </select>
                 </div>
 
-                {/* Availability Filter */}
-                <div className="mb-6">
-                  <h3 className="text-md font-bold mb-3 flex items-center">
-                    <Calendar size={16} className="mr-1.5 text-primary/70" />
+                {/* Date Range Filter */}
+                <div className="mb-8">
+                  <h3 className="text-sm font-semibold mb-4 text-white/90">
                     Date Range
                   </h3>
-                  <div className="mb-3">
+                  <div className="mb-4">
                     <DateRangePicker
                       startDate={startDateObj}
                       endDate={endDateObj}
                       onStartDateChange={(date) => {
-                        console.log("Start date changed:", date);
-
-                        // Update the Date object
                         setStartDateObj(date);
-
-                        // Update the formatted string date
                         if (date) {
                           const formattedDate = date.toISOString().split('T')[0];
                           setStartDate(formattedDate);
                         } else {
                           setStartDate('');
                         }
-
-                        // If we're clearing the start date, also clear the end date
                         if (!date) {
                           setEndDateObj(null);
                           setEndDate('');
@@ -818,17 +807,10 @@ export default function BrowsePage() {
                         }
                       }}
                       onEndDateChange={(date) => {
-                        console.log("End date changed:", date);
-
-                        // Update the Date object
                         setEndDateObj(date);
-
-                        // Update the formatted string date
                         if (date) {
                           const formattedDate = date.toISOString().split('T')[0];
                           setEndDate(formattedDate);
-
-                          // If we now have both dates, mark selection as complete
                           if (startDateObj) {
                             setDateRangeSelected(true);
                           }
@@ -838,44 +820,40 @@ export default function BrowsePage() {
                         }
                       }}
                     />
-                    <p className="text-xs text-white/60 mt-1.5">
-                      {dateRangeSelected
-                        ? `Found ${vehiclesToDisplay.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
-                        : startDateObj
-                          ? "Now select the end date (day you'll return the vehicle)"
-                          : "Select the start date (day you'll pick up the vehicle)"}
-                    </p>
+                    
+                    {dateRangeSelected && (
+                      <p className="text-xs text-primary mt-2">
+                        {vehiclesToDisplay.filter(v => v.is_available_for_dates).length} vehicles available
+                      </p>
+                    )}
 
                     {(startDateObj || endDateObj) && (
                       <button
                         onClick={clearDates}
-                        className="mt-2 text-xs text-primary/80 hover:text-primary flex items-center"
+                        className="mt-3 text-xs text-white/60 hover:text-white flex items-center gap-1"
                       >
-                        <XCircle className="h-3 w-3 mr-1" />
+                        <XCircle className="h-3 w-3" />
                         Clear dates
                       </button>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2 mt-3">
+                  
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="available-vehicles"
                       checked={onlyShowAvailable}
                       onChange={() => {
                         setOnlyShowAvailable(!onlyShowAvailable);
-                        // Re-fetch data if dates are selected and we're toggling availability filter
                         if (dateRangeSelected && startDate && endDate) {
                           handleDateRangeChange(startDate, endDate);
                         }
                       }}
-                      className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
+                      className="w-4 h-4 rounded border-border/50 text-primary focus:ring-primary/20 bg-card/50"
                     />
-                    <label htmlFor="available-vehicles" className="text-sm text-gray-300">
-                      {dateRangeSelected
-                        ? "Only show available for selected dates"
-                        : "Only show available vehicles"}
-                    </label>
-                  </div>
+                    <span className="text-sm text-white/80">
+                      {dateRangeSelected ? "Available for selected dates" : "Available only"}
+                    </span>
+                  </label>
                 </div>
 
                 {/* Category Filter - show categories based on selected vehicle type */}
@@ -965,39 +943,41 @@ export default function BrowsePage() {
                 )}
 
                 {/* Price Range Filter */}
-                <div className="mb-6">
-                  <h3 className="text-md font-bold mb-3">Price Range</h3>
-                  <div className="px-2">
-                    <div className="flex justify-between mb-2 text-sm">
+                <div className="mb-8">
+                  <h3 className="text-sm font-semibold mb-4 text-white/90">Price Range</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-sm text-white/80">
                       <span>₱{priceRange[0]}</span>
                       <span>₱{priceRange[1]}</span>
                     </div>
-                    <input
-                      type="range"
-                      min={100}
-                      max={2000}
-                      value={priceRange[0]}
-                      onChange={(e) => handlePriceChange([parseInt(e.target.value), priceRange[1]])}
-                      className="w-full mb-2 accent-primary"
-                    />
-                    <input
-                      type="range"
-                      min={100}
-                      max={2000}
-                      value={priceRange[1]}
-                      onChange={(e) => handlePriceChange([priceRange[0], parseInt(e.target.value)])}
-                      className="w-full accent-primary"
-                    />
+                    <div className="space-y-3">
+                      <input
+                        type="range"
+                        min={100}
+                        max={2000}
+                        value={priceRange[0]}
+                        onChange={(e) => handlePriceChange([parseInt(e.target.value), priceRange[1]])}
+                        className="w-full h-2 bg-card/50 rounded-lg appearance-none cursor-pointer accent-primary"
+                      />
+                      <input
+                        type="range"
+                        min={100}
+                        max={2000}
+                        value={priceRange[1]}
+                        onChange={(e) => handlePriceChange([priceRange[0], parseInt(e.target.value)])}
+                        className="w-full h-2 bg-card/50 rounded-lg appearance-none cursor-pointer accent-primary"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Sort By Filter */}
-                <div className="mb-6">
-                  <h3 className="text-md font-bold mb-3">Sort By</h3>
+                <div className="mb-8">
+                  <h3 className="text-sm font-semibold mb-4 text-white/90">Sort By</h3>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-md p-2 text-sm"
+                    className="w-full bg-card/50 text-white border border-border/50 rounded-lg p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   >
                     <option value="price_asc">Price: Low to High</option>
                     <option value="price_desc">Price: High to Low</option>
@@ -1005,16 +985,17 @@ export default function BrowsePage() {
                 </div>
 
                 {/* Reset Filters Button */}
-                {(selectedCategories.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 || selectedLocation || onlyShowAvailable) ? (
-                  <div className="mt-4">
-                    <button
+                {(selectedCategories.length > 0 || minRating > 0 || priceRange[0] > 100 || priceRange[1] < 2000 || selectedLocation || onlyShowAvailable) && (
+                  <div className="pt-4 border-t border-border/30">
+                    <Button
                       onClick={resetAllFilters}
-                      className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm text-white transition-colors duration-200 flex items-center justify-center"
+                      variant="outline"
+                      className="w-full bg-card/50 border-border/50 text-white hover:bg-card"
                     >
-                      <span>Reset All Filters</span>
-                    </button>
+                      Reset Filters
+                    </Button>
                   </div>
-                ) : null}
+                )}
               </div>
 
               {/* Mobile filters (expandable) */}
@@ -1026,7 +1007,7 @@ export default function BrowsePage() {
                     initial="closed"
                     animate="open"
                     exit="closed"
-                    className="md:hidden overflow-hidden mb-6 bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700 p-4"
+                    className="md:hidden overflow-hidden mb-6 bg-card/30 backdrop-blur-xl rounded-xl border border-border/30 p-6"
                   >
                     {/* Vehicle Type (Mobile) */}
                     <div className="mb-6">

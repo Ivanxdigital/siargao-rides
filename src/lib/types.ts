@@ -14,15 +14,16 @@ export type RentalRow = Tables['rentals']['Row'];
 export type ReviewRow = Tables['reviews']['Row'];
 
 // Vehicle Type
-export type VehicleType = 'motorcycle' | 'car' | 'tuktuk';
+export type VehicleType = 'motorcycle' | 'car' | 'tuktuk' | 'van';
 
 // Category types for different vehicles
 export type BikeCategory = 'scooter' | 'semi_auto' | 'dirt_bike' | 'sport_bike' | 'other';
 export type CarCategory = 'sedan' | 'suv' | 'van' | 'pickup' | 'compact';
 export type TuktukCategory = 'standard' | 'premium' | 'electric';
+export type VanCategory = 'airport_transfer' | 'tour_van' | 'cargo_van' | 'passenger_van';
 
 // Combined category type
-export type VehicleCategory = BikeCategory | CarCategory | TuktukCategory;
+export type VehicleCategory = BikeCategory | CarCategory | TuktukCategory | VanCategory;
 
 // Enum types
 export type RentalStatus = 'booked' | 'in_progress' | 'completed' | 'cancelled';
@@ -215,6 +216,21 @@ export type VehicleSpecifications = {
   [key: string]: any
 }
 
+// Van Service type for specialized van services
+export type VanService = {
+  id: string
+  name: string
+  description?: string
+  vehicle_type: string
+  base_price: number
+  price_per_km?: number
+  max_passengers: number
+  max_luggage: number
+  features?: any
+  is_active: boolean
+  created_at: string
+}
+
 export type Rental = {
   id: string
   vehicle_id: string
@@ -228,6 +244,16 @@ export type Rental = {
   payment_status: PaymentStatus
   created_at: string
   updated_at: string
+  // Van hire specific fields
+  van_service_id?: string
+  pickup_location?: string
+  dropoff_location?: string
+  pickup_instructions?: string
+  passenger_count?: number
+  luggage_count?: number
+  special_requests?: string
+  estimated_duration?: number // minutes
+  is_van_hire?: boolean
 }
 
 export type Review = {

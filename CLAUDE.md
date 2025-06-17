@@ -133,3 +133,8 @@ src/
 - Never commit secrets or API keys
 - Validate all user input with Zod schemas
 - Use HTTPS and secure headers in production
+
+## Claude Code Memories
+
+- When gather context on the backend, always use the Supabase MCP server when necessary or whenever you need to do anything with the backend database.
+- Use the Context7 MCP server for up to date documentation for dependencies, etc.

@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
   ReactNode,
 } from "react";
 import {
@@ -67,8 +68,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isSettingUp, setIsSettingUp] = useState<boolean>(false);
   const supabase = createClientComponentClient();
   const router = useRouter();
-  const [notificationSubscription, setNotificationSubscription] = useState<{ unsubscribe: () => void } | null>(null);
-  const [shopNotificationSubscription, setShopNotificationSubscription] = useState<{ unsubscribe: () => void } | null>(null);
+  const notificationSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
+  const shopNotificationSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -100,72 +101,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (session?.user) {
           const role = session.user.user_metadata?.role;
           setIsAdmin(role === 'admin');
-
-          // Subscribe to booking notifications
-          if (!notificationSubscription && session.user.id) {
-            const subscription = subscribeToBookingNotifications(session.user.id);
-            setNotificationSubscription(subscription);
-          }
-
-          // If user is a shop owner, subscribe to shop notifications
-          if (role === 'shop_owner' && !shopNotificationSubscription) {
-            console.log('User is a shop owner, setting up shop notification subscription');
-
-            // Check if user has a shop before trying to subscribe
-            // Note: we check has_shop from user metadata, but it might be stale after shop creation
-            const userHasShop = session.user.user_metadata?.has_shop;
-            console.log('Checking if user has shop:', userHasShop);
-            
-            if (userHasShop) {
-              // Get the shop ID for this owner using a synchronous approach
-              console.log('Fetching shop ID for owner:', session.user.id);
-              supabase
-                .from('rental_shops')
-                .select('id')
-                .eq('owner_id', session.user.id)
-                .single()
-                .then(({ data, error }) => {
-                  if (error) {
-                    console.error('Error fetching shop ID:', error);
-                    // If has_shop is true but no shop found, the metadata might be stale
-                    if (error.code === 'PGRST116') {
-                      console.log('No shop found despite has_shop = true. This may indicate stale metadata.');
-                    }
-                    return;
-                  }
-
-                  if (data) {
-                    console.log('Found shop ID for owner:', data.id);
-                    const shopSubscription = subscribeToShopOwnerNotifications(data.id);
-                    setShopNotificationSubscription(shopSubscription);
-                  } else {
-                    console.log('No shop found for this owner');
-                  }
-                })
-                .catch(err => {
-                  console.error('Unexpected error fetching shop ID:', err);
-                });
-            } else {
-              console.log('Shop owner does not have a shop yet (has_shop = false or undefined)');
-            }
-          } else if (role === 'shop_owner') {
-            console.log('Shop owner already has notification subscription');
-          } else {
-            console.log('User is not a shop owner, role:', role);
-          }
         } else {
           setIsAdmin(false);
-
-          // Unsubscribe from notifications if user is no longer authenticated
-          if (notificationSubscription) {
-            notificationSubscription.unsubscribe();
-            setNotificationSubscription(null);
-          }
-
-          if (shopNotificationSubscription) {
-            shopNotificationSubscription.unsubscribe();
-            setShopNotificationSubscription(null);
-          }
         }
       } catch (error) {
         console.error("Error getting session:", error);
@@ -293,62 +230,65 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
 
             // Subscribe to booking notifications if not already subscribed
-            if (!notificationSubscription && session.user.id) {
+            if (!notificationSubscriptionRef.current && session.user.id) {
+              console.log('Setting up booking notification subscription');
               const subscription = subscribeToBookingNotifications(session.user.id);
-              setNotificationSubscription(subscription);
+              notificationSubscriptionRef.current = subscription;
             }
 
             // If user is a shop owner, subscribe to shop notifications
-            if (user.user_metadata?.role === 'shop_owner' && !shopNotificationSubscription) {
-              console.log('User is a shop owner (auth change), setting up shop notification subscription');
+            if (user.user_metadata?.role === 'shop_owner' && !shopNotificationSubscriptionRef.current) {
+              console.log('User is a shop owner, setting up shop notification subscription');
 
               // Check if user has a shop before trying to subscribe
               const userHasShop = user.user_metadata?.has_shop;
-              console.log('Checking if user has shop (auth change):', userHasShop);
+              console.log('Checking if user has shop:', userHasShop);
               
               if (userHasShop) {
-                // Get the shop ID for this owner
-                console.log('Fetching shop ID for owner (auth change):', session.user.id);
-                const { data, error } = await supabase
-                  .from('rental_shops')
-                  .select('id')
-                  .eq('owner_id', session.user.id)
-                  .single();
+                try {
+                  // Get the shop ID for this owner
+                  console.log('Fetching shop ID for owner:', session.user.id);
+                  const { data, error } = await supabase
+                    .from('rental_shops')
+                    .select('id')
+                    .eq('owner_id', session.user.id)
+                    .single();
 
-                if (error) {
-                  console.error('Error fetching shop ID (auth change):', error);
-                  // If has_shop is true but no shop found, the metadata might be stale
-                  if (error.code === 'PGRST116') {
-                    console.log('No shop found despite has_shop = true (auth change). This may indicate stale metadata.');
+                  if (error) {
+                    console.error('Error fetching shop ID:', error);
+                    // If has_shop is true but no shop found, the metadata might be stale
+                    if (error.code === 'PGRST116') {
+                      console.log('No shop found despite has_shop = true. This may indicate stale metadata.');
+                    }
+                  } else if (data) {
+                    console.log('Found shop ID for owner:', data.id);
+                    const shopSubscription = subscribeToShopOwnerNotifications(data.id);
+                    shopNotificationSubscriptionRef.current = shopSubscription;
+                  } else {
+                    console.log('No shop found for this owner');
                   }
-                }
-
-                if (!error && data) {
-                  console.log('Found shop ID for owner (auth change):', data.id);
-                  const shopSubscription = subscribeToShopOwnerNotifications(data.id);
-                  setShopNotificationSubscription(shopSubscription);
-                } else {
-                  console.log('No shop found for this owner (auth change)');
+                } catch (err) {
+                  console.error('Unexpected error fetching shop ID:', err);
                 }
               } else {
                 console.log('Shop owner does not have a shop yet (has_shop = false or undefined)');
               }
             } else if (user.user_metadata?.role === 'shop_owner') {
-              console.log('Shop owner already has notification subscription (auth change)');
+              console.log('Shop owner already has notification subscription');
             }
           } else {
             setIsAdmin(false);
             setIsLoading(false);
 
             // Unsubscribe from notifications if user is no longer authenticated
-            if (notificationSubscription) {
-              notificationSubscription.unsubscribe();
-              setNotificationSubscription(null);
+            if (notificationSubscriptionRef.current) {
+              notificationSubscriptionRef.current.unsubscribe();
+              notificationSubscriptionRef.current = null;
             }
 
-            if (shopNotificationSubscription) {
-              shopNotificationSubscription.unsubscribe();
-              setShopNotificationSubscription(null);
+            if (shopNotificationSubscriptionRef.current) {
+              shopNotificationSubscriptionRef.current.unsubscribe();
+              shopNotificationSubscriptionRef.current = null;
             }
           }
         }
@@ -365,15 +305,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       // Cleanup notification subscriptions on unmount
-      if (notificationSubscription) {
-        notificationSubscription.unsubscribe();
+      if (notificationSubscriptionRef.current) {
+        notificationSubscriptionRef.current.unsubscribe();
       }
 
-      if (shopNotificationSubscription) {
-        shopNotificationSubscription.unsubscribe();
+      if (shopNotificationSubscriptionRef.current) {
+        shopNotificationSubscriptionRef.current.unsubscribe();
       }
     };
-  }, [supabase.auth, router, notificationSubscription, shopNotificationSubscription]);
+  }, [supabase.auth, router]);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
