@@ -145,6 +145,8 @@ src/
 - `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` / `RECAPTCHA_SECRET_KEY` - reCAPTCHA keys
 - `RESEND_API_KEY` - Email service API key
 - `PAYMONGO_SECRET_KEY` / `NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY` - Payment keys
+- `NEXT_PUBLIC_PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` - PayPal payment keys
+- `PAYPAL_WEBHOOK_ID` / `PAYPAL_ENVIRONMENT` - PayPal webhook and environment config
 
 **Feature Flags:**
 - Environment-based toggles using `NEXT_PUBLIC_FEATURE_*` pattern

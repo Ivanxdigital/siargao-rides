@@ -309,3 +309,69 @@ export type Referral = {
   payment_method?: string;
   notes?: string;
 };
+
+// PayPal payment types
+export type PayPalPayment = {
+  id: string;
+  rental_id: string;
+  order_id: string;
+  capture_id?: string;
+  amount: number;
+  currency: string;
+  status: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+};
+
+export type PayPalOrder = {
+  id: string;
+  status: string;
+  intent: string;
+  purchase_units: PayPalPurchaseUnit[];
+  create_time: string;
+  update_time: string;
+  links: PayPalLink[];
+};
+
+export type PayPalPurchaseUnit = {
+  reference_id: string;
+  description: string;
+  amount: {
+    currency_code: string;
+    value: string;
+  };
+  custom_id?: string;
+  payments?: {
+    captures?: PayPalCapture[];
+  };
+};
+
+export type PayPalCapture = {
+  id: string;
+  status: string;
+  amount: {
+    currency_code: string;
+    value: string;
+  };
+  create_time: string;
+  update_time: string;
+};
+
+export type PayPalLink = {
+  href: string;
+  rel: string;
+  method: string;
+};
+
+// Payment method provider types
+export type PaymentProvider = 'paymongo' | 'paypal' | 'cash';
+
+export type PaymentMethod = {
+  id: string;
+  name: string;
+  description?: string;
+  provider?: PaymentProvider;
+  is_online: boolean;
+  is_active: boolean;
+  requires_deposit?: boolean;
+};

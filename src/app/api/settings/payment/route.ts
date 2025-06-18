@@ -38,7 +38,8 @@ export async function GET() {
         enable_cash_with_deposit: true,
         require_deposit: true,
         enable_paymongo_card: true,
-        enable_paymongo_gcash: true
+        enable_paymongo_gcash: true,
+        enable_paypal: true
       }
     });
   }

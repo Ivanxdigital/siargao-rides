@@ -8,7 +8,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import PayMongoForm from "@/components/PayMongoForm";
 import GCashPaymentForm from "@/components/GCashPaymentForm";
-import { ArrowLeft, CheckCircle, AlertCircle, RefreshCw, CreditCard, Smartphone } from "lucide-react";
+import PayPalCheckoutForm from "@/components/PayPalCheckoutForm";
+import { ArrowLeft, CheckCircle, AlertCircle, RefreshCw, CreditCard, Smartphone, Wallet } from "lucide-react";
 
 export default function BookingPaymentPage() {
   const params = useParams();
@@ -19,7 +20,7 @@ export default function BookingPaymentPage() {
   const [booking, setBooking] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'gcash'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'gcash' | 'paypal'>('card');
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -33,6 +34,8 @@ export default function BookingPaymentPage() {
         setPaymentMethod('gcash');
       } else if (paymentType === 'card') {
         setPaymentMethod('card');
+      } else if (paymentType === 'paypal') {
+        setPaymentMethod('paypal');
       }
     } else {
       setError("Booking ID is missing");
@@ -199,7 +202,7 @@ export default function BookingPaymentPage() {
                   {/* Payment Method Selection */}
                   <div className="p-5 border-b border-white/10">
                     <h3 className="text-white font-medium mb-4">Select Payment Method</h3>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('card')}
@@ -224,6 +227,18 @@ export default function BookingPaymentPage() {
                         <Smartphone className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${paymentMethod === 'gcash' ? 'text-primary' : 'text-white/70'}`} />
                         <span className={`text-xs sm:text-sm font-medium ${paymentMethod === 'gcash' ? 'text-primary' : 'text-white'}`}>GCash</span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('paypal')}
+                        className={`p-3 sm:p-4 border rounded-lg flex flex-col items-center justify-center transition-all duration-200 ${
+                          paymentMethod === 'paypal'
+                            ? 'border-primary bg-primary/20 shadow-md'
+                            : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
+                        }`}
+                      >
+                        <Wallet className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${paymentMethod === 'paypal' ? 'text-primary' : 'text-white/70'}`} />
+                        <span className={`text-xs sm:text-sm font-medium ${paymentMethod === 'paypal' ? 'text-primary' : 'text-white'}`}>PayPal</span>
+                      </button>
                     </div>
                   </div>
 
@@ -236,7 +251,7 @@ export default function BookingPaymentPage() {
                       onPaymentSuccess={handlePaymentSuccess}
                       onPaymentError={handlePaymentError}
                     />
-                  ) : (
+                  ) : paymentMethod === 'gcash' ? (
                     <GCashPaymentForm
                       rentalId={bookingId}
                       amount={booking.total_price}
@@ -247,6 +262,14 @@ export default function BookingPaymentPage() {
                         // Redirect happens in the component
                       }}
                       onError={handlePaymentError}
+                    />
+                  ) : (
+                    <PayPalCheckoutForm
+                      rentalId={bookingId}
+                      amount={booking.total_price}
+                      vehicle={rentalVehicle}
+                      onPaymentSuccess={handlePaymentSuccess}
+                      onPaymentError={handlePaymentError}
                     />
                   )}
                 </div>

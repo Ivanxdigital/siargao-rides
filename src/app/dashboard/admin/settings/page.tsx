@@ -18,7 +18,8 @@ export default function AdminSettingsPage() {
     enable_cash_with_deposit: true,
     require_deposit: true,
     enable_paymongo_card: true,
-    enable_paymongo_gcash: true
+    enable_paymongo_gcash: true,
+    enable_paypal: true
   });
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
@@ -296,6 +297,28 @@ export default function AdminSettingsPage() {
                         setPaymentSettings({
                           ...paymentSettings,
                           enable_paymongo_gcash: checked
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* PayPal Payment Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-white/90 border-b border-white/10 pb-2">PayPal Payment Options</h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-medium text-white/90">Enable PayPal Payments</h3>
+                      <p className="text-sm text-white/60">
+                        Allow customers to pay with PayPal account or cards through PayPal
+                      </p>
+                    </div>
+                    <Switch
+                      checked={paymentSettings.enable_paypal}
+                      onCheckedChange={(checked) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          enable_paypal: checked
                         })
                       }
                     />

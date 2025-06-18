@@ -58,6 +58,7 @@ export default function BookingForm({
     require_deposit: true,
     enable_paymongo_card: true,
     enable_paymongo_gcash: true,
+    enable_paypal: true,
     default_grace_period_minutes: 30,
     enable_auto_cancellation: true
   });
@@ -81,6 +82,7 @@ export default function BookingForm({
         }
 
         const data = await response.json();
+        console.log('Fetched payment settings:', data.settings);
         setSystemSettings(data.settings);
       } catch (error) {
         console.error('Error fetching payment settings:', error);
@@ -372,6 +374,14 @@ export default function BookingForm({
         bookingData.deposit_required = false;
         bookingData.deposit_amount = 0;
         bookingData.deposit_paid = false;
+      } else if (paymentMethod === 'paypal') {
+        // PayPal payment
+        bookingData.payment_method_id = 'f3a4b5c6-7d8e-9f0a-1b2c-3d4e5f6a7b8c'; // PayPal payment method ID
+        bookingData.payment_provider = 'paypal';
+        bookingData.payment_type = 'paypal';
+        bookingData.deposit_required = false;
+        bookingData.deposit_amount = 0;
+        bookingData.deposit_paid = false;
       };
 
       // Vehicle ID is already validated above
@@ -496,6 +506,9 @@ export default function BookingForm({
       if (paymentMethod === 'paymongo_card' || paymentMethod === 'paymongo_gcash') {
         // Navigate to the payment page for online payment
         router.push(`/booking/payment/${booking.id}?payment_type=${paymentMethod === 'paymongo_card' ? 'card' : 'gcash'}`);
+      } else if (paymentMethod === 'paypal') {
+        // Navigate to the payment page for PayPal payment
+        router.push(`/booking/payment/${booking.id}?payment_type=paypal`);
       } else if (paymentMethod === 'cash') {
         // Navigate to the deposit payment page for cash payments
         router.push(`/booking/deposit-payment/${booking.id}`);
@@ -718,7 +731,13 @@ export default function BookingForm({
       {/* Payment options */}
       <div>
         <h3 className="text-lg font-medium mb-2">Payment Method</h3>
+        {isLoadingSettings ? (
+          <div className="flex justify-center py-4">
+            <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+          </div>
+        ) : (
         <div className="space-y-2">
+          {console.log('Rendering payment options with settings:', systemSettings)}
           {/* Cash Payment - only shown when enabled in settings */}
           {systemSettings.enable_temporary_cash_payment && (
             <label
@@ -845,7 +864,32 @@ export default function BookingForm({
               </div>
             </label>
           )}
+
+          {/* PayPal option */}
+          {systemSettings.enable_paypal && (
+            <label
+              className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
+                paymentMethod === 'paypal'
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-white/10'
+              }`}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="paypal"
+                checked={paymentMethod === 'paypal'}
+                onChange={() => setPaymentMethod('paypal')}
+                className="mt-1"
+              />
+              <div>
+                <div className="font-medium">PayPal Payment</div>
+                <div className="text-sm text-white/70">Pay online with PayPal or any major credit/debit card</div>
+              </div>
+            </label>
+          )}
         </div>
+        )}
       </div>
 
       {/* Authentication prompt for non-authenticated users */}
