@@ -134,7 +134,78 @@ src/
 - Validate all user input with Zod schemas
 - Use HTTPS and secure headers in production
 
-## Claude Code Memories
+## Environment Setup
 
-- When gather context on the backend, always use the Supabase MCP server when necessary or whenever you need to do anything with the backend database.
-- Use the Context7 MCP server for up to date documentation for dependencies, etc.
+**Required Environment Variables (.env.local):**
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_SERVICE_KEY` - Service role key for admin operations
+- `NEXT_PUBLIC_SITE_URL` - Site URL for auth redirects
+- `NEXT_PUBLIC_USE_MOCK_DATA` - Feature flag (true/false)
+- `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` / `RECAPTCHA_SECRET_KEY` - reCAPTCHA keys
+- `RESEND_API_KEY` - Email service API key
+- `PAYMONGO_SECRET_KEY` / `NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY` - Payment keys
+
+**Feature Flags:**
+- Environment-based toggles using `NEXT_PUBLIC_FEATURE_*` pattern
+- Currently includes `NEXT_PUBLIC_FEATURE_ONBOARDING_V2`
+
+## Key Configuration
+
+**Authentication & Security:**
+- Supabase Auth with `@supabase/auth-helpers-nextjs`
+- Middleware handles auth sessions and JWT cleanup
+- Service role key separated for admin operations
+- reCAPTCHA protection on forms
+
+**Build Configuration:**
+- TypeScript strict mode with `noImplicitAny: false`
+- ESLint ignores build errors for faster development
+- Vercel cron jobs for auto-cancellation processing
+- Image optimization for Supabase storage domains
+
+**Feature Architecture:**
+- Multi-role system (tourist, shop_owner, admin)
+- Payment integration (PayMongo, GCash, cash deposits)
+- Email notifications via Resend
+- File uploads with browser compression
+- Referral tracking system
+
+## Data Flow Patterns
+
+**Authentication Flow:**
+- Supabase Auth → middleware → RLS policies
+- Role-based redirects via auth callbacks
+- Session persistence across page reloads
+
+**Booking System:**
+- Date availability checking → price calculation → payment processing
+- Auto-cancellation for unpaid bookings
+- Email notifications at each step
+
+**Shop Management:**
+- Progressive onboarding with verification steps
+- Subscription-based access control
+- Vehicle inventory management with categories
+
+## AI Development Notes
+
+**MCP Server Usage:**
+- Always use Supabase MCP for database context and queries
+- Use Context7 MCP for up-to-date dependency documentation
+- Never assume database structure - query live data
+
+**Code Standards from .cursor/rules:**
+- Functional, modular design with files <250 LOC
+- TypeScript strict mode, no `any` types
+- Zod validation for all external input
+- Conventional Commits format
+- Jest/Testing-Library tests for all exports
+
+**Project-Specific Requirements:**
+- 🤖 Start responses with emoji to confirm rule compliance
+- Break large tasks into smaller chunks
+- Ask clarification before complex implementations
+- Use date-fns consistently (avoid moment, multiple calendar libraries)
+- Generate raw SQL for schema changes (no CLI commands)
+- Prioritize mobile-first responsive design

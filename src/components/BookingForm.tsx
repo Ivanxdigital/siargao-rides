@@ -7,7 +7,7 @@ import TimeSlotPicker from "@/components/TimeSlotPicker";
 import ContactInfoInput, { ContactInfo } from "@/components/ContactInfoInput";
 import { Button } from "@/components/ui/button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Bike, RentalShop, Vehicle } from "@/lib/types";
+import { RentalShop, Vehicle } from "@/lib/types";
 import { User } from "@supabase/auth-helpers-nextjs";
 import { Info, AlertCircle, Clock, Phone } from "lucide-react";
 import { addDays, subDays, format, isWithinInterval } from "date-fns";
@@ -15,8 +15,7 @@ import { TermsAndConditions } from "./TermsAndConditions";
 import { toast } from "react-hot-toast";
 
 interface BookingFormProps {
-  bike?: Bike;
-  vehicle?: Vehicle;
+  vehicle: Vehicle;
   shop: RentalShop;
   user: User | null;
   isAuthenticated: boolean;
@@ -33,7 +32,6 @@ interface DateRange {
 }
 
 export default function BookingForm({
-  bike,
   vehicle,
   shop,
   user,
@@ -69,8 +67,7 @@ export default function BookingForm({
   // Deposit amount constant
   const DEPOSIT_AMOUNT = 300; // 300 PHP deposit for cash payments
 
-  // Use either vehicle or bike depending on which is provided
-  const rentalVehicle = vehicle || bike;
+  // No longer need fallback - vehicle is required
 
   // Fetch system settings when component mounts
   useEffect(() => {
@@ -99,13 +96,13 @@ export default function BookingForm({
   // Check availability for pre-filled dates when component mounts
   useEffect(() => {
     // Only check if both dates are provided and we have a vehicle ID
-    if (startDate && endDate && rentalVehicle?.id) {
+    if (startDate && endDate && vehicle?.id) {
       // Format dates for consistency
       const formattedStart = new Date(startDate);
       const formattedEnd = new Date(endDate);
 
       console.log("Checking availability for pre-filled dates:", {
-        vehicleId: rentalVehicle.id,
+        vehicleId: vehicle.id,
         startDate: formattedStart.toISOString(),
         endDate: formattedEnd.toISOString(),
         formattedStartDate: formattedStart.toISOString().split('T')[0],
@@ -135,7 +132,7 @@ export default function BookingForm({
 
       checkInitialAvailability();
     }
-  }, [startDate, endDate, rentalVehicle?.id]);
+  }, [startDate, endDate, vehicle?.id]);
 
   // Fetch delivery options
   useEffect(() => {
@@ -198,7 +195,7 @@ export default function BookingForm({
     if (vehicle) {
       return vehicle.vehicle_type;
     } else {
-      return 'motorcycle'; // Default to motorcycle for bikes
+      return 'motorcycle'; // Default vehicle type
     }
   };
 
@@ -206,7 +203,7 @@ export default function BookingForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!rentalVehicle) {
+    if (!vehicle) {
       setFormError("No vehicle information found.");
       return;
     }
@@ -252,7 +249,7 @@ export default function BookingForm({
       const supabase = createClientComponentClient();
 
       // Make an API call to check if the vehicle is still available for the selected dates
-      const vehicleId = vehicle?.id || bike?.id;
+      const vehicleId = vehicle.id;
 
       if (!vehicleId) {
         setFormError("Vehicle ID is missing.");
@@ -301,7 +298,7 @@ export default function BookingForm({
 
       // Calculate pricing
       const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      const rentalPrice = rentalVehicle.price_per_day * days;
+      const rentalPrice = vehicle.price_per_day * days;
       const deliveryFeeAmount = deliveryOptions.find(o => o.id === deliveryOption)?.fee || 0;
       const totalPrice = rentalPrice + deliveryFeeAmount;
 
@@ -313,7 +310,7 @@ export default function BookingForm({
       // Generate a unique confirmation code
       const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
-      // Create a new booking record - handle both vehicle and bike paths
+      // Create a new booking record
       let bookingData: any = {
         shop_id: shop.id,
         user_id: session?.user?.id, // User must be authenticated at this point
@@ -377,28 +374,46 @@ export default function BookingForm({
         bookingData.deposit_paid = false;
       };
 
-      // Add the right ID field based on whether we're using vehicle or bike
-      if (vehicle) {
-        bookingData.vehicle_id = vehicle.id;
-        bookingData.vehicle_type_id = vehicle.vehicle_type_id;
-      } else if (bike) {
-        bookingData.bike_id = bike.id;
-      }
+      // Vehicle ID is already validated above
+      const vehicleIdToUse = vehicleId;
 
-      const { data: booking, error } = await supabase
-        .from("rentals")
-        .insert(bookingData)
-        .select()
-        .single();
+      // Add vehicle type ID (required by atomic function)
+      bookingData.vehicle_type_id = vehicle.vehicle_type_id;
 
-      if (error) {
-        console.error("Error creating booking:", error);
-        setFormError("An error occurred while processing your booking. Please try again.");
+      // Use atomic booking API to prevent race conditions
+      const bookingResponse = await fetch('/api/bookings/create-atomic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vehicleId: vehicleIdToUse,
+          shopId: shop.id,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          totalPrice: totalPrice,
+          bookingData: bookingData
+        }),
+      });
+
+      const result = await bookingResponse.json();
+
+      if (!bookingResponse.ok || !result.success) {
+        console.error("Error creating booking:", result);
+        
+        // Handle specific error cases
+        if (result.error_code === 'BOOKING_CONFLICT') {
+          setFormError("This vehicle is already booked for the selected dates. Please choose different dates or another vehicle.");
+        } else {
+          setFormError(result.error || "An error occurred while processing your booking. Please try again.");
+        }
+        
         setLoading(false);
         return;
       }
 
-      console.log("Booking created:", booking);
+      const booking = result.booking;
+      console.log("Booking created successfully:", booking);
 
       // Send booking confirmation emails
       try {
@@ -511,7 +526,7 @@ export default function BookingForm({
     const { data: rentals, error: rentalsError } = await supabase
       .from('rentals')
       .select('id, start_date, end_date')
-      .or(`vehicle_id.eq.${vehicleId},bike_id.eq.${vehicleId}`)
+      .eq('vehicle_id', vehicleId)
       .in('status', ['pending', 'confirmed'])
       .gte('end_date', today.toISOString().split('T')[0]);
 
@@ -617,7 +632,7 @@ export default function BookingForm({
               setFormError(null);
             }
           }}
-          vehicleId={vehicle?.id || bike?.id}
+          vehicleId={vehicle.id}
           showAvailabilityIndicator={true}
         />
 

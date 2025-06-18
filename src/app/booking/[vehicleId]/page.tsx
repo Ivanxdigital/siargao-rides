@@ -91,34 +91,10 @@ export default function BookingPage() {
 
           setVehicle(formattedVehicle);
         } catch (vehicleError) {
-          console.log('Error fetching from vehicles table, trying bikes table:', vehicleError);
-
-          // Fallback to bikes table for backward compatibility
-          const { data: bikeData, error: bikeError } = await supabase
-            .from('bikes')
-            .select(`
-              *,
-              bike_images(*)
-            `)
-            .eq('id', vehicleId)
-            .single();
-
-          if (bikeError || !bikeData) {
-            console.error('Error fetching bike:', bikeError);
-            setError('Vehicle not found');
-            setLoading(false);
-            return;
-          }
-
-          // Transform bike data to vehicle format
-          const formattedVehicle = {
-            ...bikeData,
-            vehicle_type: 'motorcycle' as VehicleType,
-            vehicle_type_id: '1', // Assuming motorcycles have ID 1
-            images: bikeData.bike_images || []
-          };
-
-          setVehicle(formattedVehicle);
+          console.error('Error fetching vehicle:', vehicleError);
+          setError('Vehicle not found');
+          setLoading(false);
+          return;
         }
 
         // Get shop data

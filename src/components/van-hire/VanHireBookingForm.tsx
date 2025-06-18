@@ -11,16 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 
-interface VanHireBookingFormProps {
-  initialRoute?: string
-}
-
-export default function VanHireBookingForm({ initialRoute }: VanHireBookingFormProps) {
+export default function VanHireBookingForm() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     // Route Information
-    routeType: initialRoute || '',
     pickupLocation: '',
     dropoffLocation: '',
     customPickup: '',
@@ -60,40 +55,6 @@ export default function VanHireBookingForm({ initialRoute }: VanHireBookingFormP
     { value: 'custom', label: 'Custom Address' }
   ]
 
-  const popularRoutes = [
-    { 
-      id: 'airport-luna', 
-      label: 'Sayak Airport → General Luna', 
-      price: 1200, 
-      duration: 45,
-      pickup: 'sayak-airport',
-      dropoff: 'general-luna'
-    },
-    { 
-      id: 'luna-airport', 
-      label: 'General Luna → Sayak Airport', 
-      price: 1200, 
-      duration: 45,
-      pickup: 'general-luna',
-      dropoff: 'sayak-airport'
-    },
-    { 
-      id: 'airport-cloud9', 
-      label: 'Sayak Airport → Cloud 9', 
-      price: 1000, 
-      duration: 35,
-      pickup: 'sayak-airport',
-      dropoff: 'cloud-9'
-    },
-    { 
-      id: 'airport-pacifico', 
-      label: 'Sayak Airport → Pacifico', 
-      price: 1800, 
-      duration: 75,
-      pickup: 'sayak-airport',
-      dropoff: 'pacifico'
-    }
-  ]
 
   const timeSlots = [
     '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
@@ -102,19 +63,6 @@ export default function VanHireBookingForm({ initialRoute }: VanHireBookingFormP
     '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'
   ]
 
-  const handleRouteSelection = (routeId: string) => {
-    const route = popularRoutes.find(r => r.id === routeId)
-    if (route) {
-      setFormData(prev => ({
-        ...prev,
-        routeType: routeId,
-        pickupLocation: route.pickup,
-        dropoffLocation: route.dropoff,
-        estimatedPrice: route.price,
-        estimatedDuration: route.duration
-      }))
-    }
-  }
 
   const handleLocationChange = (field: 'pickupLocation' | 'dropoffLocation', value: string) => {
     setFormData(prev => ({
@@ -130,15 +78,14 @@ export default function VanHireBookingForm({ initialRoute }: VanHireBookingFormP
   }
 
   const calculatePriceEstimate = async () => {
-    // Placeholder for price calculation API call
-    // In real implementation, this would call /api/van-hire/quote
+    // Fixed price of ₱2,500 for all van hire services
     setIsLoading(true)
     
     // Simulate API call
     setTimeout(() => {
       setFormData(prev => ({
         ...prev,
-        estimatedPrice: 1200,
+        estimatedPrice: 2500,
         estimatedDuration: 45
       }))
       setIsLoading(false)
@@ -207,39 +154,9 @@ export default function VanHireBookingForm({ initialRoute }: VanHireBookingFormP
                     Select Your Route
                   </h3>
                   
-                  {/* Popular Routes */}
-                  <div className="space-y-3 mb-6">
-                    <Label>Popular Routes</Label>
-                    <div className="grid gap-3">
-                      {popularRoutes.map((route) => (
-                        <Card
-                          key={route.id}
-                          className={`cursor-pointer transition-all border-2 ${
-                            formData.routeType === route.id
-                              ? 'border-primary bg-primary/10'
-                              : 'border-zinc-600 hover:border-zinc-500'
-                          }`}
-                          onClick={() => handleRouteSelection(route.id)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <div className="font-medium">{route.label}</div>
-                                <div className="text-sm text-white/70">{route.duration} minutes</div>
-                              </div>
-                              <div className="text-lg font-bold text-primary">₱{route.price}</div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Custom Route */}
-                  <div className="space-y-4 mt-6">
-                    <Label>Or Create Custom Route</Label>
+                  {/* Route Selection */}
+                  <div className="space-y-4">
+                    <Label>Select Your Route</Label>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="pickup">Pickup Location</Label>
@@ -321,7 +238,7 @@ export default function VanHireBookingForm({ initialRoute }: VanHireBookingFormP
                   type="button"
                   onClick={nextStep}
                   className="w-full bg-primary hover:bg-primary/80"
-                  disabled={!formData.routeType && (!formData.pickupLocation || !formData.dropoffLocation)}
+                  disabled={!formData.pickupLocation || !formData.dropoffLocation}
                 >
                   Continue to Date & Time
                   <ArrowRight className="ml-2 h-4 w-4" />
