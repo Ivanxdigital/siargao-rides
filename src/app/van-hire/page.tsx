@@ -113,8 +113,17 @@ export default function VanHirePage() {
 
 
       {/* How It Works Section */}
-      <section className="py-20 bg-black">
-        <div className="container mx-auto px-4">
+      <section className="py-20 bg-gradient-to-b from-black via-zinc-950 to-zinc-900 relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(20,184,166,0.08),transparent_70%)] opacity-60"></div>
+          <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,rgba(134,25,143,0.06),transparent_70%)] opacity-50"></div>
+          <div className="absolute inset-0 opacity-30" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }}></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -237,7 +246,7 @@ export default function VanHirePage() {
 
                 <Button 
                   size="lg" 
-                  className="w-full bg-primary hover:bg-primary/80 text-white"
+                  className="w-full"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
                   Book Your Premium Van Now

@@ -30,8 +30,9 @@ Siargao Rides is a vehicle rental marketplace built on modern web technologies, 
 ### Core Features
 - Multi-vehicle support (motorcycles, cars, tuktuks, vans)
 - Real-time availability checking
-- Multiple payment methods (cash, deposits, online payments)
-- Email notification system
+- **Request-to-book system** requiring shop owner approval
+- **Cash-only payment** at pickup/delivery
+- Email notification system for both customers and shop owners
 - Admin dashboard for shop management
 - Review and rating system
 - Auto-cancellation for no-shows
@@ -225,6 +226,8 @@ $$ LANGUAGE plpgsql;
 ---
 
 ## Booking Flow
+
+**Important Note:** Siargao Rides operates as a **request-to-book marketplace**. All bookings require shop owner approval and use cash-only payments.
 
 ### 1. Vehicle Discovery Phase
 
@@ -583,27 +586,19 @@ if (paymentMethod === 'cash') {
 
 ### Payment Methods
 
-1. **Temporary Cash Payment (No Deposit)**
+**Currently Active (Cash-Only System):**
+
+1. **Cash Payment (Primary Method)**
    - Full payment at pickup/delivery
-   - Pickup time required
-   - Auto-cancellation after grace period
+   - Pickup time selection required
+   - Auto-cancellation after grace period if customer is late
    - No upfront payment required
+   - Part of request-to-book flow requiring shop owner approval
 
-2. **Cash Payment with Deposit**
-   - ₱300 deposit via PayMongo
-   - Remaining amount paid in cash
-   - Anti-ghost booking mechanism
-   - Deposit forfeited if no-show
-
-3. **PayMongo Card Payment**
-   - Full payment via credit/debit card
-   - Immediate confirmation
-   - Secure payment processing
-
-4. **PayMongo GCash Payment**
-   - Full payment via GCash e-wallet
-   - Popular in Philippines
-   - Mobile-friendly flow
+**Disabled Payment Methods:**
+- PayMongo Card Payment - Disabled in system settings
+- PayMongo GCash Payment - Disabled in system settings
+- Cash Payment with Deposit - Not currently used
 
 ### Payment Flow Architecture
 
@@ -727,9 +722,9 @@ useEffect(() => {
 
 **Booking Status Flow:**
 ```
-pending → confirmed → completed
+pending (request submitted) → confirmed (shop owner approved) → completed (rental finished)
     ↓
-cancelled (at any point)
+cancelled (at any point - by customer or shop owner)
 ```
 
 **Payment Status Flow:**

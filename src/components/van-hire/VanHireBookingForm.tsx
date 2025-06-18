@@ -237,7 +237,7 @@ export default function VanHireBookingForm() {
                 <Button
                   type="button"
                   onClick={nextStep}
-                  className="w-full bg-primary hover:bg-primary/80"
+                  className="w-full"
                   disabled={!formData.pickupLocation || !formData.dropoffLocation}
                 >
                   Continue to Date & Time
@@ -338,7 +338,7 @@ export default function VanHireBookingForm() {
                   <Button
                     type="button"
                     onClick={nextStep}
-                    className="flex-1 bg-primary hover:bg-primary/80"
+                    className="flex-1"
                     disabled={!formData.date || !formData.time}
                   >
                     Continue
@@ -422,7 +422,7 @@ export default function VanHireBookingForm() {
                   <Button
                     type="button"
                     onClick={nextStep}
-                    className="flex-1 bg-primary hover:bg-primary/80"
+                    className="flex-1"
                     disabled={!formData.firstName || !formData.lastName || !formData.email || !formData.phone}
                   >
                     Review Booking
@@ -495,7 +495,7 @@ export default function VanHireBookingForm() {
                   </Button>
                   <Button
                     type="submit"
-                    className="flex-1 bg-primary hover:bg-primary/80"
+                    className="flex-1"
                     disabled={isLoading}
                   >
                     {isLoading ? (

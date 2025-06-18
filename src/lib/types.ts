@@ -26,7 +26,7 @@ export type VanCategory = 'airport_transfer' | 'tour_van' | 'cargo_van' | 'passe
 export type VehicleCategory = BikeCategory | CarCategory | TuktukCategory | VanCategory;
 
 // Enum types
-export type RentalStatus = 'booked' | 'in_progress' | 'completed' | 'cancelled';
+export type RentalStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'cancelled';
 export type UserRole = 'tourist' | 'shop_owner' | 'admin';
 

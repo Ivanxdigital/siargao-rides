@@ -395,7 +395,7 @@ export default function BookingConfirmationPage() {
     switch (action) {
       case 'creation':
         icon = <Info size={16} />;
-        title = 'Booking Created';
+        title = 'Request Submitted';
         colorClass = 'text-blue-400';
         break;
       case 'status_change':
@@ -652,7 +652,13 @@ export default function BookingConfirmationPage() {
                 )}
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold">Booking {booking?.status}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold">
+                  {booking?.status === 'pending' ? 'Request Submitted' : 
+                   booking?.status === 'confirmed' ? 'Request Approved' :
+                   booking?.status === 'completed' ? 'Booking Completed' :
+                   booking?.status === 'cancelled' ? 'Request Cancelled' : 
+                   `Booking ${booking?.status}`}
+                </h1>
                 <p className="text-white/60 print:text-gray-600 text-sm">
                   {booking?.created_at && format(new Date(booking.created_at), 'PPP')}
                 </p>
@@ -711,12 +717,20 @@ export default function BookingConfirmationPage() {
             >
               <CheckCircle className="text-green-500 w-5 h-5 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <h3 className="font-medium text-green-400 mb-1">Cash Payment at {booking?.deliveryOption?.name === 'Self Pickup' ? 'Pickup' : 'Delivery'}</h3>
+                <h3 className="font-medium text-green-400 mb-1">
+                  {booking?.status === 'pending' ? 'Request Submitted' : 'Cash Payment at ' + (booking?.deliveryOption?.name === 'Self Pickup' ? 'Pickup' : 'Delivery')}
+                </h3>
                 <p className="text-white/80">
-                  Your booking has been confirmed! Please pay the full amount of ₱{booking?.total_price?.toFixed(2)} in cash when you {booking?.deliveryOption?.name === 'Self Pickup' ? 'pick up your vehicle' : 'receive your vehicle delivery'}.
+                  {booking?.status === 'pending' 
+                    ? 'Your booking request has been submitted to the shop owner for approval. You will be notified once they respond.'
+                    : `Your booking request has been approved! Please pay the full amount of ₱${booking?.total_price?.toFixed(2)} in cash when you ${booking?.deliveryOption?.name === 'Self Pickup' ? 'pick up your vehicle' : 'receive your vehicle delivery'}.`
+                  }
                 </p>
                 <p className="mt-2 text-white/70 text-sm">
-                  The shop owner has been notified of your reservation.
+                  {booking?.status === 'pending' 
+                    ? 'The shop owner will review your request and contact you with their decision.'
+                    : 'The shop owner has approved your request and is preparing your vehicle.'
+                  }
                 </p>
 
                 {/* Show pickup time if available */}

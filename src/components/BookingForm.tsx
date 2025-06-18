@@ -719,7 +719,7 @@ export default function BookingForm({
       <div>
         <h3 className="text-lg font-medium mb-2">Payment Method</h3>
         <div className="space-y-2">
-          {/* Temporary Cash Payment (no deposit) - only shown when enabled in settings */}
+          {/* Cash Payment - only shown when enabled in settings */}
           {systemSettings.enable_temporary_cash_payment && (
             <label
               className={`flex items-start gap-2 p-3 rounded-md hover:bg-white/5 cursor-pointer border transition ${
@@ -738,17 +738,22 @@ export default function BookingForm({
               />
               <div>
                 <div className="font-medium">Cash Payment</div>
-                <div className="text-sm text-white/70">Pay the full amount with cash when picking up or when the vehicle is delivered</div>
+                <div className="text-sm text-white/70">Pay the full amount with cash when you visit the shop to pick up the vehicle or when they deliver it to you</div>
                 <div className="mt-2 p-2 bg-green-900/30 border border-green-500/30 rounded-md text-xs text-white/80">
-                  <p>Pay the full amount in cash directly to the shop when you pick up or receive your vehicle.</p>
+                  <p><strong>How it works:</strong></p>
+                  <ul className="list-disc ml-4 mt-1 space-y-1">
+                    <li>Submit your booking request below</li>
+                    <li>The shop owner will review and accept your request</li>
+                    <li>Pay the full amount in cash when you visit their shop or when they deliver the vehicle</li>
+                  </ul>
                   <div className="flex items-center mt-2 mb-1">
                     <Clock className="w-3 h-3 mr-1 text-green-400" />
                     <p className="font-medium text-green-400">Pickup Time Required</p>
                   </div>
-                  <p className="mb-1">Please select a pickup time below. Your booking will be automatically cancelled if you're more than {systemSettings.default_grace_period_minutes || 30} minutes late.</p>
+                  <p className="mb-1">Please select your preferred pickup time below. This helps the shop prepare your vehicle.</p>
                 </div>
 
-                {/* Time Slot Picker - only shown for temporary cash payment */}
+                {/* Time Slot Picker - only shown for cash payment */}
                 {paymentMethod === 'temp_cash' && (
                   <div className="mt-3">
                     <TimeSlotPicker
@@ -899,8 +904,13 @@ export default function BookingForm({
           className="w-full"
           disabled={loading || !isAuthenticated}
         >
-          {loading ? "Processing..." : isAuthenticated ? "Confirm Booking" : "Sign In to Book"}
+          {loading ? "Submitting Request..." : isAuthenticated ? "Submit Booking Request" : "Sign In to Submit Request"}
         </Button>
+        {isAuthenticated && (
+          <p className="text-xs text-white/60 mt-2 text-center">
+            Your booking request will be sent to the shop owner for approval
+          </p>
+        )}
       </div>
     </form>
   );

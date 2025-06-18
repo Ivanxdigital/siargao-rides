@@ -216,7 +216,7 @@ export default function BookingPage() {
         </Button>
 
         <div className="flex items-center mb-2">
-          <h1 className="text-2xl md:text-3xl font-bold">Book {vehicle.name}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Request to Book {vehicle.name}</h1>
           <div className="ml-3 px-3 py-1 bg-black/30 rounded-full flex items-center border border-white/10">
             {getVehicleIcon()}
             <span>{getVehicleTypeLabel()}</span>

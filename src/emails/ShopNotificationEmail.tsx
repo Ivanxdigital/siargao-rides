@@ -126,10 +126,29 @@ export const ShopNotificationEmail: React.FC<Readonly<ShopNotificationEmailProps
               )}
             </Section>
             
+            <Section className="bg-blue-50 p-4 rounded my-6 border border-blue-200">
+              <Heading className="text-lg font-semibold text-blue-800">Payment Information</Heading>
+              <Text className="text-blue-800">
+                <strong>Cash Payment:</strong> The customer will pay the full amount (₱{safePrice.toLocaleString()}) in cash when they visit your shop or when you deliver the vehicle.
+              </Text>
+              <Text className="text-blue-800 text-sm">
+                No online payment has been processed - this is a cash-only booking request.
+              </Text>
+            </Section>
+            
             <Section className="bg-yellow-50 p-4 rounded my-6 border border-yellow-200">
               <Heading className="text-lg font-semibold text-yellow-800">Action Required</Heading>
               <Text className="text-yellow-800">
-                Please log in to your dashboard to accept or decline this booking. You can also manage all your bookings from your dashboard.
+                <strong>Please respond to this booking request:</strong>
+              </Text>
+              <Text className="text-yellow-800">
+                • Log in to your dashboard to accept or decline this request
+              </Text>
+              <Text className="text-yellow-800">
+                • If accepted, coordinate pickup/delivery details with the customer
+              </Text>
+              <Text className="text-yellow-800">
+                • The customer is waiting for your approval to confirm their plans
               </Text>
             </Section>
             

@@ -71,17 +71,20 @@ export const BookingConfirmationEmail: React.FC<Readonly<BookingConfirmationEmai
   return (
     <Html lang="en">
       <Head />
-      <Preview>Your Siargao Rides Booking #{booking.confirmation_code} is Confirmed</Preview>
+      <Preview>Your Siargao Rides Booking Request #{booking.confirmation_code} has been Submitted</Preview>
       <Tailwind>
         <Body className="bg-gray-100 my-auto mx-auto font-sans">
           <Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] max-w-[600px] bg-white">
             <Section className="mt-4">
               <Heading className="text-2xl font-bold text-center text-black my-0">
-                Your Booking is Confirmed!
+                {bookingStatus === 'pending' ? 'Your Booking Request has been Submitted!' : 'Your Booking is Confirmed!'}
               </Heading>
               <Text className="text-gray-700">Dear {user.name || 'Valued Customer'},</Text>
               <Text className="text-gray-700">
-                Thank you for booking with Siargao Rides. Here are your booking details:
+                {bookingStatus === 'pending' 
+                  ? 'Thank you for your booking request with Siargao Rides. Your request has been sent to the shop owner for review. Here are your booking details:'
+                  : 'Thank you for booking with Siargao Rides. Here are your booking details:'
+                }
               </Text>
             </Section>
             
@@ -128,6 +131,41 @@ export const BookingConfirmationEmail: React.FC<Readonly<BookingConfirmationEmai
                 </Text>
               )}
             </Section>
+            
+            <Hr className="my-6 border-gray-300" />
+            
+            {bookingStatus === 'pending' && (
+              <Section>
+                <Heading className="text-xl font-semibold text-black">Next Steps</Heading>
+                <Text className="text-gray-700">
+                  <strong>1.</strong> The shop owner will review your booking request and contact you within 24 hours.
+                </Text>
+                <Text className="text-gray-700">
+                  <strong>2.</strong> Once approved, you'll receive a confirmation email with pickup/delivery details.
+                </Text>
+                <Text className="text-gray-700">
+                  <strong>3.</strong> Payment: You'll pay the full amount (₱{safePrice.toLocaleString()}) in cash when you visit the shop or receive the vehicle.
+                </Text>
+                <Text className="text-gray-700 text-sm bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
+                  <strong>Note:</strong> This is a request to book, not a confirmed reservation. The shop owner needs to approve your request before your booking is confirmed.
+                </Text>
+              </Section>
+            )}
+            
+            {bookingStatus === 'confirmed' && (
+              <Section>
+                <Heading className="text-xl font-semibold text-black">Next Steps</Heading>
+                <Text className="text-gray-700">
+                  <strong>1.</strong> Your booking has been confirmed by the shop owner.
+                </Text>
+                <Text className="text-gray-700">
+                  <strong>2.</strong> Payment: Pay the full amount (₱{safePrice.toLocaleString()}) in cash when you visit the shop or receive the vehicle.
+                </Text>
+                <Text className="text-gray-700">
+                  <strong>3.</strong> Contact the shop if you have any questions about pickup/delivery.
+                </Text>
+              </Section>
+            )}
             
             <Hr className="my-6 border-gray-300" />
             
