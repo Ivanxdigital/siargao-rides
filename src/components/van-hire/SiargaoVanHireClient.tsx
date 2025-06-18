@@ -70,7 +70,7 @@ export default function SiargaoVanHireClient() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
-      <section className="relative min-h-[calc(100vh-5rem)] lg:min-h-screen flex items-start lg:items-center justify-center overflow-hidden">
+      <section className="relative min-h-[calc(100vh-3rem)] lg:min-h-screen flex items-start lg:items-center justify-center overflow-hidden py-8 lg:py-12">
         {/* Aurora Background */}
         <div className="absolute inset-0 w-full h-full">
           <AuroraBackground className="w-full h-full">
@@ -79,7 +79,7 @@ export default function SiargaoVanHireClient() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 container mx-auto px-4 pt-20 lg:pt-0 py-8 lg:py-0">
+        <div className="relative z-10 container mx-auto px-4 pt-24 lg:pt-20 pb-12 lg:pb-8">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Hero Text */}
             <motion.div
@@ -96,8 +96,8 @@ export default function SiargaoVanHireClient() {
               </p>
               <p className="text-lg mb-8 text-white/80">
                 Comfortable, private transportation for families and groups. Air conditioning, complimentary water, and professional service included. 
-                Need smaller transport? Check our <a href="/browse/bikes" className="text-primary hover:text-primary/80 underline">motorbike rentals</a> or 
-                browse <a href="/shops" className="text-primary hover:text-primary/80 underline">vehicle rental shops</a> across Siargao.
+                Need smaller transport? Check our <a href="/browse" className="text-primary hover:text-primary/80 underline">motorbike rentals</a> or 
+                browse <a href="/browse" className="text-primary hover:text-primary/80 underline">vehicle rental shops</a> across Siargao.
               </p>
               <div className="text-2xl md:text-3xl font-bold text-primary mb-8">
                 ₱2,500 - All Inclusive

@@ -134,8 +134,8 @@ export default function VanHireBookingForm() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card className="bg-zinc-800 border-zinc-700">
+    <div className="max-w-2xl mx-auto mt-4 lg:mt-8">
+      <Card className="bg-zinc-800 border-zinc-700 shadow-2xl">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Book Your Van</CardTitle>
           <div className="flex justify-center space-x-2 mt-4">
@@ -150,7 +150,7 @@ export default function VanHireBookingForm() {
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-track-zinc-700 scrollbar-thumb-zinc-500">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Service & Route Selection */}
             {step === 1 && (
@@ -278,11 +278,11 @@ export default function VanHireBookingForm() {
                       
                       <div>
                         <Label>Tour Destinations (We'll create the best route)</Label>
-                        <div className="grid md:grid-cols-2 gap-2 mt-2">
+                        <div className="grid md:grid-cols-2 gap-3 mt-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-zinc-700 scrollbar-thumb-zinc-500 pr-2">
                           {landTourDestinations.map((destination) => (
                             <div
                               key={destination.value}
-                              className="flex items-center space-x-2 p-2 border border-zinc-600 rounded cursor-pointer hover:bg-zinc-700"
+                              className="flex items-center space-x-2 p-3 border border-zinc-600 rounded cursor-pointer hover:bg-zinc-700 transition-colors"
                               onClick={() => {
                                 const isSelected = formData.landTourStops.includes(destination.value)
                                 setFormData(prev => ({
