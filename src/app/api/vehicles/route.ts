@@ -76,14 +76,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate documents if provided (now optional for quick listing)
+    // Validate documents if provided (registration required, insurance optional)
     const documents = vehicleData.documents || [];
     let hasRequiredDocs = false;
     
-    if (documents && Array.isArray(documents) && documents.length >= 2) {
+    if (documents && Array.isArray(documents) && documents.length >= 1) {
       const hasRegistration = documents.some((doc: VehicleDocument) => doc.type === 'registration');
-      const hasInsurance = documents.some((doc: VehicleDocument) => doc.type === 'insurance');
-      hasRequiredDocs = hasRegistration && hasInsurance;
+      hasRequiredDocs = hasRegistration; // Only registration is required
     }
     
     // Check if vehicle type exists

@@ -270,10 +270,10 @@ export default function AddVehiclePage() {
         throw new Error("Category is required");
       }
 
-      // Check for documents (now optional for quick listing)
+      // Check for documents (registration required, insurance optional)
       const registrationDoc = documents.find(doc => doc.type === 'registration');
       const insuranceDoc = documents.find(doc => doc.type === 'insurance');
-      const hasRequiredDocs = registrationDoc?.file && insuranceDoc?.file;
+      const hasRequiredDocs = registrationDoc?.file; // Only registration is required
 
       // Validate vehicle-specific fields
       if (vehicleTypeId === 1) { // Motorcycle
@@ -397,12 +397,9 @@ export default function AddVehiclePage() {
         }
       }
       
-      // Require at least registration and insurance documents
-      if (
-        !uploadedDocuments.some(doc => doc.type === 'registration') || 
-        !uploadedDocuments.some(doc => doc.type === 'insurance')
-      ) {
-        throw new Error(`Failed to upload required documents: ${uploadErrorMessage}`);
+      // Require at least registration document (insurance is optional)
+      if (!uploadedDocuments.some(doc => doc.type === 'registration')) {
+        throw new Error(`Failed to upload required registration document: ${uploadErrorMessage}`);
       }
 
       // Prepare vehicle data with documents
@@ -551,7 +548,7 @@ export default function AddVehiclePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl">
+      <form onSubmit={handleSubmit} className="space-y-8">
         {/* Vehicle Type Selection */}
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Vehicle Type</h2>
@@ -642,7 +639,7 @@ export default function AddVehiclePage() {
         {/* Pricing */}
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Pricing</h2>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <label
                 className="block text-sm font-medium mb-1"
@@ -732,7 +729,7 @@ export default function AddVehiclePage() {
         {/* Specifications */}
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Specifications</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label
                 className="block text-sm font-medium mb-1"
@@ -770,7 +767,7 @@ export default function AddVehiclePage() {
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 lg:col-span-3">
               <label
                 className="block text-sm font-medium mb-1"
                 htmlFor="features"
@@ -995,7 +992,7 @@ export default function AddVehiclePage() {
                 
                 {/* Insurance Document */}
                 <div>
-                  <h3 className="text-sm font-medium mb-2">Vehicle Insurance <span className="text-destructive">*</span></h3>
+                  <h3 className="text-sm font-medium mb-2">Vehicle Insurance <span className="text-muted-foreground">(Optional)</span></h3>
                   
                   <div className="bg-muted/30 border border-border rounded-lg p-4">
                     <div className="flex items-center gap-3">
@@ -1153,7 +1150,7 @@ export default function AddVehiclePage() {
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
-                  <p>Vehicle registration and insurance documents are <strong>optional for quick listing</strong> but required for verification. Upload them now to get verified faster, or add them later to get your verified badge!</p>
+                  <p>Vehicle registration is <strong>required for verification</strong>. Insurance documents are optional but recommended. Upload registration now to get verified faster, or add it later to get your verified badge!</p>
                 </div>
               </div>
             </div>

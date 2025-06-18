@@ -121,7 +121,7 @@ export function VehicleVerificationBadge({
           <TooltipContent>
             <div className="text-center">
               <p className="font-medium">📄 Documents Needed</p>
-              <p className="text-xs">Upload registration & insurance to get verified</p>
+              <p className="text-xs">Upload registration documents to get verified</p>
             </div>
           </TooltipContent>
         </Tooltip>
