@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { MapPin, Clock, Users, Luggage, Shield, Droplets, Wind, Phone, CheckCircle, ArrowRight, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import AuroraBackground from "@/components/ui/aurora-background"
+import YouTubeBackground from "@/components/ui/youtube-background"
 import VanHireBookingForm from "@/components/van-hire/VanHireBookingForm"
 import WhyBookVanHire from "@/components/van-hire/WhyBookVanHire"
 import PopularRoutes from "@/components/van-hire/PopularRoutes"
@@ -71,11 +71,13 @@ export default function SiargaoVanHireClient() {
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
       <section className="relative min-h-[calc(100vh-3rem)] lg:min-h-screen flex items-start lg:items-center justify-center overflow-hidden py-8 lg:py-12">
-        {/* Aurora Background */}
+        {/* YouTube Background */}
         <div className="absolute inset-0 w-full h-full">
-          <AuroraBackground className="w-full h-full">
-            <div className="absolute inset-0 bg-black/40" />
-          </AuroraBackground>
+          <YouTubeBackground 
+            videoId="9xIYXCIvcnQ"
+            className="w-full h-full"
+            fallbackImage="/images/background-GL.jpg"
+          />
         </div>
 
         {/* Hero Content */}

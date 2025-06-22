@@ -15,28 +15,44 @@ interface FAQItemProps {
 
 const faqData = [
   {
-    question: "Do I need a driver's license to rent a motorbike?",
-    answer: "Yes, a valid driver's license is required. For foreigners, an International Driving Permit (IDP) along with your home country's license is recommended. Some shops might accept your home license, but it's best to check with them directly."
+    question: "Do I need a driver's license to rent a motorbike in Siargao?",
+    answer: "Yes, a valid driver's license is required for all vehicle rentals in Siargao. For foreigners, an International Driving Permit (IDP) along with your home country's license is recommended. Some Siargao rental shops might accept your home license, but it's best to check with them directly."
   },
   {
-    question: "Is a helmet included with the rental?",
-    answer: "Most rental shops provide helmets (usually one or two) with the motorbike rental. It's always best to confirm when booking and ensure the helmet fits properly. Safety first!"
+    question: "What are the typical motorbike rental prices in Siargao?",
+    answer: "Motorbike rental prices in Siargao typically range from ₱300-800 per day depending on the type of vehicle. Scooters are usually ₱300-500/day, while manual motorcycles and larger bikes can cost ₱500-800/day. Weekly and monthly rentals often offer better rates."
   },
   {
-    question: "What type of motorbike should I choose?",
-    answer: "Scooters (automatic) are great for beginners and cruising around town. Semi-automatics offer a bit more control. Dirt bikes or manual bikes are better suited for more experienced riders or exploring off-the-beaten-path areas. Consider your experience and where you plan to go."
+    question: "Where can I pick up my rental vehicle in Siargao?",
+    answer: "Most rental shops offer pickup in General Luna, Cloud 9, and around the airport area. Many shops provide flexible pickup locations including your accommodation. Some may charge a small delivery fee for locations outside their main service area."
   },
   {
-    question: "What happens if the motorbike breaks down?",
-    answer: "Rental shops usually have procedures for breakdowns. Contact the shop immediately. They typically provide assistance or a replacement vehicle, depending on the situation and their policy. Ask about their breakdown policy before renting."
+    question: "Is a helmet included with motorbike rentals in Siargao?",
+    answer: "Most Siargao rental shops provide helmets (usually one or two) with the motorbike rental. It's always best to confirm when booking and ensure the helmet fits properly. Safety first on Siargao's roads!"
   },
   {
-    question: "Can I rent for multiple days or weeks?",
-    answer: "Absolutely! Most shops offer daily, weekly, and sometimes even monthly rental rates. Longer rentals often come with discounted daily rates."
+    question: "What type of vehicle should I rent for exploring Siargao?",
+    answer: "For Siargao exploration: Scooters (automatic) are perfect for General Luna, Cloud 9, and paved roads. Semi-automatics offer more power for hills and longer distances. Manual motorcycles are ideal for experienced riders wanting to explore remote beaches and off-road spots like Magpupungko Rock Pools."
   },
   {
-    question: "Are the roads safe in Siargao?",
-    answer: "While main roads are generally paved, conditions can vary, especially after rain. Be aware of potholes, animals on the road, and local driving habits. Always ride defensively and within your comfort level. Refer to our Safety Tips section for more!"
+    question: "Can I rent a car or just motorbikes in Siargao?",
+    answer: "You can rent both! While motorbikes are most popular in Siargao, many shops also offer cars, vans, and multicabs for families or groups. Cars are great for airport transfers and comfortable island touring, especially during rainy season."
+  },
+  {
+    question: "What happens if my rental breaks down in Siargao?",
+    answer: "Siargao rental shops usually have breakdown procedures. Contact your rental shop immediately - they typically provide roadside assistance or a replacement vehicle. Ask about their breakdown policy and emergency contact numbers before renting."
+  },
+  {
+    question: "How far in advance should I book a vehicle rental in Siargao?",
+    answer: "During peak season (December-March), book 1-2 weeks in advance. For surfing season and holidays, even earlier booking is recommended. During off-season, you can often find availability with just a few days notice, but popular vehicle types may still sell out."
+  },
+  {
+    question: "Are Siargao roads safe for tourists?",
+    answer: "Siargao's main roads between General Luna, Cloud 9, and the airport are generally well-maintained. However, conditions can vary, especially after rain. Watch for potholes, animals, and local traffic patterns. Many tourists successfully explore the island - just ride defensively and within your comfort level."
+  },
+  {
+    question: "Can I rent vehicles for multiple days or weeks in Siargao?",
+    answer: "Absolutely! Most Siargao rental shops offer daily, weekly, and monthly rates. Extended rentals typically come with significant discounts - weekly rates can be 20-30% cheaper per day, and monthly rentals offer even better value for longer stays."
   }
 ]
 

@@ -10,6 +10,7 @@ import * as service from "@/lib/service"
 import { RentalShop, Bike, BikeCategory, Vehicle, VehicleType, VehicleCategory } from "@/lib/types"
 import { ArrowRight } from "lucide-react"
 import FAQSection from '@/components/FAQSection'
+import { generateLocalBusinessSchema, generateJSONLD } from "@/lib/structured-data"
 
 // Transformed shop data for the RentalShopCard
 interface ShopCardData {
@@ -72,8 +73,8 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkIfMobile)
   }, [])
 
-  // YouTube video setup
-  const videoId = "l6K6FgR2xB8"
+  // YouTube video setup - TEMPORARILY DISABLED
+  // const videoId = "l6K6FgR2xB8"
 
   useEffect(() => {
     async function fetchData() {
@@ -141,7 +142,8 @@ export default function Home() {
     fetchData()
   }, [])
 
-  // Initialize the YouTube iframe after the component mounts (client-side only)
+  // YouTube iframe initialization - TEMPORARILY DISABLED
+  /*
   useEffect(() => {
     if (!videoContainerRef.current || isMobile) return;
 
@@ -196,6 +198,7 @@ export default function Home() {
       clearTimeout(timeoutId);
     };
   }, [videoId, isMobile, videoLoaded]);
+  */
 
   const handleSearch = async (params: SearchParams) => {
     console.log("Search params:", params)
@@ -354,8 +357,18 @@ export default function Home() {
     }
   }, [])
 
+  // Generate structured data for SEO
+  const localBusinessSchema = generateLocalBusinessSchema()
+
   return (
     <div className="flex flex-col min-h-screen w-full overflow-hidden">
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: generateJSONLD(localBusinessSchema)
+        }}
+      />
       {/* Hero Section - improved responsive heights */}
       <section className="relative min-h-[100vh] sm:min-h-screen bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10 transition-all duration-500">
         {/* Background Image with Overlay - Mobile Only - improved for performance */}
@@ -363,7 +376,7 @@ export default function Home() {
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 hover:opacity-50 transition-opacity duration-1000"
             style={{
-              backgroundImage: "url('/images/alejandro-luengo-clllGLYtLRA-unsplash.jpg')",
+              backgroundImage: "url('/images/siargao-motorbike-rental-siargao.png')",
               backgroundSize: "cover"
             }}
             aria-hidden="true"
@@ -384,25 +397,19 @@ export default function Home() {
           <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-purple-900/10 to-transparent z-10"></div>
         </div>
 
-        {/* YouTube Video Background or Fallback Image - Desktop Only */}
+        {/* Static Background Image - Desktop */}
         <div className="absolute inset-0 w-full h-full hidden md:block">
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10"></div>
           <div className="relative w-full h-full overflow-hidden">
-            {videoError ? (
-              /* Fallback Image when video fails to load */
-              <div className="w-full h-full relative">
-                <Image
-                  src="/images/background-GL.jpg"
-                  alt="Siargao Island Background"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            ) : (
-              /* YouTube Video Container */
-              <div ref={videoContainerRef} className="w-full h-full"></div>
-            )}
+            <div className="w-full h-full relative">
+              <Image
+                src="/images/siargao-motorbike-rental-siargao.png"
+                alt="Siargao Motorbike Rental"
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
           </div>
         </div>
 
@@ -411,24 +418,13 @@ export default function Home() {
           <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-blue-200 to-white animate-gradient-x leading-relaxed drop-shadow-xl filter-shadow-strong tracking-wide">
-                Because Walking in Flip-Flops Only Gets You So Far
+                Siargao Vehicle Rentals – Because Walking in Flip-Flops Only Gets You So Far
               </span>
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
-            Explore Siargao with Ease – Rent Motorbikes, Cars, or TukTuks with Flexible Pickup, Local Rates, and Total Freedom.
+              Rent motorbikes, cars, and scooters in Siargao Island, Philippines. Compare trusted local rental shops with flexible pickup, competitive rates, and total freedom to explore paradise.
             </p>
-            {/* Credits - Only visible on desktop */}
-            <p className="hidden md:block text-xs sm:text-sm text-white/50 mt-2 font-light">
-              Video by{' '}
-              <a
-                href="https://www.youtube.com/@ourawesomeplanet"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white/70 transition-colors underline underline-offset-2 decoration-white/30"
-              >
-                Our Awesome Planet
-              </a>
-            </p>
+{/* Credits removed since no longer using video background */}
           </div>
 
           {/* Search Bar Container - better mobile spacing */}
@@ -877,6 +873,92 @@ export default function Home() {
               </Link>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Why Choose Siargao Rides Section */}
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-gray-900 to-black text-white overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12 md:mb-16">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 sm:mb-3">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
+                Why Rent with Siargao Rides?
+              </span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
+              The most trusted vehicle rental platform in Siargao Island
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {/* Local Expertise */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5">
+              <div className="text-primary/80 mb-4 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium mb-2 text-center">Local Siargao Knowledge</h3>
+              <p className="text-gray-400 text-sm text-center leading-relaxed">
+                Partner with verified local rental shops who know Siargao's roads, conditions, and best spots to explore.
+              </p>
+            </div>
+
+            {/* Best Prices */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5">
+              <div className="text-primary/80 mb-4 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium mb-2 text-center">Competitive Rates</h3>
+              <p className="text-gray-400 text-sm text-center leading-relaxed">
+                Compare prices from multiple Siargao rental shops to find the best deals on motorbikes, cars, and scooters.
+              </p>
+            </div>
+
+            {/* Easy Booking */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 md:col-span-2 lg:col-span-1">
+              <div className="text-primary/80 mb-4 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <path d="M22 4 12 14.01l-3-3"></path>
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium mb-2 text-center">Flexible Pickup</h3>
+              <p className="text-gray-400 text-sm text-center leading-relaxed">
+                Book online and arrange convenient pickup anywhere in General Luna, Cloud 9, or other Siargao locations.
+              </p>
+            </div>
+          </div>
+
+          {/* Popular Destinations */}
+          <div className="mt-12 sm:mt-16 text-center">
+            <h3 className="text-lg sm:text-xl font-medium mb-4 text-white">
+              Popular Siargao Destinations to Explore
+            </h3>
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+              {[
+                'Cloud 9 Surfing',
+                'Magpupungko Rock Pools',
+                'Sugba Lagoon',
+                'Naked Island',
+                'Daku Island',
+                'Guyam Island',
+                'Sohoton Cove',
+                'General Luna'
+              ].map((destination) => (
+                <span 
+                  key={destination}
+                  className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs sm:text-sm font-medium"
+                >
+                  {destination}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

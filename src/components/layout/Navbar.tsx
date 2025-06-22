@@ -221,7 +221,6 @@ const Navbar = () => {
           <div className="hidden md:flex gap-8 items-center">
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
             <NavLink href="/browse" isScrolled={scrolled}>Browse</NavLink>
-            <NavLink href="/van-hire" isScrolled={scrolled}>Private Van Hire</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About Us</NavLink>
             <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
@@ -407,9 +406,6 @@ const Navbar = () => {
               </MobileNavLink>
               <MobileNavLink href="/browse" onClick={() => setIsMenuOpen(false)} icon={<Search size={16} />}>
                 Browse
-              </MobileNavLink>
-              <MobileNavLink href="/van-hire" onClick={() => setIsMenuOpen(false)} icon={<Truck size={16} />}>
-                Private Van Hire
               </MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)} icon={<Info size={16} />}>
                 About Us
