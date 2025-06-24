@@ -97,6 +97,9 @@ src/
 - Ensure `npm run build` passes
 - Use TypeScript strict mode (no `any` types)
 - Validate all external input with Zod
+- Test payment flows with PayMongo test cards (see `docs/paymongo-test-cards.md`)
+- Use `npm run reset-db` for database reset during development
+- Run `npm run setup-storage` for Supabase storage bucket setup
 
 ## Business Logic
 
@@ -109,9 +112,12 @@ src/
 - Referral system for shop acquisition
 
 **Payment Methods:**
-- Cash payments with deposit system
-- GCash integration
-- PayMongo for card payments
+- Cash payments with deposit system and payout tracking
+- GCash integration via PayMongo e-wallets
+- PayMongo for card payments (cards, bank transfers)
+- PayPal integration for international customers
+- Deposit payment system with separate flows
+- Auto-cancellation for unpaid bookings
 
 **Role-Based Access:**
 - Tourists: Browse, book, review
@@ -151,6 +157,19 @@ src/
 **Feature Flags:**
 - Environment-based toggles using `NEXT_PUBLIC_FEATURE_*` pattern
 - Currently includes `NEXT_PUBLIC_FEATURE_ONBOARDING_V2`
+
+## Database Migration Strategy
+
+**Schema Changes:**
+- Generate raw SQL for manual execution in Supabase SQL Editor
+- Never use Supabase CLI commands or migration scripts
+- All schema changes stored in `sql/` directory for reference
+- Key migrations include vehicle verification, deposit payouts, pickup times
+
+**Legacy Data Handling:**
+- `bikes` table being phased out in favor of `vehicles` table
+- Maintain backward compatibility during transition
+- Use type-safe migrations with proper foreign key constraints
 
 ## Key Configuration
 
@@ -211,3 +230,21 @@ src/
 - Use date-fns consistently (avoid moment, multiple calendar libraries)
 - Generate raw SQL for schema changes (no CLI commands)
 - Prioritize mobile-first responsive design
+- Focus on clean, readable, well-commented code
+- Use modern JavaScript/TypeScript syntax (async/await, ES6+)
+- Structure code into clear components, hooks, or API helpers
+- Include helpful console.log() statements for debugging during development
+
+## Current Development Priorities
+
+**Active Features:**
+- Van hire service with custom booking flow
+- PayPal payment integration
+- Vehicle verification system
+- Shop onboarding improvements
+- SEO optimization for van hire pages
+
+**Legacy Migration:**
+- Transitioning from `bikes` to `vehicles` table structure
+- Consolidating date libraries to date-fns only
+- Removing redundant notification libraries

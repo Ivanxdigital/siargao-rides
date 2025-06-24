@@ -1,4 +1,5 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useQuery } from '@tanstack/react-query';
 import { Vehicle, VehicleType } from '@/lib/types';
 
 export interface VehicleWithMetadata extends Vehicle {
@@ -14,6 +15,38 @@ export interface VehicleWithMetadata extends Vehicle {
 
 export interface FetchVehiclesResult {
   vehicles: VehicleWithMetadata[];
+  availableCategories: Record<VehicleType, string[]>;
+  locations: string[];
+}
+
+export interface BrowseFilters {
+  page?: number;
+  limit?: number;
+  price_min?: number;
+  price_max?: number;
+  vehicle_type?: VehicleType | 'all';
+  categories?: string[];
+  location?: string;
+  start_date?: string;
+  end_date?: string;
+  only_available?: boolean;
+  min_seats?: number;
+  transmission?: string;
+  engine_size_min?: number;
+  engine_size_max?: number;
+  sort_by?: string;
+}
+
+export interface BrowseVehiclesResult {
+  vehicles: VehicleWithMetadata[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
   availableCategories: Record<VehicleType, string[]>;
   locations: string[];
 }
@@ -101,4 +134,38 @@ export async function fetchVehicles(): Promise<FetchVehiclesResult> {
     availableCategories: allCategories,
     locations: allLocations,
   };
-} 
+}
+
+export async function fetchBrowseVehicles(filters: BrowseFilters): Promise<BrowseVehiclesResult> {
+  const searchParams = new URLSearchParams();
+  
+  // Add all filters to search params
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value)) {
+        value.forEach(v => searchParams.append(key, v.toString()));
+      } else {
+        searchParams.append(key, value.toString());
+      }
+    }
+  });
+
+  const response = await fetch(`/api/vehicles/browse?${searchParams.toString()}`);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch vehicles: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+export function useBrowseVehicles(filters: BrowseFilters) {
+  return useQuery({
+    queryKey: ['browse-vehicles', filters],
+    queryFn: () => fetchBrowseVehicles(filters),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: false,
+    // Enable background refetching for better UX
+    refetchInterval: 1000 * 60 * 5, // 5 minutes
+  });
+}
