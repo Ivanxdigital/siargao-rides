@@ -252,6 +252,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     .from('rental_shops')
                     .select('id')
                     .eq('owner_id', session.user.id)
+                    .eq('is_active', true)  // Add explicit filter to help with RLS policy
                     .single();
 
                   if (error) {
@@ -473,7 +474,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             intent: intent || role,
             has_shop: hasShop,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
@@ -560,8 +560,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         setIsLoading(false);
-        // Redirect to email verification page
-        router.push("/verify-email");
+        // Redirect directly to dashboard (email confirmation disabled)
+        router.push("/dashboard");
         return { error: null };
       } else {
         console.error('Auth signup succeeded but no user object returned');
@@ -584,9 +584,74 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      console.log('Starting sign-out process...');
+      setIsLoading(true);
+      
+      // Clear notification subscriptions before signing out
+      if (notificationSubscriptionRef.current) {
+        console.log('Unsubscribing from booking notifications...');
+        notificationSubscriptionRef.current.unsubscribe();
+        notificationSubscriptionRef.current = null;
+      }
+
+      if (shopNotificationSubscriptionRef.current) {
+        console.log('Unsubscribing from shop notifications...');
+        shopNotificationSubscriptionRef.current.unsubscribe();
+        shopNotificationSubscriptionRef.current = null;
+      }
+
+      // Sign out from Supabase
+      console.log('Calling supabase.auth.signOut()...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Supabase sign-out error:', error);
+        throw error;
+      }
+
+      // Clear local state
+      console.log('Clearing local authentication state...');
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      
+      console.log('Sign-out successful, redirecting to home page...');
+      
+      // Use replace instead of push to prevent back button issues
+      router.replace("/");
+      
+      // Add a small delay before refreshing to ensure navigation completes
+      setTimeout(() => {
+        router.refresh();
+      }, 100);
+      
+    } catch (error: any) {
+      console.error('Sign-out failed:', error);
+      
+      // Even if sign-out fails, try to clear local state and redirect
+      console.log('Attempting to clear local state despite error...');
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      
+      // Clear notification subscriptions
+      if (notificationSubscriptionRef.current) {
+        notificationSubscriptionRef.current.unsubscribe();
+        notificationSubscriptionRef.current = null;
+      }
+      if (shopNotificationSubscriptionRef.current) {
+        shopNotificationSubscriptionRef.current.unsubscribe();
+        shopNotificationSubscriptionRef.current = null;
+      }
+      
+      router.replace("/");
+      
+      // Re-throw error so calling component can handle it
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetPassword = async (email: string) => {
@@ -609,78 +674,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const resendVerificationEmail = async (email: string) => {
-    try {
-      console.log(`Attempting to send verification email to: ${email}`);
-
-      // First check if the email exists in our system
-      const { data: userExists, error: checkError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking if user exists:', checkError);
-        return {
-          error: { message: `Error verifying email address: ${checkError.message}` },
-          success: false,
-          details: null
-        };
-      }
-
-      if (!userExists) {
-        console.warn(`Email address ${email} not found in our system`);
-        return {
-          error: { message: 'Email address not found in our system' },
-          success: false,
-          details: null
-        };
-      }
-
-      // Attempt to resend the verification email
-      const { error, data } = await supabase.auth.resend({
-        type: 'signup',
+    // Email verification is disabled - return success immediately
+    console.log('Email verification is disabled, skipping resend');
+    return {
+      error: null,
+      success: true,
+      details: {
         email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) {
-        console.error('Supabase auth.resend error:', error);
-        return {
-          error,
-          success: false,
-          details: {
-            message: error.message,
-            status: error.status || 'unknown',
-            requestTime: new Date().toISOString()
-          }
-        };
+        timestamp: new Date().toISOString(),
+        message: 'Email verification is currently disabled',
       }
-
-      console.log('Verification email resend successful:', data);
-      return {
-        error: null,
-        success: true,
-        details: {
-          email,
-          timestamp: new Date().toISOString(),
-          provider: 'supabase',
-        }
-      };
-    } catch (error) {
-      console.error('Unexpected error in resendVerificationEmail:', error);
-      return {
-        error,
-        success: false,
-        details: {
-          timestamp: new Date().toISOString(),
-          errorType: error instanceof Error ? error.name : 'Unknown',
-          errorDetail: error instanceof Error ? error.message : String(error)
-        }
-      };
-    }
+    };
   };
 
   const signInWithGoogle = async () => {
@@ -695,7 +699,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             access_type: 'offline',
             prompt: 'consent',
           },
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/dashboard`,
         }
       });
 

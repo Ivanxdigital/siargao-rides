@@ -333,6 +333,40 @@ export type PayPalOrder = {
   links: PayPalLink[];
 };
 
+// Shop browsing types
+export interface BrowseShopsFilters {
+  page?: number;
+  limit?: number;
+  sort_by?: 'rating_desc' | 'rating_asc' | 'vehicles_desc' | 'price_asc' | 'price_desc' | 'newest';
+  location?: string;
+  vehicle_types?: VehicleType[];
+  verified_only?: boolean;
+  offers_delivery?: boolean;
+  has_whatsapp?: boolean;
+  min_rating?: number;
+  search?: string;
+}
+
+export interface ShopWithMetadata extends RentalShop {
+  starting_price?: number;
+  average_rating?: number;
+  review_count?: number;
+  vehicle_count?: number;
+  vehicle_types?: VehicleType[];
+  images?: string[];
+}
+
+export interface ShopsPaginationResponse {
+  shops: ShopWithMetadata[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  locations: string[];
+}
+
 export type PayPalPurchaseUnit = {
   reference_id: string;
   description: string;

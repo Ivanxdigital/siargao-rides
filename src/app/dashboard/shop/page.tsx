@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { Edit, MapPin, Phone, Mail, Clock, Save, Eye, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Edit, MapPin, Phone, Mail, Clock, Save, Eye, Upload, X, Image as ImageIcon, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
@@ -12,6 +12,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/SubscriptionStatus";
 import { Badge } from "@/components/ui/badge";
 import { SIARGAO_LOCATIONS } from "@/lib/constants";
+import { VerificationBadge } from "@/components/shop/VerificationBadge";
 
 // Use the shared locations from constants
 const siargaoLocations = SIARGAO_LOCATIONS;
@@ -29,6 +30,7 @@ interface RentalShop {
   logo_url: string | null;
   banner_url: string | null;
   is_verified: boolean;
+  status?: 'pending_verification' | 'active' | 'rejected';
   created_at: string;
   updated_at: string;
   owner_id: string;
@@ -156,7 +158,7 @@ export default function ManageShopPage() {
         // Get the shop owned by this user
         const { data, error: shopError } = await supabase
           .from("rental_shops")
-          .select("*")
+          .select("*, status")
           .eq("owner_id", user.id)
           .single();
 
@@ -566,21 +568,31 @@ export default function ManageShopPage() {
     }
   };
 
-  // Not verified message
-  if (shop && !shop.is_verified) {
+  // Block access only for rejected or inactive shops
+  if (shop && (shop.status === 'rejected' || shop.is_active === false)) {
     return (
       <div className="container mx-auto px-4 py-12">
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-8 text-center max-w-md mx-auto shadow-md">
-          <h1 className="text-2xl font-bold mb-4">Pending Verification</h1>
-          <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-800/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Clock size={40} className="text-yellow-600 dark:text-yellow-400" />
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center max-w-md mx-auto shadow-md">
+          <h1 className="text-2xl font-bold mb-4">
+            {shop.status === 'rejected' ? 'Shop Registration Issues' : 'Shop Inactive'}
+          </h1>
+          <div className="w-20 h-20 bg-red-100 dark:bg-red-800/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={40} className="text-red-600 dark:text-red-400" />
           </div>
           <p className="mb-6 text-muted-foreground">
-            Your shop registration is currently being reviewed by our team. You'll be able to manage your shop once it's verified.
+            {shop.status === 'rejected' 
+              ? 'There are issues with your shop registration that need to be resolved. Please contact support for assistance.'
+              : 'Your shop is currently inactive. Please contact support to reactivate your shop.'
+            }
           </p>
-          <Button variant="outline" asChild className="hover:bg-yellow-100 dark:hover:bg-yellow-900/30">
-            <Link href="/dashboard">Return to Dashboard</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button variant="outline" asChild className="hover:bg-red-100 dark:hover:bg-red-900/30">
+              <Link href="/dashboard">Return to Dashboard</Link>
+            </Button>
+            <Button variant="default" asChild>
+              <Link href="mailto:support@siargaorides.ph">Contact Support</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -631,11 +643,13 @@ export default function ManageShopPage() {
           </p>
         </div>
         <div className="shrink-0 flex flex-wrap items-center gap-2 sm:gap-3">
-          {shop && !shop.is_verified && (
-            <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 flex items-center gap-2 py-1.5 px-3 text-xs sm:text-sm">
-              <Clock className="h-4 w-4" />
-              Pending Verification
-            </Badge>
+          {shop && (
+            <VerificationBadge 
+              status={shop.status || 'pending_verification'} 
+              isVerified={shop.is_verified}
+              size="md"
+              showText={true}
+            />
           )}
 
           {!isEditing && (
@@ -665,6 +679,35 @@ export default function ManageShopPage() {
           )}
         </div>
       </div>
+
+      {/* Verification Info Banner for Unverified Shops */}
+      {shop && !shop.is_verified && shop.status !== 'rejected' && (
+        <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-800/30 rounded-full flex items-center justify-center">
+                <Clock size={16} className="text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                Verification in Progress
+              </h3>
+              <p className="text-sm text-blue-700 dark:text-blue-200 mb-3">
+                Your shop is active and you can manage vehicles and bookings. Complete verification to unlock additional benefits like higher search rankings and trust badges.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" size="sm" asChild className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:text-blue-200 dark:border-blue-600 dark:hover:bg-blue-800/30">
+                  <Link href="/dashboard/verification">Complete Verification</Link>
+                </Button>
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-800/30">
+                  Learn About Benefits
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form/Content section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

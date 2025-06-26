@@ -339,7 +339,7 @@ function RegisterShopPageContent({
   toggleLanguage: () => void,
   languageTransition: any
 }) {
-  const { user, isAuthenticated, isLoading: authLoading, resendVerificationEmail } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const formRef = useRef<HTMLDivElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -786,27 +786,9 @@ function RegisterShopPageContent({
     }
   });
 
+  // Email verification is disabled - this function is no longer needed
   const handleResendVerification = async () => {
-    if (!verificationEmail) {
-      setError("Please provide an email address to send the verification link")
-      return
-    }
-
-    setIsResending(true)
-    setResendSuccess(false)
-    setDebugDetails(null)
-    setError(null)
-
-    const { success, error, details } = await resendVerificationEmail(verificationEmail)
-
-    setIsResending(false)
-    setDebugDetails(details)
-
-    if (success) {
-      setResendSuccess(true)
-    } else {
-      setError(`Verification email failed: ${error?.message || 'Unknown error'}`)
-    }
+    console.log('Email verification is disabled');
   }
 
   const handleRequestManualVerification = async () => {

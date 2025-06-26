@@ -202,36 +202,8 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Check if this is the first vehicle for this shop
-    const { data: vehicleCountData, error: countError } = await supabase
-      .from('vehicles')
-      .select('id')
-      .eq('shop_id', shopData.id);
-      
-    const vehicleCount = vehicleCountData?.length || 0;
-      
-    if (!countError && vehicleCount === 1) {
-      // This is the first vehicle - start subscription
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + 1); // Add 1 month for free trial
-      
-      // Update the shop with subscription info
-      const { error: updateError } = await supabase
-        .from('rental_shops')
-        .update({
-          subscription_status: 'active',
-          subscription_start_date: startDate.toISOString(),
-          subscription_end_date: endDate.toISOString(),
-          is_active: true
-        })
-        .eq('id', shopData.id);
-        
-      if (updateError) {
-        console.error('Error starting subscription:', updateError);
-        // Continue despite this error since the vehicle was created successfully
-      }
-    }
+    // SUBSCRIPTION SYSTEM DISABLED: No longer need to activate subscription on first vehicle
+    // All shops are now permanently active upon verification
     
     return NextResponse.json({
       success: true,

@@ -166,6 +166,29 @@ export default function DashboardLayout({
     }
   }, [isLoading, isAuthenticated, router]);
 
+  // This useEffect ensures consistent hook execution order
+  useEffect(() => {
+    // This is an empty effect that runs on every render
+    // to ensure consistent hook execution order
+  }, []);
+
+  // Add scroll lock effect for mobile sidebar
+  useEffect(() => {
+    const handleScrollLock = () => {
+      if (sidebarOpen && window.innerWidth < 768) {
+        document.body.classList.add('overflow-hidden');
+      } else {
+        document.body.classList.remove('overflow-hidden');
+      }
+    };
+
+    handleScrollLock();
+
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [sidebarOpen]);
+
   // Show loading state while checking authentication or setting up user
   if (isLoading || isSettingUp) {
     return (
@@ -197,29 +220,6 @@ export default function DashboardLayout({
 
   const isShopOwner = user?.user_metadata?.role === "shop_owner";
   const isAdmin = user?.user_metadata?.role === "admin";
-
-  // This useEffect ensures consistent hook execution order
-  useEffect(() => {
-    // This is an empty effect that runs on every render
-    // to ensure consistent hook execution order
-  }, []);
-
-  // Add scroll lock effect for mobile sidebar
-  useEffect(() => {
-    const handleScrollLock = () => {
-      if (sidebarOpen && window.innerWidth < 768) {
-        document.body.classList.add('overflow-hidden');
-      } else {
-        document.body.classList.remove('overflow-hidden');
-      }
-    };
-
-    handleScrollLock();
-
-    return () => {
-      document.body.classList.remove('overflow-hidden');
-    };
-  }, [sidebarOpen]);
 
   return (
     <motion.div

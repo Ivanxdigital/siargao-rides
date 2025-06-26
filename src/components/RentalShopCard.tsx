@@ -12,13 +12,14 @@ interface RentalShopCardProps {
   id: string
   name: string
   images: string[]
-  startingPrice: number
-  rating: number
+  startingPrice?: number
+  rating?: number
   reviewCount: number
   availableBikes?: number
   totalBikes?: number
   location?: string
   vehicleTypes?: VehicleType[]
+  onClick?: () => void
 }
 
 const RentalShopCard = ({
@@ -31,7 +32,8 @@ const RentalShopCard = ({
   availableBikes,
   totalBikes,
   location,
-  vehicleTypes = ['motorcycle']
+  vehicleTypes = ['motorcycle'],
+  onClick
 }: RentalShopCardProps) => {
   const fallbackImage = "https://placehold.co/600x400/1e3b8a/white?text=Shop+Image"
   
@@ -52,10 +54,12 @@ const RentalShopCard = ({
         />
         
         {/* Minimal rating overlay */}
-        <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md rounded-lg px-3 py-1.5 flex items-center gap-1.5">
-          <Star size={12} className="text-yellow-400 fill-yellow-400" />
-          <span className="text-sm font-medium text-white">{rating.toFixed(1)}</span>
-        </div>
+        {rating !== undefined && (
+          <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+            <Star size={12} className="text-yellow-400 fill-yellow-400" />
+            <span className="text-sm font-medium text-white">{rating.toFixed(1)}</span>
+          </div>
+        )}
         
         {/* Clean vehicle type indicators */}
         {vehicleTypes && vehicleTypes.length > 0 && (
@@ -96,10 +100,14 @@ const RentalShopCard = ({
         {/* Cleaner pricing display */}
         <div className="mb-6">
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-primary">₱{startingPrice}</span>
+            <span className="text-2xl font-bold text-primary">
+              ₱{startingPrice ? startingPrice.toFixed(0) : '---'}
+            </span>
             <span className="text-sm text-muted-foreground">/day</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Starting from</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {startingPrice ? 'Starting from' : 'Price not available'}
+          </p>
         </div>
         
         {/* Simplified vehicle availability */}
@@ -111,11 +119,17 @@ const RentalShopCard = ({
 
         {/* Clean CTA button */}
         <div className="mt-auto">
-          <Button asChild className="w-full h-11 text-sm font-medium" variant="default">
-            <Link href={`/shop/${id}`}>
+          {onClick ? (
+            <Button onClick={onClick} className="w-full h-11 text-sm font-medium" variant="default">
               View Shop
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button asChild className="w-full h-11 text-sm font-medium" variant="default">
+              <Link href={`/shop/${id}`}>
+                View Shop
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </motion.div>

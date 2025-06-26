@@ -66,6 +66,7 @@ export async function fetchVehicles(): Promise<FetchVehiclesResult> {
     .order('price_per_day');
 
   vehicleQuery = vehicleQuery.eq('is_available', true);
+  // SUBSCRIPTION SYSTEM DISABLED: All shops are now permanently active
   vehicleQuery = vehicleQuery.eq('rental_shops.is_active', true);
   vehicleQuery = vehicleQuery.eq('is_verified', true);
   vehicleQuery = vehicleQuery.eq('verification_status', 'approved');
@@ -113,11 +114,10 @@ export async function fetchVehicles(): Promise<FetchVehiclesResult> {
     });
   }
 
-  // Get all unique locations from active shops
+  // Get all unique locations (subscription system disabled - all shops included)
   const { data: shopData } = await supabase
     .from('rental_shops')
     .select('location_area')
-    .eq('is_active', true)
     .order('location_area');
 
   const allLocations = Array.from(

@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
 
     // Apply basic filters
     vehicleQuery = vehicleQuery.eq('is_available', true);
+    // SUBSCRIPTION SYSTEM DISABLED: All shops are now permanently active
     vehicleQuery = vehicleQuery.eq('rental_shops.is_active', true);
     vehicleQuery = vehicleQuery.eq('is_verified', true);
     vehicleQuery = vehicleQuery.eq('verification_status', 'approved');
@@ -262,11 +263,10 @@ export async function GET(request: NextRequest) {
         .from('categories')
         .select('*'),
       
-      // Get locations
+      // Get locations (subscription system disabled - all shops included)
       supabase
         .from('rental_shops')
         .select('location_area')
-        .eq('is_active', true)
         .order('location_area')
     ]);
 

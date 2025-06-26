@@ -104,13 +104,19 @@ export async function PATCH(request: Request) {
     }
 
     // If approving, update is_verified to true
-    // NOTE: We're not setting is_active here - that happens when first vehicle is added
+    // SUBSCRIPTION SYSTEM DISABLED: Immediately activate all verified shops
+    const endDate = new Date();
+    endDate.setFullYear(endDate.getFullYear() + 5); // Set 5 years from now
+    
     const { data, error } = await supabaseAdmin
       .from('rental_shops')
       .update({
         is_verified: true,
-        // Subscription will be activated when shop adds first vehicle
-        subscription_status: 'inactive'
+        // SUBSCRIPTION SYSTEM DISABLED: All shops get immediate free access
+        subscription_status: 'active',
+        is_active: true,
+        subscription_start_date: new Date().toISOString(),
+        subscription_end_date: endDate.toISOString()
       })
       .eq('id', shopId)
       .select()

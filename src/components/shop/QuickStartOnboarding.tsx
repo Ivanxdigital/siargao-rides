@@ -144,12 +144,97 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
 
       toast.success("🎉 Welcome to Siargao Rides! You can now start listing your vehicles.");
       
-      // Give more time to ensure session refresh and database sync is complete
-      setTimeout(() => {
-        if (onComplete) {
-          onComplete();
+      // Enhanced coordination: verify shop exists before calling onComplete
+      const verifyAndComplete = async () => {
+        try {
+          // Verify the shop was actually created and is accessible
+          // Add explicit is_active filter to help with RLS policy matching
+          const { data: verifyShop, error: verifyError } = await supabase
+            .from("rental_shops")
+            .select("id, name")
+            .eq("owner_id", user.id)
+            .eq("is_active", true)  // Explicit filter to match RLS policy
+            .single();
+
+          if (verifyShop && !verifyError) {
+            console.log("Shop creation verified:", verifyShop);
+            if (onComplete) {
+              onComplete();
+            }
+          } else {
+            console.warn("Shop verification failed, analyzing error...", {
+              error: verifyError,
+              code: verifyError?.code,
+              message: verifyError?.message,
+              details: verifyError?.details
+            });
+            
+            // Check if this is a timing/permission issue (406 or auth-related)
+            const isTimingIssue = verifyError?.code === 'PGRST116' || 
+                                 verifyError?.message?.includes('406') ||
+                                 verifyError?.message?.includes('permission') ||
+                                 verifyError?.message?.includes('not found');
+            
+            if (isTimingIssue) {
+              console.log("Detected timing/RLS issue. Retrying with longer delay...");
+              // Use exponential backoff for timing issues
+              setTimeout(async () => {
+                const { data: retryShop, error: retryError } = await supabase
+                  .from("rental_shops")
+                  .select("id, name")
+                  .eq("owner_id", user.id)
+                  .eq("is_active", true)
+                  .single();
+                
+                if (retryShop && !retryError) {
+                  console.log("Shop creation verified on retry:", retryShop);
+                  if (onComplete) {
+                    onComplete();
+                  }
+                } else {
+                  console.error("Shop verification failed after retry:", retryError);
+                  // For persistent failures, proceed anyway - dashboard has its own retry logic
+                  console.log("Proceeding to dashboard - it has additional retry mechanisms");
+                  if (onComplete) {
+                    onComplete();
+                  }
+                }
+              }, 3000); // Longer delay for timing issues
+            } else {
+              // For non-timing errors, retry once quickly then proceed
+              console.log("Non-timing error detected, quick retry then proceed");
+              setTimeout(async () => {
+                const { data: retryShop, error: retryError } = await supabase
+                  .from("rental_shops")
+                  .select("id, name")
+                  .eq("owner_id", user.id)
+                  .eq("is_active", true)
+                  .single();
+                
+                // Always proceed regardless of retry result for non-timing errors
+                if (retryShop && !retryError) {
+                  console.log("Shop creation verified on quick retry:", retryShop);
+                }
+                if (onComplete) {
+                  onComplete();
+                }
+              }, 1000);
+            }
+          }
+        } catch (err) {
+          console.error("Unexpected error during shop verification:", err);
+          // Always call onComplete to let the dashboard handle the issue
+          if (onComplete) {
+            onComplete();
+          }
         }
-      }, 1500);
+      };
+
+      // Adaptive delay based on session refresh success - longer delays for JWT propagation
+      const delay = refreshError ? 4000 : 3000; // Increased delays for JWT token propagation
+      console.log(`Waiting ${delay}ms before verifying shop creation (allowing for JWT propagation)...`);
+      
+      setTimeout(verifyAndComplete, delay);
 
     } catch (error) {
       console.error('Error creating shop:', error);
@@ -184,9 +269,9 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-gradient-to-br from-teal-900/90 to-orange-900/90 rounded-xl overflow-hidden shadow-xl border border-teal-700/30 backdrop-blur-md">
+    <div className="w-full max-w-md mx-auto bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-xl hover:border-primary/20 transition-all duration-300">
       {/* Header */}
-      <div className="px-6 py-4 bg-gradient-to-r from-teal-600 to-orange-600">
+      <div className="px-6 py-4 bg-black/40 border-b border-white/10">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-white/20 rounded-lg">
             <Store className="h-5 w-5 text-white" />
@@ -199,8 +284,8 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
         
         {/* Progress indicator */}
         <div className="mt-4 flex space-x-2">
-          <div className={`h-2 flex-1 rounded-full ${currentStep >= 1 ? 'bg-white' : 'bg-white/30'}`} />
-          <div className={`h-2 flex-1 rounded-full ${currentStep >= 2 ? 'bg-white' : 'bg-white/30'}`} />
+          <div className={`h-2 flex-1 rounded-full ${currentStep >= 1 ? 'bg-primary' : 'bg-white/20'}`} />
+          <div className={`h-2 flex-1 rounded-full ${currentStep >= 2 ? 'bg-primary' : 'bg-white/20'}`} />
         </div>
       </div>
 
@@ -219,8 +304,8 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
               className="space-y-6"
             >
               <div className="text-center mb-6">
-                <div className="mx-auto w-12 h-12 bg-teal-500/20 rounded-full flex items-center justify-center mb-3">
-                  <Store className="h-6 w-6 text-teal-400" />
+                <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-3">
+                  <Store className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2">Let's start with the basics</h3>
                 <p className="text-white/70 text-sm">Just your shop name and phone number</p>
@@ -262,7 +347,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
 
                 <Button
                   type="submit"
-                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 mt-6"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 mt-6"
                   disabled={!step1Form.formState.isValid}
                 >
                   Continue
@@ -284,8 +369,8 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
               className="space-y-6"
             >
               <div className="text-center mb-6">
-                <div className="mx-auto w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mb-3">
-                  <MapPin className="h-6 w-6 text-orange-400" />
+                <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-3">
+                  <MapPin className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2">Where are you located?</h3>
                 <p className="text-white/70 text-sm">Help customers find you easily</p>
@@ -342,7 +427,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
                   
                   <Button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-teal-600 to-orange-600 hover:from-teal-700 hover:to-orange-700 text-white font-medium transition-all duration-300 hover:shadow-lg hover:scale-105"
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all duration-300 hover:shadow-lg"
                     disabled={!step2Form.formState.isValid || isSubmitting}
                   >
                     {isSubmitting ? (

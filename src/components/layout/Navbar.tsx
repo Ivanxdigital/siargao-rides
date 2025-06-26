@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { toast } from "react-hot-toast"
 
 const styles = {
   shadowGlow: `
@@ -35,6 +36,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const { user, isAuthenticated, signOut, isAdmin } = useAuth()
   const scrollPosition = useRef(0)
   const [shopData, setShopData] = useState<{ id: string; name: string } | null>(null)
@@ -179,8 +181,43 @@ const Navbar = () => {
   }
 
   const handleLogout = async () => {
-    await signOut()
-    setIsProfileMenuOpen(false)
+    if (isSigningOut) {
+      console.log('Sign-out already in progress, ignoring click');
+      return;
+    }
+
+    try {
+      console.log('User clicked sign-out button');
+      setIsSigningOut(true);
+      setIsProfileMenuOpen(false);
+      
+      // Show loading toast
+      const loadingToast = toast.loading('Signing out...');
+      
+      await signOut();
+      
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast);
+      toast.success('Successfully signed out');
+      
+      console.log('Sign-out completed successfully');
+    } catch (error: any) {
+      console.error('Sign-out error in navbar:', error);
+      
+      // Show error toast with user-friendly message
+      const errorMessage = error?.message || 'Failed to sign out. Please try again.';
+      toast.error(errorMessage);
+      
+      // Log detailed error for debugging
+      console.error('Detailed sign-out error:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name,
+        code: error?.code
+      });
+    } finally {
+      setIsSigningOut(false);
+    }
   }
 
   const closeMenus = () => {
@@ -220,7 +257,8 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex gap-8 items-center">
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
-            <NavLink href="/browse" isScrolled={scrolled}>Browse</NavLink>
+            <NavLink href="/browse" isScrolled={scrolled}>Browse Vehicles</NavLink>
+            <NavLink href="/browse/shops" isScrolled={scrolled}>Browse Shops</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About Us</NavLink>
             <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
@@ -334,11 +372,18 @@ const Navbar = () => {
                       </Link>
 
                       <button
-                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-red-50 text-red-600 hover:text-red-700 rounded-md transition-all duration-200 group"
+                        className="flex items-center gap-2 w-full p-2 text-sm hover:bg-red-50 text-red-600 hover:text-red-700 rounded-md transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleLogout}
+                        disabled={isSigningOut}
                       >
-                        <LogOut className="h-4 w-4 transition-colors duration-200" />
-                        <span className="group-hover:translate-x-1 transition-transform duration-200">Sign Out</span>
+                        {isSigningOut ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent transition-colors duration-200" />
+                        ) : (
+                          <LogOut className="h-4 w-4 transition-colors duration-200" />
+                        )}
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">
+                          {isSigningOut ? 'Signing out...' : 'Sign Out'}
+                        </span>
                       </button>
                     </div>
                   </motion.div>
@@ -405,7 +450,10 @@ const Navbar = () => {
                 Home
               </MobileNavLink>
               <MobileNavLink href="/browse" onClick={() => setIsMenuOpen(false)} icon={<Search size={16} />}>
-                Browse
+                Browse Vehicles
+              </MobileNavLink>
+              <MobileNavLink href="/browse/shops" onClick={() => setIsMenuOpen(false)} icon={<ShoppingBag size={16} />}>
+                Browse Shops
               </MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)} icon={<Info size={16} />}>
                 About Us
@@ -448,14 +496,19 @@ const Navbar = () => {
                   </MobileNavLink>
 
                   <button
-                    className="flex items-center w-full py-3 px-3 text-white hover:text-destructive rounded-md transition-colors mt-2 text-sm"
+                    className="flex items-center w-full py-3 px-3 text-white hover:text-destructive rounded-md transition-colors mt-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => {
                       handleLogout();
                       setIsMenuOpen(false);
                     }}
+                    disabled={isSigningOut}
                   >
-                    <LogOut size={16} className="mr-2.5" />
-                    Sign Out
+                    {isSigningOut ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2.5" />
+                    ) : (
+                      <LogOut size={16} className="mr-2.5" />
+                    )}
+                    {isSigningOut ? 'Signing out...' : 'Sign Out'}
                   </button>
                 </div>
               </>

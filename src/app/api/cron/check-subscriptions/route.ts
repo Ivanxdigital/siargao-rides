@@ -4,38 +4,14 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    // This is a webhook handler for testing the expiration flow
-    // In production, this would be triggered by a cron job
-    
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Call the function to check expired subscriptions
-    const { data, error } = await supabase.rpc('check_expired_subscriptions');
-    
-    if (error) {
-      console.error('Error checking subscriptions:', error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
-    }
-    
-    // Get count of expired shops
-    const { data: expiredShops, error: countError } = await supabase
-      .from('rental_shops')
-      .select('id')
-      .eq('subscription_status', 'expired');
-      
-    if (countError) {
-      console.error('Error counting expired shops:', countError);
-    }
-    
-    const expiredCount = expiredShops?.length || 0;
+    // SUBSCRIPTION SYSTEM DISABLED: This endpoint no longer performs expiration checks
+    // All shops are now permanently active
     
     return NextResponse.json({
       success: true,
-      message: 'Subscription check completed successfully',
-      expiredCount
+      message: 'Subscription system is disabled - all shops are permanently active',
+      expiredCount: 0,
+      disabled: true
     });
     
   } catch (err) {

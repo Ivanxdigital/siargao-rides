@@ -78,24 +78,19 @@ export function useShopAccess(skipRedirect = false): ShopStatus {
           return;
         }
         
-        // For verified shops, check subscription status
+        // SUBSCRIPTION SYSTEM DISABLED: All verified shops now have free access
         if (shopData.is_verified) {
-          // For shop management pages, check if subscription is active
-          const hasShopAccess = shopData.is_active && shopData.subscription_status === 'active';
-          
+          // All verified shops automatically have access (subscription system disabled)
           setStatus({
             isLoading: false,
-            hasAccess: hasShopAccess,
+            hasAccess: true, // Always true - subscription system disabled
             isVerified: true,
-            subscriptionStatus: shopData.subscription_status,
+            subscriptionStatus: 'active', // Always show as active
             subscriptionEndDate: shopData.subscription_end_date,
             shopId: shopData.id
           });
           
-          // Redirect to subscription page if shop does not have access
-          if (!hasShopAccess && !skipRedirect) {
-            router.push('/dashboard/subscription');
-          }
+          // No redirect needed - all verified shops have access
         } else {
           // For unverified shops, they can still access their main dashboard 
           // but we'll let components handle specific restrictions
@@ -103,7 +98,7 @@ export function useShopAccess(skipRedirect = false): ShopStatus {
             isLoading: false,
             hasAccess: true, // They can at least see the dashboard
             isVerified: false,
-            subscriptionStatus: shopData.subscription_status,
+            subscriptionStatus: 'active', // Show as active even if unverified
             shopId: shopData.id
           });
         }

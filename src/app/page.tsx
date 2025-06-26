@@ -371,55 +371,38 @@ export default function Home() {
       />
       {/* Hero Section - improved responsive heights */}
       <section className="relative min-h-[100vh] sm:min-h-screen bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10 transition-all duration-500">
-        {/* Background Image with Overlay - Mobile Only - improved for performance */}
+        {/* Background Image with Overlay - Mobile Only - simplified */}
         <div className="absolute inset-0 z-0 md:hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 hover:opacity-50 transition-opacity duration-1000"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50"
             style={{
               backgroundImage: "url('/images/siargao-motorbike-rental-siargao.png')",
               backgroundSize: "cover"
             }}
             aria-hidden="true"
           ></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-black/50 to-purple-900/40 z-10"></div>
-
-          {/* Smooth Gradient Overlay - reduced animation complexity for mobile */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-purple-700/20 animate-[pulse_6s_ease-in-out_infinite] z-10 opacity-70"></div>
-
-          {/* Reduced animations for better mobile performance */}
-          <div className="absolute -inset-[10%] bg-[radial-gradient(circle_at_50%_50%,rgba(120,50,255,0.08),transparent_70%)] opacity-60 animate-[spin_40s_linear_infinite] z-10"></div>
-
-          {/* Simplified floating elements for mobile */}
-          <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-[float_30s_ease-in-out_infinite] z-5"></div>
-          <div className="absolute bottom-1/3 right-1/4 w-40 h-40 rounded-full bg-purple-500/5 blur-2xl animate-[float_35s_ease-in-out_infinite_1s] z-5"></div>
-
-          <div className="absolute top-0 left-0 w-full h-2/5 bg-gradient-to-b from-primary/5 to-transparent z-10"></div>
-          <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-purple-900/10 to-transparent z-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 z-10"></div>
         </div>
 
         {/* Static Background Image - Desktop */}
         <div className="absolute inset-0 w-full h-full hidden md:block">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10"></div>
-          <div className="relative w-full h-full overflow-hidden">
-            <div className="w-full h-full relative">
-              <Image
-                src="/images/siargao-motorbike-rental-siargao.png"
-                alt="Siargao Motorbike Rental"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
+          <div className="w-full h-full relative">
+            <Image
+              src="/images/siargao-motorbike-rental-siargao.png"
+              alt="Siargao Motorbike Rental"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/70 z-10"></div>
         </div>
 
         {/* Hero Content - improved padding and spacing for mobile */}
         <div className="container mx-auto relative z-20 min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-blue-200 to-white animate-gradient-x leading-relaxed drop-shadow-xl filter-shadow-strong tracking-wide">
-                Siargao Vehicle Rentals – Because Walking in Flip-Flops Only Gets You So Far
-              </span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 leading-tight">
+              Siargao Vehicle Rentals – Because Walking in Flip-Flops Only Gets You So Far
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
               Rent motorbikes, cars, and scooters in Siargao Island, Philippines. Compare trusted local rental shops with flexible pickup, competitive rates, and total freedom to explore paradise.
@@ -450,32 +433,6 @@ export default function Home() {
           animation: fadeInUp 0.8s ease-out forwards;
         }
 
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-          }
-          25% {
-            transform: translateY(-10px) translateX(10px);
-          }
-          50% {
-            transform: translateY(8px) translateX(-8px);
-          }
-          75% {
-            transform: translateY(-4px) translateX(4px);
-          }
-        }
-
-        /* Add mobile-specific keyframes */
-        @media (max-width: 768px) {
-          @keyframes float {
-            0%, 100% {
-              transform: translateY(0) translateX(0);
-            }
-            50% {
-              transform: translateY(5px) translateX(-5px);
-            }
-          }
-        }
 
         .bg-noise-pattern {
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
@@ -489,29 +446,6 @@ export default function Home() {
           }
         }
 
-        /* Gradient animation for heading */
-        @keyframes gradient-x {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-
-        .animate-gradient-x {
-          background-size: 200% 100%;
-          animation: gradient-x 15s ease infinite;
-        }
-
-        /* For the enhanced hero heading */
-        h1 span.animate-gradient-x {
-          background-size: 300% 100%;
-          animation: gradient-x 8s ease-in-out infinite;
-        }
 
         /* Animation for the Safety Tips section */
         @keyframes fadeIn {
@@ -538,19 +472,6 @@ export default function Home() {
           }
         }
 
-        /* Add hero heading animation */
-        @keyframes heroScale {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.02);
-          }
-        }
-
-        .hero-heading-animate {
-          animation: heroScale 4s ease-in-out infinite;
-        }
 
         /* Add shimmer effect for shop cards */
         @keyframes shimmer {
@@ -1047,17 +968,6 @@ export default function Home() {
       {/* FAQ Section */}
       <FAQSection />
 
-      <style jsx>{`
-        .filter-shadow {
-          filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.25));
-        }
-
-        .filter-shadow-strong {
-          filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4))
-                 drop-shadow(0 0 20px rgba(56, 189, 248, 0.2));
-          text-shadow: 0 0 20px rgba(186, 230, 253, 0.3);
-        }
-      `}</style>
     </div>
   )
 }

@@ -139,87 +139,50 @@ export default function SubscriptionPage() {
               Your shop is currently being reviewed by our team. You'll be able to add vehicles once it's verified.
             </p>
           </div>
-        ) : shop.subscription_status === 'expired' ? (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center mb-8">
-            <AlertCircle size={40} className="text-red-600 dark:text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Free Trial Expired</h3>
-            <p className="text-muted-foreground mb-6">
-              Your free trial has ended. Soon you'll be able to subscribe to continue listing your vehicles.
-            </p>
-            <Button disabled className="cursor-not-allowed">
-              Subscribe Coming Soon
-            </Button>
-          </div>
-        ) : shop.subscription_status === 'active' ? (
+        ) : (
+          // SUBSCRIPTION SYSTEM DISABLED: Show free access message for all shops
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center mb-8">
             <CheckCircle size={40} className="text-green-600 dark:text-green-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Active Free Trial</h3>
+            <h3 className="text-lg font-medium mb-2">🎉 Completely Free Access!</h3>
             <p className="text-muted-foreground mb-4">
-              Your free trial is active until {new Date(shop.subscription_end_date!).toLocaleDateString()}.
+              Great news! Siargao Rides is now completely free to use. You can list unlimited vehicles and manage your bookings at no cost.
             </p>
-            <div className="max-w-md mx-auto">
-              <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
-                <div 
-                  className="h-full bg-primary" 
-                  style={{ width: `${trialProgress}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {daysLeft} days remaining
-              </p>
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4">
+              <h4 className="font-medium text-primary mb-2">What this means for you:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1 text-left">
+                <li>✅ No subscription fees ever</li>
+                <li>✅ List unlimited vehicles</li>
+                <li>✅ Full access to all features</li>
+                <li>✅ No trial periods or expiration dates</li>
+              </ul>
             </div>
-          </div>
-        ) : (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 text-center mb-8">
-            <ShoppingBag size={40} className="text-primary mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Start Your Free Trial</h3>
-            <p className="text-muted-foreground mb-6">
-              Add your first vehicle to start your free 1-month trial!
-            </p>
             <Button asChild>
-              <Link href="/dashboard/vehicles/add">Add Your First Vehicle</Link>
+              <Link href="/dashboard/vehicles">Manage Your Vehicles</Link>
             </Button>
           </div>
         )}
         
         <div className="space-y-4">
-          <div className="flex justify-between items-center p-4 bg-muted/50 rounded-lg">
+          <div className="flex justify-between items-center p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <div>
-              <p className="font-medium">Free Trial</p>
-              <p className="text-sm text-muted-foreground">30 days free access</p>
+              <p className="font-medium text-green-800 dark:text-green-400">Free Forever Plan</p>
+              <p className="text-sm text-green-600 dark:text-green-300">All features included at no cost</p>
             </div>
-            {shop.subscription_status === 'active' && (
-              <span className="text-sm bg-primary/20 text-primary px-2 py-1 rounded">Current Plan</span>
-            )}
-          </div>
-          
-          <div className="flex justify-between items-center p-4 bg-muted/50 rounded-lg opacity-60">
-            <div>
-              <p className="font-medium">Monthly Subscription</p>
-              <p className="text-sm text-muted-foreground">₱XXX per month</p>
-            </div>
-            <span className="text-sm bg-muted text-muted-foreground px-2 py-1 rounded">Coming Soon</span>
-          </div>
-          
-          <div className="flex justify-between items-center p-4 bg-muted/50 rounded-lg opacity-60">
-            <div>
-              <p className="font-medium">Annual Subscription</p>
-              <p className="text-sm text-muted-foreground">₱XXX per year (Save XX%)</p>
-            </div>
-            <span className="text-sm bg-muted text-muted-foreground px-2 py-1 rounded">Coming Soon</span>
+            <span className="text-sm bg-green-500/20 text-green-700 dark:text-green-400 px-2 py-1 rounded">Active Plan</span>
           </div>
           
           <div className="mt-6 p-4 border border-primary/20 rounded-lg bg-primary/5 text-center">
             <div className="flex items-center justify-center mb-2">
               <Shield size={20} className="text-primary mr-2" />
-              <span className="font-medium">Subscription Benefits</span>
+              <span className="font-medium">What You Get (FREE)</span>
             </div>
             <ul className="text-sm text-muted-foreground space-y-2 mt-3">
-              <li>List unlimited vehicles to rent out</li>
-              <li>Manage your bookings and rentals</li>
-              <li>Appear in search results and browse pages</li>
-              <li>Receive inquiries from potential customers</li>
-              <li>Track your shop performance and statistics</li>
+              <li>✅ List unlimited vehicles to rent out</li>
+              <li>✅ Manage your bookings and rentals</li>
+              <li>✅ Appear in search results and browse pages</li>
+              <li>✅ Receive inquiries from potential customers</li>
+              <li>✅ Track your shop performance and statistics</li>
+              <li>✅ Access to all platform features</li>
             </ul>
           </div>
         </div>

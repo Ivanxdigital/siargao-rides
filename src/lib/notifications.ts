@@ -326,7 +326,9 @@ export const subscribeToShopOwnerNotifications = (shopId: string) => {
  */
 export const sendAdminNotification = async (shopId: string): Promise<void> => {
   try {
-    const response = await fetch('/api/send-admin-notification', {
+    // In server-side context, we need an absolute URL
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/send-admin-notification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

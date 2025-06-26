@@ -144,11 +144,11 @@ export function ProgressiveSetupCard({
 
   // Determine level based on completion
   const getLevel = (percentage: number) => {
-    if (percentage >= 90) return { name: "Expert", icon: "🏆", color: "text-yellow-400" };
-    if (percentage >= 70) return { name: "Pro", icon: "⭐", color: "text-orange-400" };
-    if (percentage >= 50) return { name: "Advanced", icon: "🚀", color: "text-teal-400" };
-    if (percentage >= 25) return { name: "Getting Started", icon: "📈", color: "text-green-400" };
-    return { name: "Beginner", icon: "🌱", color: "text-gray-400" };
+    if (percentage >= 90) return { name: "Expert", icon: "🏆", color: "text-primary" };
+    if (percentage >= 70) return { name: "Pro", icon: "⭐", color: "text-primary/80" };
+    if (percentage >= 50) return { name: "Advanced", icon: "🚀", color: "text-primary/70" };
+    if (percentage >= 25) return { name: "Getting Started", icon: "📈", color: "text-white/80" };
+    return { name: "Beginner", icon: "🌱", color: "text-white/60" };
   };
 
   const currentLevel = getLevel(completionPercentage);
@@ -167,7 +167,7 @@ export function ProgressiveSetupCard({
 
   return (
     <motion.div
-      className={`bg-gradient-to-br from-teal-900/90 to-orange-900/90 rounded-xl border border-teal-700/30 shadow-lg overflow-hidden backdrop-blur-md ${className}`}
+      className={`bg-black/50 backdrop-blur-md border border-white/10 rounded-xl shadow-lg overflow-hidden hover:border-primary/20 transition-all duration-300 ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -234,10 +234,10 @@ export function ProgressiveSetupCard({
           >
             {/* Achievement Banner */}
             {completedTasks.length > 0 && (
-              <div className="bg-green-900/30 border border-green-700/30 rounded-lg p-4 mb-4">
+              <div className="bg-black/40 border border-primary/20 rounded-lg p-4 mb-4">
                 <div className="flex items-center space-x-2 mb-2">
-                  <Award className="h-5 w-5 text-green-400" />
-                  <span className="text-green-300 font-medium">
+                  <Award className="h-5 w-5 text-primary" />
+                  <span className="text-white font-medium">
                     Nice work! {completedTasks.length} task{completedTasks.length !== 1 ? 's' : ''} completed
                   </span>
                 </div>
@@ -245,15 +245,15 @@ export function ProgressiveSetupCard({
                   {completedTasks.slice(0, 3).map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center space-x-1 bg-green-800/30 px-2 py-1 rounded text-green-200 text-xs"
+                      className="flex items-center space-x-1 bg-primary/20 px-2 py-1 rounded text-primary text-xs"
                     >
                       <CheckCircle2 className="h-3 w-3" />
                       <span>{task.title}</span>
-                      <span className="text-green-300 font-medium">+{task.points}</span>
+                      <span className="text-primary font-medium">+{task.points}</span>
                     </div>
                   ))}
                   {completedTasks.length > 3 && (
-                    <div className="text-green-300 text-xs py-1">
+                    <div className="text-primary text-xs py-1">
                       +{completedTasks.length - 3} more
                     </div>
                   )}
@@ -278,9 +278,9 @@ export function ProgressiveSetupCard({
                       <div className="flex items-center justify-between">
                         <div className="flex items-start space-x-3">
                           <div className={`p-2 rounded-lg ${
-                            task.priority === 'high' ? 'bg-red-500/20 text-red-400' :
-                            task.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-orange-500/20 text-orange-400'
+                            task.priority === 'high' ? 'bg-primary/20 text-primary' :
+                            task.priority === 'medium' ? 'bg-white/10 text-white/80' :
+                            'bg-white/5 text-white/60'
                           }`}>
                             {task.icon}
                           </div>
@@ -304,7 +304,7 @@ export function ProgressiveSetupCard({
                             <Link href={task.href}>
                               <Button
                                 size="sm"
-                                className="bg-teal-600 hover:bg-teal-700 text-white transition-all duration-300 hover:shadow-lg hover:scale-105"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:shadow-lg"
                               >
                                 {task.action}
                               </Button>
@@ -320,9 +320,9 @@ export function ProgressiveSetupCard({
 
             {/* Completion celebration */}
             {completionPercentage >= 70 && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-teal-900/50 to-orange-900/50 border border-teal-700/30 rounded-lg">
+              <div className="mt-4 p-4 bg-black/40 border border-primary/20 rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <Star className="h-5 w-5 text-yellow-400" />
+                  <Star className="h-5 w-5 text-primary" />
                   <span className="text-white font-medium">
                     Almost there! Your shop is looking great 🎉
                   </span>

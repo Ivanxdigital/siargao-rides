@@ -1,26 +1,27 @@
 {
-    "mcpServers": {
-      "supabase": {
-        "command": "npx",
-        "args": [
-          "-y",
-          "@supabase/mcp-server-supabase@latest",
-          "--access-token",
-          "sbp_75c6a092a3f39bd6204f22cf4fdcea3d90ed200a"
-        ]
-      },
-      "Context7": {
-        "command": "npx",
-        "args": ["-y", "@upstash/context7-mcp"]
-      },
-      "Bright Data": {
-        "command": "npx",
-        "args": ["@brightdata/mcp"],
-        "env": {
-          "API_TOKEN": "77280350f22f3b7d1645d9af191d8995ea4d61055f89843d3b4a31834998a907",
-          "WEB_UNLOCKER_ZONE": "web_unlocker1",
-          "BROWSER_ZONE": "<optional browser zone name, defaults to mcp_browser>"
-        }
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_75c6a092a3f39bd6204f22cf4fdcea3d90ed200a"
+      ]
+    },
+    "Context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "mcp-server-firecrawl": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "firecrawl-mcp"
+      ],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-6df8698b1c3e42ada5f1b0b558f358af"
       }
     }
   }
+}

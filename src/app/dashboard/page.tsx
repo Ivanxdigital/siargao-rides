@@ -18,7 +18,8 @@ import {
   Users,
   ChevronRight,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  AlertCircle
 } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -232,61 +233,10 @@ export default function DashboardPage() {
     }
   };
 
-  // Fetch data specific to shop owners
-  const fetchShopOwnerData = async (supabase: any) => {
+  // Helper function to fetch vehicle statistics and related data
+  const fetchVehicleStats = async (supabase: any, shopId: string) => {
     try {
-      // Check if user ID is defined
-      if (!user || !user.id) {
-        console.error("Cannot fetch shop owner data: User ID is undefined");
-        setError("Unable to identify your account. Please try signing out and signing in again.");
-        return;
-      }
-
-      // 1. Get the user's shop with subscription data
-      const { data: shopWithSubscription, error: shopError } = await supabase
-        .from("rental_shops")
-        .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, sms_number, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
-        .eq("owner_id", user.id)
-        .single();
-
-      console.log("User ID:", user.id); // Debug log
-      console.log("Shop data:", shopWithSubscription); // Debug log
-
-      // Enhanced error handling for shopError
-      if (shopError || !shopWithSubscription) {
-        // Log detailed error information
-        console.error("Error fetching shop:", {
-          error: shopError,
-          errorMessage: shopError?.message || "No error message",
-          errorCode: shopError?.code || "No error code",
-          userId: user?.id || "No user ID",
-          hasData: !!shopWithSubscription
-        });
-
-        // Don't automatically reset has_shop - this causes issues after shop creation
-        // Instead, just log the issue and let the user try to refresh
-        console.log("Shop not found but user metadata indicates has_shop = true. This may be a temporary sync issue.");
-
-        // Only show error for actual database errors, not missing data
-        if (shopError && shopError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-          setError(`Error loading shop data: ${shopError.message}. Please refresh the page.`);
-        } else if (!shopWithSubscription) {
-          // For missing shop data, don't show an error immediately - the user might be mid-onboarding
-          console.log("No shop found for user. They may need to complete onboarding or data is still syncing.");
-          // Don't set an error - let the onboarding component show instead
-        }
-        
-        // IMPORTANT: Set loading to false even when returning early
-        setIsDataLoading(false);
-        return;
-      }
-
-      // Save shop data with subscription info for component
-      setShopData(shopWithSubscription as ShopWithSubscription);
-
-      const shopId = shopWithSubscription.id;
-
-      // 2. Get vehicle statistics
+      // 1. Get vehicle statistics
       const { data: vehicles, error: vehiclesError } = await supabase
         .from("vehicles")
         .select("id, is_available, price_per_day")
@@ -294,7 +244,7 @@ export default function DashboardPage() {
 
       if (vehiclesError) {
         console.error("Error fetching vehicles:", vehiclesError);
-        return;
+        throw vehiclesError;
       }
 
       console.log("Vehicles data:", vehicles); // Debug log
@@ -302,14 +252,10 @@ export default function DashboardPage() {
       const totalVehicles = vehicles?.length || 0;
       const availableVehicles = vehicles?.filter((vehicle: any) => vehicle.is_available).length || 0;
 
-      // Update shop setup status with the shop data and vehicle count
-      const setupStatus = checkShopSetupStatus(shopWithSubscription, totalVehicles);
-      setShopSetupStatus(setupStatus);
-
       console.log("Total vehicles:", totalVehicles); // Debug log
       console.log("Available vehicles:", availableVehicles); // Debug log
 
-      // 3. Get active bookings
+      // 2. Get active bookings
       const { data: activeBookings, error: bookingsError } = await supabase
         .from("rentals")
         .select("id, status")
@@ -318,12 +264,12 @@ export default function DashboardPage() {
 
       if (bookingsError) {
         console.error("Error fetching bookings:", bookingsError);
-        return;
+        throw bookingsError;
       }
 
       console.log("Active bookings data:", activeBookings); // Debug log
 
-      // 4. Calculate revenue (from paid bookings)
+      // 3. Calculate revenue (from paid bookings)
       const { data: paidBookings, error: revenueError } = await supabase
         .from("rentals")
         .select("total_price")
@@ -332,7 +278,7 @@ export default function DashboardPage() {
 
       if (revenueError) {
         console.error("Error fetching revenue data:", revenueError);
-        return;
+        throw revenueError;
       }
 
       const totalRevenue = paidBookings?.reduce((sum: number, booking: { total_price?: number }) =>
@@ -340,7 +286,7 @@ export default function DashboardPage() {
 
       console.log("Paid bookings:", paidBookings); // Debug log for paid bookings
 
-      // 5. Get recent bookings for the shop - using a simpler approach without joins
+      // 4. Get recent bookings for the shop
       try {
         // First get basic rental info
         const { data: rentalsData, error: rentalsError } = await supabase
@@ -414,9 +360,129 @@ export default function DashboardPage() {
         activeBookings: activeBookings?.length || 0,
         totalRevenue
       });
-      
+
       // Set loading to false on successful completion
       setIsDataLoading(false);
+    } catch (err) {
+      console.error("Error in fetchVehicleStats:", err);
+      throw err; // Re-throw to be handled by caller
+    }
+  };
+
+  // Fetch data specific to shop owners
+  const fetchShopOwnerData = async (supabase: any) => {
+    try {
+      // Check if user ID is defined
+      if (!user || !user.id) {
+        console.error("Cannot fetch shop owner data: User ID is undefined");
+        setError("Unable to identify your account. Please try signing out and signing in again.");
+        return;
+      }
+
+      // 1. Get the user's shop with subscription data
+      const { data: shopWithSubscription, error: shopError } = await supabase
+        .from("rental_shops")
+        .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, sms_number, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
+        .eq("owner_id", user.id)
+        .single();
+
+      console.log("User ID:", user.id); // Debug log
+      console.log("Shop data:", shopWithSubscription); // Debug log
+
+      // Enhanced error handling for shopError with retry logic
+      if (shopError || !shopWithSubscription) {
+        // Log detailed error information
+        console.error("Error fetching shop:", {
+          error: shopError,
+          errorMessage: shopError?.message || "No error message",
+          errorCode: shopError?.code || "No error code",
+          userId: user?.id || "No user ID",
+          hasData: !!shopWithSubscription,
+          userHasShop: user?.user_metadata?.has_shop
+        });
+
+        // Check if this is likely a race condition (user has has_shop=true but shop not found)
+        const isLikelyRaceCondition = user?.user_metadata?.has_shop === true && 
+                                     (!shopError || shopError.code === 'PGRST116');
+
+        if (isLikelyRaceCondition) {
+          console.log("Race condition detected: user has has_shop=true but shop not found. Implementing retry logic...");
+          
+          // Implement exponential backoff retry
+          const retryAttempts = 3;
+          for (let attempt = 1; attempt <= retryAttempts; attempt++) {
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // 1s, 2s, 4s max
+            console.log(`Retry attempt ${attempt}/${retryAttempts} in ${delay}ms...`);
+            
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+            const { data: retryShopData, error: retryError } = await supabase
+              .from("rental_shops")
+              .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, sms_number, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
+              .eq("owner_id", user.id)
+              .single();
+            
+            if (retryShopData && !retryError) {
+              console.log(`Retry successful on attempt ${attempt}!`);
+              // Continue with the rest of the function using retryShopData
+              setShopData(retryShopData as ShopWithSubscription);
+              const shopId = retryShopData.id;
+              
+              // Continue to vehicle statistics and setup status
+              await fetchVehicleStats(supabase, shopId);
+              
+              // Update shop setup status with the shop data and vehicle count
+              const { data: vehiclesForSetup } = await supabase
+                .from("vehicles")
+                .select("id")
+                .eq("shop_id", shopId);
+              
+              const vehicleCount = vehiclesForSetup?.length || 0;
+              const setupStatus = checkShopSetupStatus(retryShopData, vehicleCount);
+              setShopSetupStatus(setupStatus);
+              return;
+            } else {
+              console.log(`Retry attempt ${attempt} failed:`, retryError);
+            }
+          }
+          
+          // All retries failed - set error and stop loading
+          console.error("All retry attempts failed. Shop may not exist yet.");
+          setError("Shop data is still being created. Please refresh the page in a moment.");
+        } else {
+          // Only show error for actual database errors, not missing data
+          if (shopError && shopError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            setError(`Error loading shop data: ${shopError.message}. Please refresh the page.`);
+          } else if (!shopWithSubscription) {
+            // For missing shop data, don't show an error immediately - the user might be mid-onboarding
+            console.log("No shop found for user. They may need to complete onboarding or data is still syncing.");
+            // Don't set an error - let the onboarding component show instead
+          }
+        }
+        
+        // IMPORTANT: Set loading to false even when returning early
+        setIsDataLoading(false);
+        return;
+      }
+
+      // Save shop data with subscription info for component
+      setShopData(shopWithSubscription as ShopWithSubscription);
+
+      const shopId = shopWithSubscription.id;
+
+      // Fetch vehicle statistics and related data
+      await fetchVehicleStats(supabase, shopId);
+
+      // Update shop setup status with the shop data and vehicle count
+      // We need to get vehicle count first, so let's get it quickly here
+      const { data: vehiclesForSetup } = await supabase
+        .from("vehicles")
+        .select("id")
+        .eq("shop_id", shopId);
+      
+      const vehicleCount = vehiclesForSetup?.length || 0;
+      const setupStatus = checkShopSetupStatus(shopWithSubscription, vehicleCount);
+      setShopSetupStatus(setupStatus);
     } catch (err) {
       // Enhanced catch block with more detailed error logging
       console.error("Error in fetchShopOwnerData:", err);
@@ -526,13 +592,38 @@ export default function DashboardPage() {
       </motion.div>
 
       <div className="space-y-6 md:space-y-10">
-        {/* Error message if any */}
+        {/* Enhanced error message with retry option */}
         {error && !error.includes('registration') && (
           <motion.div
             className="bg-red-900/20 border border-red-700/50 text-red-400 px-4 py-3 rounded-lg mb-6 text-base"
             variants={slideUp}
           >
-            {error}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
+                  <h3 className="font-medium text-red-300">Unable to Load Dashboard Data</h3>
+                </div>
+                <p className="text-sm text-red-200 mb-3">{error}</p>
+                {error.includes('still being created') && (
+                  <p className="text-xs text-red-300/80">
+                    💡 This usually resolves within a few seconds after creating a new shop.
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setError(null);
+                  fetchDashboardData();
+                }}
+                className="bg-red-900/30 border-red-600/50 text-red-200 hover:bg-red-800/40 hover:text-red-100 flex-shrink-0"
+              >
+                <Clock className="h-4 w-4 mr-1" />
+                Retry
+              </Button>
+            </div>
           </motion.div>
         )}
 

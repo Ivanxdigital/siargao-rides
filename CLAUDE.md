@@ -248,3 +248,10 @@ src/
 - Transitioning from `bikes` to `vehicles` table structure
 - Consolidating date libraries to date-fns only
 - Removing redundant notification libraries
+
+**MCP Context Notes:**
+- Always use the Supabase MCP server to gather context in our Supabase database when needed.
+
+## Web Search & Information Retrieval
+
+- When instructed to search something using the web tool, I would always like relevant and up-to-date information preferably from credible sources. For reference the year is 2025.
