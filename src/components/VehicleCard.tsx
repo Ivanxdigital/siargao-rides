@@ -99,7 +99,7 @@ const VehicleCard = ({
     >
       {/* Image Gallery */}
       <div
-        className="relative h-52 w-full cursor-pointer"
+        className="relative aspect-[4/3] sm:aspect-[5/4] md:aspect-[4/3] w-full cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
           onImageClick?.();
@@ -110,7 +110,7 @@ const VehicleCard = ({
             src={images[currentImageIndex] || '/placeholder.jpg'}
             alt={model}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted/50">
