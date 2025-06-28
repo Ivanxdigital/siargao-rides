@@ -4,7 +4,6 @@ import "./globals.css";
 import "./calendar.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Providers } from './providers';
@@ -113,7 +112,6 @@ export default function RootLayout({
           <AuthProvider>
             <div className="relative flex min-h-screen flex-col">
               <ScrollToTop />
-              <AnnouncementBar />
               <Navbar />
               <main className="flex-1">
                 {children}
