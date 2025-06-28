@@ -35,33 +35,37 @@ export function CollapsibleText({
 
   return (
     <div className={className}>
-      <div className="relative">
-        {/* Collapsed state */}
-        {!isExpanded && (
-          <div className="relative">
-            <div className="relative">
-              {formatTextWithLineBreaks(truncatedText)}
-              {/* Fade gradient effect */}
-              <div className="absolute bottom-0 right-0 w-16 h-6 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none" />
-            </div>
-          </div>
-        )}
-        
-        {/* Expanded state */}
-        {isExpanded && (
-          <div>
+      {/* Content container with smooth max-height animation */}
+      <div 
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{
+          maxHeight: isExpanded ? '500px' : '4.5rem' // ~3 lines for collapsed state
+        }}
+      >
+        <div className="relative">
+          {/* Always render full text for smooth animation */}
+          <div className="leading-relaxed">
             {formatTextWithLineBreaks(text)}
           </div>
-        )}
+          
+          {/* Fade gradient overlay - smoothly fades out when expanding */}
+          <div 
+            className={`
+              absolute bottom-0 right-0 w-16 h-6 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none
+              transition-opacity duration-300 ease-in-out
+              ${isExpanded ? 'opacity-0' : 'opacity-100'}
+            `}
+          />
+        </div>
       </div>
 
-      {/* Toggle button */}
+      {/* Toggle button with coordinated timing */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={`
-          mt-2 text-sm font-medium transition-colors duration-200 
+          mt-2 text-sm font-medium transition-all duration-300 ease-in-out
           hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-gray-900 
-          inline-flex items-center gap-1
+          inline-flex items-center gap-1 group
           ${isExpanded 
             ? `text-gray-400 hover:text-gray-300 ${showLessClassName}` 
             : `text-primary hover:text-primary/80 ${readMoreClassName}`
@@ -70,9 +74,15 @@ export function CollapsibleText({
         aria-expanded={isExpanded}
         aria-label={isExpanded ? "Show less text" : "Show more text"}
       >
-        {isExpanded ? "Show less" : "Read more"}
+        <span className="transition-all duration-300 ease-in-out">
+          {isExpanded ? "Show less" : "Read more"}
+        </span>
         <svg
-          className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+          className={`
+            w-3 h-3 transition-transform duration-300 ease-in-out transform
+            ${isExpanded ? 'rotate-180' : 'rotate-0'}
+            group-hover:scale-110
+          `}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -80,6 +90,17 @@ export function CollapsibleText({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
+
+      {/* Respect reduced motion preferences */}
+      <style jsx>{`
+        @media (prefers-reduced-motion: reduce) {
+          .transition-all,
+          .transition-opacity,
+          .transition-transform {
+            transition: none !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
