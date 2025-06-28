@@ -210,10 +210,12 @@ export default function AddVehiclePage() {
     
     console.log(`Original file size: ${file.size / 1024 / 1024} MB`);
     
+    // Always compress images for optimal upload size
     const compressionOptions = {
-      maxSizeMB: 5, // Limit to 5MB for vehicle images
-      maxWidthOrHeight: 1920, // Limit resolution
+      maxSizeMB: 1, // Target 1MB for reliable uploads
+      maxWidthOrHeight: 1200, // Reduce resolution for faster uploads
       useWebWorker: true, // Use multi-threading
+      quality: 0.8, // 80% quality for good balance
       onProgress: (progress: number) => {
         console.log(`Compression progress: ${progress}%`);
       }
@@ -222,13 +224,23 @@ export default function AddVehiclePage() {
     try {
       let processedFile = file;
       
-      // Check if compression is needed
-      if (file.size > compressionOptions.maxSizeMB * 1024 * 1024) {
-        console.log('File size exceeds 5MB, compressing...');
-        processedFile = await imageCompression(file, compressionOptions);
-        console.log(`Compressed file size: ${processedFile.size / 1024 / 1024} MB`);
-      } else {
-        console.log('File size is within limits, no compression needed.');
+      // Compress all images for optimal performance
+      console.log(`Original file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      console.log('Compressing image for optimal upload...');
+      processedFile = await imageCompression(file, compressionOptions);
+      console.log(`Compressed file size: ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      
+      // If still too large, apply more aggressive compression
+      if (processedFile.size > 2 * 1024 * 1024) { // If still > 2MB
+        console.log('Applying more aggressive compression...');
+        const aggressiveOptions = {
+          maxSizeMB: 0.5, // Very aggressive limit
+          maxWidthOrHeight: 800, // Lower resolution
+          useWebWorker: true,
+          quality: 0.6, // Lower quality
+        };
+        processedFile = await imageCompression(processedFile, aggressiveOptions);
+        console.log(`Final compressed size: ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
       }
       
       // Create preview
@@ -254,7 +266,7 @@ export default function AddVehiclePage() {
       
     } catch (compressionError) {
       console.error('Error compressing image:', compressionError);
-      setError('Failed to process image. Please try a smaller file or different format.');
+      setError(`Failed to process image: ${compressionError instanceof Error ? compressionError.message : 'Unknown error'}. Please try a different image.`);
       
       // Reset compressing state
       setImages(prevImages =>
@@ -381,15 +393,26 @@ export default function AddVehiclePage() {
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
           const filePath = `vehicle-images/${fileName}`;
 
-          // Upload the file
+          // Check final file size before upload
+          if (img.file.size > 5 * 1024 * 1024) { // 5MB safety check
+            console.error(`File still too large after compression: ${(img.file.size / 1024 / 1024).toFixed(2)}MB`);
+            uploadErrorOccurred = true;
+            uploadErrorMessage = `Image ${i + 1} is still too large (${(img.file.size / 1024 / 1024).toFixed(2)}MB). Please try a different image.`;
+            continue;
+          }
+
+          // Upload the file with additional options
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('vehicles')
-            .upload(filePath, img.file);
+            .upload(filePath, img.file, {
+              cacheControl: '3600',
+              upsert: false // Ensure unique file names
+            });
 
           if (uploadError) {
             console.error("Error uploading image:", uploadError);
             uploadErrorOccurred = true;
-            uploadErrorMessage = uploadError.message;
+            uploadErrorMessage = `Upload failed: ${uploadError.message}`;
             // Continue with other images instead of throwing immediately
             continue;
           }
@@ -863,7 +886,7 @@ export default function AddVehiclePage() {
           <div className="space-y-5">
             <div className="bg-background/50 border border-border rounded-md p-4">
               <div className="text-sm text-muted-foreground mb-3">
-                <p>Upload clear, high-quality images of your vehicle. Large images will be automatically compressed to ensure fast loading. The first image will be set as the primary image shown to potential renters.</p>
+                <p>Upload clear, high-quality images of your vehicle. All images are automatically compressed to ensure fast loading and reliable uploads. The first image will be set as the primary image shown to potential renters.</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -987,7 +1010,7 @@ export default function AddVehiclePage() {
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
-                <p>You can upload up to 6 images. Images larger than 5MB will be automatically compressed. The first image will be used as the primary display image.</p>
+                <p>You can upload up to 6 images. All images are automatically compressed for optimal performance. The first image will be used as the primary display image.</p>
               </div>
             </div>
           </div>
