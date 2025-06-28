@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import * as service from "@/lib/service"
 import { Vehicle, VehicleType, Review, ReviewWithDetails } from "@/lib/types"
+import { CollapsibleText } from "@/components/ui/collapsible-text"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { VehicleAvailabilityCalendar } from "@/components/VehicleAvailabilityCalendar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -100,6 +101,8 @@ interface RentalShop {
   email: string | null;
   logo_url: string | null;
   banner_url: string | null;
+  banner_position_x?: number;
+  banner_position_y?: number;
   is_verified: boolean;
   owner_id: string;
   location_area: string | null;
@@ -449,7 +452,11 @@ export default function ShopPage() {
           alt={`${shop.name} banner`}
           fill
           priority
-          className="object-cover object-center"
+          quality={90}
+          className="object-cover"
+          style={{
+            objectPosition: `${shop.banner_position_x || 50}% ${shop.banner_position_y || 50}%`
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/10 backdrop-blur-[2px]"></div>
       </motion.div>
@@ -522,7 +529,11 @@ export default function ShopPage() {
 
             {/* Description */}
             {shop.description && (
-              <p className="text-white/80 text-base leading-relaxed mb-6">{shop.description}</p>
+              <CollapsibleText
+                text={shop.description}
+                maxLength={180}
+                className="text-white/80 text-base leading-relaxed mb-6"
+              />
             )}
 
             {/* Vehicle types */}

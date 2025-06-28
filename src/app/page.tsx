@@ -8,8 +8,9 @@ import RentalShopCard from "@/components/RentalShopCard"
 import VehicleCard from "@/components/VehicleCard"
 import * as service from "@/lib/service"
 import { RentalShop, Bike, BikeCategory, Vehicle, VehicleType, VehicleCategory } from "@/lib/types"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, MapPin } from "lucide-react"
 import FAQSection from '@/components/FAQSection'
+import { Badge } from "@/components/ui/badge"
 import { generateLocalBusinessSchema, generateJSONLD } from "@/lib/structured-data"
 
 // Transformed shop data for the RentalShopCard
@@ -401,8 +402,17 @@ export default function Home() {
         {/* Hero Content - improved padding and spacing for mobile */}
         <div className="container mx-auto relative z-20 min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
+            {/* Brand Badge */}
+            <div className="mb-4 sm:mb-6">
+              <Badge variant="brand" className="inline-flex items-center gap-1.5 text-xs sm:text-sm">
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                Siargao Vehicle Rentals
+              </Badge>
+            </div>
+            
+            {/* Main Tagline */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 leading-tight">
-              Siargao Vehicle Rentals – Because Walking in Flip-Flops Only Gets You So Far
+              Because Walking in Flip-Flops Only Gets You So Far
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
               Rent motorbikes, cars, and scooters in Siargao Island, Philippines. Compare trusted local rental shops with flexible pickup, competitive rates, and total freedom to explore paradise.

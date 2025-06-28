@@ -82,6 +82,8 @@ export type RentalShop = {
   opening_hours?: OpeningHours
   logo_url?: string
   banner_url?: string
+  banner_position_x?: number
+  banner_position_y?: number
   is_verified: boolean
   location_area?: string
   offers_delivery?: boolean

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { SIARGAO_LOCATIONS } from "@/lib/constants";
 import { VerificationBadge } from "@/components/shop/VerificationBadge";
 import imageCompression from 'browser-image-compression';
+import BannerPositionTool from "@/components/BannerPositionTool";
 
 // Use the shared locations from constants
 const siargaoLocations = SIARGAO_LOCATIONS;
@@ -30,6 +31,8 @@ interface RentalShop {
   email: string | null;
   logo_url: string | null;
   banner_url: string | null;
+  banner_position_x?: number;
+  banner_position_y?: number;
   is_verified: boolean;
   status?: 'pending_verification' | 'active' | 'rejected';
   created_at: string;
@@ -109,6 +112,10 @@ export default function ManageShopPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isBannerCompressing, setIsBannerCompressing] = useState(false);
   const [isLogoCompressing, setIsLogoCompressing] = useState(false);
+
+  // Banner positioning states
+  const [bannerPositionX, setBannerPositionX] = useState<number>(50);
+  const [bannerPositionY, setBannerPositionY] = useState<number>(50);
 
   // Refs for file inputs
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -223,6 +230,10 @@ export default function ManageShopPage() {
           } else if (shopData.banner_url) {
             setBannerPreview(shopData.banner_url);
           }
+
+          // Initialize banner position from shop data
+          setBannerPositionX(shopData.banner_position_x || 50);
+          setBannerPositionY(shopData.banner_position_y || 50);
 
           if (savedLogoPreview) {
             setLogoPreview(savedLogoPreview);
@@ -361,12 +372,12 @@ export default function ManageShopPage() {
     
     console.log(`Original banner file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
     
-    // Banner compression options (more lenient than vehicle images)
+    // Banner compression options (optimized for banner display)
     const compressionOptions = {
       maxSizeMB: 1.5, // Target 1.5MB for banners
-      maxWidthOrHeight: 1200, // Good for banner dimensions
+      maxWidthOrHeight: 1400, // Slightly higher resolution for crisp banners
       useWebWorker: true,
-      quality: 0.85, // Higher quality for banners
+      quality: 0.9, // Higher quality for banners to reduce blurriness
       onProgress: (progress: number) => {
         console.log(`Banner compression progress: ${progress}%`);
       }
@@ -520,6 +531,12 @@ export default function ManageShopPage() {
     }
   };
 
+  // Handle banner position changes
+  const handleBannerPositionChange = (x: number, y: number) => {
+    setBannerPositionX(x);
+    setBannerPositionY(y);
+  };
+
   // Upload files to Supabase Storage
   const uploadImage = async (file: File, path: string) => {
     const supabaseClient = createClientComponentClient();
@@ -572,6 +589,8 @@ export default function ManageShopPage() {
         facebook_url: formData.facebook_url,
         instagram_url: formData.instagram_url,
         sms_number: formData.sms_number,
+        banner_position_x: bannerPositionX,
+        banner_position_y: bannerPositionY,
         updated_at: new Date().toISOString()
       };
 
@@ -830,6 +849,9 @@ export default function ManageShopPage() {
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     fill
                     priority
+                    style={{
+                      objectPosition: `${bannerPositionX}% ${bannerPositionY}%`
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 </>
@@ -846,6 +868,9 @@ export default function ManageShopPage() {
                         alt="Banner preview"
                         className="object-cover"
                         fill
+                        style={{
+                          objectPosition: `${bannerPositionX}% ${bannerPositionY}%`
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                       <button
@@ -967,6 +992,9 @@ export default function ManageShopPage() {
                               alt="Banner preview"
                               className="object-cover"
                               fill
+                              style={{
+                                objectPosition: `${bannerPositionX}% ${bannerPositionY}%`
+                              }}
                             />
                             <button
                               type="button"
@@ -1016,6 +1044,18 @@ export default function ManageShopPage() {
                           Recommended size: 1200×400 pixels. Images are automatically compressed for optimal upload.
                         </p>
                       </div>
+
+                      {/* Banner Position Control - Show only when banner exists */}
+                      {bannerPreview && (
+                        <div className="mt-4">
+                          <BannerPositionTool
+                            bannerUrl={bannerPreview}
+                            initialX={bannerPositionX}
+                            initialY={bannerPositionY}
+                            onPositionChange={handleBannerPositionChange}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Shop Logo */}
