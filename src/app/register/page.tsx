@@ -569,6 +569,12 @@ function RegisterShopPageContent({
 
   // Form submission handler with React Hook Form
   const handleFormSubmit = hookFormSubmit(async (data) => {
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log('Form submission already in progress, ignoring...');
+      return;
+    }
+    
     setIsSubmitting(true);
     setReferralError(null);
     let resolvedReferrerId: string | null = null;
@@ -736,6 +742,14 @@ function RegisterShopPageContent({
           });
         }
       } catch (shopError) {
+        // Check if this is a duplicate shop error
+        if (shopError instanceof Error && 
+            shopError.message.includes('You already have a shop registered')) {
+          setError("You already have a shop registered. Only one shop per account is allowed.");
+          setIsSubmitting(false);
+          return;
+        }
+        
         // Check if this is a "User not found" error
         if (shopError instanceof Error &&
             (shopError.message.includes('User not found') ||

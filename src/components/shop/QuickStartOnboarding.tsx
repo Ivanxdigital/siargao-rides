@@ -82,6 +82,12 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
       return;
     }
 
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log('Shop creation already in progress, ignoring...');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -117,6 +123,13 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle specific duplicate shop error
+        if (response.status === 409 && errorData.type === 'duplicate_shop') {
+          toast.error("You already have a shop registered. Only one shop per account is allowed.");
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to create shop');
       }
 

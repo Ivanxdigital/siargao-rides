@@ -71,8 +71,26 @@ export async function POST(request: Request) {
       });
       
       // Return more specific error codes based on the error type
-      const status = error.code === '23505' ? 409 : // Duplicate key constraint
-                    error.code === '23503' ? 400 : // Foreign key constraint
+      if (error.code === '23505') {
+        // Check if it's our unique_owner_id constraint
+        if (error.message?.includes('unique_owner_id') || error.constraint === 'unique_owner_id') {
+          return NextResponse.json(
+            { 
+              error: 'You already have a shop registered. Only one shop per account is allowed.',
+              code: error.code,
+              type: 'duplicate_shop'
+            },
+            { status: 409 }
+          );
+        }
+        // Other unique constraint violations
+        return NextResponse.json(
+          { error: 'A record with this information already exists.', code: error.code },
+          { status: 409 }
+        );
+      }
+      
+      const status = error.code === '23503' ? 400 : // Foreign key constraint
                     error.code === '42501' ? 403 : // Insufficient privileges 
                     500; // General server error
       
