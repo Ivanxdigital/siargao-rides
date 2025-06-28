@@ -104,21 +104,6 @@ const Navbar = () => {
     }
   }, [])
 
-  // Check if announcement is visible
-  const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(true)
-
-  useEffect(() => {
-    // Listen for custom event when announcement is dismissed
-    const handleAnnouncementDismissed = () => {
-      setIsAnnouncementVisible(false)
-    }
-
-    window.addEventListener("announcement-dismissed", handleAnnouncementDismissed)
-
-    return () => {
-      window.removeEventListener("announcement-dismissed", handleAnnouncementDismissed)
-    }
-  }, [])
 
   // Better scroll lock implementation
   useEffect(() => {
@@ -231,7 +216,7 @@ const Navbar = () => {
         className={`fixed left-0 right-0 z-[1000] transition-all duration-200 ${
           scrolled
             ? "top-0 py-3 bg-transparent backdrop-blur-md shadow-md border-b border-white/10"
-            : `${isAnnouncementVisible ? 'md:top-[36px] top-0' : 'top-0'} py-5 bg-transparent`
+            : "top-0 py-5 bg-transparent"
         } ${isMenuOpen ? 'bg-black/90 backdrop-blur-md border-b border-white/10' : ''}`}
       >
         <div className="container mx-auto px-4 flex justify-between items-center">
