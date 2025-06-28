@@ -13,6 +13,7 @@ import { SubscriptionStatus, ShopWithSubscription } from "@/components/shop/Subs
 import { Badge } from "@/components/ui/badge";
 import { SIARGAO_LOCATIONS } from "@/lib/constants";
 import { VerificationBadge } from "@/components/shop/VerificationBadge";
+import imageCompression from 'browser-image-compression';
 
 // Use the shared locations from constants
 const siargaoLocations = SIARGAO_LOCATIONS;
@@ -106,6 +107,8 @@ export default function ManageShopPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isBannerCompressing, setIsBannerCompressing] = useState(false);
+  const [isLogoCompressing, setIsLogoCompressing] = useState(false);
 
   // Refs for file inputs
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -341,70 +344,155 @@ export default function ManageShopPage() {
   };
 
   // New file input handlers
-  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type and size
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload only JPEG, PNG, or WebP images.');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB max
-      alert('File size must be less than 5MB');
-      return;
-    }
-
-    setBannerFile(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const previewUrl = reader.result as string;
-      setBannerPreview(previewUrl);
-
-      // Save banner preview to localStorage
-      if (shop && isEditing) {
-        saveImagesToLocalStorage(shop.id, previewUrl, logoPreview);
+    // Set compressing state
+    setIsBannerCompressing(true);
+    setError(''); // Clear any previous errors
+    
+    console.log(`Original banner file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+    
+    // Banner compression options (more lenient than vehicle images)
+    const compressionOptions = {
+      maxSizeMB: 1.5, // Target 1.5MB for banners
+      maxWidthOrHeight: 1200, // Good for banner dimensions
+      useWebWorker: true,
+      quality: 0.85, // Higher quality for banners
+      onProgress: (progress: number) => {
+        console.log(`Banner compression progress: ${progress}%`);
       }
     };
-    reader.readAsDataURL(file);
+    
+    try {
+      let processedFile = file;
+      
+      // Always compress banners for optimal performance
+      console.log('Compressing banner image for optimal upload...');
+      processedFile = await imageCompression(file, compressionOptions);
+      console.log(`Compressed banner file size: ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      
+      // If still too large, apply more aggressive compression
+      if (processedFile.size > 3 * 1024 * 1024) { // If still > 3MB
+        console.log('Applying more aggressive banner compression...');
+        const aggressiveOptions = {
+          maxSizeMB: 0.8, // Very aggressive limit
+          maxWidthOrHeight: 800, // Lower resolution
+          useWebWorker: true,
+          quality: 0.7, // Lower quality
+        };
+        processedFile = await imageCompression(processedFile, aggressiveOptions);
+        console.log(`Final compressed banner size: ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      }
+      
+      setBannerFile(processedFile);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const previewUrl = reader.result as string;
+        setBannerPreview(previewUrl);
+        
+        // Save banner preview to localStorage
+        if (shop && isEditing) {
+          saveImagesToLocalStorage(shop.id, previewUrl, logoPreview);
+        }
+        
+        setIsBannerCompressing(false);
+      };
+      reader.readAsDataURL(processedFile);
+      
+    } catch (compressionError) {
+      console.error('Error compressing banner image:', compressionError);
+      setError(`Failed to process banner image: ${compressionError instanceof Error ? compressionError.message : 'Unknown error'}. Please try a different image.`);
+      setIsBannerCompressing(false);
+    }
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type and size
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload only JPEG, PNG, or WebP images.');
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB max
-      alert('File size must be less than 2MB');
-      return;
-    }
-
-    setLogoFile(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const previewUrl = reader.result as string;
-      setLogoPreview(previewUrl);
-
-      // Save logo preview to localStorage
-      if (shop && isEditing) {
-        saveImagesToLocalStorage(shop.id, bannerPreview, previewUrl);
+    // Set compressing state
+    setIsLogoCompressing(true);
+    setError(''); // Clear any previous errors
+    
+    console.log(`Original logo file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+    
+    // Logo compression options (smaller target for logos)
+    const compressionOptions = {
+      maxSizeMB: 0.5, // Target 0.5MB for logos
+      maxWidthOrHeight: 400, // Good for logo dimensions
+      useWebWorker: true,
+      quality: 0.85, // Good quality for logos
+      onProgress: (progress: number) => {
+        console.log(`Logo compression progress: ${progress}%`);
       }
     };
-    reader.readAsDataURL(file);
+    
+    try {
+      let processedFile = file;
+      
+      // Always compress logos for optimal performance
+      console.log('Compressing logo image for optimal upload...');
+      processedFile = await imageCompression(file, compressionOptions);
+      console.log(`Compressed logo file size: ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      
+      // If still too large, apply more aggressive compression
+      if (processedFile.size > 1 * 1024 * 1024) { // If still > 1MB
+        console.log('Applying more aggressive logo compression...');
+        const aggressiveOptions = {
+          maxSizeMB: 0.25, // Very aggressive limit
+          maxWidthOrHeight: 300, // Lower resolution
+          useWebWorker: true,
+          quality: 0.7, // Lower quality
+        };
+        processedFile = await imageCompression(processedFile, aggressiveOptions);
+        console.log(`Final compressed logo size: ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      }
+      
+      setLogoFile(processedFile);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const previewUrl = reader.result as string;
+        setLogoPreview(previewUrl);
+        
+        // Save logo preview to localStorage
+        if (shop && isEditing) {
+          saveImagesToLocalStorage(shop.id, bannerPreview, previewUrl);
+        }
+        
+        setIsLogoCompressing(false);
+      };
+      reader.readAsDataURL(processedFile);
+      
+    } catch (compressionError) {
+      console.error('Error compressing logo image:', compressionError);
+      setError(`Failed to process logo image: ${compressionError instanceof Error ? compressionError.message : 'Unknown error'}. Please try a different image.`);
+      setIsLogoCompressing(false);
+    }
   };
 
   const handleBannerRemove = () => {
     setBannerFile(null);
+    setIsBannerCompressing(false);
     const defaultPreview = shop?.banner_url || null;
     setBannerPreview(defaultPreview);
     if (bannerInputRef.current) {
@@ -419,6 +507,7 @@ export default function ManageShopPage() {
 
   const handleLogoRemove = () => {
     setLogoFile(null);
+    setIsLogoCompressing(false);
     const defaultPreview = shop?.logo_url || null;
     setLogoPreview(defaultPreview);
     if (logoInputRef.current) {
@@ -488,6 +577,14 @@ export default function ManageShopPage() {
 
       // Upload banner if changed
       if (bannerFile) {
+        // Check final file size before upload
+        if (bannerFile.size > 5 * 1024 * 1024) { // 5MB safety check
+          console.error(`Banner still too large after compression: ${(bannerFile.size / 1024 / 1024).toFixed(2)}MB`);
+          setError(`Banner image is still too large (${(bannerFile.size / 1024 / 1024).toFixed(2)}MB). Please try a different image.`);
+          setIsSaving(false);
+          return;
+        }
+        
         setIsUploading(true);
         setUploadProgress(10);
         try {
@@ -505,6 +602,14 @@ export default function ManageShopPage() {
 
       // Upload logo if changed
       if (logoFile) {
+        // Check final file size before upload
+        if (logoFile.size > 2 * 1024 * 1024) { // 2MB safety check
+          console.error(`Logo still too large after compression: ${(logoFile.size / 1024 / 1024).toFixed(2)}MB`);
+          setError(`Logo image is still too large (${(logoFile.size / 1024 / 1024).toFixed(2)}MB). Please try a different image.`);
+          setIsSaving(false);
+          return;
+        }
+        
         setIsUploading(true);
         setUploadProgress(60);
         try {
@@ -544,6 +649,8 @@ export default function ManageShopPage() {
       // Reset file states
       setBannerFile(null);
       setLogoFile(null);
+      setIsBannerCompressing(false);
+      setIsLogoCompressing(false);
 
       // Update previews to new URLs
       if (updateData.banner_url) {
@@ -877,17 +984,27 @@ export default function ManageShopPage() {
                             <p className="text-muted-foreground text-xs sm:text-sm mb-2 sm:mb-3">No banner selected</p>
                           </div>
                         )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => bannerInputRef.current?.click()}
-                          className="w-full py-1.5 sm:py-2 hover:bg-primary/5 text-xs sm:text-sm"
-                        >
-                          <Upload size={14} className="sm:hidden mr-1" />
-                          <Upload size={16} className="hidden sm:block mr-2" />
-                          {bannerPreview ? "Change Banner" : "Upload Banner"}
-                        </Button>
+                        {isBannerCompressing ? (
+                          <div className="w-full">
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                              <div className="h-full bg-blue-500 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                            </div>
+                            <p className="text-xs text-center text-blue-600">Compressing banner...</p>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => bannerInputRef.current?.click()}
+                            className="w-full py-1.5 sm:py-2 hover:bg-primary/5 text-xs sm:text-sm"
+                            disabled={isBannerCompressing}
+                          >
+                            <Upload size={14} className="sm:hidden mr-1" />
+                            <Upload size={16} className="hidden sm:block mr-2" />
+                            {bannerPreview ? "Change Banner" : "Upload Banner"}
+                          </Button>
+                        )}
                         <input
                           type="file"
                           ref={bannerInputRef}
@@ -896,7 +1013,7 @@ export default function ManageShopPage() {
                           accept="image/*"
                         />
                         <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 sm:mt-3">
-                          Recommended size: 1200×400 pixels. Max 5MB.
+                          Recommended size: 1200×400 pixels. Images are automatically compressed for optimal upload.
                         </p>
                       </div>
                     </div>
@@ -933,17 +1050,27 @@ export default function ManageShopPage() {
                             <p className="text-muted-foreground text-xs sm:text-sm mb-2 sm:mb-3">No logo selected</p>
                           </div>
                         )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => logoInputRef.current?.click()}
-                          className="w-full py-1.5 sm:py-2 hover:bg-primary/5 text-xs sm:text-sm"
-                        >
-                          <Upload size={14} className="sm:hidden mr-1" />
-                          <Upload size={16} className="hidden sm:block mr-2" />
-                          {logoPreview ? "Change Logo" : "Upload Logo"}
-                        </Button>
+                        {isLogoCompressing ? (
+                          <div className="w-full">
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                              <div className="h-full bg-blue-500 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                            </div>
+                            <p className="text-xs text-center text-blue-600">Compressing logo...</p>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => logoInputRef.current?.click()}
+                            className="w-full py-1.5 sm:py-2 hover:bg-primary/5 text-xs sm:text-sm"
+                            disabled={isLogoCompressing}
+                          >
+                            <Upload size={14} className="sm:hidden mr-1" />
+                            <Upload size={16} className="hidden sm:block mr-2" />
+                            {logoPreview ? "Change Logo" : "Upload Logo"}
+                          </Button>
+                        )}
                         <input
                           type="file"
                           ref={logoInputRef}
@@ -952,7 +1079,7 @@ export default function ManageShopPage() {
                           accept="image/*"
                         />
                         <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 sm:mt-3">
-                          Recommended size: 200×200 pixels. Max 2MB.
+                          Recommended size: 200×200 pixels. Images are automatically compressed for optimal upload.
                         </p>
                       </div>
                     </div>
