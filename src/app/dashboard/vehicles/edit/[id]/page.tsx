@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PlusCircle, XCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import imageCompression from 'browser-image-compression';
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ type ImageInput = {
   file: File | null;
   preview: string;
   isUploading: boolean;
+  isCompressing: boolean;
   existing_url?: string;
   image_id?: string;
 };
@@ -62,7 +64,7 @@ export default function EditVehiclePage() {
   const [weeklyPrice, setWeeklyPrice] = useState<PriceInput>("");
   const [monthlyPrice, setMonthlyPrice] = useState<PriceInput>("");
   const [images, setImages] = useState<ImageInput[]>([
-    { id: "1", file: null, preview: "", isUploading: false },
+    { id: "1", file: null, preview: "", isUploading: false, isCompressing: false },
   ]);
   
   // Common specifications
@@ -194,6 +196,7 @@ export default function EditVehiclePage() {
               file: null,
               preview: img.image_url,
               isUploading: false,
+              isCompressing: false,
               existing_url: img.image_url,
               image_id: img.id
             }))
@@ -270,7 +273,7 @@ export default function EditVehiclePage() {
     const newId = (images.length + 1).toString();
     setImages([
       ...images,
-      { id: newId, file: null, preview: "", isUploading: false },
+      { id: newId, file: null, preview: "", isUploading: false, isCompressing: false },
     ]);
   };
 
@@ -280,19 +283,81 @@ export default function EditVehiclePage() {
     }
   };
 
-  const handleImageChange = (id: string, file: File | null) => {
-    if (file) {
+  const handleImageChange = async (id: string, file: File | null) => {
+    if (!file) return;
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload only JPEG, PNG, or WebP images.');
+      return;
+    }
+    
+    // Set compressing state
+    setImages(prevImages =>
+      prevImages.map(img =>
+        img.id === id
+          ? { ...img, isCompressing: true }
+          : img
+      )
+    );
+    
+    console.log(`Original file size: ${file.size / 1024 / 1024} MB`);
+    
+    const compressionOptions = {
+      maxSizeMB: 5, // Limit to 5MB for vehicle images
+      maxWidthOrHeight: 1920, // Limit resolution
+      useWebWorker: true, // Use multi-threading
+      onProgress: (progress: number) => {
+        console.log(`Compression progress: ${progress}%`);
+      }
+    };
+    
+    try {
+      let processedFile = file;
+      
+      // Check if compression is needed
+      if (file.size > compressionOptions.maxSizeMB * 1024 * 1024) {
+        console.log('File size exceeds 5MB, compressing...');
+        processedFile = await imageCompression(file, compressionOptions);
+        console.log(`Compressed file size: ${processedFile.size / 1024 / 1024} MB`);
+      } else {
+        console.log('File size is within limits, no compression needed.');
+      }
+      
+      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImages(
-          images.map((img) =>
+        setImages(prevImages =>
+          prevImages.map(img =>
             img.id === id
-              ? { ...img, file, preview: e.target?.result as string }
+              ? { 
+                  ...img, 
+                  file: processedFile, 
+                  preview: e.target?.result as string,
+                  isCompressing: false 
+                }
               : img
           )
         );
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(processedFile);
+      
+      // Clear any previous errors
+      if (error) setError("");
+      
+    } catch (compressionError) {
+      console.error('Error compressing image:', compressionError);
+      setError('Failed to process image. Please try a smaller file or different format.');
+      
+      // Reset compressing state
+      setImages(prevImages =>
+        prevImages.map(img =>
+          img.id === id
+            ? { ...img, isCompressing: false }
+            : img
+        )
+      );
     }
   };
 
@@ -339,7 +404,7 @@ export default function EditVehiclePage() {
       const updatedImages: VehicleImage[] = [];
 
       // Update all image states to uploading
-      setImages(images.map(img => ({ ...img, isUploading: !!img.file })));
+      setImages(images.map(img => ({ ...img, isUploading: !!img.file, isCompressing: false })));
 
       // Process each image
       for (let i = 0; i < images.length; i++) {
@@ -434,7 +499,7 @@ export default function EditVehiclePage() {
       router.push("/dashboard/vehicles");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update vehicle");
-      setImages(images.map(img => ({ ...img, isUploading: false })));
+      setImages(images.map(img => ({ ...img, isUploading: false, isCompressing: false })));
     } finally {
       setIsSubmitting(false);
     }
@@ -812,7 +877,7 @@ export default function EditVehiclePage() {
                               type="button"
                               onClick={() => handleRemoveImage(image.id)}
                               className="bg-red-500/90 hover:bg-red-600 text-white p-2 rounded-full shadow-lg"
-                              disabled={image.isUploading}
+                              disabled={image.isUploading || image.isCompressing}
                             >
                               <XCircle size={20} />
                             </button>
@@ -832,6 +897,13 @@ export default function EditVehiclePage() {
                           <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '100%' }}></div>
                           <p className="text-xs text-center mt-2 text-muted-foreground">Uploading...</p>
                         </div>
+                      ) : image.isCompressing ? (
+                        <div className="w-full">
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                          </div>
+                          <p className="text-xs text-center mt-2 text-blue-600">Compressing image...</p>
+                        </div>
                       ) : (
                         <label className="flex items-center justify-center w-full cursor-pointer">
                           <input
@@ -844,7 +916,7 @@ export default function EditVehiclePage() {
                               )
                             }
                             className="hidden"
-                            disabled={image.isUploading}
+                            disabled={image.isUploading || image.isCompressing}
                           />
                           <div className="flex items-center space-x-2 py-2 px-3 bg-background border border-border rounded-md hover:bg-muted/50 hover:border-primary/50 transition-colors w-full text-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
