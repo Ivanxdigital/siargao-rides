@@ -5,6 +5,7 @@ import "./calendar.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/layout/ScrollToTop";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Providers } from './providers';
 import { PerformanceInit } from '@/components/PerformanceInit';
@@ -119,6 +120,7 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
+              <WhatsAppFloat />
             </div>
           </AuthProvider>
         </Providers>
