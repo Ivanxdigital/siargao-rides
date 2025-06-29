@@ -361,11 +361,14 @@ export default function ShopPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-semibold mb-4">Loading Shop Details</h1>
-        <p className="text-muted-foreground">
-          Please wait while we fetch the shop information...
-        </p>
+      <div className="min-h-screen bg-gradient-to-b from-black to-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-6"></div>
+          <h1 className="text-2xl font-semibold mb-4">Loading Shop Details</h1>
+          <p className="text-white/70">
+            Please wait while we fetch the shop information...
+          </p>
+        </div>
       </div>
     )
   }
