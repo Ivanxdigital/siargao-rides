@@ -1241,9 +1241,14 @@ export default function ManageShopPage() {
 
                     {/* SMS Number */}
                     <div className="space-y-1 sm:space-y-2">
-                      <label htmlFor="phone_number" className="block text-xs sm:text-sm font-medium mb-1">
-                        Phone Number for Booking Notifications
-                      </label>
+                      <div className="flex items-center gap-2 mb-1">
+                        <label htmlFor="phone_number" className="block text-xs sm:text-sm font-medium">
+                          Phone Number for Booking Notifications
+                        </label>
+                        <Badge variant="comingSoon" className="text-xs">
+                          Coming Soon
+                        </Badge>
+                      </div>
                       <input
                         type="text"
                         id="phone_number"
@@ -1251,23 +1256,25 @@ export default function ManageShopPage() {
                         value={formData.phone_number}
                         onChange={handleInputChange}
                         placeholder="+63 9XX XXX XXXX"
-                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        disabled
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all opacity-50 cursor-not-allowed"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Enter your phone number to receive instant SMS notifications for new bookings
+                        SMS notifications are coming soon! You'll be able to receive instant notifications for new bookings.
                       </p>
                       
                       {/* SMS Notifications Toggle */}
-                      <div className="flex items-center space-x-2 mt-3">
+                      <div className="flex items-center space-x-2 mt-3 opacity-50">
                         <input
                           type="checkbox"
                           id="sms_notifications_enabled"
                           name="sms_notifications_enabled"
                           checked={formData.sms_notifications_enabled ?? true}
                           onChange={handleInputChange}
-                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                          disabled
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded cursor-not-allowed"
                         />
-                        <label htmlFor="sms_notifications_enabled" className="text-sm">
+                        <label htmlFor="sms_notifications_enabled" className="text-sm cursor-not-allowed">
                           Enable SMS notifications for new bookings
                         </label>
                       </div>

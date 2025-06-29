@@ -35,51 +35,12 @@ interface SMSNotificationHistoryProps {
 }
 
 export function SMSNotificationHistory({ shopId }: SMSNotificationHistoryProps) {
-  const [history, setHistory] = useState<SMSHistory[]>([]);
-  const [stats, setStats] = useState<SMSStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const supabase = createClientComponentClient();
-
-  useEffect(() => {
-    fetchSMSHistory();
-  }, [shopId]);
-
-  const fetchSMSHistory = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Fetch SMS history
-      const { data: historyData, error: historyError } = await supabase
-        .from('sms_notification_history')
-        .select('*')
-        .eq('shop_id', shopId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (historyError) {
-        throw historyError;
-      }
-
-      setHistory(historyData || []);
-
-      // Calculate stats
-      if (historyData) {
-        const stats: SMSStats = {
-          total_messages: historyData.length,
-          delivered_messages: historyData.filter(sms => sms.status === 'delivered').length,
-          failed_messages: historyData.filter(sms => sms.status === 'failed').length,
-          undelivered_messages: historyData.filter(sms => sms.status === 'undelivered').length,
-        };
-        setStats(stats);
-      }
-    } catch (err) {
-      console.error('Error fetching SMS history:', err);
-      setError('Failed to load SMS history');
-    } finally {
-      setIsLoading(false);
-    }
+  // Coming Soon: SMS functionality is temporarily disabled
+  const stats: SMSStats = {
+    total_messages: 0,
+    delivered_messages: 0,
+    failed_messages: 0,
+    undelivered_messages: 0,
   };
 
   const getStatusIcon = (status: string) => {
@@ -115,141 +76,66 @@ export function SMSNotificationHistory({ shopId }: SMSNotificationHistoryProps) 
     );
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>SMS Notification History</CardTitle>
-          <CardDescription>Loading SMS history...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>SMS Notification History</CardTitle>
-          <CardDescription>Error loading SMS history</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-destructive">{error}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>SMS Notification History</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle>SMS Notification History</CardTitle>
+          <Badge variant="comingSoon" className="text-xs">
+            Coming Soon
+          </Badge>
+        </div>
         <CardDescription>
-          Track SMS notifications sent to your registered phone number
+          SMS notifications are being developed and will be available soon!
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Stats Summary */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-background border rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                <span className="text-sm font-medium">Total</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{stats.total_messages}</p>
+        {/* Stats Summary - Coming Soon Placeholder */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+          <div className="bg-primary/5 border border-border rounded-lg p-4 md:p-6 text-center opacity-60 transition-all">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <MessageSquare className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+              <span className="text-xs md:text-sm font-medium">Total</span>
             </div>
-            <div className="bg-background border rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="text-sm font-medium">Delivered</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{stats.delivered_messages}</p>
-            </div>
-            <div className="bg-background border rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <XCircle className="h-5 w-5 text-red-500" />
-                <span className="text-sm font-medium">Failed</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{stats.failed_messages}</p>
-            </div>
-            <div className="bg-background border rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-5 w-5 text-orange-500" />
-                <span className="text-sm font-medium">Undelivered</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{stats.undelivered_messages}</p>
-            </div>
+            <p className="text-xl md:text-2xl font-bold text-primary">{stats.total_messages}</p>
           </div>
-        )}
+          <div className="bg-green-500/5 border border-border rounded-lg p-4 md:p-6 text-center opacity-60 transition-all">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
+              <span className="text-xs md:text-sm font-medium">Delivered</span>
+            </div>
+            <p className="text-xl md:text-2xl font-bold text-green-500">{stats.delivered_messages}</p>
+          </div>
+          <div className="bg-red-500/5 border border-border rounded-lg p-4 md:p-6 text-center opacity-60 transition-all">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
+              <span className="text-xs md:text-sm font-medium">Failed</span>
+            </div>
+            <p className="text-xl md:text-2xl font-bold text-red-500">{stats.failed_messages}</p>
+          </div>
+          <div className="bg-orange-500/5 border border-border rounded-lg p-4 md:p-6 text-center opacity-60 transition-all">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-orange-500" />
+              <span className="text-xs md:text-sm font-medium">Undelivered</span>
+            </div>
+            <p className="text-xl md:text-2xl font-bold text-orange-500">{stats.undelivered_messages}</p>
+          </div>
+        </div>
 
-        {/* History Table */}
-        {history.length === 0 ? (
-          <div className="text-center py-8">
-            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No SMS notifications sent yet</p>
+        {/* Coming Soon Message */}
+        <div className="flex flex-col items-center justify-center py-16 px-4 sm:px-6 bg-card border border-border rounded-lg text-center">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <MessageSquare className="h-8 w-8 text-primary" />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2 font-medium text-sm">Date</th>
-                  <th className="text-left p-2 font-medium text-sm">Booking</th>
-                  <th className="text-left p-2 font-medium text-sm">Status</th>
-                  <th className="text-left p-2 font-medium text-sm">Phone</th>
-                  <th className="text-left p-2 font-medium text-sm">Message</th>
-                  <th className="text-left p-2 font-medium text-sm">Error</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((sms) => (
-                  <tr key={sms.id} className="border-b hover:bg-muted/50">
-                    <td className="p-2 whitespace-nowrap text-sm">
-                      {format(new Date(sms.sent_at), 'MMM dd, h:mm a')}
-                    </td>
-                    <td className="p-2">
-                      <a
-                        href={`/dashboard/bookings/${sms.rental_id}`}
-                        className="text-primary hover:underline text-sm"
-                      >
-                        View
-                      </a>
-                    </td>
-                    <td className="p-2">
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(sms.status)}
-                        {getStatusBadge(sms.status)}
-                      </div>
-                    </td>
-                    <td className="p-2 text-sm">
-                      {sms.phone_number}
-                    </td>
-                    <td className="p-2 max-w-xs">
-                      <p className="text-sm truncate" title={sms.message_content}>
-                        {sms.message_content}
-                      </p>
-                    </td>
-                    <td className="p-2">
-                      {sms.error_message && (
-                        <span className="text-xs text-destructive" title={sms.error_message}>
-                          {sms.error_code || 'Error'}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+          <h3 className="text-xl font-medium mb-3">SMS Notifications Coming Soon</h3>
+          <p className="text-muted-foreground max-w-lg mx-auto mb-6 text-sm sm:text-base leading-relaxed">
+            We're working on bringing you instant SMS notifications for new bookings. 
+            You'll be able to track message delivery, view notification history, and manage your SMS preferences.
+          </p>
+          <Badge variant="comingSoon" className="px-3 py-1.5 text-xs">
+            Coming Soon
+          </Badge>
+        </div>
       </CardContent>
     </Card>
   );
