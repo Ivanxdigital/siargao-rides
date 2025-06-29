@@ -54,7 +54,7 @@ export function checkShopSetupStatus(
     shop.email || 
     shop.facebook_url || 
     shop.instagram_url ||
-    shop.sms_number
+    shop.phone_number
   );
   
   // Calculate completion percentage

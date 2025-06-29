@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import { checkShopSetupStatus } from "@/utils/shopSetupStatus";
 import { ProgressiveSetupCard } from "@/components/shop/ProgressiveSetupCard";
 import { QuickStartOnboarding } from "@/components/shop/QuickStartOnboarding";
 import { isFeatureEnabled } from "@/lib/featureFlags";
+import { withParallelTimeout, formatError, withTimeout, safeDbOperation } from "@/lib/dbTimeout";
 
 // Types for our dashboard data
 interface ShopStats {
@@ -174,15 +175,19 @@ export default function DashboardPage() {
   // No longer redirect shop owners without a shop to registration page
   // Instead, we show the ShopOnboardingBanner component
 
-  // Fetch dashboard data when authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchDashboardData();
-    }
-  }, [isAuthenticated, user]);
+  // Add ref to prevent concurrent fetches
+  const isFetchingRef = useRef(false);
 
-  // Function to fetch all required dashboard data
-  const fetchDashboardData = async () => {
+  // Function to fetch all required dashboard data with improved error handling
+  const fetchDashboardData = useCallback(async () => {
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      console.log("Already fetching dashboard data, skipping duplicate call");
+      return;
+    }
+
+    console.log("Starting fetchDashboardData for user role:", user?.user_metadata?.role);
+    isFetchingRef.current = true;
     setIsDataLoading(true);
     setError(null);
 
@@ -190,9 +195,8 @@ export default function DashboardPage() {
       const supabase = createClientComponentClient();
 
       if (!user) {
-        console.error("Cannot fetch dashboard data: No authenticated user");
+        console.warn("Cannot fetch dashboard data: No authenticated user");
         setError("Please sign in to view your dashboard");
-        setIsDataLoading(false);
         return;
       }
 
@@ -202,137 +206,159 @@ export default function DashboardPage() {
         console.log("Shop owner has_shop status:", hasShop);
         
         if (hasShop === true) {
+          console.log("Fetching shop data for verified shop owner");
           // Fetch shop data for shop owners who have a shop
           await fetchShopOwnerData(supabase);
         } else if (hasShop === false) {
           console.log("Shop owner doesn't have a shop yet (has_shop = false)");
           // Don't try to fetch shop data, but don't show an error either
-          setIsDataLoading(false);
+          // The onboarding component will handle this case
         } else {
-          // has_shop is undefined - this might be an old user or metadata is not synced
           console.log("Shop owner has_shop status is undefined, checking if shop exists in database");
+          // has_shop is undefined - this might be an old user or metadata is not synced
           // Try to fetch shop data anyway - if it exists, the user has a shop even if metadata is stale
           await fetchShopOwnerData(supabase);
         }
       } else {
+        console.log("Fetching data for regular user");
         // Fetch user data for regular users
         await fetchRegularUserData(supabase);
       }
     } catch (err) {
       // More detailed error logging
-      console.error("Error fetching dashboard data:", {
-        error: err,
+      console.warn("Error fetching dashboard data:", {
+        error: formatError(err),
         message: err instanceof Error ? err.message : 'Unknown error',
         stack: err instanceof Error ? err.stack : undefined,
-        userRole: user?.user_metadata?.role || 'unknown'
+        userRole: user?.user_metadata?.role || 'unknown',
+        userId: user?.id || 'unknown',
+        timestamp: new Date().toISOString()
       });
 
-      setError("Failed to load dashboard data. Please refresh the page or try again later.");
+      // Set specific error messages based on error type
+      if (err instanceof Error && err.message.includes('timed out')) {
+        setError("Dashboard is taking longer than expected to load. Please check your connection and try refreshing the page.");
+      } else {
+        setError("Failed to load dashboard data. Please refresh the page or try again later.");
+      }
     } finally {
+      // CRITICAL: Always set loading to false to prevent stuck loading states
+      console.log("Setting isDataLoading to false in fetchDashboardData finally block");
       setIsDataLoading(false);
+      isFetchingRef.current = false;
     }
-  };
+  }, [user?.id]); // Only depend on user ID to prevent infinite loops
 
-  // Helper function to fetch vehicle statistics and related data
+  // Fetch dashboard data when authenticated
+  useEffect(() => {
+    console.log("Dashboard useEffect triggered:", {
+      isAuthenticated,
+      userId: user?.id,
+      hasUser: !!user,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (isAuthenticated && user) {
+      fetchDashboardData();
+    }
+  }, [isAuthenticated, user?.id, fetchDashboardData]); // Use user.id instead of user
+
+  // Helper function to fetch vehicle statistics and related data with timeout and parallel execution
   const fetchVehicleStats = async (supabase: any, shopId: string) => {
     try {
-      // 1. Get vehicle statistics
-      const { data: vehicles, error: vehiclesError } = await supabase
-        .from("vehicles")
-        .select("id, is_available, price_per_day")
-        .eq("shop_id", shopId);
+      console.log(`Starting data fetch for shop: ${shopId}`);
 
-      if (vehiclesError) {
-        console.error("Error fetching vehicles:", vehiclesError);
-        throw vehiclesError;
-      }
-
-      console.log("Vehicles data:", vehicles); // Debug log
-
-      const totalVehicles = vehicles?.length || 0;
-      const availableVehicles = vehicles?.filter((vehicle: any) => vehicle.is_available).length || 0;
-
-      console.log("Total vehicles:", totalVehicles); // Debug log
-      console.log("Available vehicles:", availableVehicles); // Debug log
-
-      // 2. Get active bookings
-      const { data: activeBookings, error: bookingsError } = await supabase
-        .from("rentals")
-        .select("id, status")
-        .eq("shop_id", shopId)
-        .in("status", ["pending", "confirmed", "active"]);
-
-      if (bookingsError) {
-        console.error("Error fetching bookings:", bookingsError);
-        throw bookingsError;
-      }
-
-      console.log("Active bookings data:", activeBookings); // Debug log
-
-      // 3. Calculate revenue (from paid bookings)
-      const { data: paidBookings, error: revenueError } = await supabase
-        .from("rentals")
-        .select("total_price")
-        .eq("shop_id", shopId)
-        .eq("payment_status", "paid");
-
-      if (revenueError) {
-        console.error("Error fetching revenue data:", revenueError);
-        throw revenueError;
-      }
-
-      const totalRevenue = paidBookings?.reduce((sum: number, booking: { total_price?: number }) =>
-        sum + (booking.total_price || 0), 0) || 0;
-
-      console.log("Paid bookings:", paidBookings); // Debug log for paid bookings
-
-      // 4. Get recent bookings for the shop
-      try {
-        // First get basic rental info
-        const { data: rentalsData, error: rentalsError } = await supabase
+      // Execute the main data queries in parallel with timeout protection
+      const parallelResults = await withParallelTimeout({
+        vehicles: supabase
+          .from("vehicles")
+          .select("id, is_available, price_per_day")
+          .eq("shop_id", shopId),
+        activeBookings: supabase
           .from("rentals")
-          .select("id, start_date, end_date, status, vehicle_id, user_id")
+          .select("id, status")
           .eq("shop_id", shopId)
-          .order("created_at", { ascending: false })
-          .limit(5);
+          .in("status", ["pending", "confirmed", "active"]),
+        paidBookings: supabase
+          .from("rentals")
+          .select("total_price")
+          .eq("shop_id", shopId)
+          .eq("payment_status", "paid")
+      }, { timeoutMs: 6000, operation: 'Vehicle statistics fetch' });
 
-        if (rentalsError) {
-          console.error("Error fetching rentals:", rentalsError);
-          throw rentalsError;
-        }
+      // Extract data from results, handling potential nulls
+      const vehicles = parallelResults.vehicles?.data || [];
+      const activeBookings = parallelResults.activeBookings?.data || [];
+      const paidBookings = parallelResults.paidBookings?.data || [];
 
-        // If we have rentals, let's fetch the additional data separately
-        if (rentalsData && rentalsData.length > 0) {
-          // Format the bookings with placeholder data first
+      // Log any errors from the parallel operations
+      if (parallelResults.vehicles?.error) {
+        console.warn("Error fetching vehicles:", {
+          error: formatError(parallelResults.vehicles.error),
+          raw: parallelResults.vehicles.error
+        });
+      }
+      if (parallelResults.activeBookings?.error) {
+        console.warn("Error fetching active bookings:", {
+          error: formatError(parallelResults.activeBookings.error),
+          raw: parallelResults.activeBookings.error
+        });
+      }
+      if (parallelResults.paidBookings?.error) {
+        console.warn("Error fetching paid bookings:", {
+          error: formatError(parallelResults.paidBookings.error),
+          raw: parallelResults.paidBookings.error
+        });
+      }
+
+      const totalVehicles = vehicles.length;
+      const availableVehicles = vehicles.filter((vehicle: any) => vehicle.is_available).length;
+      const totalRevenue = paidBookings.reduce((sum: number, booking: { total_price?: number }) =>
+        sum + (booking.total_price || 0), 0);
+
+      console.log("Vehicle stats:", { totalVehicles, availableVehicles, activeBookings: activeBookings.length, totalRevenue });
+
+      // 4. Get recent bookings for the shop with timeout protection
+      const recentBookingsResult = await safeDbOperation(
+        async () => {
+          const { data: rentalsData, error: rentalsError } = await supabase
+            .from("rentals")
+            .select("id, start_date, end_date, status, vehicle_id, user_id")
+            .eq("shop_id", shopId)
+            .order("created_at", { ascending: false })
+            .limit(5);
+
+          if (rentalsError) {
+            console.warn("Error fetching rentals:", rentalsError);
+            return [];
+          }
+
+          if (!rentalsData || rentalsData.length === 0) {
+            return [];
+          }
+
+          // Use parallel operations to fetch vehicle and user data
           const formattedBookings = await Promise.all(rentalsData.map(async (rental) => {
-            let vehicleName = "Unknown Vehicle";
-            let customerName = "Guest";
-
-            // Get vehicle name
-            if (rental.vehicle_id) {
-              const { data: vehicleData } = await supabase
+            const [vehicleResult, userResult] = await Promise.allSettled([
+              rental.vehicle_id ? supabase
                 .from("vehicles")
                 .select("name")
                 .eq("id", rental.vehicle_id)
-                .single();
-
-              if (vehicleData) {
-                vehicleName = vehicleData.name || "Unknown Vehicle";
-              }
-            }
-
-            // Get customer name
-            if (rental.user_id) {
-              const { data: userData } = await supabase
+                .single() : Promise.resolve({ data: null }),
+              rental.user_id ? supabase
                 .from("users")
                 .select("first_name, last_name")
                 .eq("id", rental.user_id)
-                .single();
+                .single() : Promise.resolve({ data: null })
+            ]);
 
-              if (userData) {
-                customerName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || "Guest";
-              }
-            }
+            const vehicleName = vehicleResult.status === 'fulfilled' && vehicleResult.value.data
+              ? vehicleResult.value.data.name || "Unknown Vehicle"
+              : "Unknown Vehicle";
+
+            const customerName = userResult.status === 'fulfilled' && userResult.value.data
+              ? `${userResult.value.data.first_name || ''} ${userResult.value.data.last_name || ''}`.trim() || "Guest"
+              : "Guest";
 
             return {
               id: rental.id,
@@ -344,28 +370,44 @@ export default function DashboardPage() {
             };
           }));
 
-          setRecentBookings(formattedBookings);
-        } else {
-          setRecentBookings([]);
-        }
-      } catch (error) {
-        console.error("Error fetching recent bookings:", error);
-      }
+          return formattedBookings;
+        },
+        [], // fallback to empty array
+        { timeoutMs: 5000, operation: 'Recent bookings fetch' }
+      );
+
+      setRecentBookings(recentBookingsResult);
 
       // Update state with all the shop owner data
       setShopStats({
         totalVehicles,
         availableVehicles,
         unavailableVehicles: totalVehicles - availableVehicles,
-        activeBookings: activeBookings?.length || 0,
+        activeBookings: activeBookings.length,
         totalRevenue
       });
 
-      // Set loading to false on successful completion
-      setIsDataLoading(false);
+      console.log("Successfully completed vehicle stats fetch");
     } catch (err) {
-      console.error("Error in fetchVehicleStats:", err);
-      throw err; // Re-throw to be handled by caller
+      console.warn("Error in fetchVehicleStats:", {
+        error: formatError(err),
+        errorType: err instanceof Error ? 'Error' : typeof err,
+        shopId,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Set default values on error to prevent UI issues
+      setShopStats({
+        totalVehicles: 0,
+        availableVehicles: 0,
+        unavailableVehicles: 0,
+        activeBookings: 0,
+        totalRevenue: 0
+      });
+      setRecentBookings([]);
+      
+      // Don't throw error here - let the dashboard load with default values
+      console.log("fetchVehicleStats completed with fallback values due to error");
     }
   };
 
@@ -374,7 +416,7 @@ export default function DashboardPage() {
     try {
       // Check if user ID is defined
       if (!user || !user.id) {
-        console.error("Cannot fetch shop owner data: User ID is undefined");
+        console.warn("Cannot fetch shop owner data: User ID is undefined");
         setError("Unable to identify your account. Please try signing out and signing in again.");
         return;
       }
@@ -382,7 +424,7 @@ export default function DashboardPage() {
       // 1. Get the user's shop with subscription data
       const { data: shopWithSubscription, error: shopError } = await supabase
         .from("rental_shops")
-        .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, sms_number, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
+        .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
         .eq("owner_id", user.id)
         .single();
 
@@ -392,7 +434,7 @@ export default function DashboardPage() {
       // Enhanced error handling for shopError with retry logic
       if (shopError || !shopWithSubscription) {
         // Log detailed error information
-        console.error("Error fetching shop:", {
+        console.warn("Error fetching shop:", {
           error: shopError,
           errorMessage: shopError?.message || "No error message",
           errorCode: shopError?.code || "No error code",
@@ -416,11 +458,16 @@ export default function DashboardPage() {
             
             await new Promise(resolve => setTimeout(resolve, delay));
             
-            const { data: retryShopData, error: retryError } = await supabase
-              .from("rental_shops")
-              .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, sms_number, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
-              .eq("owner_id", user.id)
-              .single();
+            const retryResult = await withTimeout(
+              supabase
+                .from("rental_shops")
+                .select("id, name, logo_url, banner_url, description, address, location_area, phone_number, whatsapp, email, facebook_url, instagram_url, is_verified, subscription_status, subscription_start_date, subscription_end_date, is_active")
+                .eq("owner_id", user.id)
+                .single(),
+              { timeoutMs: 3000, operation: `Shop data retry ${attempt}` }
+            );
+            
+            const { data: retryShopData, error: retryError } = retryResult;
             
             if (retryShopData && !retryError) {
               console.log(`Retry successful on attempt ${attempt}!`);
@@ -432,13 +479,19 @@ export default function DashboardPage() {
               await fetchVehicleStats(supabase, shopId);
               
               // Update shop setup status with the shop data and vehicle count
-              const { data: vehiclesForSetup } = await supabase
-                .from("vehicles")
-                .select("id")
-                .eq("shop_id", shopId);
+              const vehicleCountResult = await safeDbOperation(
+                async () => {
+                  const { data: vehiclesForSetup } = await supabase
+                    .from("vehicles")
+                    .select("id")
+                    .eq("shop_id", shopId);
+                  return vehiclesForSetup?.length || 0;
+                },
+                0, // fallback to 0 vehicles
+                { timeoutMs: 3000, operation: 'Vehicle count for setup status' }
+              );
               
-              const vehicleCount = vehiclesForSetup?.length || 0;
-              const setupStatus = checkShopSetupStatus(retryShopData, vehicleCount);
+              const setupStatus = checkShopSetupStatus(retryShopData, vehicleCountResult);
               setShopSetupStatus(setupStatus);
               return;
             } else {
@@ -447,7 +500,7 @@ export default function DashboardPage() {
           }
           
           // All retries failed - set error and stop loading
-          console.error("All retry attempts failed. Shop may not exist yet.");
+          console.warn("All retry attempts failed. Shop may not exist yet.");
           setError("Shop data is still being created. Please refresh the page in a moment.");
         } else {
           // Only show error for actual database errors, not missing data
@@ -474,54 +527,91 @@ export default function DashboardPage() {
       await fetchVehicleStats(supabase, shopId);
 
       // Update shop setup status with the shop data and vehicle count
-      // We need to get vehicle count first, so let's get it quickly here
-      const { data: vehiclesForSetup } = await supabase
-        .from("vehicles")
-        .select("id")
-        .eq("shop_id", shopId);
+      const vehicleCountResult = await safeDbOperation(
+        async () => {
+          const { data: vehiclesForSetup } = await supabase
+            .from("vehicles")
+            .select("id")
+            .eq("shop_id", shopId);
+          return vehiclesForSetup?.length || 0;
+        },
+        0, // fallback to 0 vehicles
+        { timeoutMs: 3000, operation: 'Vehicle count for setup status' }
+      );
       
-      const vehicleCount = vehiclesForSetup?.length || 0;
-      const setupStatus = checkShopSetupStatus(shopWithSubscription, vehicleCount);
+      const setupStatus = checkShopSetupStatus(shopWithSubscription, vehicleCountResult);
       setShopSetupStatus(setupStatus);
     } catch (err) {
       // Enhanced catch block with more detailed error logging
-      console.error("Error in fetchShopOwnerData:", err);
+      console.warn("Error in fetchShopOwnerData:", {
+        error: formatError(err),
+        errorType: err instanceof Error ? 'Error' : typeof err,
+        userId: user?.id,
+        hasShop: user?.user_metadata?.has_shop,
+        timestamp: new Date().toISOString(),
+        stack: err instanceof Error ? err.stack : undefined
+      });
 
-      // Set a user-friendly error message
-      setError("An error occurred while fetching your shop data. Please try refreshing the page or contact support if the problem persists.");
+      // Set a user-friendly error message based on error type
+      if (err instanceof Error && err.message.includes('timed out')) {
+        setError("Loading is taking longer than expected. Please check your connection and try refreshing the page.");
+      } else {
+        setError("An error occurred while fetching your shop data. Please try refreshing the page or contact support if the problem persists.");
+      }
 
-      // Set loading to false even on error
-      setIsDataLoading(false);
+      // Set default shop stats to prevent UI issues
+      setShopStats({
+        totalVehicles: 0,
+        availableVehicles: 0,
+        unavailableVehicles: 0,
+        activeBookings: 0,
+        totalRevenue: 0
+      });
+      setRecentBookings([]);
 
       // Don't rethrow the error so we can handle it here
       return;
+    } finally {
+      // CRITICAL: Always set loading to false to prevent stuck loading states
+      console.log("Setting isDataLoading to false in fetchShopOwnerData finally block");
+      setIsDataLoading(false);
     }
   };
 
-  // Fetch data specific to regular users
+  // Fetch data specific to regular users with timeout protection
   const fetchRegularUserData = async (supabase: any) => {
+    console.log("Starting fetchRegularUserData for user:", user?.id);
+    
     try {
-      // 1. Get user's active bookings
-      const { data: activeBookings, error: bookingsError } = await supabase
-        .from("rentals")
-        .select("id")
-        .eq("user_id", user!.id)
-        .in("status", ["active", "confirmed"]);
+      // Execute user data queries in parallel with timeout protection
+      const parallelResults = await withParallelTimeout({
+        activeBookings: supabase
+          .from("rentals")
+          .select("id")
+          .eq("user_id", user!.id)
+          .in("status", ["active", "confirmed"]),
+        savedVehicles: supabase
+          .from("favorites")
+          .select("id")
+          .eq("user_id", user!.id)
+      }, { timeoutMs: 5000, operation: 'User data fetch' });
 
-      if (bookingsError) {
-        console.error("Error fetching user bookings:", bookingsError);
-        return;
+      // Extract data from results, handling potential nulls
+      const activeBookings = parallelResults.activeBookings?.data || [];
+      const savedVehicles = parallelResults.savedVehicles?.data || [];
+
+      // Log any errors from the parallel operations
+      if (parallelResults.activeBookings?.error) {
+        console.warn("Error fetching user bookings:", {
+          error: formatError(parallelResults.activeBookings.error),
+          raw: parallelResults.activeBookings.error
+        });
       }
-
-      // 2. Get user's saved vehicles (favorites)
-      const { data: savedVehicles, error: favoritesError } = await supabase
-        .from("favorites")
-        .select("id")
-        .eq("user_id", user!.id);
-
-      if (favoritesError) {
-        console.error("Error fetching favorites:", favoritesError);
-        return;
+      if (parallelResults.savedVehicles?.error) {
+        console.warn("Error fetching favorites:", {
+          error: formatError(parallelResults.savedVehicles.error),
+          raw: parallelResults.savedVehicles.error
+        });
       }
 
       // 3. Calculate profile completion percentage
@@ -541,13 +631,29 @@ export default function DashboardPage() {
 
       // Update state with all the user data
       setUserStats({
-        activeBookings: activeBookings?.length || 0,
-        savedVehicles: savedVehicles?.length || 0,
+        activeBookings: activeBookings.length,
+        savedVehicles: savedVehicles.length,
         profileCompletionPercentage
       });
+
+      console.log("Successfully completed regular user data fetch");
     } catch (err) {
-      console.error("Error in fetchRegularUserData:", err);
-      throw err;
+      console.warn("Error in fetchRegularUserData:", {
+        error: formatError(err),
+        errorType: err instanceof Error ? 'Error' : typeof err,
+        userId: user?.id,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Set default values on error to prevent UI issues
+      setUserStats({
+        activeBookings: 0,
+        savedVehicles: 0,
+        profileCompletionPercentage: 40 // Default value
+      });
+      
+      // Don't throw error here - let the dashboard load with default values
+      console.log("fetchRegularUserData completed with fallback values due to error");
     }
   };
 

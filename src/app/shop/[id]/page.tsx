@@ -114,7 +114,7 @@ interface RentalShop {
   cash_deposit_amount?: number;
   facebook_url?: string | null;
   instagram_url?: string | null;
-  sms_number?: string | null;
+  phone_number?: string | null;
   is_showcase?: boolean;
 }
 

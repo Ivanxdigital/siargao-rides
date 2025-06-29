@@ -15,6 +15,7 @@ import { SIARGAO_LOCATIONS } from "@/lib/constants";
 import { VerificationBadge } from "@/components/shop/VerificationBadge";
 import imageCompression from 'browser-image-compression';
 import BannerPositionTool from "@/components/BannerPositionTool";
+import { SMSNotificationHistory } from "@/components/shop/SMSNotificationHistory";
 
 // Use the shared locations from constants
 const siargaoLocations = SIARGAO_LOCATIONS;
@@ -50,7 +51,10 @@ interface RentalShop {
   cash_deposit_amount?: number;
   facebook_url?: string | null;
   instagram_url?: string | null;
-  sms_number?: string | null;
+  phone_number?: string | null;
+  sms_notifications_enabled?: boolean;
+  phone_verified?: boolean;
+  phone_verified_at?: string | null;
 }
 
 // Define form data type
@@ -69,7 +73,8 @@ interface ShopFormData {
   cash_deposit_amount: number;
   facebook_url: string;
   instagram_url: string;
-  sms_number: string;
+  phone_number: string;
+  sms_notifications_enabled: boolean;
 }
 
 export default function ManageShopPage() {
@@ -93,7 +98,8 @@ export default function ManageShopPage() {
     cash_deposit_amount: 0,
     facebook_url: "",
     instagram_url: "",
-    sms_number: ""
+    phone_number: "",
+    sms_notifications_enabled: true
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -151,6 +157,9 @@ export default function ManageShopPage() {
     }
   };
 
+  // Add ref to prevent concurrent fetches
+  const isFetchingRef = useRef(false);
+
   useEffect(() => {
     // Check if user is a shop owner
     if (user && user.user_metadata?.role !== "shop_owner") {
@@ -162,7 +171,14 @@ export default function ManageShopPage() {
     const fetchShop = async () => {
       if (!user) return;
 
+      // Prevent concurrent fetches
+      if (isFetchingRef.current) {
+        console.log("Already fetching shop data, skipping duplicate call");
+        return;
+      }
+
       try {
+        isFetchingRef.current = true;
         setIsLoading(true);
 
         // Get the shop owned by this user
@@ -177,6 +193,7 @@ export default function ManageShopPage() {
             // No shop found for this user
             setError("You don't have a shop registered yet.");
             setIsLoading(false);
+            isFetchingRef.current = false;
             return;
           }
           throw shopError;
@@ -214,7 +231,8 @@ export default function ManageShopPage() {
               cash_deposit_amount: shopData.cash_deposit_amount || 0,
               facebook_url: shopData.facebook_url || "",
               instagram_url: shopData.instagram_url || "",
-              sms_number: shopData.sms_number || ""
+              phone_number: shopData.phone_number || "",
+              sms_notifications_enabled: shopData.sms_notifications_enabled ?? true
             });
           }
 
@@ -257,7 +275,8 @@ export default function ManageShopPage() {
             cash_deposit_amount: shopData.cash_deposit_amount || 0,
             facebook_url: shopData.facebook_url || "",
             instagram_url: shopData.instagram_url || "",
-            sms_number: shopData.sms_number || ""
+            phone_number: shopData.phone_number || "",
+            sms_notifications_enabled: shopData.sms_notifications_enabled ?? true
           });
 
           // Set banner and logo preview if they exist
@@ -288,13 +307,14 @@ export default function ManageShopPage() {
         setError("Failed to load shop data");
       } finally {
         setIsLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
     if (isAuthenticated && user) {
       fetchShop();
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user?.id, router]); // Use user.id instead of user to prevent loops
 
   const handleEditToggle = () => {
     // Reset previews when canceling edit
@@ -588,7 +608,7 @@ export default function ManageShopPage() {
         cash_deposit_amount: formData.requires_cash_deposit ? formData.cash_deposit_amount : 0,
         facebook_url: formData.facebook_url,
         instagram_url: formData.instagram_url,
-        sms_number: formData.sms_number,
+        sms_notifications_enabled: formData.sms_notifications_enabled,
         banner_position_x: bannerPositionX,
         banner_position_y: bannerPositionY,
         updated_at: new Date().toISOString()
@@ -1221,18 +1241,36 @@ export default function ManageShopPage() {
 
                     {/* SMS Number */}
                     <div className="space-y-1 sm:space-y-2">
-                      <label htmlFor="sms_number" className="block text-xs sm:text-sm font-medium mb-1">
-                        SMS Number (Optional)
+                      <label htmlFor="phone_number" className="block text-xs sm:text-sm font-medium mb-1">
+                        Phone Number for Booking Notifications
                       </label>
                       <input
                         type="text"
-                        id="sms_number"
-                        name="sms_number"
-                        value={formData.sms_number}
+                        id="phone_number"
+                        name="phone_number"
+                        value={formData.phone_number}
                         onChange={handleInputChange}
-                        placeholder="+63 XXX XXX XXXX"
+                        placeholder="+63 9XX XXX XXXX"
                         className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter your phone number to receive instant SMS notifications for new bookings
+                      </p>
+                      
+                      {/* SMS Notifications Toggle */}
+                      <div className="flex items-center space-x-2 mt-3">
+                        <input
+                          type="checkbox"
+                          id="sms_notifications_enabled"
+                          name="sms_notifications_enabled"
+                          checked={formData.sms_notifications_enabled ?? true}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <label htmlFor="sms_notifications_enabled" className="text-sm">
+                          Enable SMS notifications for new bookings
+                        </label>
+                      </div>
                     </div>
 
                     <div className="space-y-1 sm:space-y-2">
@@ -1661,6 +1699,13 @@ export default function ManageShopPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* SMS Notification History */}
+            {shop && !isEditing && formData.phone_number && (
+              <div className="mt-8">
+                <SMSNotificationHistory shopId={shop.id} />
               </div>
             )}
           </>

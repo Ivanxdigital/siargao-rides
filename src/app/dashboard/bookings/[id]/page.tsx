@@ -73,7 +73,7 @@ export default function BookingDetailsPage() {
 
         // Use the same Supabase client instance for all operations
         // Only check auth if we haven't refreshed recently
-        let freshSupabase = supabase;
+        const freshSupabase = supabase;
         const now = Date.now();
 
         try {

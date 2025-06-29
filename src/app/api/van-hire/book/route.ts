@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
+import { twilioService, TwilioService } from '@/lib/sms'
 
 // Validation schema for van hire booking
 const bookingSchema = z.object({
@@ -212,7 +213,7 @@ export async function POST(request: NextRequest) {
     // Get the first verified shop for now (in a real system, this would be assigned based on availability)
     const { data: shop } = await supabase
       .from('rental_shops')
-      .select('id')
+      .select('id, name, phone_number, sms_notifications_enabled')
       .eq('is_verified', true)
       .limit(1)
       .single()
@@ -325,6 +326,38 @@ Contact: ${email}, ${phone}`,
     } catch (notificationError) {
       console.error('Error sending admin notification:', notificationError)
       // Don't fail the booking if notification fails
+    }
+    
+    // Send SMS notification to shop owner if enabled
+    if (shop.phone_number && shop.sms_notifications_enabled && twilioService.isAvailable()) {
+      try {
+        const smsMessage = TwilioService.createBookingMessage({
+          customerName: `${firstName} ${lastName}`,
+          vehicleName: 'Van Hire Service',
+          startDate: startDateTime.toISOString(),
+          endDate: endDateTime.toISOString(),
+          bookingId: rental.id,
+          isVanHire: true,
+          pickupLocation: pickupLocation,
+          pickupTime: startDateTime.toISOString()
+        })
+
+        const smsResult = await twilioService.sendBookingNotification({
+          to: shop.phone_number,
+          message: smsMessage,
+          shopId: shop.id,
+          rentalId: rental.id
+        })
+
+        if (smsResult.success) {
+          console.log('SMS notification sent successfully to shop owner')
+        } else {
+          console.error('Failed to send SMS notification:', smsResult.error)
+        }
+      } catch (smsError) {
+        console.error('Error sending SMS notification:', smsError)
+        // Don't fail the booking if SMS fails
+      }
     }
     
     const response = {

@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
     const remainingCapacity = (MAX_DAILY_BOOKINGS * 8) - totalPassengersBooked // Assuming 8 passengers per van
     
     // Special considerations for specific routes or conditions
-    let routeNotes: string[] = []
+    const routeNotes: string[] = []
     if (pickupLocation === 'sayak-airport' || dropoffLocation === 'sayak-airport') {
       routeNotes.push('Airport transfers require 2-hour advance booking')
       routeNotes.push('Meet at designated pickup area with name sign')

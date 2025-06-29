@@ -4,6 +4,7 @@ import { BookingConfirmationEmail } from '@/emails/BookingConfirmationEmail';
 import { ShopNotificationEmail } from '@/emails/ShopNotificationEmail';
 import { z } from 'zod';
 import { v4 as uuid } from 'uuid';
+import { twilioService, TwilioService } from '@/lib/sms';
 
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY;
@@ -233,13 +234,53 @@ export async function POST(request: Request) {
       shopEmailResult = { error: { message: errorMessage } };
     }
 
+    // Send SMS notification to shop owner if phone number is available
+    let smsResult = { success: false, error: 'No phone number available' };
+    if (safeShop.phone_number && twilioService.isAvailable()) {
+      console.log(`Attempting to send SMS to shop owner at ${safeShop.phone_number}`);
+      
+      // Try to get vehicle name from booking object or use confirmation code as fallback
+      let vehicleName = 'Vehicle';
+      if (body.vehicleName) {
+        vehicleName = body.vehicleName;
+      } else if (body.vehicle && body.vehicle.name) {
+        vehicleName = body.vehicle.name;
+      } else {
+        vehicleName = `Booking #${safeBooking.confirmation_code}`;
+      }
+      
+      const smsMessage = TwilioService.createBookingMessage({
+        customerName: safeUser.name || safeUser.email.split('@')[0],
+        vehicleName: vehicleName,
+        startDate: safeBooking.start_date,
+        endDate: safeBooking.end_date,
+        bookingId: safeBooking.id
+      });
+
+      smsResult = await twilioService.sendBookingNotification({
+        to: safeShop.phone_number,
+        message: smsMessage,
+        shopId: safeShop.id,
+        rentalId: safeBooking.id
+      });
+
+      if (smsResult.success) {
+        console.log('SMS sent successfully to shop owner');
+      } else {
+        console.error('Failed to send SMS:', smsResult.error);
+      }
+    } else {
+      console.log('SMS not sent - no phone number or Twilio not configured');
+    }
+
     // Update error handling for partial success
-    if (customerEmailResult.error || shopEmailResult.error) {
+    if (customerEmailResult.error || shopEmailResult.error || !smsResult.success) {
       const errors: string[] = [];
       if (customerEmailResult.error) errors.push(`Customer email: ${customerEmailResult.error.message}`);
       if (shopEmailResult.error) errors.push(`Shop email: ${shopEmailResult.error.message}`);
+      if (!smsResult.success && safeShop.phone_number) errors.push(`Shop SMS: ${smsResult.error}`);
 
-      console.error('Email sending errors:', errors);
+      console.error('Notification errors:', errors);
 
       // Check for common email sending issues
       const isResendIssue = errors.some(err =>
@@ -258,22 +299,25 @@ export async function POST(request: Request) {
             customer: safeUser.email,
             shop: safeShop.email
           },
-          errors
+          errors,
+          smsStatus: smsResult.success ? 'sent' : 'failed'
         }, { status: 207 });
       } else {
         return NextResponse.json({
           status: 'partial_success',
-          message: 'Some emails failed to send',
-          errors
+          message: 'Some notifications failed to send',
+          errors,
+          smsStatus: smsResult.success ? 'sent' : 'failed'
         }, { status: 207 });
       }
     }
 
     return NextResponse.json({
       status: 'success',
-      message: 'Booking emails sent successfully',
+      message: 'Booking notifications sent successfully',
       customerEmailId: customerEmailResult.id,
-      shopEmailId: shopEmailResult.id
+      shopEmailId: shopEmailResult.id,
+      smsMessageId: smsResult.messageId || null
     }, { status: 200 });
   } catch (error) {
     console.error('Unexpected error in send-booking-email route:', error);

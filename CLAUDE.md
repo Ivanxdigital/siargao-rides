@@ -153,6 +153,8 @@ src/
 - `PAYMONGO_SECRET_KEY` / `NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY` - Payment keys
 - `NEXT_PUBLIC_PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` - PayPal payment keys
 - `PAYPAL_WEBHOOK_ID` / `PAYPAL_ENVIRONMENT` - PayPal webhook and environment config
+- `SEMAPHORE_API_KEY` - Semaphore SMS API key for Philippine mobile networks
+- `SEMAPHORE_SENDER_NAME` - Optional custom sender name (defaults to "SEMAPHORE")
 
 **Feature Flags:**
 - Environment-based toggles using `NEXT_PUBLIC_FEATURE_*` pattern

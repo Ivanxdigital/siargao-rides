@@ -39,7 +39,7 @@ const formSchema = z.object({
   whatsapp: z.string().optional(),
   facebook_url: z.string().optional(),
   instagram_url: z.string().optional(),
-  sms_number: z.string().optional(),
+  phone_number: z.string().optional(),
 });
 
 // Type for the form data
@@ -101,7 +101,7 @@ export function ShopOnboardingBanner({ onComplete }: ShopOnboardingBannerProps) 
       whatsapp: "",
       facebook_url: "",
       instagram_url: "",
-      sms_number: ""
+      phone_number: ""
     }
   });
 
@@ -241,7 +241,7 @@ export function ShopOnboardingBanner({ onComplete }: ShopOnboardingBannerProps) 
         location_area: data.location_area,
         facebook_url: data.facebook_url || null,
         instagram_url: data.instagram_url || null,
-        sms_number: data.sms_number || null,
+        phone_number: data.phone_number || null,
         referrer_id: resolvedReferrerId,
         verification_documents: {
           government_id: governmentIdUrl,

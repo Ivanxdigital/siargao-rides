@@ -313,7 +313,7 @@ export default function BookingForm({
       const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
       // Create a new booking record
-      let bookingData: any = {
+      const bookingData: any = {
         shop_id: shop.id,
         user_id: session?.user?.id, // User must be authenticated at this point
         start_date: startDate.toISOString(),
@@ -441,7 +441,8 @@ export default function BookingForm({
           body: JSON.stringify({
             booking,
             user: session?.user,
-            shop
+            shop,
+            vehicleName: vehicle.name
           }),
         });
 

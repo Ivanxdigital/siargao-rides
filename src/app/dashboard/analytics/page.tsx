@@ -186,7 +186,7 @@ export default function AnalyticsPage() {
       const vehicleIds = bookings?.map(booking => booking.vehicle_id).filter(Boolean) || [];
 
       // Fetch vehicle details if we have any vehicle IDs
-      let vehicleDetails: Record<string, { id: string, name: string }> = {};
+      const vehicleDetails: Record<string, { id: string, name: string }> = {};
 
       if (vehicleIds.length > 0) {
         // Get unique vehicle IDs

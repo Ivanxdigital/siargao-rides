@@ -322,7 +322,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log(`Attempting to sign in with email: ${email}`);
 
       // Significantly reduce retry attempts to avoid hitting rate limits
-      let attempts = 0;
+      const attempts = 0;
       const maxRetries = 0; // No retries - if we hit a rate limit, we should back off completely
       let lastError: any = null;
 
