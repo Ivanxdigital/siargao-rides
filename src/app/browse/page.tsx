@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import VehicleCard from "@/components/VehicleCard"
-import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon, XCircle } from "lucide-react"
+import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon, XCircle, Star, Shield, Clock, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation"
 import DateRangePicker from "@/components/DateRangePicker"
 import { useBrowseVehicles, BrowseFilters } from '@/lib/queries/vehicles'
 import Pagination from '@/components/ui/pagination'
+import { generateLocalBusinessSchema, generateJSONLD, generateBreadcrumbSchema } from "@/lib/structured-data"
+import Image from "next/image"
 
 // Interface for vehicle data with additional calculated fields
 interface VehicleWithMetadata {
@@ -330,24 +332,126 @@ export default function BrowsePage() {
     );
   }
 
-  return (
-    <div className="min-h-screen">
-      <motion.section
-        className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        <motion.div
-          className="absolute inset-0 z-0 opacity-20"
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-        >
-          <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
-        </motion.div>
+  // Generate structured data for SEO
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Vehicle Rentals in Siargao Island",
+    "description": "Browse and compare motorcycle, car, and scooter rentals from trusted shops in Siargao Island, Philippines",
+    "numberOfItems": pagination?.total || vehicles.length,
+    "itemListElement": vehicles.map((vehicle, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "item": {
+        "@type": "Product",
+        "name": `${vehicle.name || 'Vehicle'} - ${vehicle.vehicle_type} Rental in Siargao`,
+        "description": `Rent ${vehicle.name || 'vehicle'} ${vehicle.vehicle_type} in Siargao Island. Daily rate: PHP ${vehicle.price_per_day}`,
+        "image": vehicle.images?.[0]?.image_url || '',
+        "offers": {
+          "@type": "Offer",
+          "price": vehicle.price_per_day,
+          "priceCurrency": "PHP",
+          "availability": vehicle.is_available ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+        },
+        "brand": {
+          "@type": "Brand",
+          "name": vehicle.shopName || "Siargao Rental Shop"
+        },
+        "category": `${vehicle.vehicle_type} Rental Siargao`
+      }
+    }))
+  }
 
-        <div className="container mx-auto px-4 py-12 relative z-10 pt-24">
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Home", url: "https://siargaorides.com" },
+    { name: "Browse Vehicles", url: "https://siargaorides.com/browse" }
+  ])
+
+  const localBusinessSchema = generateLocalBusinessSchema()
+
+  // Generate page title and description based on filters
+  const getPageTitle = () => {
+    let title = "Browse Vehicle Rentals in Siargao Island | Siargao Rides"
+    if (selectedVehicleType !== 'all') {
+      const vehicleTypeName = selectedVehicleType.charAt(0).toUpperCase() + selectedVehicleType.slice(1)
+      title = `${vehicleTypeName} Rentals in Siargao Island | Browse & Compare Prices`
+    }
+    if (selectedLocation) {
+      title = title.replace('Siargao Island', selectedLocation)
+    }
+    return title
+  }
+
+  const getPageDescription = () => {
+    let description = `Browse ${pagination?.total || 'available'} vehicle rentals in Siargao Island, Philippines. Compare prices from trusted local rental shops with flexible pickup and competitive rates.`
+    
+    if (selectedVehicleType !== 'all') {
+      const vehicleTypeName = selectedVehicleType === 'motorcycle' ? 'motorbike and scooter' : selectedVehicleType
+      description = `Find the perfect ${vehicleTypeName} rental in Siargao Island. ${pagination?.total || 'Multiple'} ${vehicleTypeName}s available from verified local shops.`
+    }
+    
+    if (selectedLocation) {
+      description = description.replace('Siargao Island', selectedLocation)
+    }
+    
+    return description
+  };
+
+  return (
+    <>
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: generateJSONLD(itemListSchema)
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: generateJSONLD(breadcrumbSchema)
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: generateJSONLD(localBusinessSchema)
+        }}
+      />
+
+      <div className="min-h-screen">
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" className="bg-gray-900 border-b border-gray-800">
+          <div className="container mx-auto px-4 py-3">
+            <ol className="flex items-center space-x-2 text-sm" itemScope itemType="https://schema.org/BreadcrumbList">
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <a href="/" className="text-gray-400 hover:text-white transition-colors" itemProp="item">
+                  <span itemProp="name">Home</span>
+                </a>
+                <meta itemProp="position" content="1" />
+              </li>
+              <li className="text-gray-500" aria-hidden="true">/</li>
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <span className="text-white font-medium" aria-current="page" itemProp="name">
+                  Browse Vehicles
+                </span>
+                <meta itemProp="position" content="2" />
+              </li>
+            </ol>
+          </div>
+        </nav>
+
+        <header className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden">
+          <motion.div
+            className="absolute inset-0 z-0 opacity-20"
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
+          >
+            <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
+          </motion.div>
+
+        <div className="container mx-auto px-4 py-12 relative z-10 pt-16">
           <motion.div
             className="max-w-3xl mx-auto mb-8"
             initial={{ y: 20, opacity: 0 }}
@@ -355,6 +459,7 @@ export default function BrowsePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <motion.div
+              className="flex justify-center mb-4"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.4 }}
@@ -364,26 +469,83 @@ export default function BrowsePage() {
               </Badge>
             </motion.div>
             <motion.h1
-              className="text-3xl md:text-4xl font-bold mb-4 text-white"
+              className="text-3xl md:text-4xl font-bold mb-4 text-white text-center"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
             >
-              Browse Available Vehicles
+              {selectedVehicleType === 'all' 
+                ? 'Vehicle Rentals in Siargao Island'
+                : `${selectedVehicleType.charAt(0).toUpperCase() + selectedVehicleType.slice(1)} Rentals in Siargao`
+              }
             </motion.h1>
             <motion.p
-              className="text-lg text-gray-300"
+              className="text-lg text-gray-300 text-center max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.6 }}
             >
-              Find the perfect ride for your Siargao adventure
+              {selectedVehicleType === 'motorcycle' 
+                ? 'Rent motorbikes and scooters from trusted local shops in Siargao Island. Compare prices, check availability, and book online for your island adventure.'
+                : selectedVehicleType === 'car'
+                ? 'Rent cars and vehicles for comfortable exploration of Siargao Island. Perfect for families and groups with competitive daily rates.'
+                : selectedVehicleType === 'tuktuk'
+                ? 'Experience authentic Filipino transportation with tuktuk rentals in Siargao Island. Ideal for local trips and cultural exploration.'
+                : 'Compare motorbikes, cars, and scooters from verified rental shops across Siargao Island. Book online with flexible pickup and competitive rates.'
+              }
             </motion.p>
           </motion.div>
         </div>
-      </motion.section>
+        </header>
 
-      <section className="py-8 bg-gradient-to-b from-gray-900 to-black text-white">
+      {/* Location-specific Information Section */}
+      <section className="py-8 bg-gray-900 text-white border-b border-gray-800">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Trust Signals */}
+            <motion.div 
+              className="flex items-center gap-3 bg-gray-800/50 rounded-lg p-4 h-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Shield className="text-green-400 h-6 w-6 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-sm">Verified Shops Only</h3>
+                <p className="text-gray-400 text-xs">All rental shops are verified and trusted</p>
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              className="flex items-center gap-3 bg-gray-800/50 rounded-lg p-4 h-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Clock className="text-blue-400 h-6 w-6 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-sm">Flexible Pickup</h3>
+                <p className="text-gray-400 text-xs">Hotel delivery available across Siargao</p>
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              className="flex items-center gap-3 bg-gray-800/50 rounded-lg p-4 h-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Users className="text-purple-400 h-6 w-6 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-sm">Trusted by Thousands</h3>
+                <p className="text-gray-400 text-xs">Join satisfied customers exploring Siargao</p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <main className="py-8 bg-gradient-to-b from-gray-900 to-black text-white">
         <div className="container mx-auto px-4">
           {/* Top bar with filters toggle */}
           <div className="flex justify-between mb-6">
@@ -846,7 +1008,110 @@ export default function BrowsePage() {
             </div>
           </div>
         </div>
+      </main>
+
+      {/* Popular Siargao Destinations Section */}
+      <section className="py-12 bg-black text-white">
+        <div className="container mx-auto px-4">
+          <motion.div 
+            className="text-center mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+              Explore Siargao Island with Your Rental
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Discover the best destinations in Siargao Island with the freedom of your own vehicle
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                name: "Cloud 9 Surfing",
+                description: "World-famous surf break perfect for all skill levels",
+                icon: "🏄‍♂️"
+              },
+              {
+                name: "Magpupungko Rock Pools",
+                description: "Natural tidal pools with crystal clear water", 
+                icon: "🏊‍♀️"
+              },
+              {
+                name: "Sugba Lagoon",
+                description: "Stunning blue lagoon perfect for kayaking",
+                icon: "🛶"
+              },
+              {
+                name: "Three Island Tour",
+                description: "Visit Naked, Daku, and Guyam Islands",
+                icon: "🏝️"
+              }
+            ].map((destination, index) => (
+              <motion.div
+                key={destination.name}
+                className="bg-gray-800/50 rounded-lg p-6 text-center hover:bg-gray-800/70 transition-colors h-full"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <div className="text-3xl mb-4">{destination.icon}</div>
+                <h3 className="font-semibold mb-3">{destination.name}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{destination.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section specific to browsing vehicles */}
+      <section className="py-12 bg-gray-900 text-white">
+        <div className="container mx-auto px-4">
+          <motion.div 
+            className="max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
+              Frequently Asked Questions
+            </h2>
+            
+            <div className="space-y-6">
+              {[
+                {
+                  question: "How do I book a vehicle in Siargao?",
+                  answer: "Simply browse available vehicles, select your preferred dates, and click 'Book Now'. You can filter by vehicle type, location, and price to find the perfect ride for your Siargao adventure."
+                },
+                {
+                  question: "What documents do I need to rent a vehicle in Siargao?",
+                  answer: "You'll need a valid driver's license (international license recommended for foreigners), a valid ID, and a deposit. Some shops may require additional documentation for longer rentals."
+                },
+                {
+                  question: "Can I get vehicle delivery to my hotel in Siargao?",
+                  answer: "Yes! Most rental shops offer delivery services to hotels, resorts, and other locations across Siargao Island including General Luna, Cloud 9, and other popular areas."
+                },
+                {
+                  question: "What's the best vehicle type for exploring Siargao?",
+                  answer: "Motorbikes and scooters are most popular for their flexibility and fuel efficiency. Cars are great for families or groups, while tuktuks offer an authentic Filipino experience for shorter trips."
+                }
+              ].map((faq, index) => (
+                <motion.div
+                  key={index}
+                  className="bg-gray-800/50 rounded-lg p-6"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <h3 className="font-semibold mb-3 text-lg">{faq.question}</h3>
+                  <p className="text-gray-400 leading-relaxed">{faq.answer}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </section>
     </div>
+    </>
   )
 }
