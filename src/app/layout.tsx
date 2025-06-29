@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Providers } from './providers';
+import { PerformanceInit } from '@/components/PerformanceInit';
 import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ["latin"], display: 'swap' });
@@ -110,6 +111,7 @@ export default function RootLayout({
       <body className={cn('bg-background min-h-screen font-sans antialiased overflow-x-hidden', inter.className)}>
         <Providers>
           <AuthProvider>
+            <PerformanceInit />
             <div className="relative flex min-h-screen flex-col">
               <ScrollToTop />
               <Navbar />

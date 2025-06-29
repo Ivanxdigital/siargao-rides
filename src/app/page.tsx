@@ -3,15 +3,30 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import SearchBar, { SearchParams } from "@/components/SearchBar"
 import RentalShopCard from "@/components/RentalShopCard"
 import VehicleCard from "@/components/VehicleCard"
 import * as service from "@/lib/service"
-import { RentalShop, Bike, BikeCategory, Vehicle, VehicleType, VehicleCategory } from "@/lib/types"
+import { RentalShop, Vehicle, VehicleType, VehicleCategory } from "@/lib/types"
 import { ArrowRight, MapPin } from "lucide-react"
 import FAQSection from '@/components/FAQSection'
 import { Badge } from "@/components/ui/badge"
 import { generateLocalBusinessSchema, generateJSONLD } from "@/lib/structured-data"
+
+// Import new animation components
+import { ScrollReveal } from '@/components/animations/ScrollReveal'
+import { FloatingElements, ParticleField, OrganicShape } from '@/components/animations/FloatingElements'
+import { AnimatedCard, StaggeredCards } from '@/components/animations/AnimatedCard'
+import { AnimatedButton, SecondaryButton } from '@/components/animations/AnimatedButton'
+import { useReducedMotion } from '@/hooks/useScrollAnimation'
+import { 
+  heroTitleVariants, 
+  heroSubtitleVariants, 
+  heroSearchVariants,
+  staggerContainerVariants,
+  staggerItemVariants
+} from '@/lib/animations'
 
 // Transformed shop data for the RentalShopCard
 interface ShopCardData {
@@ -47,7 +62,7 @@ interface VehicleCardData {
 
 export default function Home() {
   const [shops, setShops] = useState<ShopCardData[]>([])
-  const [bikes, setBikes] = useState<Bike[]>([])
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<ShopCardData[] | null>(null)
@@ -57,6 +72,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false)
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const searchResultsRef = useRef<HTMLDivElement>(null)
+  const shouldReduceMotion = useReducedMotion()
 
   // Check if device is mobile
   useEffect(() => {
@@ -83,24 +99,24 @@ export default function Home() {
         setLoading(true)
         setError(null)
 
-        // Fetch shops and bikes
+        // Fetch shops and vehicles
         const shopsData = await service.getVerifiedShops()
 
         // Only fetch verified vehicles for public display
         // The API now defaults to only returning verified vehicles
-        const bikesData = await service.getBikes()
+        const vehiclesData = await service.getVehicles()
 
-        setBikes(bikesData)
+        setVehicles(vehiclesData)
 
         // Transform shop data for the card component
         const shopCardData = await Promise.all(
           shopsData.map(async (shop) => {
-            // Get bikes for this shop - only verified bikes will be included
-            const shopBikes = bikesData.filter(bike => bike.shop_id === shop.id)
+            // Get vehicles for this shop - only verified vehicles will be included
+            const shopVehicles = vehiclesData.filter(vehicle => vehicle.shop_id === shop.id)
 
             // Calculate starting price (lowest price per day)
-            const startingPrice = shopBikes.length > 0
-              ? Math.min(...shopBikes.map(bike => bike.price_per_day))
+            const startingPrice = shopVehicles.length > 0
+              ? Math.min(...shopVehicles.map(vehicle => vehicle.price_per_day))
               : 0
 
             // Get shop reviews (in a real app we'd calculate average rating)
@@ -110,15 +126,15 @@ export default function Home() {
               ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
               : 0
 
-            // Get bike images for thumbnails
-            const bikeImages = shopBikes.flatMap(bike => bike.images?.map(img => img.image_url) || [])
+            // Get vehicle images for thumbnails
+            const vehicleImages = shopVehicles.flatMap(vehicle => vehicle.images?.map(img => img.image_url) || [])
 
             return {
               id: shop.id,
               name: shop.name,
-              // Use bike images if available, or use shop logo/placeholder
-              images: bikeImages.length > 0
-                ? bikeImages.slice(0, 3)
+              // Use vehicle images if available, or use shop logo/placeholder
+              images: vehicleImages.length > 0
+                ? vehicleImages.slice(0, 3)
                 : [shop.logo_url || 'https://placehold.co/600x400/1e3b8a/white?text=Shop+Image'],
               startingPrice,
               rating: averageRating || 4.5, // Default rating if no reviews
@@ -208,14 +224,14 @@ export default function Home() {
 
     try {
       // Map the UI vehicle type to our database category
-      let category: BikeCategory | undefined = undefined
+      let category: VehicleCategory | undefined = undefined
       if (params.vehicleType === "motorcycle" && params.category && params.category !== "Any Type") {
-        const categoryMap: Record<string, BikeCategory> = {
-          "Scooter": "scooter" as BikeCategory,
-          "Semi-automatic": "semi_auto" as BikeCategory,
-          "Dirt Bike": "dirt_bike" as BikeCategory,
-          "Manual": "sport_bike" as BikeCategory,
-          "Electric": "other" as BikeCategory
+        const categoryMap: Record<string, VehicleCategory> = {
+          "Scooter": "scooter" as VehicleCategory,
+          "Semi-automatic": "semi_auto" as VehicleCategory,
+          "Dirt Bike": "dirt_bike" as VehicleCategory,
+          "Manual": "sport_bike" as VehicleCategory,
+          "Electric": "other" as VehicleCategory
         }
         category = categoryMap[params.category]
       }
@@ -370,9 +386,9 @@ export default function Home() {
           __html: generateJSONLD(localBusinessSchema)
         }}
       />
-      {/* Hero Section - improved responsive heights */}
-      <section className="relative min-h-[100vh] sm:min-h-screen bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10 transition-all duration-500">
-        {/* Background Image with Overlay - Mobile Only - simplified */}
+      {/* Hero Section - Enhanced with modern animations */}
+      <section className="relative min-h-[100vh] sm:min-h-screen bg-gradient-to-b from-black to-black/95 overflow-hidden border-b border-white/10">
+        {/* Background Image with Overlay - Mobile Only */}
         <div className="absolute inset-0 z-0 md:hidden">
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50"
@@ -387,7 +403,12 @@ export default function Home() {
 
         {/* Static Background Image - Desktop */}
         <div className="absolute inset-0 w-full h-full hidden md:block">
-          <div className="w-full h-full relative">
+          <motion.div 
+            className="w-full h-full relative"
+            initial={{ scale: 1.1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+          >
             <Image
               src="/images/siargao-motorbike-rental-siargao.png"
               alt="Siargao Motorbike Rental"
@@ -395,35 +416,80 @@ export default function Home() {
               className="object-cover"
               priority
             />
-          </div>
+          </motion.div>
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/70 z-10"></div>
         </div>
 
-        {/* Hero Content - improved padding and spacing for mobile */}
+        {/* Floating Background Elements */}
+        {!shouldReduceMotion && (
+          <>
+            <FloatingElements count={8} className="z-5" />
+            <ParticleField density={15} className="z-5" />
+            
+            {/* Organic background shapes */}
+            <OrganicShape 
+              className="w-96 h-96 -top-48 -left-48 z-5" 
+              color="primary" 
+            />
+            <OrganicShape 
+              className="w-80 h-80 -bottom-40 -right-40 z-5" 
+              color="tropical-teal" 
+            />
+          </>
+        )}
+
+        {/* Hero Content - Enhanced with animations */}
         <div className="container mx-auto relative z-20 min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16">
+          <motion.div 
+            className="text-center mb-4 sm:mb-8 pt-10 sm:pt-12 md:pt-16"
+            variants={staggerContainerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             {/* Brand Badge */}
-            <div className="mb-4 sm:mb-6">
+            <motion.div 
+              className="mb-4 sm:mb-6"
+              variants={staggerItemVariants}
+            >
               <Badge variant="brand" className="inline-flex items-center gap-1.5 text-xs sm:text-sm">
                 <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
                 Siargao Vehicle Rentals
               </Badge>
-            </div>
+            </motion.div>
             
             {/* Main Tagline */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 leading-tight">
+            <motion.h1 
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 sm:mb-8 tracking-tight max-w-4xl mx-auto px-4 leading-tight"
+              variants={heroTitleVariants}
+              initial="hidden"
+              animate="visible"
+            >
               Because Walking in Flip-Flops Only Gets You So Far
-            </h1>
-            <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
+            </motion.h1>
+            
+            <motion.p 
+              className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed px-2"
+              variants={heroSubtitleVariants}
+              initial="hidden"
+              animate="visible"
+            >
               Rent motorbikes, cars, and scooters in Siargao Island, Philippines. Compare trusted local rental shops with flexible pickup, competitive rates, and total freedom to explore paradise.
-            </p>
-{/* Credits removed since no longer using video background */}
-          </div>
+            </motion.p>
+          </motion.div>
 
-          {/* Search Bar Container - better mobile spacing */}
-          <div className="w-full max-w-md mx-auto relative mb-8 sm:mb-12 lg:mb-16 px-2 sm:px-0">
+          {/* Search Bar Container - Enhanced with floating effect */}
+          <motion.div 
+            className="w-full max-w-md mx-auto relative mb-8 sm:mb-12 lg:mb-16 px-2 sm:px-0"
+            variants={heroSearchVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Particle field around search bar */}
+            {!shouldReduceMotion && (
+              <ParticleField density={5} className="absolute inset-0 scale-150" />
+            )}
             <SearchBar onSearch={handleSearch} />
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -601,12 +667,14 @@ export default function Home() {
                 </svg>
               </div>
               <p className="text-red-400 mb-3">{error}</p>
-              <button
+              <SecondaryButton
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
+                enableMagnetic={!isMobile}
+                enableGlow={true}
+                glowColor="rgba(45, 212, 191, 0.3)"
               >
                 Try Again
-              </button>
+              </SecondaryButton>
             </div>
           ) : (
             <>
@@ -621,37 +689,51 @@ export default function Home() {
                         </svg>
                       </div>
                       <p className="text-gray-300 mb-3">No vehicles found matching your criteria.</p>
-                      <button
+                      <SecondaryButton
                         onClick={() => {
                           setVehicleSearchResults(null);
                           setSearchResults(null);
                         }}
-                        className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
+                        enableMagnetic={!isMobile}
+                        enableGlow={true}
+                        glowColor="rgba(45, 212, 191, 0.3)"
                       >
                         View Featured Shops
-                      </button>
+                      </SecondaryButton>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                      {vehicleSearchResults.map((vehicle, index) => (
-                        <div key={vehicle.id} className="group animate-[fadeInUp_0.6s_ease-out_forwards] opacity-0" style={{ animationDelay: `${index * 0.1}s` }}>
-                          <VehicleCard
-                            id={vehicle.id}
-                            model={vehicle.model}
-                            vehicleType={vehicle.vehicleType}
-                            category={vehicle.category}
-                            images={vehicle.images}
-                            prices={vehicle.prices}
-                            isAvailable={vehicle.isAvailable}
-                            specifications={vehicle.specifications}
-                            shop={vehicle.shop}
-                            onBookClick={(id) => {
-                              window.location.href = `/booking/${id}`;
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    <ScrollReveal 
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+                      threshold={0.1}
+                      rootMargin="0px 0px -10%"
+                    >
+                      <StaggeredCards className="contents" staggerDelay={0.15}>
+                        {vehicleSearchResults.map((vehicle) => (
+                          <AnimatedCard
+                            key={vehicle.id}
+                            enableMagnetic={!isMobile}
+                            enableTilt={!isMobile}
+                            enableGlow={true}
+                            glowColor="rgba(45, 212, 191, 0.2)"
+                          >
+                            <VehicleCard
+                              id={vehicle.id}
+                              model={vehicle.model}
+                              vehicleType={vehicle.vehicleType}
+                              category={vehicle.category}
+                              images={vehicle.images}
+                              prices={vehicle.prices}
+                              isAvailable={vehicle.isAvailable}
+                              specifications={vehicle.specifications}
+                              shop={vehicle.shop}
+                              onBookClick={(id) => {
+                                window.location.href = `/booking/${id}`;
+                              }}
+                            />
+                          </AnimatedCard>
+                        ))}
+                      </StaggeredCards>
+                    </ScrollReveal>
                   )}
                 </>
               )}
@@ -667,210 +749,290 @@ export default function Home() {
                         </svg>
                       </div>
                       <p className="text-gray-300 mb-3">No shops found matching your criteria.</p>
-                      <button
+                      <SecondaryButton
                         onClick={() => setSearchResults(null)}
-                        className="px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white border border-primary/30 shadow-md rounded-lg hover:border-primary/50 transition-all hover:shadow-primary/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-gray-900"
+                        enableMagnetic={!isMobile}
+                        enableGlow={true}
+                        glowColor="rgba(45, 212, 191, 0.3)"
                       >
                         View Featured Shops
-                      </button>
+                      </SecondaryButton>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                      {(searchResults || shops).map((shop, index) => (
-                        <div key={shop.id} className="group animate-[fadeInUp_0.6s_ease-out_forwards] opacity-0" style={{ animationDelay: `${index * 0.1}s` }}>
-                          <Link href={`/shop/${shop.id}`}>
-                            <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-xl hover:shadow-black/40 hover:border-gray-700 transition-all duration-300 h-full flex flex-col">
-                              {/* Image Gallery with better layout */}
-                              <div className="relative aspect-[16/9] overflow-hidden">
-                                <div className="flex h-full">
-                                  {/* Main image */}
-                                  <div className="w-2/3 h-full relative border-r border-white/5">
-                                    {shop.images && shop.images[0] && (
-                                      <Image
-                                        src={shop.images[0]}
-                                        fill
-                                        alt={`${shop.name} vehicle`}
-                                        className="object-cover transition-transform duration-700"
-                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                      />
-                                    )}
-                                  </div>
-                                  {/* Side thumbnails */}
-                                  <div className="w-1/3 h-full flex flex-col">
-                                    {shop.images && shop.images.slice(1, 3).map((image, i) => (
-                                      <div key={i} className="h-1/2 relative border-b last:border-b-0 border-white/5">
-                                        <Image
-                                          src={image}
-                                          fill
-                                          alt={`${shop.name} vehicle ${i+1}`}
-                                          className="object-cover transition-transform duration-700"
-                                          sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
-                                        />
-                                      </div>
-                                    ))}
-                                    {/* If not enough images, show placeholder */}
-                                    {(!shop.images || shop.images.length < 3) && Array.from({ length: 3 - (shop.images?.length || 0) }).map((_, i) => (
-                                      <div key={i + (shop.images?.length || 0)} className="h-1/2 relative bg-gray-800/50 border-b last:border-b-0 border-white/5 flex items-center justify-center">
-                                        <span className="text-xs text-gray-500">No image</span>
-                                      </div>
-                                    ))}
-                                  </div>
+                    <ScrollReveal 
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+                      threshold={0.1}
+                      rootMargin="0px 0px -10%"
+                    >
+                      <StaggeredCards className="contents" staggerDelay={0.15}>
+                        {(searchResults || shops).map((shop) => (
+                          <AnimatedCard
+                            key={shop.id}
+                            enableMagnetic={!isMobile}
+                            enableTilt={!isMobile}
+                            enableGlow={true}
+                            glowColor="rgba(45, 212, 191, 0.15)"
+                            href={`/shop/${shop.id}`}
+                            className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-xl h-full flex flex-col"
+                          >
+                            {/* Image Gallery with better layout */}
+                            <div className="relative aspect-[16/9] overflow-hidden">
+                              <div className="flex h-full">
+                                {/* Main image */}
+                                <div className="w-2/3 h-full relative border-r border-white/5">
+                                  {shop.images && shop.images[0] && (
+                                    <Image
+                                      src={shop.images[0]}
+                                      fill
+                                      alt={`${shop.name} vehicle`}
+                                      className="object-cover transition-transform duration-700"
+                                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    />
+                                  )}
                                 </div>
-                                {/* Price badge - simpler hover */}
-                                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 text-white font-medium shadow-lg text-sm">
-                                  From ₱{shop.startingPrice}/day
+                                {/* Side thumbnails */}
+                                <div className="w-1/3 h-full flex flex-col">
+                                  {shop.images && shop.images.slice(1, 3).map((image, i) => (
+                                    <div key={i} className="h-1/2 relative border-b last:border-b-0 border-white/5">
+                                      <Image
+                                        src={image}
+                                        fill
+                                        alt={`${shop.name} vehicle ${i+1}`}
+                                        className="object-cover transition-transform duration-700"
+                                        sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
+                                      />
+                                    </div>
+                                  ))}
+                                  {/* If not enough images, show placeholder */}
+                                  {(!shop.images || shop.images.length < 3) && Array.from({ length: 3 - (shop.images?.length || 0) }).map((_, i) => (
+                                    <div key={i + (shop.images?.length || 0)} className="h-1/2 relative bg-gray-800/50 border-b last:border-b-0 border-white/5 flex items-center justify-center">
+                                      <span className="text-xs text-gray-500">No image</span>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
+                              {/* Price badge */}
+                              <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 text-white font-medium shadow-lg text-sm">
+                                From ₱{shop.startingPrice}/day
+                              </div>
+                            </div>
 
-                              {/* Content Area - removed hover effects */}
-                              <div className="p-4 sm:p-5 flex flex-col flex-grow">
-                                <h3 className="text-lg sm:text-xl font-medium text-white mb-2 truncate">
-                                  {shop.name}
-                                </h3>
+                            {/* Content Area */}
+                            <div className="p-4 sm:p-5 flex flex-col flex-grow">
+                              <h3 className="text-lg sm:text-xl font-medium text-white mb-2 truncate">
+                                {shop.name}
+                              </h3>
 
-                                {/* Rating */}
-                                <div className="flex items-center mt-auto pt-3">
-                                  <div className="flex items-center">
-                                    {shop.reviewCount > 0 ? (
-                                      <>
-                                        <div className="flex">
-                                          {[1, 2, 3, 4, 5].map((star) => (
-                                            <svg
-                                              key={star}
-                                              className={`w-4 h-4 ${star <= Math.round(shop.rating) ? 'text-yellow-400' : 'text-gray-600'}`}
-                                              fill="currentColor"
-                                              viewBox="0 0 20 20"
-                                            >
-                                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                          ))}
-                                        </div>
-                                        <span className="ml-2 text-sm text-gray-400">
-                                          {shop.rating.toFixed(1)}
-                                          <span className="ml-1 text-gray-500">
-                                            ({shop.reviewCount} {shop.reviewCount === 1 ? 'review' : 'reviews'})
-                                          </span>
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <div className="flex items-center">
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-300 border border-blue-800/50">
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              {/* Rating */}
+                              <div className="flex items-center mt-auto pt-3">
+                                <div className="flex items-center">
+                                  {shop.reviewCount > 0 ? (
+                                    <>
+                                      <div className="flex">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                          <svg
+                                            key={star}
+                                            className={`w-4 h-4 ${star <= Math.round(shop.rating) ? 'text-yellow-400' : 'text-gray-600'}`}
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                           </svg>
-                                          New Shop
-                                        </span>
+                                        ))}
                                       </div>
-                                    )}
-                                  </div>
+                                      <span className="ml-2 text-sm text-gray-400">
+                                        {shop.rating.toFixed(1)}
+                                        <span className="ml-1 text-gray-500">
+                                          ({shop.reviewCount} {shop.reviewCount === 1 ? 'review' : 'reviews'})
+                                        </span>
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <div className="flex items-center">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-300 border border-blue-800/50">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        New Shop
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
 
-                                  {/* View button - simplified */}
-                                  <div className="ml-auto">
-                                    <span className="inline-flex items-center text-xs text-blue-400">
-                                      View shop
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-3.5 w-3.5 ml-1"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                      </svg>
-                                    </span>
-                                  </div>
+                                {/* View button */}
+                                <div className="ml-auto">
+                                  <span className="inline-flex items-center text-xs text-blue-400">
+                                    View shop
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3.5 w-3.5 ml-1"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </span>
                                 </div>
                               </div>
                             </div>
-                          </Link>
-                        </div>
-                      ))}
-                    </div>
+                          </AnimatedCard>
+                        ))}
+                      </StaggeredCards>
+                    </ScrollReveal>
                   )}
                 </>
               )}
             </>
           )}
 
-          {/* View All Button - simplified design - only show when not showing search results */}
+          {/* View All Button - Minimalistic Design */}
           {!vehicleSearchResults && !searchResults && !loading && shops.length > 0 && (
-            <div className="text-center mt-12 sm:mt-14">
+            <ScrollReveal className="text-center mt-12 sm:mt-14" threshold={0.5}>
               <Link
                 href="/browse"
-                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg shadow-lg border border-gray-700 transition-colors duration-300 inline-flex items-center justify-center"
+                className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-200 group focus:outline-none focus:text-white"
               >
-                View all rental shops
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <span className="text-sm font-medium">View all rental shops</span>
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
-            </div>
+            </ScrollReveal>
           )}
         </div>
       </section>
 
-      {/* Why Choose Siargao Rides Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-gray-900 to-black text-white overflow-hidden">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center mb-8 sm:mb-12 md:mb-16">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 sm:mb-3">
+      {/* Why Choose Siargao Rides Section - Enhanced with animations */}
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-gray-900 to-black text-white overflow-hidden relative">
+        {/* Background decorative elements */}
+        {!shouldReduceMotion && (
+          <>
+            <OrganicShape className="w-64 h-64 -top-32 -left-32 opacity-10" color="primary" />
+            <FloatingElements count={4} className="opacity-30" />
+          </>
+        )}
+        
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+          <ScrollReveal 
+            className="text-center mb-8 sm:mb-12 md:mb-16"
+            threshold={0.2}
+          >
+            <motion.h2 
+              className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 sm:mb-3"
+              variants={heroTitleVariants}
+            >
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
                 Why Rent with Siargao Rides?
               </span>
-            </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
+            </motion.h2>
+            <motion.p 
+              className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base"
+              variants={heroSubtitleVariants}
+            >
               The most trusted vehicle rental platform in Siargao Island
-            </p>
-          </div>
+            </motion.p>
+          </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {/* Local Expertise */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5">
-              <div className="text-primary/80 mb-4 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium mb-2 text-center">Local Siargao Knowledge</h3>
-              <p className="text-gray-400 text-sm text-center leading-relaxed">
-                Partner with verified local rental shops who know Siargao's roads, conditions, and best spots to explore.
-              </p>
-            </div>
+          <ScrollReveal 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+            threshold={0.1}
+            rootMargin="0px 0px -5%"
+          >
+            <StaggeredCards className="contents" staggerDelay={0.2}>
+              {/* Local Expertise */}
+              <AnimatedCard
+                enableMagnetic={!isMobile}
+                enableTilt={!isMobile}
+                enableGlow={true}
+                glowColor="rgba(45, 212, 191, 0.1)"
+                className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 shadow-lg"
+              >
+                <motion.div 
+                  className="text-primary/80 mb-4 flex justify-center"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                </motion.div>
+                <h3 className="text-lg font-medium mb-2 text-center">Local Siargao Knowledge</h3>
+                <p className="text-gray-400 text-sm text-center leading-relaxed">
+                  Partner with verified local rental shops who know Siargao's roads, conditions, and best spots to explore.
+                </p>
+              </AnimatedCard>
 
-            {/* Best Prices */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5">
-              <div className="text-primary/80 mb-4 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
-                  <line x1="12" y1="1" x2="12" y2="23"></line>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium mb-2 text-center">Competitive Rates</h3>
-              <p className="text-gray-400 text-sm text-center leading-relaxed">
-                Compare prices from multiple Siargao rental shops to find the best deals on motorbikes, cars, and scooters.
-              </p>
-            </div>
+              {/* Best Prices */}
+              <AnimatedCard
+                enableMagnetic={!isMobile}
+                enableTilt={!isMobile}
+                enableGlow={true}
+                glowColor="rgba(45, 212, 191, 0.1)"
+                className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 shadow-lg"
+              >
+                <motion.div 
+                  className="text-primary/80 mb-4 flex justify-center"
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                    <path d="M3 3v18h18"></path>
+                    <path d="M18 17V9"></path>
+                    <path d="M13 17V5"></path>
+                    <path d="M8 17v-3"></path>
+                  </svg>
+                </motion.div>
+                <h3 className="text-lg font-medium mb-2 text-center">Competitive Rates</h3>
+                <p className="text-gray-400 text-sm text-center leading-relaxed">
+                  Compare prices from multiple Siargao rental shops to find the best deals on motorbikes, cars, and scooters.
+                </p>
+              </AnimatedCard>
 
-            {/* Easy Booking */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 md:col-span-2 lg:col-span-1">
-              <div className="text-primary/80 mb-4 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <path d="M22 4 12 14.01l-3-3"></path>
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium mb-2 text-center">Flexible Pickup</h3>
-              <p className="text-gray-400 text-sm text-center leading-relaxed">
-                Book online and arrange convenient pickup anywhere in General Luna, Cloud 9, or other Siargao locations.
-              </p>
-            </div>
-          </div>
+              {/* Easy Booking */}
+              <AnimatedCard
+                enableMagnetic={!isMobile}
+                enableTilt={!isMobile}
+                enableGlow={true}
+                glowColor="rgba(45, 212, 191, 0.1)"
+                className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-6 shadow-lg md:col-span-2 lg:col-span-1"
+              >
+                <motion.div 
+                  className="text-primary/80 mb-4 flex justify-center"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <path d="M22 4 12 14.01l-3-3"></path>
+                  </svg>
+                </motion.div>
+                <h3 className="text-lg font-medium mb-2 text-center">Flexible Pickup</h3>
+                <p className="text-gray-400 text-sm text-center leading-relaxed">
+                  Book online and arrange convenient pickup anywhere in General Luna, Cloud 9, or other Siargao locations.
+                </p>
+              </AnimatedCard>
+            </StaggeredCards>
+          </ScrollReveal>
 
-          {/* Popular Destinations */}
-          <div className="mt-12 sm:mt-16 text-center">
-            <h3 className="text-lg sm:text-xl font-medium mb-4 text-white">
+          {/* Popular Destinations - Enhanced with animations */}
+          <ScrollReveal 
+            className="mt-12 sm:mt-16 text-center"
+            threshold={0.3}
+            delay={200}
+          >
+            <motion.h3 
+              className="text-lg sm:text-xl font-medium mb-4 text-white"
+              variants={heroSubtitleVariants}
+            >
               Popular Siargao Destinations to Explore
-            </h3>
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+            </motion.h3>
+            <motion.div 
+              className="flex flex-wrap justify-center gap-3 sm:gap-4"
+              variants={staggerContainerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-10%" }}
+            >
               {[
                 'Cloud 9 Surfing',
                 'Magpupungko Rock Pools',
@@ -880,98 +1042,138 @@ export default function Home() {
                 'Guyam Island',
                 'Sohoton Cove',
                 'General Luna'
-              ].map((destination) => (
-                <span 
+              ].map((destination, index) => (
+                <motion.span 
                   key={destination}
-                  className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs sm:text-sm font-medium"
+                  className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs sm:text-sm font-medium cursor-default"
+                  variants={staggerItemVariants}
+                  whileHover={shouldReduceMotion ? {} : { 
+                    scale: 1.05, 
+                    backgroundColor: "rgba(45, 212, 191, 0.2)",
+                    borderColor: "rgba(45, 212, 191, 0.4)"
+                  }}
+                  whileTap={shouldReduceMotion ? {} : { scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   {destination}
-                </span>
+                </motion.span>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </ScrollReveal>
         </div>
       </section>
 
-      {/* Safety Tips Section */}
-      <section className="py-10 sm:py-16 md:py-20 bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden">
-        <div className="container mx-auto px-4 sm:px-6">
-          {/* Section Header with animation */}
-          <div className="text-center mb-8 sm:mb-12 md:mb-16 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 sm:mb-3">
+      {/* Safety Tips Section - Enhanced with modern animations */}
+      <section className="py-10 sm:py-16 md:py-20 bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden relative">
+        {/* Background decorative elements */}
+        {!shouldReduceMotion && (
+          <>
+            <OrganicShape className="w-72 h-72 -bottom-36 -right-36 opacity-5" color="tropical-coral" />
+            <FloatingElements count={3} className="opacity-20" />
+          </>
+        )}
+        
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+          {/* Section Header with enhanced animation */}
+          <ScrollReveal 
+            className="text-center mb-8 sm:mb-12 md:mb-16"
+            threshold={0.2}
+          >
+            <motion.h2 
+              className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 sm:mb-3"
+              variants={heroTitleVariants}
+            >
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
                 Ride Safe, Ride Smart
               </span>
-            </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
+            </motion.h2>
+            <motion.p 
+              className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base"
+              variants={heroSubtitleVariants}
+            >
               Essential safety tips for exploring Siargao Island on two wheels
-            </p>
-          </div>
+            </motion.p>
+          </ScrollReveal>
 
-          {/* Tips Grid - Improved mobile spacing */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 lg:gap-8">
-            {/* Tip 1 - Improved mobile sizing */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 group opacity-0 animate-[fadeInUp_0.5s_ease-out_0.1s_forwards]">
-              <div className="text-primary/80 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
-                  <path d="M12 2a8 8 0 0 0 0 16 8 8 0 0 0 0-16z"></path>
-                  <path d="M12 8v4l2 2"></path>
-                </svg>
-              </div>
-              <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Helmet Always</h3>
-              <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
-                Always wear a helmet, even for short trips. Most rental shops provide one, or you can bring your own.
-              </p>
-            </div>
-
-            {/* Tip 2 - Improved mobile sizing */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 group opacity-0 animate-[fadeInUp_0.5s_ease-out_0.2s_forwards]">
-              <div className="text-primary/80 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
-                  <path d="M2 12h2"></path>
-                  <path d="M20 12h2"></path>
-                  <path d="M12 2v2"></path>
-                  <path d="M12 20v2"></path>
-                  <path d="M6.34 6.34 4.93 4.93"></path>
-                  <path d="M19.07 4.93l-1.41 1.41"></path>
-                  <path d="M17.66 17.66 19.07 19.07"></path>
-                  <path d="M4.93 19.07l1.41-1.41"></path>
-                </svg>
-              </div>
-              <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Local Traffic Rules</h3>
-              <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
-                Always look left and right at intersections. Ride defensively as if others can't see you. Double beep your horn when overtaking other vehicles.
-              </p>
-            </div>
-
-            {/* Tip 3 - Improved mobile sizing */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 group opacity-0 animate-[fadeInUp_0.5s_ease-out_0.3s_forwards]">
-              <div className="text-primary/80 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <path d="M22 4 12 14.01l-3-3"></path>
-                </svg>
-              </div>
-              <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Inspect Your Bike</h3>
-              <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
-                Check brakes, lights, and tires before riding. Ask the rental shop to demonstrate any features you're unsure about.
-              </p>
-            </div>
-
-            {/* Tip 4 - Improved mobile sizing */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-lg hover:shadow-primary/5 group opacity-0 animate-[fadeInUp_0.5s_ease-out_0.4s_forwards]">
-              <div className="text-primary/80 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
-                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-                  <path d="m9 12 2 2 4-4"></path>
-                </svg>
-              </div>
-              <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">Weather Aware</h3>
-              <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
-                Siargao roads can become slippery during rain. Plan your trips according to weather forecasts.
-              </p>
-            </div>
-          </div>
+          {/* Tips Grid - Enhanced with modern animations */}
+          <ScrollReveal 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 lg:gap-8"
+            threshold={0.1}
+            rootMargin="0px 0px -5%"
+          >
+            <StaggeredCards className="contents" staggerDelay={0.15}>
+              {/* Safety tips data */}
+              {[
+                {
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
+                      <path d="M12 2a8 8 0 0 0 0 16 8 8 0 0 0 0-16z"></path>
+                      <path d="M12 8v4l2 2"></path>
+                    </svg>
+                  ),
+                  title: "Helmet Always",
+                  description: "Always wear a helmet, even for short trips. Most rental shops provide one, or you can bring your own."
+                },
+                {
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
+                      <path d="M2 12h2"></path>
+                      <path d="M20 12h2"></path>
+                      <path d="M12 2v2"></path>
+                      <path d="M12 20v2"></path>
+                      <path d="M6.34 6.34 4.93 4.93"></path>
+                      <path d="M19.07 4.93l-1.41 1.41"></path>
+                      <path d="M17.66 17.66 19.07 19.07"></path>
+                      <path d="M4.93 19.07l1.41-1.41"></path>
+                    </svg>
+                  ),
+                  title: "Local Traffic Rules",
+                  description: "Always look left and right at intersections. Ride defensively as if others can't see you. Double beep your horn when overtaking other vehicles."
+                },
+                {
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <path d="M22 4 12 14.01l-3-3"></path>
+                    </svg>
+                  ),
+                  title: "Inspect Your Vehicle",
+                  description: "Check brakes, lights, and tires before riding. Ask the rental shop to demonstrate any features you're unsure about."
+                },
+                {
+                  icon: (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-10 sm:h-10">
+                      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                      <path d="m9 12 2 2 4-4"></path>
+                    </svg>
+                  ),
+                  title: "Weather Aware",
+                  description: "Siargao roads can become slippery during rain. Plan your trips according to weather forecasts."
+                }
+              ].map((tip, index) => (
+                <AnimatedCard
+                  key={tip.title}
+                  enableMagnetic={!isMobile}
+                  enableTilt={!isMobile}
+                  enableGlow={true}
+                  glowColor="rgba(45, 212, 191, 0.1)"
+                  className="bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 sm:p-6 shadow-lg"
+                >
+                  <motion.div 
+                    className="text-primary/80 mb-3 sm:mb-4 flex justify-center"
+                    whileHover={shouldReduceMotion ? {} : { scale: 1.15, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    {tip.icon}
+                  </motion.div>
+                  <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2 text-center">{tip.title}</h3>
+                  <p className="text-gray-400 text-xs sm:text-sm text-center leading-relaxed">
+                    {tip.description}
+                  </p>
+                </AnimatedCard>
+              ))}
+            </StaggeredCards>
+          </ScrollReveal>
         </div>
       </section>
 

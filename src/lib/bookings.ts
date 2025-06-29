@@ -45,7 +45,7 @@ export const blockDatesForBooking = async (rentalId: string) => {
     
     // Check if dates are already blocked
     const { data: existingBlocks, error: existingError } = await supabase
-      .from('blocked_dates')
+      .from('vehicle_blocked_dates')
       .select('date')
       .eq('vehicle_id', rental.vehicle_id)
       .in('date', dates.map(d => d.toISOString().split('T')[0]));
@@ -71,12 +71,12 @@ export const blockDatesForBooking = async (rentalId: string) => {
     const blockedDates = datesToBlock.map(date => ({
       vehicle_id: rental.vehicle_id,
       date: date.toISOString().split('T')[0],
-      rental_id: rental.id,
+      reason: `Booked (Rental #${rental.id})`,
       created_at: new Date().toISOString()
     }));
     
     const { data: createdBlocks, error: blockError } = await supabase
-      .from('blocked_dates')
+      .from('vehicle_blocked_dates')
       .insert(blockedDates)
       .select();
       

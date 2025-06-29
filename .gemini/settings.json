@@ -1,0 +1,27 @@
+{
+    "mcpServers": {
+      "supabase": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@supabase/mcp-server-supabase@latest",
+          "--access-token",
+          "sbp_75c6a092a3f39bd6204f22cf4fdcea3d90ed200a"
+        ]
+      },
+      "Context7": {
+        "command": "npx",
+        "args": ["-y", "@upstash/context7-mcp"]
+      },
+      "mcp-server-firecrawl": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "firecrawl-mcp"
+        ],
+        "env": {
+          "FIRECRAWL_API_KEY": "fc-6df8698b1c3e42ada5f1b0b558f358af"
+        }
+      }
+    }
+  }
