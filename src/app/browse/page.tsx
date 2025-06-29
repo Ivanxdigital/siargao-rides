@@ -420,27 +420,6 @@ export default function BrowsePage() {
       />
 
       <div className="min-h-screen">
-        {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="bg-gray-900 border-b border-gray-800">
-          <div className="container mx-auto px-4 py-3">
-            <ol className="flex items-center space-x-2 text-sm" itemScope itemType="https://schema.org/BreadcrumbList">
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                <a href="/" className="text-gray-400 hover:text-white transition-colors" itemProp="item">
-                  <span itemProp="name">Home</span>
-                </a>
-                <meta itemProp="position" content="1" />
-              </li>
-              <li className="text-gray-500" aria-hidden="true">/</li>
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                <span className="text-white font-medium" aria-current="page" itemProp="name">
-                  Browse Vehicles
-                </span>
-                <meta itemProp="position" content="2" />
-              </li>
-            </ol>
-          </div>
-        </nav>
-
         <header className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden">
           <motion.div
             className="absolute inset-0 z-0 opacity-20"
@@ -451,9 +430,9 @@ export default function BrowsePage() {
             <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>
           </motion.div>
 
-        <div className="container mx-auto px-4 py-12 relative z-10 pt-16">
+        <div className="container mx-auto px-4 py-12 relative z-10 pt-20">
           <motion.div
-            className="max-w-3xl mx-auto mb-8"
+            className="max-w-3xl mx-auto mb-6"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -464,7 +443,7 @@ export default function BrowsePage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.4 }}
             >
-              <Badge className="mb-4 text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
+              <Badge className="text-sm bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
                 Find Your Ride
               </Badge>
             </motion.div>
