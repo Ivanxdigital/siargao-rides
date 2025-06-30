@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { PlusCircle, XCircle, ArrowLeft, Info } from "lucide-react";
+import { PlusCircle, XCircle, ArrowLeft, Info, Package, Users, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SmartTooltip, TooltipPresets } from "@/components/ui/smart-tooltip";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import imageCompression from 'browser-image-compression';
 import {
@@ -110,6 +111,13 @@ export default function AddVehiclePage() {
   // Vehicle categories based on type
   const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
 
+  // Batch creation states
+  const [createAsGroup, setCreateAsGroup] = useState(false);
+  const [quantity, setQuantity] = useState<string>("2");
+  const [namingPattern, setNamingPattern] = useState<string>("Unit {index}");
+  const [individualNames, setIndividualNames] = useState<string[]>([]);
+  const [showIndividualNames, setShowIndividualNames] = useState(false);
+
   // Redirect to dashboard if not authenticated or not a shop owner
   useEffect(() => {
     if (user && user.user_metadata?.role !== "shop_owner") {
@@ -174,6 +182,46 @@ export default function AddVehiclePage() {
     
     fetchCategories();
   }, [selectedVehicleTypeUUID]);
+
+  // Helper functions for batch creation
+  const handleQuantityChange = (newQuantity: string) => {
+    const qty = parseInt(newQuantity) || 2;
+    setQuantity(newQuantity);
+    
+    // Update individual names array
+    if (showIndividualNames) {
+      const newNames = Array.from({ length: qty }, (_, i) => 
+        individualNames[i] || namingPattern.replace('{index}', (i + 1).toString()).replace('{name}', name)
+      );
+      setIndividualNames(newNames);
+    }
+  };
+
+  const handleNamingPatternChange = (pattern: string) => {
+    setNamingPattern(pattern);
+    
+    // Update individual names if using pattern
+    if (!showIndividualNames) {
+      const qty = parseInt(quantity) || 2;
+      const newNames = Array.from({ length: qty }, (_, i) => 
+        pattern.replace('{index}', (i + 1).toString()).replace('{name}', name)
+      );
+      setIndividualNames(newNames);
+    }
+  };
+
+  const toggleIndividualNames = () => {
+    setShowIndividualNames(!showIndividualNames);
+    
+    if (!showIndividualNames) {
+      // Generate initial individual names from pattern
+      const qty = parseInt(quantity) || 2;
+      const newNames = Array.from({ length: qty }, (_, i) => 
+        namingPattern.replace('{index}', (i + 1).toString()).replace('{name}', name)
+      );
+      setIndividualNames(newNames);
+    }
+  };
 
   const handleAddImage = () => {
     const newId = (images.length + 1).toString();
@@ -353,6 +401,20 @@ export default function AddVehiclePage() {
         throw new Error("Category is required");
       }
 
+      // Additional validation for batch creation
+      if (createAsGroup) {
+        const qty = parseInt(quantity);
+        if (!qty || qty < 2 || qty > 50) {
+          throw new Error("Quantity must be between 2 and 50 for batch creation");
+        }
+        if (showIndividualNames) {
+          const validNames = individualNames.filter(name => name.trim().length > 0);
+          if (validNames.length !== qty) {
+            throw new Error("All vehicle names must be provided when using custom names");
+          }
+        }
+      }
+
       // Check for documents (registration required, insurance optional)
       const registrationDoc = documents.find(doc => doc.type === 'registration');
       const insuranceDoc = documents.find(doc => doc.type === 'insurance');
@@ -523,18 +585,66 @@ export default function AddVehiclePage() {
         vehicleData.transmission = transmission;
       }
 
-      // Send data to API
-      const response = await fetch("/api/vehicles", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(vehicleData)
-      });
+      // Send data to API - handle batch creation vs individual
+      if (createAsGroup) {
+        // Batch creation via vehicle groups API
+        const qty = parseInt(quantity) || 2;
+        const groupData = {
+          name: name,
+          vehicle_type_id: selectedVehicleTypeUUID,
+          category_id: category,
+          quantity: qty,
+          base_vehicle_data: {
+            description: description,
+            price_per_day: parseInt(price),
+            price_per_week: weeklyPrice ? parseInt(weeklyPrice) : null,
+            price_per_month: monthlyPrice ? parseInt(monthlyPrice) : null,
+            specifications: {
+              color: specifications.color,
+              year: specifications.year ? parseInt(specifications.year) : null,
+              features: specifications.features,
+              ...(vehicleTypeId === 1 && { engine_size: engineSize ? parseInt(engineSize) : null }),
+              ...(vehicleTypeId === 2 && { 
+                seats: seats ? parseInt(seats) : null,
+                transmission: transmission 
+              })
+            },
+            images: uploadedImages,
+            documents: uploadedDocuments
+          },
+          naming_pattern: showIndividualNames ? 'Custom' : namingPattern,
+          individual_names: showIndividualNames ? individualNames : undefined
+        };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add vehicle");
+        const response = await fetch("/api/vehicle-groups", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(groupData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to create vehicle group");
+        }
+
+        const result = await response.json();
+        console.log(`Created vehicle group with ${result.vehicle_count} vehicles`);
+      } else {
+        // Individual vehicle creation
+        const response = await fetch("/api/vehicles", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(vehicleData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to add vehicle");
+        }
       }
 
       // Redirect back to vehicles management page
@@ -684,6 +794,117 @@ export default function AddVehiclePage() {
                 onChange={(e) => setName(e.target.value)}
                 required
               />
+            </div>
+
+            {/* Batch Creation Option */}
+            <div className="border border-blue-200 dark:border-blue-800 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="createAsGroup"
+                  checked={createAsGroup}
+                  onChange={(e) => setCreateAsGroup(e.target.checked)}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <label htmlFor="createAsGroup" className="flex items-center gap-2 font-medium text-blue-900 dark:text-blue-100 cursor-pointer">
+                    <Package className="w-4 h-4" />
+                    Create Multiple Identical Vehicles
+                    <SmartTooltip
+                      {...TooltipPresets.groupCreation}
+                      content="Save time by creating multiple identical vehicles at once. Perfect for shops with several Honda Clicks, for example."
+                    >
+                      <HelpCircle className="w-4 h-4 text-blue-600 cursor-help" />
+                    </SmartTooltip>
+                  </label>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Create multiple identical vehicles with the same specifications and images.
+                  </p>
+                </div>
+              </div>
+
+              {createAsGroup && (
+                <div className="mt-4 space-y-4 pl-7">
+                  {/* Quantity */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1" htmlFor="quantity">
+                        Number of Vehicles *
+                      </label>
+                      <input
+                        id="quantity"
+                        type="number"
+                        min="2"
+                        max="50"
+                        className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                        value={quantity}
+                        onChange={(e) => handleQuantityChange(e.target.value)}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Between 2 and 50 vehicles</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1" htmlFor="namingPattern">
+                        Naming Pattern
+                        <SmartTooltip
+                          {...TooltipPresets.namingPattern}
+                          content="Use {index} for numbers (1, 2, 3...) and {name} for the vehicle name. Example: 'Honda #{index}' becomes 'Honda #1', 'Honda #2', etc."
+                        >
+                          <HelpCircle className="w-4 h-4 text-muted-foreground ml-1 inline" />
+                        </SmartTooltip>
+                      </label>
+                      <input
+                        id="namingPattern"
+                        type="text"
+                        className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                        value={namingPattern}
+                        onChange={(e) => handleNamingPatternChange(e.target.value)}
+                        placeholder="Unit {index}"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Preview: {namingPattern.replace('{index}', '1').replace('{name}', name || 'Honda Click')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Custom Names Toggle */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="showIndividualNames"
+                      checked={showIndividualNames}
+                      onChange={toggleIndividualNames}
+                    />
+                    <label htmlFor="showIndividualNames" className="text-sm font-medium cursor-pointer">
+                      Use custom names for each vehicle
+                    </label>
+                  </div>
+
+                  {/* Individual Names */}
+                  {showIndividualNames && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Custom Vehicle Names</label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                        {Array.from({ length: parseInt(quantity) || 2 }, (_, i) => (
+                          <input
+                            key={i}
+                            type="text"
+                            placeholder={`Vehicle ${i + 1} name`}
+                            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+                            value={individualNames[i] || ''}
+                            onChange={(e) => {
+                              const newNames = [...individualNames];
+                              newNames[i] = e.target.value;
+                              setIndividualNames(newNames);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
@@ -1282,7 +1503,11 @@ export default function AddVehiclePage() {
             disabled={isSubmitting}
             className={isSubmitting ? "opacity-70 cursor-not-allowed" : ""}
           >
-            {isSubmitting ? "Adding Vehicle..." : "Add Vehicle"}
+            {isSubmitting ? (
+              createAsGroup ? "Creating Vehicle Group..." : "Adding Vehicle..."
+            ) : (
+              createAsGroup ? `Create ${quantity} Vehicles` : "Add Vehicle"
+            )}
           </Button>
         </div>
       </form>

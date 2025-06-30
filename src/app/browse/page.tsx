@@ -35,6 +35,11 @@ interface VehicleWithMetadata {
   shopIsShowcase?: boolean;
   images?: any[];
   is_available_for_dates?: boolean;
+  // Vehicle group fields
+  group_id?: string;
+  is_group?: boolean;
+  available_count?: number;
+  total_count?: number;
 }
 
 // Date range interfaces
@@ -963,6 +968,11 @@ export default function BrowsePage() {
                             startDate: startDateObj?.toISOString().split('T')[0] || '',
                             endDate: endDateObj?.toISOString().split('T')[0] || ''
                           } : undefined}
+                          // Group-related props
+                          isGroup={vehicle.is_group || false}
+                          groupId={vehicle.group_id}
+                          availableCount={vehicle.available_count || 1}
+                          totalCount={vehicle.total_count || 1}
                           onViewShopClick={() => handleViewShopClick(vehicle.shopId)}
                           onImageClick={() => handleViewShopClick(vehicle.shopId)}
                           onBookClick={handleBookClick}

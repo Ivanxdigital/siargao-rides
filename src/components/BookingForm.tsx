@@ -24,6 +24,7 @@ interface BookingFormProps {
   onStartDateChange: (date: Date | null) => void;
   onEndDateChange: (date: Date | null) => void;
   onDeliveryFeeChange: (fee: number) => void;
+  selectedVehicleId?: string | null; // For group vehicle selection
 }
 
 interface DateRange {
@@ -40,7 +41,8 @@ export default function BookingForm({
   endDate,
   onStartDateChange,
   onEndDateChange,
-  onDeliveryFeeChange
+  onDeliveryFeeChange,
+  selectedVehicleId = null
 }: BookingFormProps) {
   // State for form fields
   const [deliveryOption, setDeliveryOption] = useState<string | null>(null);
@@ -384,8 +386,8 @@ export default function BookingForm({
         bookingData.deposit_paid = false;
       };
 
-      // Vehicle ID is already validated above
-      const vehicleIdToUse = vehicleId;
+      // Vehicle ID is already validated above - use selectedVehicleId for groups, fallback to vehicleId
+      const vehicleIdToUse = selectedVehicleId || vehicleId;
 
       // Add vehicle type ID (required by atomic function)
       bookingData.vehicle_type_id = vehicle.vehicle_type_id;

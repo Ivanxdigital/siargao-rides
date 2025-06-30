@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Vehicle, RentalShop, VehicleType } from "@/lib/types";
-import { ArrowLeft, Bike, Car, Truck } from "lucide-react";
+import { Vehicle, RentalShop, VehicleType, VehicleGroupWithDetails } from "@/lib/types";
+import { ArrowLeft, Bike, Car, Truck, Users, Package, CheckCircle, Info, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import BookingForm from "@/components/BookingForm";
 import BookingSummary from "@/components/BookingSummary";
 
@@ -19,6 +20,9 @@ export default function BookingPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [shop, setShop] = useState<RentalShop | null>(null);
+  const [vehicleGroup, setVehicleGroup] = useState<VehicleGroupWithDetails | null>(null);
+  const [availableVehicles, setAvailableVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +30,46 @@ export default function BookingPage() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [deliveryFee, setDeliveryFee] = useState(0);
+
+  // Helper function to fetch available vehicles for specific dates
+  const fetchAvailableVehiclesForDates = async (groupId: string, start: Date, end: Date) => {
+    try {
+      const response = await fetch(`/api/vehicle-groups/${groupId}/availability`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          start_date: start.toISOString().split('T')[0],
+          end_date: end.toISOString().split('T')[0]
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.available_vehicles && data.available_vehicles.length > 0) {
+          // Fetch full vehicle details for available vehicles
+          const supabase = createClientComponentClient();
+          const { data: vehicles, error } = await supabase
+            .from('vehicles')
+            .select(`
+              *,
+              vehicle_images(*)
+            `)
+            .in('id', data.available_vehicles);
+
+          if (!error && vehicles) {
+            setAvailableVehicles(vehicles);
+          }
+        } else {
+          setAvailableVehicles([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching available vehicles:', error);
+      setAvailableVehicles([]);
+    }
+  };
 
   useEffect(() => {
     // Fetch vehicle and shop data
@@ -90,6 +134,30 @@ export default function BookingPage() {
           };
 
           setVehicle(formattedVehicle);
+
+          // Check if this vehicle is part of a group
+          if (formattedVehicle.group_id) {
+            try {
+              // Fetch group information
+              const { data: groupData, error: groupError } = await supabase
+                .from('vehicle_group_availability')
+                .select('*')
+                .eq('id', formattedVehicle.group_id)
+                .single();
+
+              if (!groupError && groupData) {
+                setVehicleGroup(groupData);
+
+                // If dates are selected, check which vehicles are available for those dates
+                if (startDate && endDate) {
+                  await fetchAvailableVehiclesForDates(formattedVehicle.group_id, startDate, endDate);
+                }
+              }
+            } catch (groupError) {
+              console.error('Error fetching group data:', groupError);
+              // Continue without group data
+            }
+          }
         } catch (vehicleError) {
           console.error('Error fetching vehicle:', vehicleError);
           setError('Vehicle not found');
@@ -130,6 +198,13 @@ export default function BookingPage() {
 
     fetchData();
   }, [vehicleId, shopId, searchParams]);
+
+  // Effect to fetch available vehicles when dates change (for group vehicles)
+  useEffect(() => {
+    if (vehicleGroup && startDate && endDate) {
+      fetchAvailableVehiclesForDates(vehicleGroup.id, startDate, endDate);
+    }
+  }, [vehicleGroup, startDate, endDate]);
 
   const goBack = () => {
     router.back();
@@ -224,6 +299,122 @@ export default function BookingPage() {
         </div>
         <p className="text-white/70 mb-8">from {shop.name}</p>
 
+        {/* Vehicle Selection for Groups */}
+        {vehicleGroup && (
+          <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-6 mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Users className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-semibold">Select Your Vehicle</h2>
+              <Badge variant="secondary" className="bg-primary/20 text-primary">
+                {availableVehicles.length} of {vehicleGroup.total_units} available
+              </Badge>
+            </div>
+            
+            <p className="text-white/70 mb-6">
+              This is a group of {vehicleGroup.total_units} identical vehicles. 
+              {startDate && endDate 
+                ? ` For your selected dates, ${availableVehicles.length} units are available.`
+                : ' Please select your dates to see available units.'
+              }
+            </p>
+
+            {startDate && endDate && availableVehicles.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-white/80">
+                    Choose a specific vehicle (optional)
+                  </label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedVehicleId(null)}
+                    className={selectedVehicleId ? 'opacity-100' : 'opacity-50'}
+                  >
+                    Auto-assign
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {availableVehicles.map((availableVehicle) => (
+                    <div
+                      key={availableVehicle.id}
+                      className={`relative border rounded-lg p-4 cursor-pointer transition-all ${
+                        selectedVehicleId === availableVehicle.id
+                          ? 'border-primary bg-primary/10'
+                          : 'border-white/20 hover:border-white/40'
+                      }`}
+                      onClick={() => setSelectedVehicleId(availableVehicle.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-white">
+                            {availableVehicle.individual_identifier || availableVehicle.name}
+                          </h4>
+                          <p className="text-sm text-white/60">
+                            {availableVehicle.specifications?.color && (
+                              <span className="capitalize">{availableVehicle.specifications.color}</span>
+                            )}
+                            {availableVehicle.specifications?.year && (
+                              <span> • {availableVehicle.specifications.year}</span>
+                            )}
+                          </p>
+                        </div>
+                        {selectedVehicleId === availableVehicle.id && (
+                          <CheckCircle className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-white/70">
+                      <p className="font-medium text-white/90 mb-1">Vehicle Assignment</p>
+                      <p>
+                        {selectedVehicleId 
+                          ? "You've selected a specific vehicle. We'll assign this exact unit to your booking."
+                          : "Auto-assign is enabled. We'll automatically assign the best available vehicle from this group based on your preferences."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {startDate && endDate && availableVehicles.length === 0 && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-red-400 mb-1">No Units Available</p>
+                    <p className="text-sm text-red-300">
+                      All vehicles in this group are booked for your selected dates. 
+                      Please try different dates or contact the shop directly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(!startDate || !endDate) && (
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Package className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-blue-400 mb-1">Select Dates First</p>
+                    <p className="text-sm text-blue-300">
+                      Choose your rental dates below to see which vehicles are available in this group.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg p-6">
@@ -239,6 +430,7 @@ export default function BookingPage() {
                 onStartDateChange={setStartDate}
                 onEndDateChange={setEndDate}
                 onDeliveryFeeChange={setDeliveryFee}
+                selectedVehicleId={selectedVehicleId}
               />
             </div>
           </div>

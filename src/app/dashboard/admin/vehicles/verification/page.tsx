@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { CheckCircle, XCircle, ExternalLink, AlertCircle, FileText, Car, Bike } from "lucide-react";
+import { CheckCircle, XCircle, ExternalLink, AlertCircle, FileText, Car, Bike, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import Image from "next/image";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 // Define vehicle document type
 type VehicleDocument = {
@@ -263,6 +264,13 @@ export default function VehicleVerificationPage() {
   const [rejectionNotes, setRejectionNotes] = useState<string>('');
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  
+  // Multi-select state
+  const [selectedVehicleIds, setSelectedVehicleIds] = useState<Set<string>>(new Set());
+  const [isConfirmBulkActionOpen, setIsConfirmBulkActionOpen] = useState(false);
+  const [bulkActionType, setBulkActionType] = useState<'approve' | 'reject' | null>(null);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [bulkRejectionNotes, setBulkRejectionNotes] = useState<string>('');
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -423,6 +431,105 @@ export default function VehicleVerificationPage() {
     }
   };
 
+  // Multi-select helper functions
+  const handleSelectVehicle = (vehicleId: string, checked: boolean) => {
+    setSelectedVehicleIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(vehicleId);
+      } else {
+        newSet.delete(vehicleId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedVehicleIds(new Set(pendingVehicles.map(v => v.id)));
+    } else {
+      setSelectedVehicleIds(new Set());
+    }
+  };
+
+  const openBulkActionDialog = (actionType: 'approve' | 'reject') => {
+    setBulkActionType(actionType);
+    setBulkRejectionNotes('');
+    setIsConfirmBulkActionOpen(true);
+  };
+
+  const handleBulkAction = async () => {
+    if (!bulkActionType || selectedVehicleIds.size === 0) return;
+    
+    setIsBulkProcessing(true);
+    setIsConfirmBulkActionOpen(false);
+    setStatusMessage(null);
+    
+    try {
+      const vehicleIdsArray = Array.from(selectedVehicleIds);
+      
+      // Call our API endpoint for bulk processing
+      const response = await fetch('/api/vehicles/verify', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vehicleIds: vehicleIdsArray,
+          approve: bulkActionType === 'approve',
+          notes: bulkActionType === 'reject' ? bulkRejectionNotes : null
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to ${bulkActionType} vehicles`);
+      }
+      
+      const responseData = await response.json();
+      
+      // Update UI based on the action
+      if (bulkActionType === 'approve') {
+        // Move approved vehicles to verified list
+        const approvedVehicles = pendingVehicles.filter(v => selectedVehicleIds.has(v.id));
+        const updatedApprovedVehicles = approvedVehicles.map(v => ({
+          ...v,
+          is_verified: true,
+          verification_status: 'approved' as const
+        }));
+        
+        setPendingVehicles(prev => prev.filter(v => !selectedVehicleIds.has(v.id)));
+        setVerifiedVehicles(prev => [...updatedApprovedVehicles, ...prev]);
+        
+        setStatusMessage({ 
+          type: 'success', 
+          text: `${selectedVehicleIds.size} vehicle(s) have been approved successfully.`
+        });
+      } else {
+        // Remove rejected vehicles from pending list
+        setPendingVehicles(prev => prev.filter(v => !selectedVehicleIds.has(v.id)));
+        
+        setStatusMessage({ 
+          type: 'success', 
+          text: `${selectedVehicleIds.size} vehicle(s) have been rejected.`
+        });
+      }
+      
+      // Clear selection
+      setSelectedVehicleIds(new Set());
+      
+    } catch (error: any) {
+      console.error(`Error ${bulkActionType}ing vehicles:`, error);
+      setStatusMessage({ 
+        type: 'error', 
+        text: `Failed to ${bulkActionType} vehicles: ${error.message}` 
+      });
+    } finally {
+      setIsBulkProcessing(false);
+      setBulkActionType(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -501,6 +608,49 @@ export default function VehicleVerificationPage() {
         </button>
       </div>
 
+      {/* Multi-select controls - only show for pending tab */}
+      {activeTab === 'pending' && pendingVehicles.length > 0 && (
+        <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg p-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Select All Controls */}
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={selectedVehicleIds.size === pendingVehicles.length && pendingVehicles.length > 0}
+                onCheckedChange={handleSelectAll}
+                className="mr-2"
+              />
+              <span className="text-sm text-white/70">
+                Select All ({selectedVehicleIds.size} of {pendingVehicles.length} selected)
+              </span>
+            </div>
+
+            {/* Mass Action Buttons */}
+            {selectedVehicleIds.size > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => openBulkActionDialog('approve')}
+                  disabled={isBulkProcessing}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Approve Selected ({selectedVehicleIds.size})
+                </Button>
+                <Button
+                  onClick={() => openBulkActionDialog('reject')}
+                  disabled={isBulkProcessing}
+                  variant="destructive"
+                  size="sm"
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Reject Selected ({selectedVehicleIds.size})
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg">
         {isLoadingVehicles ? (
@@ -527,6 +677,11 @@ export default function VehicleVerificationPage() {
                           {/* Vehicle info */}
                           <div className="p-6 md:col-span-3">
                             <div className="flex items-center mb-4">
+                              <Checkbox
+                                checked={selectedVehicleIds.has(vehicle.id)}
+                                onCheckedChange={(checked) => handleSelectVehicle(vehicle.id, checked as boolean)}
+                                className="mr-4"
+                              />
                               <div className="mr-4 bg-primary/10 p-2 rounded-lg">
                                 {getVehicleIcon(vehicle.vehicle_types?.name || 'motorcycle')}
                               </div>
@@ -770,6 +925,79 @@ export default function VehicleVerificationPage() {
           </div>
         </div>
       )}
+
+      {/* Bulk Action Confirmation Dialog */}
+      <Dialog open={isConfirmBulkActionOpen} onOpenChange={setIsConfirmBulkActionOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {bulkActionType === 'approve' ? 'Approve' : 'Reject'} Selected Vehicles
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {bulkActionType} {selectedVehicleIds.size} vehicle(s)?
+              {bulkActionType === 'approve' && ' This action will mark them as verified and available for rental.'}
+              {bulkActionType === 'reject' && ' This action will mark them as rejected and unavailable.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Show list of selected vehicles */}
+          <div className="max-h-48 overflow-y-auto border border-border rounded-md p-3">
+            <h4 className="text-sm font-medium mb-2">Selected Vehicles:</h4>
+            <ul className="space-y-1 text-sm">
+              {pendingVehicles
+                .filter(v => selectedVehicleIds.has(v.id))
+                .map(vehicle => (
+                  <li key={vehicle.id} className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span>{vehicle.name} - {vehicle.rental_shops?.name}</span>
+                  </li>
+                ))}
+            </ul>
+          </div>
+
+          {/* Rejection notes for bulk reject */}
+          {bulkActionType === 'reject' && (
+            <div>
+              <label className="text-sm font-medium block mb-2">
+                Rejection Reason (will be sent to all shop owners)
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-border rounded-md bg-background h-24"
+                placeholder="Rejection reason (e.g., documents unclear, expired registration, etc.)"
+                value={bulkRejectionNotes}
+                onChange={(e) => setBulkRejectionNotes(e.target.value)}
+              />
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsConfirmBulkActionOpen(false)}
+              disabled={isBulkProcessing}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBulkAction}
+              disabled={isBulkProcessing || (bulkActionType === 'reject' && !bulkRejectionNotes.trim())}
+              variant={bulkActionType === 'approve' ? 'default' : 'destructive'}
+            >
+              {isBulkProcessing ? (
+                <div className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin mr-2"></div>
+              ) : bulkActionType === 'approve' ? (
+                <CheckCircle className="mr-2 h-4 w-4" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4" />
+              )}
+              {isBulkProcessing 
+                ? `${bulkActionType === 'approve' ? 'Approving' : 'Rejecting'}...`
+                : `${bulkActionType === 'approve' ? 'Approve' : 'Reject'} ${selectedVehicleIds.size} Vehicle(s)`
+              }
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

@@ -29,39 +29,52 @@ export async function PATCH(request: NextRequest) {
     }
     
     // Parse request body
-    const { vehicleId, approve, notes } = await request.json();
+    const { vehicleId, vehicleIds, approve, notes } = await request.json();
     
-    if (!vehicleId) {
+    // Support both single vehicle and batch operations
+    const targetVehicleIds = vehicleIds || (vehicleId ? [vehicleId] : []);
+    
+    if (!targetVehicleIds.length) {
       return NextResponse.json(
-        { error: 'Vehicle ID is required' },
+        { error: 'Vehicle ID(s) required' },
         { status: 400 }
       );
     }
     
-    // Check if vehicle exists
-    const { data: vehicleData, error: vehicleError } = await supabase
+    // Check if vehicles exist and are pending
+    const { data: vehiclesData, error: vehiclesError } = await supabase
       .from('vehicles')
       .select('id, shop_id, is_verified, verification_status')
-      .eq('id', vehicleId)
-      .single();
+      .in('id', targetVehicleIds);
     
-    if (vehicleError || !vehicleData) {
+    if (vehiclesError) {
       return NextResponse.json(
-        { error: 'Vehicle not found' },
+        { error: 'Error checking vehicles', details: vehiclesError.message },
+        { status: 500 }
+      );
+    }
+    
+    if (!vehiclesData || vehiclesData.length === 0) {
+      return NextResponse.json(
+        { error: 'No vehicles found' },
         { status: 404 }
       );
     }
     
-    // If vehicle is already verified or rejected, return an error
-    if (vehicleData.verification_status !== 'pending') {
+    // Check if all vehicles are pending
+    const nonPendingVehicles = vehiclesData.filter(v => v.verification_status !== 'pending');
+    if (nonPendingVehicles.length > 0) {
       return NextResponse.json(
-        { error: `Vehicle is already ${vehicleData.verification_status}` },
+        { 
+          error: `Some vehicles are not pending verification`,
+          details: nonPendingVehicles.map(v => `${v.id} is ${v.verification_status}`)
+        },
         { status: 400 }
       );
     }
     
     if (approve) {
-      // Approve the vehicle
+      // Approve vehicles in batch
       const { error: updateError } = await supabase
         .from('vehicles')
         .update({
@@ -71,23 +84,25 @@ export async function PATCH(request: NextRequest) {
           verified_by: userId,
           verification_notes: notes || null
         })
-        .eq('id', vehicleId);
+        .in('id', targetVehicleIds);
       
       if (updateError) {
         return NextResponse.json(
-          { error: 'Failed to approve vehicle', details: updateError.message },
+          { error: 'Failed to approve vehicles', details: updateError.message },
           { status: 500 }
         );
       }
       
-      // After vehicle is verified, update referral if applicable
-      if (vehicleData && vehicleData.shop_id) {
+      // Update referrals for all affected shops
+      const uniqueShopIds = [...new Set(vehiclesData.map(v => v.shop_id))];
+      for (const shopId of uniqueShopIds) {
         // Get the shop's referrer_id and is_verified status
         const { data: shop, error: shopError } = await supabase
           .from('rental_shops')
           .select('referrer_id, is_verified')
-          .eq('id', vehicleData.shop_id)
+          .eq('id', shopId)
           .single();
+        
         if (shop && shop.referrer_id) {
           await supabase
             .from('referrals')
@@ -97,16 +112,17 @@ export async function PATCH(request: NextRequest) {
               updated_at: new Date().toISOString()
             })
             .eq('referrer_id', shop.referrer_id)
-            .eq('shop_id', vehicleData.shop_id);
+            .eq('shop_id', shopId);
         }
       }
       
       return NextResponse.json({
         success: true,
-        message: 'Vehicle has been approved successfully'
+        message: `${targetVehicleIds.length} vehicle(s) have been approved successfully`,
+        processed: targetVehicleIds.length
       });
     } else {
-      // Reject the vehicle - mark as rejected instead of deleting
+      // Reject vehicles in batch - mark as rejected instead of deleting
       const { error: updateError } = await supabase
         .from('vehicles')
         .update({
@@ -117,18 +133,19 @@ export async function PATCH(request: NextRequest) {
           verification_notes: notes || null,
           is_available: false // Also mark as unavailable
         })
-        .eq('id', vehicleId);
+        .in('id', targetVehicleIds);
       
       if (updateError) {
         return NextResponse.json(
-          { error: 'Failed to reject vehicle', details: updateError.message },
+          { error: 'Failed to reject vehicles', details: updateError.message },
           { status: 500 }
         );
       }
       
       return NextResponse.json({
         success: true,
-        message: 'Vehicle has been rejected'
+        message: `${targetVehicleIds.length} vehicle(s) have been rejected`,
+        processed: targetVehicleIds.length
       });
     }
     

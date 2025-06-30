@@ -178,9 +178,9 @@ export function GroupedVehicleCard({
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">Individual Units</h4>
                 <div className="space-y-2">
-                  {group.vehicles?.map((vehicle, index) => (
+                  {group.vehicles?.filter(vehicle => vehicle && typeof vehicle === 'object').map((vehicle, index) => (
                     <VehicleUnitRow
-                      key={vehicle.id}
+                      key={vehicle.id ? `${group.id}-vehicle-${vehicle.id}` : `${group.id}-index-${index}`}
                       vehicle={vehicle}
                       index={index}
                       onView={() => onViewVehicle?.(vehicle.id)}
