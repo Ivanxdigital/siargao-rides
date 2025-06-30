@@ -10,24 +10,33 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
-// Rate limit tracking
+// Rate limit tracking with progressive penalties
 const RATE_LIMIT_KEY = "siargao_auth_rate_limit";
-const RATE_LIMIT_DURATION = 600; // Increase to 10 minutes (600 seconds) to avoid hitting Supabase rate limits
-const MAX_ATTEMPTS = 1; // Reduce to 1 attempt before cooling down to avoid rate limits
-const DEBOUNCE_TIMEOUT = 3000; // Increase to 3 seconds to reduce rate limit issues
+const BASE_RATE_LIMIT_DURATION = 120; // 2 minutes base cooldown
+const MAX_FREE_ATTEMPTS = 3; // 3 free attempts before any penalties
+const PROGRESSIVE_PENALTY_ATTEMPTS = 5; // Start 30s penalty at attempt 4-5
+const MAX_ATTEMPTS_BEFORE_LOCKOUT = 8; // Total attempts before longer lockout
+const SHORT_COOLDOWN = 30; // 30 seconds for early penalties
+const SUPABASE_RATE_LIMIT_COOLDOWN = 300; // 5 minutes for actual Supabase rate limits
+const RESET_ATTEMPTS_AFTER = 1800000; // Reset counter after 30 minutes (in ms)
+const DEBOUNCE_TIMEOUT = 1500; // Reduce to 1.5 seconds for better UX
 
 interface RateLimitState {
   attempts: number;
   lastAttempt: number;
   blocked: boolean;
   blockedUntil: number;
+  penaltyLevel: 'none' | 'short' | 'medium' | 'long';
+  lastResetTime: number;
 }
 
 const getDefaultRateLimitState = (): RateLimitState => ({
   attempts: 0,
   lastAttempt: 0,
   blocked: false,
-  blockedUntil: 0
+  blockedUntil: 0,
+  penaltyLevel: 'none',
+  lastResetTime: Date.now()
 });
 
 export default function SignInPage() {
@@ -59,16 +68,32 @@ export default function SignInPage() {
         if (storedState) {
           const parsedState: RateLimitState = JSON.parse(storedState);
 
+          // Ensure backward compatibility with old state format
+          const compatibleState: RateLimitState = {
+            attempts: parsedState.attempts || 0,
+            lastAttempt: parsedState.lastAttempt || 0,
+            blocked: parsedState.blocked || false,
+            blockedUntil: parsedState.blockedUntil || 0,
+            penaltyLevel: parsedState.penaltyLevel || 'none',
+            lastResetTime: parsedState.lastResetTime || Date.now()
+          };
+
+          // Check if we should reset due to time passage
+          if (shouldResetAttempts(compatibleState, Date.now())) {
+            resetRateLimit();
+            return;
+          }
+
           // Check if we're still in a blocked state
-          if (parsedState.blocked && parsedState.blockedUntil > Date.now()) {
+          if (compatibleState.blocked && compatibleState.blockedUntil > Date.now()) {
             setIsRateLimited(true);
-            setCooldownTimer(Math.ceil((parsedState.blockedUntil - Date.now()) / 1000));
-            setRateLimitState(parsedState);
-          } else if (parsedState.blocked) {
+            setCooldownTimer(Math.ceil((compatibleState.blockedUntil - Date.now()) / 1000));
+            setRateLimitState(compatibleState);
+          } else if (compatibleState.blocked) {
             // Reset if the block period has expired
             resetRateLimit();
           } else {
-            setRateLimitState(parsedState);
+            setRateLimitState(compatibleState);
           }
         }
       } catch (e) {
@@ -133,57 +158,78 @@ export default function SignInPage() {
     }
   };
 
+  const calculatePenalty = (attempts: number, isRateLimitError: boolean): { duration: number, penaltyLevel: 'none' | 'short' | 'medium' | 'long' } => {
+    if (isRateLimitError) {
+      return { duration: SUPABASE_RATE_LIMIT_COOLDOWN, penaltyLevel: 'long' };
+    }
+
+    if (attempts <= MAX_FREE_ATTEMPTS) {
+      return { duration: 0, penaltyLevel: 'none' };
+    } else if (attempts <= PROGRESSIVE_PENALTY_ATTEMPTS) {
+      return { duration: SHORT_COOLDOWN, penaltyLevel: 'short' };
+    } else if (attempts < MAX_ATTEMPTS_BEFORE_LOCKOUT) {
+      return { duration: BASE_RATE_LIMIT_DURATION, penaltyLevel: 'medium' };
+    } else {
+      return { duration: BASE_RATE_LIMIT_DURATION * 2, penaltyLevel: 'long' };
+    }
+  };
+
+  const shouldResetAttempts = (state: RateLimitState, now: number): boolean => {
+    // Reset if it's been more than 30 minutes since last reset
+    const timeSinceLastReset = now - state.lastResetTime;
+    return timeSinceLastReset > RESET_ATTEMPTS_AFTER;
+  };
+
   const updateRateLimitState = (isError: boolean, isRateLimitError: boolean) => {
     const now = Date.now();
 
-    // If this is a rate limit error, block immediately with a longer cooldown
+    // If this is a rate limit error from Supabase, block immediately
     if (isRateLimitError) {
-      const blockedUntil = now + (RATE_LIMIT_DURATION * 1000 * 3); // Triple the cooldown time for rate limit errors (15 minutes)
+      const penalty = calculatePenalty(rateLimitState.attempts + 1, true);
+      const blockedUntil = now + (penalty.duration * 1000);
       const newState: RateLimitState = {
         attempts: rateLimitState.attempts + 1,
         lastAttempt: now,
         blocked: true,
-        blockedUntil
+        blockedUntil,
+        penaltyLevel: penalty.penaltyLevel,
+        lastResetTime: rateLimitState.lastResetTime
       };
 
       setRateLimitState(newState);
       setIsRateLimited(true);
-      setCooldownTimer(RATE_LIMIT_DURATION * 3);
-
+      setCooldownTimer(penalty.duration);
       return;
     }
 
-    // If it's another error, increment attempts
+    // Handle other errors with progressive penalties
     if (isError) {
-      // Check if we need to reset attempts (if last attempt was long ago)
-      const attemptAge = now - rateLimitState.lastAttempt;
-      const resetThreshold = RATE_LIMIT_DURATION * 1000 * 2; // 2x the rate limit period
-
-      let newAttempts = 0;
-      if (attemptAge < resetThreshold) {
-        newAttempts = rateLimitState.attempts + 1;
-      } else {
-        newAttempts = 1; // Reset counter if it's been a while
+      // Check if we should reset attempts due to time passage
+      let currentAttempts = rateLimitState.attempts;
+      let lastResetTime = rateLimitState.lastResetTime;
+      
+      if (shouldResetAttempts(rateLimitState, now)) {
+        currentAttempts = 0;
+        lastResetTime = now;
       }
 
-      // Check if we've reached max attempts
-      if (newAttempts >= MAX_ATTEMPTS) {
-        const blockedUntil = now + (RATE_LIMIT_DURATION * 1000);
-        setRateLimitState({
-          attempts: newAttempts,
-          lastAttempt: now,
-          blocked: true,
-          blockedUntil
-        });
+      const newAttempts = currentAttempts + 1;
+      const penalty = calculatePenalty(newAttempts, false);
+
+      const newState: RateLimitState = {
+        attempts: newAttempts,
+        lastAttempt: now,
+        blocked: penalty.duration > 0,
+        blockedUntil: penalty.duration > 0 ? now + (penalty.duration * 1000) : 0,
+        penaltyLevel: penalty.penaltyLevel,
+        lastResetTime
+      };
+
+      setRateLimitState(newState);
+      
+      if (penalty.duration > 0) {
         setIsRateLimited(true);
-        setCooldownTimer(RATE_LIMIT_DURATION);
-      } else {
-        setRateLimitState({
-          attempts: newAttempts,
-          lastAttempt: now,
-          blocked: false,
-          blockedUntil: 0
-        });
+        setCooldownTimer(penalty.duration);
       }
     } else {
       // Success - reset the counter
@@ -192,7 +238,7 @@ export default function SignInPage() {
   };
 
   const isRateLimitError = (error: any): boolean => {
-    // More comprehensive check for rate limit errors
+    // More comprehensive check for rate limit errors from Supabase
     if (!error) return false;
 
     const errorMsg = typeof error.message === 'string' ? error.message.toLowerCase() : '';
@@ -201,9 +247,43 @@ export default function SignInPage() {
       errorMsg.includes("request rate limit reached") ||
       errorMsg.includes("too many requests") ||
       errorMsg.includes("too many login attempts") ||
+      errorMsg.includes("email rate limit exceeded") ||
       error.status === 429 ||
       error.code === "over_request_rate_limit" ||
-      error.code === "too_many_requests"
+      error.code === "too_many_requests" ||
+      error.code === "email_rate_limit_exceeded"
+    );
+  };
+
+  const isNetworkError = (error: any): boolean => {
+    // Check for network connectivity issues that shouldn't count toward rate limiting
+    if (!error) return false;
+    
+    const errorMsg = typeof error.message === 'string' ? error.message.toLowerCase() : '';
+    return (
+      errorMsg.includes("network error") ||
+      errorMsg.includes("fetch failed") ||
+      errorMsg.includes("connection failed") ||
+      errorMsg.includes("timeout") ||
+      errorMsg.includes("offline") ||
+      error.code === "NETWORK_ERROR" ||
+      error.name === "NetworkError"
+    );
+  };
+
+  const isCredentialError = (error: any): boolean => {
+    // Check for invalid credential errors (wrong password, invalid email, etc.)
+    if (!error) return false;
+    
+    const errorMsg = typeof error.message === 'string' ? error.message.toLowerCase() : '';
+    return (
+      errorMsg.includes("invalid login credentials") ||
+      errorMsg.includes("invalid credentials") ||
+      errorMsg.includes("email not confirmed") ||
+      errorMsg.includes("invalid email or password") ||
+      errorMsg.includes("wrong password") ||
+      errorMsg.includes("user not found") ||
+      error.code === "invalid_credentials"
     );
   };
 
@@ -240,14 +320,29 @@ export default function SignInPage() {
         if (signInError) {
           console.log("Sign-in error:", signInError);
 
-          // Enhanced rate limit detection
+          // Classify the error type
           const isRateLimitErr = isRateLimitError(signInError);
-          updateRateLimitState(true, isRateLimitErr);
+          const isNetworkErr = isNetworkError(signInError);
+          const isCredentialErr = isCredentialError(signInError);
 
+          // Only count toward rate limiting if it's not a network error
+          if (!isNetworkErr) {
+            updateRateLimitState(true, isRateLimitErr);
+          }
+
+          // Provide appropriate error messages
           if (isRateLimitErr) {
             setError(
-              "Rate limit reached. This happens when there are too many sign-in attempts " +
+              "Rate limit reached from Supabase. This happens when there are too many sign-in attempts " +
               "from your location or for this account. Please wait a few minutes before trying again."
+            );
+          } else if (isNetworkErr) {
+            setError(
+              "Network connection issue. Please check your internet connection and try again."
+            );
+          } else if (isCredentialErr) {
+            setError(
+              "Invalid email or password. Please check your credentials and try again."
             );
           } else {
             setError(signInError.message || "Failed to sign in. Please check your credentials.");
@@ -261,14 +356,23 @@ export default function SignInPage() {
       } catch (err) {
         console.error("Unexpected error during sign-in:", err);
 
-        // Check if the error is a rate limit error
+        // Classify the error type
         const isRateLimitErr = err instanceof Error && isRateLimitError(err);
-        updateRateLimitState(true, isRateLimitErr);
+        const isNetworkErr = err instanceof Error && isNetworkError(err);
+        
+        // Only count toward rate limiting if it's not a network error
+        if (!isNetworkErr) {
+          updateRateLimitState(true, isRateLimitErr);
+        }
 
         if (isRateLimitErr) {
           setError(
-            "Rate limit reached. This happens when there are too many sign-in attempts " +
+            "Rate limit reached from Supabase. This happens when there are too many sign-in attempts " +
             "from your location or for this account. Please wait a few minutes before trying again."
+          );
+        } else if (isNetworkErr) {
+          setError(
+            "Network connection issue. Please check your internet connection and try again."
           );
         } else {
           setError("An unexpected error occurred. Please try again.");
@@ -310,28 +414,74 @@ export default function SignInPage() {
     }
   };
 
+  const getRemainingAttempts = () => {
+    if (rateLimitState.attempts <= MAX_FREE_ATTEMPTS) {
+      return MAX_FREE_ATTEMPTS - rateLimitState.attempts;
+    }
+    return 0;
+  };
+
+  const getPenaltyMessage = () => {
+    const remainingFree = getRemainingAttempts();
+    
+    if (remainingFree > 0) {
+      return `${remainingFree} attempt${remainingFree === 1 ? '' : 's'} remaining before cooldown`;
+    } else if (rateLimitState.attempts <= PROGRESSIVE_PENALTY_ATTEMPTS) {
+      return "Next failed attempt will result in a 30-second cooldown";
+    } else if (rateLimitState.attempts < MAX_ATTEMPTS_BEFORE_LOCKOUT) {
+      return "Next failed attempt will result in a 2-minute cooldown";
+    } else {
+      return "Account temporarily locked due to multiple failed attempts";
+    }
+  };
+
   const getErrorMessage = () => {
     if (isRateLimited) {
+      const penaltyType = rateLimitState.penaltyLevel === 'long' && cooldownTimer > 180 
+        ? 'Supabase Rate Limit' 
+        : 'Too Many Attempts';
+        
       return (
         <div className="flex flex-col space-y-2">
           <div className="flex items-start gap-2">
             <Clock className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">Rate limit detected</p>
-              <p className="text-sm mt-1">Supabase enforces rate limits to prevent abuse. This happens when:</p>
-              <ul className="text-sm list-disc pl-5 mt-1 space-y-1">
-                <li>Too many sign-in attempts from your location</li>
-                <li>Too many attempts for this specific account</li>
-                <li>The authentication service is experiencing high traffic</li>
-              </ul>
+              <p className="font-semibold">{penaltyType}</p>
+              {rateLimitState.penaltyLevel === 'long' && cooldownTimer > 180 ? (
+                <>
+                  <p className="text-sm mt-1">Supabase has temporarily blocked sign-in attempts due to:</p>
+                  <ul className="text-sm list-disc pl-5 mt-1 space-y-1">
+                    <li>Too many requests from your location</li>
+                    <li>High traffic on the authentication service</li>
+                    <li>Multiple failed attempts for this account</li>
+                  </ul>
+                </>
+              ) : (
+                <p className="text-sm mt-1">
+                  Please wait before trying again. This helps prevent abuse and protects your account.
+                </p>
+              )}
             </div>
           </div>
           <div className="text-sm font-medium text-center mt-2 bg-amber-900/30 py-2 rounded-md border border-amber-800/50">
-            Cooldown: <span className="font-mono">{cooldownTimer}</span> seconds remaining
+            Cooldown: <span className="font-mono">{Math.floor(cooldownTimer / 60)}:{(cooldownTimer % 60).toString().padStart(2, '0')}</span> remaining
           </div>
         </div>
       );
     }
+
+    // Show attempt counter for regular errors (if we have attempts but aren't rate limited)  
+    if (error && rateLimitState.attempts > 0 && !isRateLimited) {
+      return (
+        <div className="flex flex-col space-y-2">
+          <div>{error}</div>
+          <div className="text-xs text-gray-400 text-center">
+            {getPenaltyMessage()}
+          </div>
+        </div>
+      );
+    }
+    
     return error;
   };
 
