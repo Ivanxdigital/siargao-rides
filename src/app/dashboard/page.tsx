@@ -261,7 +261,7 @@ export default function DashboardPage() {
     if (isAuthenticated && user) {
       fetchDashboardData();
     }
-  }, [isAuthenticated, user?.id, fetchDashboardData]); // Use user.id instead of user
+  }, [isAuthenticated, user?.id]); // Removed fetchDashboardData to prevent infinite loop
 
   // Helper function to fetch vehicle statistics and related data with timeout and parallel execution
   const fetchVehicleStats = async (supabase: any, shopId: string) => {
@@ -1089,7 +1089,7 @@ export default function DashboardPage() {
             Quick Actions
           </motion.h2>
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -1157,16 +1157,6 @@ export default function DashboardPage() {
                         <CalendarRange size={20} className="text-primary" />
                       </div>
                       <span className="font-medium text-white/90 text-sm md:text-base">My Bookings</span>
-                    </div>
-                  </Link>
-                </motion.div>
-                <motion.div variants={cardVariants}>
-                  <Link href="/dashboard/favorites" className="group">
-                    <div className="bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/30 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col items-center justify-center gap-2 md:gap-3 text-center">
-                      <div className="bg-primary/20 rounded-full p-3 md:p-4 mb-1 md:mb-2 group-hover:bg-primary/30 transition-all duration-300">
-                        <Heart size={20} className="text-primary" />
-                      </div>
-                      <span className="font-medium text-white/90 text-sm md:text-base">Favorites</span>
                     </div>
                   </Link>
                 </motion.div>
