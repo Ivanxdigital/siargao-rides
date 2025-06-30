@@ -60,6 +60,7 @@ interface RentalShop {
 // Define form data type
 interface ShopFormData {
   name: string;
+  username: string;
   description: string;
   address: string;
   phone_number: string;
@@ -85,6 +86,7 @@ export default function ManageShopPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<ShopFormData>({
     name: "",
+    username: "",
     description: "",
     address: "",
     phone_number: "",
@@ -123,6 +125,13 @@ export default function ManageShopPage() {
   const [bannerPositionX, setBannerPositionX] = useState<number>(50);
   const [bannerPositionY, setBannerPositionY] = useState<number>(50);
 
+  // Username availability states
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState<string>("");
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
+  const [usernameCheckTimeout, setUsernameCheckTimeout] = useState<NodeJS.Timeout | null>(null);
+
   // Refs for file inputs
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -159,6 +168,59 @@ export default function ManageShopPage() {
 
   // Add ref to prevent concurrent fetches
   const isFetchingRef = useRef(false);
+
+  // Username availability checking function
+  const checkUsernameAvailability = async (username: string) => {
+    if (!username || username.length < 3) {
+      setUsernameAvailable(null);
+      setUsernameError("");
+      setUsernameSuggestions([]);
+      return;
+    }
+
+    setIsCheckingUsername(true);
+    setUsernameError("");
+    setUsernameSuggestions([]);
+
+    try {
+      const response = await fetch(`/api/shops/username/check?username=${encodeURIComponent(username)}`);
+      const result = await response.json();
+
+      if (response.ok) {
+        setUsernameAvailable(result.available);
+        if (!result.available) {
+          setUsernameError(result.error || "Username is not available");
+          setUsernameSuggestions(result.suggestions || []);
+        }
+      } else {
+        setUsernameError(result.error || "Unable to check username availability");
+        setUsernameAvailable(false);
+      }
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      setUsernameError("Unable to check username availability");
+      setUsernameAvailable(false);
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  // Debounced username checking
+  const handleUsernameChange = (newUsername: string) => {
+    setFormData(prev => ({ ...prev, username: newUsername }));
+    
+    // Clear previous timeout
+    if (usernameCheckTimeout) {
+      clearTimeout(usernameCheckTimeout);
+    }
+
+    // Set new timeout for debounced checking
+    const timeout = setTimeout(() => {
+      checkUsernameAvailability(newUsername);
+    }, 500); // 500ms delay
+
+    setUsernameCheckTimeout(timeout);
+  };
 
   useEffect(() => {
     // Check if user is a shop owner
@@ -218,6 +280,7 @@ export default function ManageShopPage() {
             // Set form data from shop data if no saved data
             setFormData({
               name: shopData.name,
+              username: shopData.username || "",
               description: shopData.description || "",
               address: shopData.address,
               phone_number: shopData.phone_number || "",
@@ -262,6 +325,7 @@ export default function ManageShopPage() {
           // Fallback if localStorage is not available
           setFormData({
             name: shopData.name,
+            username: shopData.username || "",
             description: shopData.description || "",
             address: shopData.address,
             phone_number: shopData.phone_number || "",
@@ -595,6 +659,7 @@ export default function ManageShopPage() {
       // Initialize update data with form fields
       const updateData: any = {
         name: formData.name,
+        username: formData.username || null,
         description: formData.description,
         address: formData.address,
         phone_number: formData.phone_number,
@@ -806,7 +871,7 @@ export default function ManageShopPage() {
                 size="sm"
                 className="flex items-center gap-1 sm:gap-2 hover:bg-primary/5 border-primary/30 text-xs sm:text-sm flex-1 sm:flex-none justify-center"
               >
-                <Link href={`/shop/${shop?.id}`}>
+                <Link href={shop?.username ? `/shop/${shop.username}` : `/shop/${shop?.id}`}>
                   <Eye size={14} className="text-primary mr-1" />
                   <span className="sm:inline">View Public Listing</span>
                   <span className="inline sm:hidden">View Shop</span>
@@ -1162,6 +1227,81 @@ export default function ManageShopPage() {
                         className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         required
                       />
+                    </div>
+
+                    <div className="space-y-1 sm:space-y-2">
+                      <label htmlFor="username" className="block text-xs sm:text-sm font-medium mb-1">
+                        Shop Username
+                        <span className="text-xs text-muted-foreground ml-2">(for custom shop URL)</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        value={formData.username}
+                        onChange={(e) => handleUsernameChange(e.target.value)}
+                        placeholder="e.g. rentagao"
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 transition-all ${
+                          usernameAvailable === true 
+                            ? 'border-green-500 focus:ring-green-500/50' 
+                            : usernameAvailable === false 
+                            ? 'border-red-500 focus:ring-red-500/50' 
+                            : 'border-input focus:ring-primary/50'
+                        }`}
+                      />
+                      
+                      {/* Username availability feedback */}
+                      <div className="min-h-[20px] mt-1">
+                        {isCheckingUsername && (
+                          <div className="flex items-center text-xs text-blue-600">
+                            <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent mr-2"></div>
+                            Checking availability...
+                          </div>
+                        )}
+                        
+                        {!isCheckingUsername && usernameAvailable === true && formData.username && (
+                          <div className="flex items-center text-xs text-green-600">
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            Available! Your shop URL will be: /shop/{formData.username}
+                          </div>
+                        )}
+                        
+                        {!isCheckingUsername && usernameAvailable === false && usernameError && (
+                          <div className="text-xs text-red-600">
+                            <div className="flex items-center">
+                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              {usernameError}
+                            </div>
+                            
+                            {usernameSuggestions.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-muted-foreground mb-1">Suggestions:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {usernameSuggestions.slice(0, 3).map((suggestion) => (
+                                    <button
+                                      key={suggestion}
+                                      type="button"
+                                      onClick={() => handleUsernameChange(suggestion)}
+                                      className="px-2 py-1 text-xs bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
+                                    >
+                                      {suggestion}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground">
+                        Create a custom URL for your shop. Use 3-30 characters (letters, numbers, hyphens, underscores).
+                        Leave empty to use the default ID-based URL.
+                      </p>
                     </div>
 
                     <div className="space-y-1 sm:space-y-2">
@@ -1597,7 +1737,7 @@ export default function ManageShopPage() {
                       size="sm"
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/90"
                     >
-                      <Link href={`/shop/${shop?.id}`}>
+                      <Link href={shop?.username ? `/shop/${shop.username}` : `/shop/${shop?.id}`}>
                         <Eye size={16} className="mr-1" />
                         View Your Public Shop Listing
                       </Link>

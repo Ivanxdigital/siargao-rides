@@ -604,13 +604,14 @@ export default function BrowseShopsPage() {
                         <RentalShopCard
                           id={shop.id}
                           name={shop.name}
+                          username={shop.username}
                           images={shop.images || []}
                           startingPrice={shop.starting_price}
                           rating={shop.average_rating}
                           reviewCount={shop.review_count || 0}
                           location={shop.location_area || shop.city || 'Siargao'}
                           vehicleTypes={shop.vehicle_types || []}
-                          onClick={() => router.push(`/shop/${shop.id}`)}
+                          onClick={() => router.push(shop.username ? `/shop/${shop.username}` : `/shop/${shop.id}`)}
                         />
                       </motion.div>
                     ))}

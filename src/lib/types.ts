@@ -71,6 +71,7 @@ export type RentalShop = {
   id: string
   owner_id: string
   name: string
+  username?: string
   description?: string
   address: string
   city: string

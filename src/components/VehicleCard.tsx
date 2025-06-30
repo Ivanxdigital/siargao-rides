@@ -32,6 +32,7 @@ interface VehicleCardProps {
   shop?: {
     id: string
     name: string
+    username?: string
     logo?: string
     location?: string
   }
@@ -242,7 +243,7 @@ const VehicleCard = ({
         {/* Clean shop information */}
         {shop && (
           <div className="mb-6 mt-auto">
-            <Link href={`/shop/${shop.id}`} className="block group">
+            <Link href={shop.username ? `/shop/${shop.username}` : `/shop/${shop.id}`} className="block group">
               <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 group-hover:border-border transition-colors">
                 <div className="w-10 h-10 relative rounded-full overflow-hidden bg-muted flex-shrink-0">
                   {shop.logo ? (

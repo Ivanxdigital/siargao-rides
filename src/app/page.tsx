@@ -32,6 +32,7 @@ import {
 interface ShopCardData {
   id: string
   name: string
+  username?: string
   images: string[]
   startingPrice: number
   rating: number
@@ -772,7 +773,7 @@ export default function Home() {
                             enableTilt={!isMobile}
                             enableGlow={true}
                             glowColor="rgba(45, 212, 191, 0.15)"
-                            href={`/shop/${shop.id}`}
+                            href={shop.username ? `/shop/${shop.username}` : `/shop/${shop.id}`}
                             className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-xl h-full flex flex-col"
                           >
                             {/* Image Gallery with better layout */}

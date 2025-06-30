@@ -11,6 +11,7 @@ import { VehicleType } from "@/lib/types"
 interface RentalShopCardProps {
   id: string
   name: string
+  username?: string
   images: string[]
   startingPrice?: number
   rating?: number
@@ -25,6 +26,7 @@ interface RentalShopCardProps {
 const RentalShopCard = ({
   id,
   name,
+  username,
   images,
   startingPrice,
   rating,
@@ -36,6 +38,11 @@ const RentalShopCard = ({
   onClick
 }: RentalShopCardProps) => {
   const fallbackImage = "https://placehold.co/600x400/1e3b8a/white?text=Shop+Image"
+  
+  // Generate shop URL - prioritize username over ID
+  const getShopUrl = () => {
+    return username ? `/shop/${username}` : `/shop/${id}`
+  }
   
   return (
     <motion.div 
@@ -125,7 +132,7 @@ const RentalShopCard = ({
             </Button>
           ) : (
             <Button asChild className="w-full h-11 text-sm font-medium" variant="default">
-              <Link href={`/shop/${id}`}>
+              <Link href={getShopUrl()}>
                 View Shop
               </Link>
             </Button>

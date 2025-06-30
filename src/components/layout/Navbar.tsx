@@ -318,7 +318,7 @@ const Navbar = () => {
 
                       {shopData && (
                         <Link
-                          href={`/shop/${shopData.id}`}
+                          href={shopData.username ? `/shop/${shopData.username}` : `/shop/${shopData.id}`}
                           className="flex items-center gap-2 w-full p-2 text-sm hover:bg-primary/10 rounded-md transition-all duration-200 group"
                           onClick={closeMenus}
                         >
@@ -461,7 +461,7 @@ const Navbar = () => {
                   </MobileNavLink>
 
                   {shopData && (
-                    <MobileNavLink href={`/shop/${shopData.id}`} onClick={() => setIsMenuOpen(false)} icon={<ShoppingBag size={16} />}>
+                    <MobileNavLink href={shopData.username ? `/shop/${shopData.username}` : `/shop/${shopData.id}`} onClick={() => setIsMenuOpen(false)} icon={<ShoppingBag size={16} />}>
                       My Shop
                     </MobileNavLink>
                   )}

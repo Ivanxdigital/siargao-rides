@@ -92,6 +92,36 @@ export async function getShopById(id: string): Promise<RentalShop | null> {
   return data
 }
 
+export async function getShopByUsername(username: string): Promise<RentalShop | null> {
+  const { data, error } = await supabase
+    .from('rental_shops')
+    .select('*')
+    .ilike('username', username)
+    .single()
+
+  if (error) {
+    console.error(`Error fetching shop with username ${username}:`, error)
+    return null
+  }
+
+  return data
+}
+
+// Helper function to detect if a string is a UUID
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(str)
+}
+
+// Universal shop fetcher that handles both UUIDs and usernames
+export async function getShopByIdOrUsername(identifier: string): Promise<RentalShop | null> {
+  if (isUUID(identifier)) {
+    return getShopById(identifier)
+  } else {
+    return getShopByUsername(identifier)
+  }
+}
+
 export async function createShop(shop: Omit<RentalShop, 'id' | 'created_at' | 'updated_at' | 'is_verified'>): Promise<RentalShop | null> {
   console.log('Creating shop with data:', JSON.stringify(shop, null, 2));
   

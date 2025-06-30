@@ -46,6 +46,23 @@ export async function getShopById(id: string): Promise<RentalShop | null> {
   return api.getShopById(id);
 }
 
+export async function getShopByUsername(username: string): Promise<RentalShop | null> {
+  if (USE_MOCK_DATA) {
+    return mockShops.find(shop => shop.username?.toLowerCase() === username.toLowerCase()) || null;
+  }
+  return api.getShopByUsername(username);
+}
+
+export async function getShopByIdOrUsername(identifier: string): Promise<RentalShop | null> {
+  if (USE_MOCK_DATA) {
+    return mockShops.find(shop => 
+      shop.id === identifier || 
+      shop.username?.toLowerCase() === identifier.toLowerCase()
+    ) || null;
+  }
+  return api.getShopByIdOrUsername(identifier);
+}
+
 export async function createShop(shop: Omit<RentalShop, 'id' | 'created_at' | 'updated_at' | 'is_verified'>): Promise<RentalShop | null> {
   // Use our server API route to handle shop creation with admin privileges
   try {

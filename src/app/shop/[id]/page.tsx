@@ -149,7 +149,7 @@ export default function ShopPage() {
 
   // Add this function to check if user can review
   const checkUserCanReview = async () => {
-    if (!user) return
+    if (!user || !shop) return
 
     try {
       const supabase = createClientComponentClient()
@@ -158,7 +158,7 @@ export default function ShopPage() {
       const { data: rentalData, error: rentalError } = await supabase
         .from('rentals')
         .select('id')
-        .eq('shop_id', id)
+        .eq('shop_id', shop.id)
         .eq('user_id', user.id)
         .eq('status', 'completed')
         .limit(1)
@@ -172,7 +172,7 @@ export default function ShopPage() {
           *,
           user:users(*)
         `)
-        .eq('shop_id', id)
+        .eq('shop_id', shop.id)
         .eq('user_id', user.id)
         .limit(1)
 
@@ -192,6 +192,8 @@ export default function ShopPage() {
 
   // Add this function to refresh reviews
   const refreshReviews = async () => {
+    if (!shop) return
+
     try {
       const supabase = createClientComponentClient()
 
@@ -202,7 +204,7 @@ export default function ShopPage() {
           *,
           user:users(*)
         `)
-        .eq('shop_id', id);
+        .eq('shop_id', shop.id);
 
       if (reviewsError) {
         console.error('Error fetching reviews:', reviewsError);
@@ -220,7 +222,7 @@ export default function ShopPage() {
   useEffect(() => {
     async function fetchShopData() {
       if (!id || typeof id !== 'string') {
-        setError('Invalid shop ID')
+        setError('Invalid shop identifier')
         setLoading(false)
         return
       }
@@ -229,15 +231,11 @@ export default function ShopPage() {
         setLoading(true)
         const supabase = createClientComponentClient()
 
-        // Get shop data
-        const { data: shopData, error: shopError } = await supabase
-          .from('rental_shops')
-          .select('*')
-          .eq('id', id)
-          .single();
+        // Get shop data using universal fetcher (handles both UUIDs and usernames)
+        const shopData = await service.getShopByIdOrUsername(id)
 
-        if (shopError || !shopData) {
-          console.error('Error fetching shop:', shopError);
+        if (!shopData) {
+          console.error('Shop not found for identifier:', id);
           setError('Shop not found')
           setLoading(false)
           return
@@ -264,7 +262,7 @@ export default function ShopPage() {
               vehicle_images(*),
               vehicle_types(*)
             `)
-            .eq('shop_id', id)
+            .eq('shop_id', shopData.id)
             .eq('is_available', true)
             .eq('is_verified', true)
             .eq('verification_status', 'approved');
@@ -291,7 +289,7 @@ export default function ShopPage() {
               *,
               bike_images(*)
             `)
-            .eq('shop_id', id)
+            .eq('shop_id', shopData.id)
             .eq('is_available', true);
 
           if (bikesError) {
@@ -319,12 +317,17 @@ export default function ShopPage() {
             *,
             user:users(*)
           `)
-          .eq('shop_id', id);
+          .eq('shop_id', shopData.id);
 
         if (reviewsError) {
           console.error('Error fetching reviews:', reviewsError);
         } else {
           setReviews(reviewsData || [])
+        }
+
+        // Check if user can review when shop data is loaded
+        if (user) {
+          checkUserCanReview()
         }
 
         setLoading(false)
@@ -336,11 +339,6 @@ export default function ShopPage() {
     }
 
     fetchShopData()
-
-    // Check if user can review when shop data is loaded
-    if (user) {
-      checkUserCanReview()
-    }
   }, [id, user])
 
   const handleBookClick = (vehicleId: string) => {
@@ -355,7 +353,7 @@ export default function ShopPage() {
     }
 
     // Navigate to the booking page with vehicle ID and shop ID
-    router.push(`/booking/${vehicleId}?shop=${id}`)
+    router.push(`/booking/${vehicleId}?shop=${shop.id}`)
   }
 
   // Loading state
@@ -925,7 +923,7 @@ export default function ShopPage() {
                 {user ? (
                   userCanReview ? (
                     <ReviewDialog
-                      shopId={id as string}
+                      shopId={shop.id}
                       onReviewSubmitted={refreshReviews}
                     />
                   ) : (
@@ -972,7 +970,7 @@ export default function ShopPage() {
             >
               {userReview ? (
                 <ReviewDialog
-                  shopId={id as string}
+                  shopId={shop.id}
                   onReviewSubmitted={refreshReviews}
                   isUpdate={true}
                   existingReview={{
@@ -983,7 +981,7 @@ export default function ShopPage() {
                 />
               ) : userCanReview ? (
                 <ReviewDialog
-                  shopId={id as string}
+                  shopId={shop.id}
                   onReviewSubmitted={refreshReviews}
                 />
               ) : (
