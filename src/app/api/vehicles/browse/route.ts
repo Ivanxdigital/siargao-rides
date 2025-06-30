@@ -41,6 +41,11 @@ interface VehicleWithMetadata {
   shopIsShowcase?: boolean;
   images?: any[];
   is_available_for_dates?: boolean;
+  // Vehicle group fields
+  group_id?: string;
+  is_group?: boolean;
+  available_count?: number;
+  total_count?: number;
 }
 
 interface BrowseResponse {
@@ -80,6 +85,8 @@ export async function GET(request: NextRequest) {
       engine_size_max: url.searchParams.get('engine_size_max') ? parseInt(url.searchParams.get('engine_size_max')!) : undefined,
       sort_by: url.searchParams.get('sort_by') || 'price_asc'
     };
+    
+    const groupVehicles = url.searchParams.get('group_vehicles') !== 'false'; // Default to true
 
     // Validate pagination parameters
     const page = Math.max(1, filters.page || 1);
@@ -93,7 +100,11 @@ export async function GET(request: NextRequest) {
         *,
         vehicle_images(*),
         vehicle_types(id, name),
-        rental_shops!inner(id, name, logo_url, location_area, is_active, is_showcase)
+        rental_shops!inner(id, name, logo_url, location_area, is_active, is_showcase),
+        group_id,
+        group_index,
+        individual_identifier,
+        is_group_primary
       `, { count: 'exact' });
 
     // Apply basic filters
@@ -173,7 +184,11 @@ export async function GET(request: NextRequest) {
         shopIsShowcase: vehicle.rental_shops?.is_showcase || false,
         vehicle_type: (vehicle.vehicle_types?.name as VehicleType) || vehicle.vehicle_type || 'motorcycle',
         images: vehicle.vehicle_images || [],
-        is_available_for_dates: true // Will be updated if date filtering is applied
+        is_available_for_dates: true, // Will be updated if date filtering is applied
+        group_id: vehicle.group_id,
+        is_group: false, // Will be updated during grouping
+        available_count: 1,
+        total_count: 1
       })) as VehicleWithMetadata[];
 
       // Apply car-specific filters
@@ -253,6 +268,45 @@ export async function GET(request: NextRequest) {
             }))
             .filter(vehicle => vehicle.is_available_for_dates);
         }
+      }
+      
+      // Group vehicles if grouping is enabled
+      if (groupVehicles) {
+        const groupedVehiclesMap = new Map<string, VehicleWithMetadata[]>();
+        const ungroupedVehicles: VehicleWithMetadata[] = [];
+        
+        // Separate grouped and ungrouped vehicles
+        vehicles.forEach(vehicle => {
+          if (vehicle.group_id) {
+            if (!groupedVehiclesMap.has(vehicle.group_id)) {
+              groupedVehiclesMap.set(vehicle.group_id, []);
+            }
+            groupedVehiclesMap.get(vehicle.group_id)!.push(vehicle);
+          } else {
+            ungroupedVehicles.push(vehicle);
+          }
+        });
+        
+        // Process grouped vehicles
+        const processedGroups: VehicleWithMetadata[] = [];
+        groupedVehiclesMap.forEach((groupVehicles, groupId) => {
+          // Find the primary vehicle or use the first one
+          const primaryVehicle = groupVehicles.find(v => v.is_group_primary) || groupVehicles[0];
+          const availableInGroup = groupVehicles.filter(v => v.is_available_for_dates).length;
+          
+          // Create a single representative vehicle for the group
+          processedGroups.push({
+            ...primaryVehicle,
+            is_group: true,
+            available_count: availableInGroup,
+            total_count: groupVehicles.length,
+            // Use the lowest price in the group for sorting
+            price_per_day: Math.min(...groupVehicles.map(v => v.price_per_day))
+          });
+        });
+        
+        // Combine grouped and ungrouped vehicles
+        vehicles = [...processedGroups, ...ungroupedVehicles];
       }
     }
 

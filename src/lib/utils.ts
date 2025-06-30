@@ -40,3 +40,54 @@ export function formatTextWithLineBreaks(text: string): React.ReactElement {
 
   return React.createElement('span', {}, ...elements);
 }
+
+// Format price helper (alias for formatCurrency for compatibility)
+export function formatPrice(amount: number): string {
+  return formatCurrency(amount);
+}
+
+// Vehicle Group utility functions
+export function formatGroupAvailability(available: number, total: number): string {
+  if (available === 0) {
+    return 'No units available'
+  } else if (available === total) {
+    return 'All units available'
+  } else if (available === 1) {
+    return '1 unit available'
+  } else {
+    return `${available} of ${total} units available`
+  }
+}
+
+export function getAvailabilityColor(available: number, total: number): string {
+  const percentage = total > 0 ? (available / total) * 100 : 0
+  
+  if (percentage === 0) return 'red'
+  if (percentage <= 20) return 'orange'
+  if (percentage <= 50) return 'yellow'
+  return 'green'
+}
+
+export function formatUnitIdentifier(
+  pattern: string, 
+  index: number, 
+  vehicleName: string
+): string {
+  return pattern
+    .replace('{index}', index.toString())
+    .replace('{name}', vehicleName)
+}
+
+export function parseGroupNamingPattern(pattern: string): {
+  hasIndex: boolean
+  hasName: boolean
+  example: string
+} {
+  const hasIndex = pattern.includes('{index}')
+  const hasName = pattern.includes('{name}')
+  const example = pattern
+    .replace('{index}', '1')
+    .replace('{name}', 'Honda Click')
+  
+  return { hasIndex, hasName, example }
+}

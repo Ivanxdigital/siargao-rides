@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, Bike, Car, Truck, Calendar } from "lucide-react"
+import { ChevronLeft, ChevronRight, Bike, Car, Truck, Calendar, Users } from "lucide-react"
 import { motion } from "framer-motion"
 import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
@@ -41,6 +41,11 @@ interface VehicleCardProps {
     startDate: string
     endDate: string
   }
+  // Group-related props
+  isGroup?: boolean
+  groupId?: string
+  availableCount?: number
+  totalCount?: number
 }
 
 const VehicleCard = ({
@@ -57,6 +62,10 @@ const VehicleCard = ({
   onImageClick,
   shop,
   availabilityInfo,
+  isGroup = false,
+  groupId,
+  availableCount = 1,
+  totalCount = 1,
 }: VehicleCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
@@ -168,7 +177,16 @@ const VehicleCard = ({
         )}
 
         {/* Clean Availability Badge */}
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 right-4 flex flex-col gap-2">
+          {/* Group indicator badge */}
+          {isGroup && (
+            <div className="px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-md bg-purple-600/80 text-white flex items-center gap-1">
+              <Users size={14} />
+              {availableCount} of {totalCount} units
+            </div>
+          )}
+          
+          {/* Availability badge */}
           {availabilityInfo ? (
             <div className={`px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-md ${
               availabilityInfo.isAvailableForDates 
@@ -179,11 +197,11 @@ const VehicleCard = ({
             </div>
           ) : (
             <div className={`px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-md ${
-              isAvailable 
+              isAvailable && (!isGroup || availableCount > 0)
                 ? 'bg-green-500/80 text-white' 
                 : 'bg-red-500/80 text-white'
             }`}>
-              {isAvailable ? 'Available' : 'Not Available'}
+              {isAvailable && (!isGroup || availableCount > 0) ? 'Available' : 'Not Available'}
             </div>
           )}
         </div>
@@ -274,10 +292,10 @@ const VehicleCard = ({
         <div className="mt-auto">
           <Button
             className="w-full h-12 text-sm font-medium"
-            onClick={() => onBookClick?.(id)}
-            disabled={!isAvailable}
+            onClick={() => onBookClick?.(isGroup ? groupId || id : id)}
+            disabled={!isAvailable || (isGroup && availableCount === 0)}
           >
-            Book Now
+            {isGroup ? `Book from ${availableCount} Available` : 'Book Now'}
           </Button>
         </div>
       </div>

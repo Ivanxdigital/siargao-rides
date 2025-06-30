@@ -173,6 +173,11 @@ export type Vehicle = {
   created_at: string
   updated_at: string
   images?: VehicleImage[]
+  // Grouping fields
+  group_id?: string
+  group_index?: number
+  individual_identifier?: string
+  is_group_primary?: boolean
 }
 
 // Legacy BikeImage type (keeping for backward compatibility)
@@ -217,6 +222,60 @@ export type VehicleSpecifications = {
   // Allow for extensibility
   features?: string[]
   [key: string]: any
+}
+
+// Vehicle Group types
+export type VehicleGroupAssignmentStrategy = 'sequential' | 'random' | 'least_used';
+
+export type VehicleGroup = {
+  id: string
+  shop_id: string
+  name: string
+  base_vehicle_id?: string
+  vehicle_type_id: string
+  category_id: string
+  total_quantity: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type VehicleGroupSettings = {
+  group_id: string
+  auto_assign_strategy: VehicleGroupAssignmentStrategy
+  naming_pattern: string
+  share_images: boolean
+  share_pricing: boolean
+  share_specifications: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type VehicleGroupWithDetails = VehicleGroup & {
+  settings?: VehicleGroupSettings
+  vehicles?: Vehicle[]
+  shop?: RentalShop
+  vehicle_type_name?: string
+  category_name?: string
+  available_count?: number
+  total_count?: number
+  price_per_day?: number
+  price_per_week?: number
+  price_per_month?: number
+  specifications?: VehicleSpecifications
+  images?: VehicleImage[]
+}
+
+export type VehicleGroupAvailability = {
+  group_id: string
+  available_count: number
+  total_count: number
+  available_vehicles: string[]
+}
+
+export type VehicleWithGroup = Vehicle & {
+  group?: VehicleGroup
+  group_availability?: VehicleGroupAvailability
 }
 
 // Van Service type for specialized van services
@@ -412,3 +471,60 @@ export type PaymentMethod = {
   is_active: boolean;
   requires_deposit?: boolean;
 };
+
+// Vehicle Group API types
+export interface CreateVehicleGroupRequest {
+  name: string;
+  vehicle_type_id: string;
+  category_id: string;
+  quantity: number;
+  base_vehicle_data: {
+    description?: string;
+    price_per_day: number;
+    price_per_week?: number;
+    price_per_month?: number;
+    specifications?: VehicleSpecifications;
+    images?: VehicleImage[];
+    documents?: VehicleDocument[];
+  };
+  naming_pattern?: string;
+  individual_names?: string[];
+}
+
+export interface BulkActionRequest {
+  action: 'set-availability' | 'update-pricing' | 'block-dates';
+  vehicle_ids?: string[];
+  data: Record<string, any>;
+}
+
+export interface GroupAvailabilityRequest {
+  start_date: string;
+  end_date: string;
+}
+
+export interface GroupAvailabilityResponse {
+  group_id: string;
+  start_date: string;
+  end_date: string;
+  total_vehicles: number;
+  available_count: number;
+  available_vehicles: Array<{
+    id: string;
+    identifier: string;
+    next_available_date?: string;
+  }>;
+}
+
+export interface CreateGroupResponse {
+  group: VehicleGroup;
+  vehicles: Vehicle[];
+  success: boolean;
+  message?: string;
+}
+
+export interface VehicleDocument {
+  type: 'registration' | 'insurance' | 'other';
+  url: string;
+  name: string;
+  uploaded_at: string;
+}

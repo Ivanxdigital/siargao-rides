@@ -14,6 +14,24 @@ interface VehicleDocument {
   uploaded_at: string;
 }
 
+interface CreateVehicleRequest {
+  name: string;
+  vehicle_type_id: string;
+  category_id?: string;
+  description?: string;
+  price_per_day: number;
+  price_per_week?: number;
+  price_per_month?: number;
+  specifications?: VehicleSpecifications;
+  documents?: VehicleDocument[];
+  images?: Array<{ image_url: string; is_primary: boolean }>;
+  // Grouping fields
+  create_as_group?: boolean;
+  quantity?: number;
+  naming_pattern?: string;
+  individual_names?: string[];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerComponentClient({ cookies });
@@ -66,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Parse request body
-    const vehicleData = await request.json();
+    const vehicleData: CreateVehicleRequest = await request.json();
     
     // Validate vehicle data
     if (!vehicleData.name || !vehicleData.vehicle_type_id || !vehicleData.price_per_day) {
@@ -76,6 +94,75 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Check if this is a group creation request
+    if (vehicleData.create_as_group && vehicleData.quantity) {
+      // Validate quantity
+      if (vehicleData.quantity < 1 || vehicleData.quantity > 100) {
+        return NextResponse.json(
+          { error: 'Quantity must be between 1 and 100' },
+          { status: 400 }
+        );
+      }
+      
+      // Create vehicle group
+      const { data: result, error: groupError } = await supabase
+        .rpc('create_vehicle_group_with_vehicles', {
+          p_shop_id: shopData.id,
+          p_name: vehicleData.name,
+          p_vehicle_type_id: vehicleData.vehicle_type_id,
+          p_category_id: vehicleData.category_id || null,
+          p_quantity: vehicleData.quantity,
+          p_vehicle_data: {
+            description: vehicleData.description || '',
+            price_per_day: vehicleData.price_per_day,
+            price_per_week: vehicleData.price_per_week || null,
+            price_per_month: vehicleData.price_per_month || null,
+            specifications: vehicleData.specifications || {},
+            documents: vehicleData.documents || []
+          },
+          p_naming_pattern: vehicleData.naming_pattern || 'Unit {index}',
+          p_individual_names: vehicleData.individual_names || null
+        });
+      
+      if (groupError) {
+        console.error('Error creating vehicle group:', groupError);
+        return NextResponse.json(
+          { error: 'Failed to create vehicle group', details: groupError.message },
+          { status: 500 }
+        );
+      }
+      
+      const { group_id, vehicle_ids } = result[0];
+      
+      // Handle images for all vehicles if provided
+      if (vehicleData.images && vehicleData.images.length > 0) {
+        const imageInserts = vehicle_ids.flatMap((vehicleId: string) => 
+          vehicleData.images!.map(image => ({
+            vehicle_id: vehicleId,
+            image_url: image.image_url,
+            is_primary: image.is_primary
+          }))
+        );
+        
+        const { error: imageError } = await supabase
+          .from('vehicle_images')
+          .insert(imageInserts);
+        
+        if (imageError) {
+          console.error('Error creating vehicle images:', imageError);
+        }
+      }
+      
+      return NextResponse.json({
+        success: true,
+        message: `Successfully created ${vehicleData.quantity} vehicles as a group`,
+        group_id,
+        vehicle_ids,
+        is_group: true
+      });
+    }
+    
+    // Regular single vehicle creation continues below
     // Validate documents if provided (registration required, insurance optional)
     const documents = vehicleData.documents || [];
     let hasRequiredDocs = false;
