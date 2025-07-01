@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 function generateRobotsTxt(): string {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://siargaorides.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://siargaorides.ph'
   
   const robotsTxt = `# Robots.txt for Siargao Rides - Vehicle Rental Directory
-# https://siargaorides.com
+# https://siargaorides.ph
 
 User-agent: *
 Allow: /
