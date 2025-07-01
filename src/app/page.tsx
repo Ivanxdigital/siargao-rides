@@ -415,7 +415,8 @@ export default function Home() {
               alt="Siargao Motorbike Rental"
               fill
               className="object-cover"
-              priority
+              priority={true}
+              sizes="100vw"
             />
           </motion.div>
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/70 z-10"></div>
