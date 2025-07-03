@@ -146,6 +146,26 @@ export async function GET(request: NextRequest) {
       vehicleQuery = vehicleQuery.eq('rental_shops.location_area', filters.location);
     }
 
+    // Apply car-specific filters at database level
+    if (filters.vehicle_type === 'car') {
+      if (filters.min_seats) {
+        vehicleQuery = vehicleQuery.gte('specifications->seats', filters.min_seats);
+      }
+      if (filters.transmission && filters.transmission !== 'any') {
+        vehicleQuery = vehicleQuery.eq('specifications->transmission', filters.transmission);
+      }
+    }
+
+    // Apply motorcycle-specific filters at database level
+    if (filters.vehicle_type === 'motorcycle') {
+      if (filters.engine_size_min !== undefined) {
+        vehicleQuery = vehicleQuery.gte('specifications->engine', filters.engine_size_min);
+      }
+      if (filters.engine_size_max !== undefined) {
+        vehicleQuery = vehicleQuery.lte('specifications->engine', filters.engine_size_max);
+      }
+    }
+
     // Apply sorting
     switch (filters.sort_by) {
       case 'price_desc':
@@ -157,10 +177,7 @@ export async function GET(request: NextRequest) {
         break;
     }
 
-    // Apply pagination
-    vehicleQuery = vehicleQuery.range(offset, offset + limit - 1);
-
-    // Execute the query
+    // Execute the query WITHOUT pagination - we'll paginate after processing
     const { data: vehicleData, error: vehicleError, count } = await vehicleQuery;
 
     if (vehicleError) {
@@ -191,35 +208,6 @@ export async function GET(request: NextRequest) {
         total_count: 1
       })) as VehicleWithMetadata[];
 
-      // Apply car-specific filters
-      if (filters.vehicle_type === 'car') {
-        if (filters.min_seats) {
-          vehicles = vehicles.filter(v => 
-            v.specifications?.seats && v.specifications.seats >= filters.min_seats!
-          );
-        }
-        if (filters.transmission && filters.transmission !== 'any') {
-          vehicles = vehicles.filter(v => 
-            v.specifications?.transmission === filters.transmission
-          );
-        }
-      }
-
-      // Apply motorcycle-specific filters
-      if (filters.vehicle_type === 'motorcycle') {
-        if (filters.engine_size_min !== undefined || filters.engine_size_max !== undefined) {
-          vehicles = vehicles.filter(v => {
-            const engineSize = parseFloat(v.specifications?.engine || '0');
-            if (filters.engine_size_min !== undefined && engineSize < filters.engine_size_min) {
-              return false;
-            }
-            if (filters.engine_size_max !== undefined && engineSize > filters.engine_size_max) {
-              return false;
-            }
-            return true;
-          });
-        }
-      }
 
       // Apply date availability filtering if dates are provided
       if (filters.start_date && filters.end_date && filters.only_available) {
@@ -310,6 +298,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Now apply pagination to the processed vehicles
+    const totalProcessedVehicles = vehicles.length;
+    const totalPages = Math.ceil(totalProcessedVehicles / limit);
+    const startIndex = offset;
+    const endIndex = startIndex + limit;
+    
+    // Slice the processed vehicles for the current page
+    const paginatedVehicles = vehicles.slice(startIndex, endIndex);
+
     // Get categories and locations (cached/separate queries)
     const [categoriesResult, locationsResult] = await Promise.all([
       // Get categories
@@ -349,21 +346,18 @@ export async function GET(request: NextRequest) {
       new Set(locationsResult.data?.map(shop => shop.location_area).filter(Boolean) || [])
     ) as string[];
 
-    // Calculate pagination metadata
-    const totalVehicles = count || 0;
-    const totalPages = Math.ceil(totalVehicles / limit);
-    
+    // Calculate pagination metadata based on processed vehicles
     const pagination = {
       page,
       limit,
-      total: totalVehicles,
+      total: totalProcessedVehicles,
       totalPages,
       hasNext: page < totalPages,
       hasPrev: page > 1
     };
 
     const response: BrowseResponse = {
-      vehicles,
+      vehicles: paginatedVehicles,
       pagination,
       availableCategories: allCategories,
       locations: allLocations

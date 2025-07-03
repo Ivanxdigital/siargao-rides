@@ -142,10 +142,8 @@ export default function BrowsePage() {
     sort_by: sortBy
   })
 
-  // Build current filters object
-  const currentFilters: BrowseFilters = useMemo(() => ({
-    page: currentPage,
-    limit: pageSize,
+  // Build current filters object (excluding pagination)
+  const currentFiltersWithoutPage: Omit<BrowseFilters, 'page' | 'limit'> = useMemo(() => ({
     price_min: priceRange[0],
     price_max: priceRange[1],
     vehicle_type: selectedVehicleType,
@@ -160,23 +158,39 @@ export default function BrowsePage() {
     engine_size_max: engineSizeRange[1] < 1000 ? engineSizeRange[1] : undefined,
     sort_by: sortBy
   }), [
-    currentPage, pageSize, priceRange, selectedVehicleType, selectedCategories, 
+    priceRange, selectedVehicleType, selectedCategories, 
     selectedLocation, startDateObj, endDateObj, onlyShowAvailable, minSeats, 
     transmission, engineSizeRange, sortBy
   ])
 
-  // Debounce filter changes (except pagination)
+  // Build complete filters object with pagination
+  const currentFilters: BrowseFilters = useMemo(() => ({
+    ...currentFiltersWithoutPage,
+    page: currentPage,
+    limit: pageSize,
+  }), [currentFiltersWithoutPage, currentPage, pageSize])
+
+  // Debounce filter changes (excluding pagination)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      setDebouncedFilters(currentFilters)
-      // Reset to page 1 when filters change (except when page changes)
-      if (currentPage !== 1 && currentFilters.page === currentPage) {
+      setDebouncedFilters({
+        ...currentFiltersWithoutPage,
+        page: 1, // Reset to page 1 when filters change
+        limit: pageSize,
+      })
+      // Reset current page to 1 when filters change
+      if (currentPage !== 1) {
         setCurrentPage(1)
       }
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [currentFilters, currentPage])
+  }, [currentFiltersWithoutPage, pageSize, currentPage])
+
+  // Handle pagination changes immediately (no debounce)
+  useEffect(() => {
+    setDebouncedFilters(currentFilters)
+  }, [currentPage])
 
   // React Query for vehicle data
   const {
@@ -368,8 +382,8 @@ export default function BrowsePage() {
   }
 
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: "Home", url: "https://siargaorides.com" },
-    { name: "Browse Vehicles", url: "https://siargaorides.com/browse" }
+    { name: "Home", url: "https://siargaorides.ph" },
+    { name: "Browse Vehicles", url: "https://siargaorides.ph/browse" }
   ])
 
   const localBusinessSchema = generateLocalBusinessSchema()
@@ -425,7 +439,7 @@ export default function BrowsePage() {
       />
 
       <div className="min-h-screen">
-        <header className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden">
+        <header className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden pt-20">
           <motion.div
             className="absolute inset-0 z-0 opacity-20"
             initial={{ scale: 1.1 }}
