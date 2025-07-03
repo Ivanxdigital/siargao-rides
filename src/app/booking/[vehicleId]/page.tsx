@@ -74,8 +74,8 @@ export default function BookingPage() {
   useEffect(() => {
     // Fetch vehicle and shop data
     const fetchData = async () => {
-      if (!vehicleId || !shopId) {
-        setError("Missing vehicle or shop ID");
+      if (!vehicleId) {
+        setError("Missing vehicle ID");
         setLoading(false);
         return;
       }
@@ -138,15 +138,24 @@ export default function BookingPage() {
           // Check if this vehicle is part of a group
           if (formattedVehicle.group_id) {
             try {
-              // Fetch group information
+              // Fetch group information from vehicle_groups table
               const { data: groupData, error: groupError } = await supabase
-                .from('vehicle_group_availability')
-                .select('*')
+                .from('vehicle_groups')
+                .select(`
+                  *,
+                  vehicle_group_settings(*)
+                `)
                 .eq('id', formattedVehicle.group_id)
                 .single();
 
               if (!groupError && groupData) {
-                setVehicleGroup(groupData);
+                // Format group data to match expected interface
+                const formattedGroup = {
+                  ...groupData,
+                  total_units: groupData.quantity || 1,
+                  available_units: groupData.quantity || 1, // This will be updated with real availability
+                };
+                setVehicleGroup(formattedGroup);
 
                 // If dates are selected, check which vehicles are available for those dates
                 if (startDate && endDate) {
@@ -155,7 +164,7 @@ export default function BookingPage() {
               }
             } catch (groupError) {
               console.error('Error fetching group data:', groupError);
-              // Continue without group data
+              // Continue without group data - allow individual vehicle booking
             }
           }
         } catch (vehicleError) {
@@ -165,11 +174,18 @@ export default function BookingPage() {
           return;
         }
 
-        // Get shop data
+        // Get shop data - use shopId from URL params or fall back to vehicle's shop_id
+        const effectiveShopId = shopId || formattedVehicle.shop_id;
+        if (!effectiveShopId) {
+          setError('Shop information not available');
+          setLoading(false);
+          return;
+        }
+
         const { data: shopData, error: shopError } = await supabase
           .from('rental_shops')
           .select('*')
-          .eq('id', shopId)
+          .eq('id', effectiveShopId)
           .single();
 
         if (shopError || !shopData) {

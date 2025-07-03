@@ -242,24 +242,33 @@ export default function BrowsePage() {
 
   const handleBookClick = (vehicleId: string) => {
     const vehicle = vehicles.find(v => v.id === vehicleId)
-    if (vehicle && vehicle.shopId) {
-      if (vehicle.shopIsShowcase) {
-        alert('This is a showcase shop for demonstration purposes only. Bookings are not available.');
-        return;
-      }
-
-      const queryParams = new URLSearchParams();
-      queryParams.append('shop', vehicle.shopId);
-
-      if (startDateObj && endDateObj && dateRangeSelected) {
-        queryParams.append('startDate', startDateObj.toISOString().split('T')[0]);
-        queryParams.append('endDate', endDateObj.toISOString().split('T')[0]);
-      }
-
-      router.push(`/booking/${vehicleId}?${queryParams.toString()}`);
-    } else {
-      router.push(`/booking/${vehicleId}`)
+    if (!vehicle) {
+      console.error('Vehicle not found for booking:', vehicleId);
+      return;
     }
+
+    if (vehicle.shopIsShowcase) {
+      alert('This is a showcase shop for demonstration purposes only. Bookings are not available.');
+      return;
+    }
+
+    const queryParams = new URLSearchParams();
+    
+    // Always include shop ID if available
+    if (vehicle.shopId) {
+      queryParams.append('shop', vehicle.shopId);
+    }
+
+    // Include dates if selected
+    if (startDateObj && endDateObj && dateRangeSelected) {
+      queryParams.append('startDate', startDateObj.toISOString().split('T')[0]);
+      queryParams.append('endDate', endDateObj.toISOString().split('T')[0]);
+    }
+
+    const queryString = queryParams.toString();
+    const bookingUrl = queryString ? `/booking/${vehicleId}?${queryString}` : `/booking/${vehicleId}`;
+    
+    router.push(bookingUrl);
   }
 
   const handlePageChange = (page: number) => {

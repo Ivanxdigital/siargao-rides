@@ -292,7 +292,7 @@ const VehicleCard = ({
         <div className="mt-auto">
           <Button
             className="w-full h-12 text-sm font-medium"
-            onClick={() => onBookClick?.(isGroup ? groupId || id : id)}
+            onClick={() => onBookClick?.(id)} // Always pass the actual vehicle ID, not group ID
             disabled={!isAvailable || (isGroup && availableCount === 0)}
           >
             {isGroup ? `Book from ${availableCount} Available` : 'Book Now'}
