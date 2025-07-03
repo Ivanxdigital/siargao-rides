@@ -17,6 +17,15 @@ import imageCompression from 'browser-image-compression';
 import BannerPositionTool from "@/components/BannerPositionTool";
 import { SMSNotificationHistory } from "@/components/shop/SMSNotificationHistory";
 
+// Utility function for adding timeouts to promises
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> => {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(`${operation} timeout after ${timeoutMs}ms`)), timeoutMs);
+  });
+  
+  return Promise.race([promise, timeoutPromise]);
+};
+
 // Use the shared locations from constants
 const siargaoLocations = SIARGAO_LOCATIONS;
 
@@ -166,8 +175,9 @@ export default function ManageShopPage() {
     }
   };
 
-  // Add ref to prevent concurrent fetches
+  // Add ref to prevent concurrent fetches with timeout safety
   const isFetchingRef = useRef(false);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Username availability checking function
   const checkUsernameAvailability = async (username: string) => {
@@ -229,36 +239,216 @@ export default function ManageShopPage() {
       return;
     }
 
+    // Navigation guard: Ensure user has proper metadata before proceeding
+    if (user && user.user_metadata?.role === "shop_owner") {
+      const hasShop = user.user_metadata?.has_shop;
+      
+      console.log("Shop page navigation guard check:", {
+        hasShop,
+        role: user.user_metadata?.role,
+        userId: user.id
+      });
+      
+      // If user definitely doesn't have a shop, redirect to dashboard for onboarding
+      if (hasShop === false) {
+        console.log("User doesn't have shop (has_shop=false), redirecting to dashboard for onboarding");
+        router.push("/dashboard");
+        return;
+      }
+      
+      // If metadata is undefined, this could be an old user or stale session
+      // Continue to load and let the retry logic handle it
+      if (hasShop === undefined) {
+        console.log("User metadata has_shop is undefined, proceeding with shop fetch (will use retry logic if needed)");
+      }
+    }
+
     // Fetch shop data
     const fetchShop = async () => {
       if (!user) return;
 
-      // Prevent concurrent fetches
+      // Prevent concurrent fetches with safety timeout
       if (isFetchingRef.current) {
         console.log("Already fetching shop data, skipping duplicate call");
         return;
       }
 
+      // Safety timeout to prevent isFetchingRef from getting stuck
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+      fetchTimeoutRef.current = setTimeout(() => {
+        console.warn("Shop fetch timeout reached, clearing isFetchingRef");
+        isFetchingRef.current = false;
+        setIsLoading(false);
+      }, 15000); // 15 second safety timeout
+
       try {
         isFetchingRef.current = true;
         setIsLoading(true);
 
-        // Get the shop owned by this user
-        const { data, error: shopError } = await supabase
-          .from("rental_shops")
-          .select("*, status")
-          .eq("owner_id", user.id)
-          .single();
+        // Get the shop owned by this user with timeout
+        const { data, error: shopError } = await withTimeout(
+          supabase
+            .from("rental_shops")
+            .select("*, status")
+            .eq("owner_id", user.id)
+            .single(),
+          10000,
+          'Shop data fetch'
+        );
 
         if (shopError) {
+          console.error("Shop query error:", {
+            code: shopError.code,
+            message: shopError.message,
+            details: shopError.details,
+            hint: shopError.hint,
+            userRole: user?.user_metadata?.role,
+            hasShop: user?.user_metadata?.has_shop,
+            timestamp: new Date().toISOString()
+          });
+
           if (shopError.code === 'PGRST116') {
-            // No shop found for this user
-            setError("You don't have a shop registered yet.");
+            // No shop found - could be timing issue or user doesn't have shop
+            if (user?.user_metadata?.has_shop === true) {
+              // Race condition: metadata says has_shop but query failed
+              console.log("Race condition detected: has_shop=true but shop not found, implementing retry logic");
+              
+              // Implement retry with exponential backoff
+              const maxRetries = 3;
+              for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 4000); // 1s, 2s, 4s
+                console.log(`Retry attempt ${attempt}/${maxRetries} in ${delay}ms...`);
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+                
+                const { data: retryData, error: retryError } = await withTimeout(
+                  supabase
+                    .from("rental_shops")
+                    .select("*, status")
+                    .eq("owner_id", user.id)
+                    .single(),
+                  8000,
+                  `Shop data retry ${attempt}`
+                );
+                
+                if (!retryError && retryData) {
+                  console.log(`Retry successful on attempt ${attempt}!`);
+                  // Set the shop data and continue with the rest of the function
+                  const shopData = retryData as RentalShop;
+                  setShop(shopData);
+                  
+                  // Continue with form data initialization and vehicle stats
+                  if (typeof window !== 'undefined') {
+                    const savedFormData = localStorage.getItem(`shop_form_${shopData.id}`);
+                    const savedEditingState = localStorage.getItem(`shop_editing_${shopData.id}`);
+                    const savedBannerPreview = localStorage.getItem(`shop_banner_preview_${shopData.id}`);
+                    const savedLogoPreview = localStorage.getItem(`shop_logo_preview_${shopData.id}`);
+
+                    if (savedFormData) {
+                      setFormData(JSON.parse(savedFormData));
+                    } else {
+                      setFormData({
+                        name: shopData.name,
+                        username: shopData.username || "",
+                        description: shopData.description || "",
+                        address: shopData.address,
+                        phone_number: shopData.phone_number || "",
+                        whatsapp: shopData.whatsapp || "",
+                        email: shopData.email || "",
+                        location_area: shopData.location_area || "",
+                        offers_delivery: shopData.offers_delivery || false,
+                        delivery_fee: shopData.delivery_fee || 0,
+                        requires_id_deposit: shopData.requires_id_deposit !== false,
+                        requires_cash_deposit: shopData.requires_cash_deposit || false,
+                        cash_deposit_amount: shopData.cash_deposit_amount || 0,
+                        facebook_url: shopData.facebook_url || "",
+                        instagram_url: shopData.instagram_url || "",
+                        phone_number: shopData.phone_number || "",
+                        sms_notifications_enabled: shopData.sms_notifications_enabled ?? true
+                      });
+                    }
+
+                    if (savedEditingState) {
+                      setIsEditing(savedEditingState === 'true');
+                    }
+
+                    if (savedBannerPreview) {
+                      setBannerPreview(savedBannerPreview);
+                    } else if (shopData.banner_url) {
+                      setBannerPreview(shopData.banner_url);
+                    }
+
+                    setBannerPositionX(shopData.banner_position_x || 50);
+                    setBannerPositionY(shopData.banner_position_y || 50);
+
+                    if (savedLogoPreview) {
+                      setLogoPreview(savedLogoPreview);
+                    } else if (shopData.logo_url) {
+                      setLogoPreview(shopData.logo_url);
+                    }
+                  }
+
+                  // Fetch vehicle statistics with timeout
+                  try {
+                    const { data: bikes, error: bikesError } = await withTimeout(
+                      supabase
+                        .from("bikes")
+                        .select("*")
+                        .eq("shop_id", shopData.id),
+                      5000,
+                      'Vehicle stats fetch after retry'
+                    );
+
+                    if (!bikesError && bikes) {
+                      setVehicleStats({
+                        totalVehicles: bikes.length,
+                        availableVehicles: bikes.filter(bike => bike.is_available).length,
+                        rentedVehicles: bikes.filter(bike => !bike.is_available).length
+                      });
+                    }
+                  } catch (vehicleError) {
+                    console.warn("Error fetching vehicle stats after retry:", vehicleError);
+                    // Don't fail the whole operation for vehicle stats
+                  }
+
+                  setIsLoading(false);
+                  isFetchingRef.current = false;
+                  if (fetchTimeoutRef.current) {
+                    clearTimeout(fetchTimeoutRef.current);
+                    fetchTimeoutRef.current = null;
+                  }
+                  return;
+                } else if (attempt === maxRetries) {
+                  // All retries failed
+                  setError("Your shop is still being set up. Please refresh the page in a moment or contact support if this persists.");
+                  setIsLoading(false);
+                  isFetchingRef.current = false;
+                  return;
+                }
+              }
+            } else {
+              // User truly doesn't have a shop
+              setError("You don't have a shop registered yet. Please complete the shop registration process.");
+              setIsLoading(false);
+              isFetchingRef.current = false;
+              return;
+            }
+          } else if (shopError.code === '42501' || shopError.message?.includes('permission')) {
+            // Permission denied - likely RLS policy issue
+            setError("Unable to access your shop data. Please try refreshing the page or contact support.");
+            setIsLoading(false);
+            isFetchingRef.current = false;
+            return;
+          } else {
+            // Other database errors
+            console.error("Database error fetching shop:", shopError);
+            setError(`Failed to load shop data: ${shopError.message}. Please refresh the page.`);
             setIsLoading(false);
             isFetchingRef.current = false;
             return;
           }
-          throw shopError;
         }
 
         // Cast the data to the RentalShop type
@@ -353,25 +543,57 @@ export default function ManageShopPage() {
           }
         }
 
-        // Fetch vehicle statistics
-        const { data: bikes, error: bikesError } = await supabase
-          .from("bikes")
-          .select("*")
-          .eq("shop_id", shopData.id);
+        // Fetch vehicle statistics with timeout
+        try {
+          const { data: bikes, error: bikesError } = await withTimeout(
+            supabase
+              .from("bikes")
+              .select("*")
+              .eq("shop_id", shopData.id),
+            5000,
+            'Vehicle stats fetch'
+          );
 
-        if (!bikesError && bikes) {
+          if (!bikesError && bikes) {
+            setVehicleStats({
+              totalVehicles: bikes.length,
+              availableVehicles: bikes.filter(bike => bike.is_available).length,
+              rentedVehicles: bikes.filter(bike => !bike.is_available).length
+            });
+          }
+        } catch (vehicleError) {
+          console.warn("Error fetching vehicle stats:", vehicleError);
+          // Don't fail the whole operation for vehicle stats
           setVehicleStats({
-            totalVehicles: bikes.length,
-            availableVehicles: bikes.filter(bike => bike.is_available).length,
-            rentedVehicles: bikes.filter(bike => !bike.is_available).length
+            totalVehicles: 0,
+            availableVehicles: 0,
+            rentedVehicles: 0
           });
         }
       } catch (error) {
         console.error("Error fetching shop:", error);
-        setError("Failed to load shop data");
+        
+        // Handle different types of errors
+        if (error instanceof Error) {
+          if (error.message.includes('timeout')) {
+            setError("Loading is taking longer than expected. Please check your connection and try refreshing the page.");
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            setError("Network error occurred. Please check your internet connection and try again.");
+          } else {
+            setError(`Failed to load shop data: ${error.message}`);
+          }
+        } else {
+          setError("An unexpected error occurred. Please refresh the page and try again.");
+        }
       } finally {
         setIsLoading(false);
         isFetchingRef.current = false;
+        
+        // Clear the safety timeout
+        if (fetchTimeoutRef.current) {
+          clearTimeout(fetchTimeoutRef.current);
+          fetchTimeoutRef.current = null;
+        }
       }
     };
 
@@ -379,6 +601,16 @@ export default function ManageShopPage() {
       fetchShop();
     }
   }, [isAuthenticated, user?.id, router]); // Use user.id instead of user to prevent loops
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+        fetchTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const handleEditToggle = () => {
     // Reset previews when canceling edit
@@ -809,17 +1041,40 @@ export default function ManageShopPage() {
     );
   }
 
-  // Show loading state
+  // Show loading state with enhanced messaging
   if (isLoading) {
+    const isNewShop = user?.user_metadata?.has_shop === true && !shop;
+    
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold mb-4">
+              {isNewShop ? "Setting up your shop..." : "Loading shop data..."}
+            </h1>
+            <p className="text-muted-foreground">
+              {isNewShop 
+                ? "Your shop is being prepared. This may take a moment as we sync your data."
+                : "Please wait while we load your shop information."
+              }
+            </p>
+          </div>
+          
           <div className="animate-pulse flex flex-col space-y-6">
             <div className="h-8 bg-muted rounded w-1/3"></div>
             <div className="h-64 bg-muted rounded-lg"></div>
             <div className="h-40 bg-muted rounded-lg"></div>
             <div className="h-40 bg-muted rounded-lg"></div>
           </div>
+          
+          {isNewShop && (
+            <div className="mt-8 text-center">
+              <div className="inline-flex items-center gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span>First-time setup in progress...</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

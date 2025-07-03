@@ -166,18 +166,31 @@ ALTER TABLE rentals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
 
--- Create policies (examples - adjust as needed)
+-- Create RLS policies
 CREATE POLICY "Public users are viewable by everyone"
 ON users FOR SELECT
 USING (true);
 
+-- Comprehensive rental shops SELECT policy - consolidates all access patterns
+CREATE POLICY "Comprehensive rental shops SELECT policy"
+ON rental_shops FOR SELECT
+USING (
+    -- Public can see active, verified shops
+    (status = 'active' AND is_verified = true)
+    OR
+    -- Owners can see their own shops regardless of status
+    (auth.uid() = owner_id)
+    OR
+    -- Admins can see all shops
+    (EXISTS (
+        SELECT 1 FROM users
+        WHERE id = auth.uid() AND role = 'admin'
+    ))
+);
+
 CREATE POLICY "Shop owners can update their own shops"
 ON rental_shops FOR UPDATE
 USING (owner_id = auth.uid());
-
-CREATE POLICY "Public rental shops are viewable by everyone"
-ON rental_shops FOR SELECT
-USING (true);
 
 CREATE POLICY "Authenticated users can create shops"
 ON rental_shops FOR INSERT

@@ -147,15 +147,61 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
         console.log("Successfully updated user metadata: has_shop = true");
       }
 
-      // Force a session refresh to get the updated metadata
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      // Enhanced session refresh logic with retry mechanism
+      console.log("Starting enhanced session refresh...");
+      let refreshError = null;
+      let refreshAttempts = 0;
+      const maxRefreshAttempts = 3;
+
+      while (refreshAttempts < maxRefreshAttempts) {
+        refreshAttempts++;
+        console.log(`Session refresh attempt ${refreshAttempts}/${maxRefreshAttempts}`);
+        
+        try {
+          const { data: refreshData, error: currentRefreshError } = await supabase.auth.refreshSession();
+          
+          if (!currentRefreshError && refreshData?.session) {
+            console.log("Session refreshed successfully:", {
+              hasShop: refreshData.session.user?.user_metadata?.has_shop,
+              userId: refreshData.session.user?.id,
+              attempt: refreshAttempts
+            });
+            refreshError = null;
+            break;
+          } else {
+            refreshError = currentRefreshError;
+            console.warn(`Session refresh attempt ${refreshAttempts} failed:`, currentRefreshError);
+            
+            if (refreshAttempts < maxRefreshAttempts) {
+              // Wait before retrying (exponential backoff)
+              const delay = Math.min(1000 * Math.pow(2, refreshAttempts - 1), 3000);
+              console.log(`Waiting ${delay}ms before retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
+          }
+        } catch (error) {
+          refreshError = error;
+          console.error(`Session refresh attempt ${refreshAttempts} threw error:`, error);
+          if (refreshAttempts < maxRefreshAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
+      
       if (refreshError) {
-        console.error("Error refreshing session:", refreshError);
-      } else {
-        console.log("Session refreshed successfully");
+        console.error("All session refresh attempts failed:", refreshError);
+        // Continue anyway - the dashboard has its own retry logic
       }
 
-      toast.success("🎉 Welcome to Siargao Rides! You can now start listing your vehicles.");
+      // Show initial success message
+      toast.success("🎉 Welcome to Siargao Rides! Your shop is being set up...");
+      
+      // Show informational toast about waiting
+      setTimeout(() => {
+        toast.info("Please wait a moment while we prepare your shop. You'll be redirected automatically.", {
+          duration: 6000
+        });
+      }, 1000);
       
       // Enhanced coordination: verify shop exists before calling onComplete
       const verifyAndComplete = async () => {
@@ -171,6 +217,12 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
 
           if (verifyShop && !verifyError) {
             console.log("Shop creation verified:", verifyShop);
+            
+            // Show success message for completed setup
+            toast.success("✅ Shop setup complete! You can now manage your vehicles and bookings.", {
+              duration: 4000
+            });
+            
             if (onComplete) {
               onComplete();
             }
@@ -243,11 +295,42 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
         }
       };
 
-      // Adaptive delay based on session refresh success - longer delays for JWT propagation
-      const delay = refreshError ? 4000 : 3000; // Increased delays for JWT token propagation
-      console.log(`Waiting ${delay}ms before verifying shop creation (allowing for JWT propagation)...`);
+      // Enhanced verification coordination with metadata check
+      console.log("Starting verification coordination...");
       
-      setTimeout(verifyAndComplete, delay);
+      // First, verify that the user's session has the updated metadata
+      const verifyMetadataAndComplete = async () => {
+        try {
+          // Get the current session to check metadata
+          const { data: sessionData } = await supabase.auth.getSession();
+          const currentUser = sessionData?.session?.user;
+          
+          console.log("Current user metadata after refresh:", {
+            hasShop: currentUser?.user_metadata?.has_shop,
+            role: currentUser?.user_metadata?.role,
+            userId: currentUser?.id
+          });
+          
+          // If metadata is not yet updated, wait a bit more
+          if (currentUser?.user_metadata?.has_shop !== true) {
+            console.log("Metadata not yet updated, waiting additional time for propagation...");
+            setTimeout(verifyAndComplete, 2000); // Additional delay for metadata propagation
+          } else {
+            console.log("Metadata confirmed updated, proceeding to shop verification");
+            setTimeout(verifyAndComplete, 1000); // Shorter delay since metadata is confirmed
+          }
+        } catch (error) {
+          console.error("Error checking session metadata:", error);
+          // Fallback to standard verification
+          setTimeout(verifyAndComplete, 3000);
+        }
+      };
+      
+      // Adaptive delay based on session refresh success
+      const initialDelay = refreshError ? 4000 : 2000; 
+      console.log(`Waiting ${initialDelay}ms before metadata verification...`);
+      
+      setTimeout(verifyMetadataAndComplete, initialDelay);
 
     } catch (error) {
       console.error('Error creating shop:', error);
