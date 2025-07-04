@@ -34,7 +34,7 @@ export function RatingStars({
     if (readOnly) return;
     
     setRating(newRating);
-    onChange && onChange(newRating);
+    onChange?.(newRating);
   };
   
   // Size classes

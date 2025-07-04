@@ -106,7 +106,7 @@ export async function GET(request: Request) {
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error setting up storage buckets:", error);
     return NextResponse.json(
       { error: "Internal server error", details: error.message || String(error) },

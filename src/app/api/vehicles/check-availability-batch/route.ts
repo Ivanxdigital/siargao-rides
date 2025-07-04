@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     let requestData;
     try {
       requestData = await request.json();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to parse request body:', error);
       return NextResponse.json(
         { error: 'Invalid JSON request body' },
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
 
         console.log(`Vehicle ${vehicle.id} availability result:`, data);
         return { vehicleId: vehicle.id, available: data === true };
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(`Exception checking availability for vehicle ${vehicle.id}:`, error);
         return { 
           vehicleId: vehicle.id, 
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
     let availabilityResults;
     try {
       availabilityResults = await Promise.all(availabilityPromises);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error waiting for availability results:', error);
       // Set all vehicles to unavailable in case of error
       availabilityResults = availableVehicles.map((vehicle: RentalVehicle) => ({ 
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
       }
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error checking batch availability:', error);
     return NextResponse.json(
       { 

@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
         status: paymentIntent.attributes.status
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in create-deposit-intent API:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

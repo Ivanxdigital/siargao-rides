@@ -3,11 +3,12 @@
  * This service handles all interactions with the PayMongo API
  */
 
+import crypto from 'crypto';
+
 // PayMongo API keys
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_PUBLIC_KEY = process.env.PAYMONGO_PUBLIC_KEY;
 const PAYMONGO_API_URL = 'https://api.paymongo.com/v1';
-const PAYMONGO_WEBHOOK_SECRET = process.env.PAYMONGO_WEBHOOK_SECRET;
 
 // Check if API keys are set
 if (!PAYMONGO_SECRET_KEY) {
@@ -333,7 +334,6 @@ export const verifyWebhookSignature = (
       return false;
     }
 
-    const crypto = require('crypto');
 
     // Extract timestamp and signatures from the header
     const [timestamp, signatures] = signature.split(',');

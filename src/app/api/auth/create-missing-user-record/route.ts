@@ -3,6 +3,14 @@ import { supabaseAdmin } from '@/lib/admin';
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 
+interface UserRecord {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role?: string;
+}
+
 export async function POST(request: Request) {
   try {
     // Get current authenticated user from the session
@@ -45,13 +53,13 @@ export async function POST(request: Request) {
       if (schemaError) {
         console.error('Error getting schema info using RPC:', schemaError);
       }
-    } catch (err) {
+    } catch {
       console.log('RPC method not available, will use basic insert instead');
     }
     
     // Create a minimal user record with only required fields
     // This avoids issues with schema mismatches
-    const userRecord: any = {
+    const userRecord: UserRecord = {
       id: user.id,
       email: user.email
     };

@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
         payment_id: paypalPayment.id
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in PayPal create-order API:', error);
 
     // Don't expose internal error details in production

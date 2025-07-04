@@ -4,16 +4,12 @@ import {
   BikeCategory, 
   RentalShop, 
   User, 
-  Rental, 
   Review,
-  Favorite,
   Vehicle,
   VehicleType,
   VehicleCategory,
-  BikeImage,
   VehicleImage,
-  Referral,
-  ReferralStatus
+  Referral
 } from './types';
 import { 
   mockBikes, 

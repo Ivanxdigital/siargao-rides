@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { addDays, format, eachDayOfInterval } from 'date-fns';
+import { format, eachDayOfInterval } from 'date-fns';
 
 // Initialize Supabase client with service role for admin operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       message: `Successfully blocked ${newBlockedDates.length} dates`,
       blockedDates: blockedDates
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in block-dates API:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

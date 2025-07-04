@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       message: 'Auto-cancellation overridden successfully'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error overriding auto-cancellation:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

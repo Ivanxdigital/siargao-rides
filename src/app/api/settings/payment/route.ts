@@ -29,7 +29,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ settings: data.value });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in GET /api/settings/payment:', error);
     // Return default settings as fallback in case of error
     return NextResponse.json({
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in POST /api/settings/payment:', error);
     console.error('Error details:', JSON.stringify(error, null, 2));
     return NextResponse.json(

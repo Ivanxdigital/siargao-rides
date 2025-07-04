@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in GCash webhook:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

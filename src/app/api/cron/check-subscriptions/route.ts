@@ -1,8 +1,6 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     // SUBSCRIPTION SYSTEM DISABLED: This endpoint no longer performs expiration checks
     // All shops are now permanently active

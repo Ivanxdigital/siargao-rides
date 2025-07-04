@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
         status: paymentIntent.attributes.status
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in create-intent API:', error);
 
     // Don't expose internal error details in production

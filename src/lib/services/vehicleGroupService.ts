@@ -5,10 +5,8 @@ import {
   VehicleGroupWithDetails, 
   CreateVehicleGroupRequest,
   Vehicle,
-  VehicleGroupAvailability,
   GroupAvailabilityResponse,
   CreateGroupResponse,
-  VehicleDocument,
   VehicleImage
 } from '@/lib/types';
 

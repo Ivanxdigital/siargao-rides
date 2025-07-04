@@ -183,10 +183,10 @@ export async function POST(request: NextRequest) {
       message: 'Deposit payout processed successfully',
       payout: payout
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in process-deposit-payout API:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

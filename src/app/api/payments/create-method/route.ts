@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       success: true,
       payment_method: paymentMethod
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in create-method API:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

@@ -3,19 +3,18 @@
  * operations by declaring that all database operations take string arguments.
  */
 
-import { SupabaseClient } from "@supabase/supabase-js";
 
 // Define a basic Database interface for type checking
 export interface Database {
   public: {
     Tables: {
-      [key: string]: any;
+      [key: string]: unknown;
     };
     Views: {
-      [key: string]: any;
+      [key: string]: unknown;
     };
     Functions: {
-      [key: string]: any;
+      [key: string]: unknown;
     };
   };
 }
@@ -23,30 +22,30 @@ export interface Database {
 declare module "@supabase/supabase-js" {
   interface SupabaseClient {
     from(table: string): {
-      select(columns?: string): any;
-      insert(values: any, options?: any): any;
-      update(values: any, options?: any): any;
-      delete(options?: any): any;
-      eq(column: string, value: any): any;
-      neq(column: string, value: any): any;
-      gt(column: string, value: any): any;
-      gte(column: string, value: any): any;
-      lt(column: string, value: any): any;
-      lte(column: string, value: any): any;
-      is(column: string, value: any): any;
-      in(column: string, values: any[]): any;
-      contains(column: string, value: any): any;
-      containedBy(column: string, value: any): any;
-      textSearch(column: string, query: string, options?: any): any;
-      filter(column: string, operator: string, value: any): any;
-      match(query: any): any;
-      single(): any;
-      maybeSingle(): any;
-      csv(): any;
-      order(column: string, options?: any): any;
-      range(from: number, to: number): any;
-      limit(count: number): any;
-      offset(count: number): any;
+      select(columns?: string): unknown;
+      insert(values: unknown, options?: unknown): unknown;
+      update(values: unknown, options?: unknown): unknown;
+      delete(options?: unknown): unknown;
+      eq(column: string, value: unknown): unknown;
+      neq(column: string, value: unknown): unknown;
+      gt(column: string, value: unknown): unknown;
+      gte(column: string, value: unknown): unknown;
+      lt(column: string, value: unknown): unknown;
+      lte(column: string, value: unknown): unknown;
+      is(column: string, value: unknown): unknown;
+      in(column: string, values: unknown[]): unknown;
+      contains(column: string, value: unknown): unknown;
+      containedBy(column: string, value: unknown): unknown;
+      textSearch(column: string, query: string, options?: unknown): unknown;
+      filter(column: string, operator: string, value: unknown): unknown;
+      match(query: unknown): unknown;
+      single(): unknown;
+      maybeSingle(): unknown;
+      csv(): unknown;
+      order(column: string, options?: unknown): unknown;
+      range(from: number, to: number): unknown;
+      limit(count: number): unknown;
+      offset(count: number): unknown;
     };
   }
 } 

@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
         payment_status: paymentStatus
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in PayPal capture-order API:', error);
 
     // Don't expose internal error details in production

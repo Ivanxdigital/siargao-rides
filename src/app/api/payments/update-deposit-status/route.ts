@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Deposit status updated successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in update-deposit-status API:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
       console.error('Error updating rental payment status:', updateError);
       // We don't return an error here since the source was already created and stored
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in create-gcash-source API:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

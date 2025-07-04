@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
@@ -48,23 +47,6 @@ const staggerItem = {
 }
 
 export default function AboutClient() {
-  const [isMobile, setIsMobile] = useState(false)
-
-  // Check if device is mobile
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    // Set initial value
-    checkIfMobile()
-
-    // Add event listener
-    window.addEventListener('resize', checkIfMobile)
-
-    // Clean up
-    return () => window.removeEventListener('resize', checkIfMobile)
-  }, [])
 
   return (
     <div className="flex flex-col min-h-screen w-full overflow-hidden">
@@ -152,7 +134,7 @@ export default function AboutClient() {
                   <div className="w-1/2 pr-12 text-right">
                     <h3 className="text-xl font-bold text-white mb-3">The Search</h3>
                     <p className="text-white/80 leading-relaxed">
-                      I have always wondered if there was a more organised way of finding a motorbike to rent here in Siargao. However, I found myself going to different Facebook pages, with some not being so reliable. It's quite a lot of effort to do my own research and go through all the motorbike socials, where some aren't active, and some barely have any comments.
+                      I have always wondered if there was a more organised way of finding a motorbike to rent here in Siargao. However, I found myself going to different Facebook pages, with some not being so reliable. It&apos;s quite a lot of effort to do my own research and go through all the motorbike socials, where some aren&apos;t active, and some barely have any comments.
                     </p>
                   </div>
 
@@ -160,7 +142,7 @@ export default function AboutClient() {
                     <div className="absolute left-0 top-3 w-6 h-6 rounded-full bg-primary -ml-3 z-10 shadow-lg shadow-primary/20"></div>
                     <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:border-primary/30 transition-all duration-300">
                       <div className="text-white/90 italic">
-                        "I've always thought I wish there could just be one place where I could compare all the stores, book directly through the site, and see exactly what I'm getting."
+                        &quot;I&apos;ve always thought I wish there could just be one place where I could compare all the stores, book directly through the site, and see exactly what I&apos;m getting.&quot;
                       </div>
                     </div>
                   </div>
@@ -182,7 +164,7 @@ export default function AboutClient() {
                   <div className="pl-12">
                     <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:border-primary/30 transition-all duration-300">
                       <div className="text-white/90 italic text-sm">
-                        "I've always thought I wish there could just be one place where I could compare all the stores, book directly through the site, and see exactly what I'm getting."
+                        &quot;I&apos;ve always thought I wish there could just be one place where I could compare all the stores, book directly through the site, and see exactly what I&apos;m getting.&quot;
                       </div>
                     </div>
                   </div>
@@ -203,7 +185,7 @@ export default function AboutClient() {
                     <div className="absolute right-0 top-3 w-6 h-6 rounded-full bg-primary -mr-3 z-10 shadow-lg shadow-primary/20"></div>
                     <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:border-primary/30 transition-all duration-300">
                       <div className="text-white/90 italic">
-                        "The side mirrors you could barely see behind you because it was so magnified, the indicator didn't work, and I didn't know till I had a bunch of people beeping me because I was turning thinking I was indicating when I wasn't."
+                        &quot;The side mirrors you could barely see behind you because it was so magnified, the indicator didn&apos;t work, and I didn&apos;t know till I had a bunch of people beeping me because I was turning thinking I was indicating when I wasn&apos;t.&quot;
                       </div>
                     </div>
                   </div>
@@ -211,7 +193,7 @@ export default function AboutClient() {
                   <div className="w-1/2 pl-12">
                     <h3 className="text-xl font-bold text-white mb-3">The Disappointment</h3>
                     <p className="text-white/80 leading-relaxed">
-                      I've had times where I was at a hotel in Siargao, I won't mention any names. But I asked them if they knew any motorbike rentals, they said yes. They have one for 500 PHP per day, so I thought "Oooo 500 PHP per day, I might get a decent bike." I said okay I'll get it, next thing you know I got a really basic Honda Beat and it was definitely beat... beaten up.
+                      I&apos;ve had times where I was at a hotel in Siargao, I won&apos;t mention any names. But I asked them if they knew any motorbike rentals, they said yes. They have one for 500 PHP per day, so I thought &quot;Oooo 500 PHP per day, I might get a decent bike.&quot; I said okay I&apos;ll get it, next thing you know I got a really basic Honda Beat and it was definitely beat... beaten up.
                     </p>
                   </div>
                 </div>
@@ -225,14 +207,14 @@ export default function AboutClient() {
 
                   <div className="pl-12 mb-4">
                     <p className="text-white/80 leading-relaxed text-sm">
-                      I've had times where I was at a hotel in Siargao. They said they have a motorbike for 500 PHP per day, so I thought I might get a decent bike. Next thing you know I got a really basic Honda Beat and it was definitely beat... beaten up.
+                      I&apos;ve had times where I was at a hotel in Siargao. They said they have a motorbike for 500 PHP per day, so I thought I might get a decent bike. Next thing you know I got a really basic Honda Beat and it was definitely beat... beaten up.
                     </p>
                   </div>
 
                   <div className="pl-12">
                     <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:border-primary/30 transition-all duration-300">
                       <div className="text-white/90 italic text-sm">
-                        "The side mirrors you could barely see behind you, the indicator didn't work, and I didn't know till I had people beeping me because I was turning thinking I was indicating when I wasn't."
+                        &quot;The side mirrors you could barely see behind you, the indicator didn&apos;t work, and I didn&apos;t know till I had people beeping me because I was turning thinking I was indicating when I wasn&apos;t.&quot;
                       </div>
                     </div>
                   </div>
@@ -252,7 +234,7 @@ export default function AboutClient() {
                   <div className="w-1/2 pr-12 text-right">
                     <h3 className="text-xl font-bold text-white mb-3">The Solution</h3>
                     <p className="text-white/80 leading-relaxed">
-                      I just had enough, so I thought why not just build a site where it could be a platform to make peoples lives easier to book, know exactly what they're getting, compare prices, and more.
+                      I just had enough, so I thought why not just build a site where it could be a platform to make peoples lives easier to book, know exactly what they&apos;re getting, compare prices, and more.
                     </p>
                   </div>
 
@@ -260,7 +242,7 @@ export default function AboutClient() {
                     <div className="absolute left-0 top-3 w-6 h-6 rounded-full bg-primary -ml-3 z-10 shadow-lg shadow-primary/20"></div>
                     <div className="bg-primary/10 backdrop-blur-sm border border-primary/30 rounded-lg p-6 hover:border-primary/50 transition-all duration-300">
                       <div className="text-white font-medium">
-                        And that's how Siargao Rides was born — a platform dedicated to making vehicle rentals transparent, reliable, and hassle-free for everyone visiting our beautiful island.
+                        And that&apos;s how Siargao Rides was born — a platform dedicated to making vehicle rentals transparent, reliable, and hassle-free for everyone visiting our beautiful island.
                       </div>
                     </div>
                   </div>
@@ -275,14 +257,14 @@ export default function AboutClient() {
 
                   <div className="pl-12 mb-4">
                     <p className="text-white/80 leading-relaxed text-sm">
-                      I just had enough, so I thought why not just build a site where it could be a platform to make peoples lives easier to book, know exactly what they're getting, compare prices, and more.
+                      I just had enough, so I thought why not just build a site where it could be a platform to make peoples lives easier to book, know exactly what they&apos;re getting, compare prices, and more.
                     </p>
                   </div>
 
                   <div className="pl-12">
                     <div className="bg-primary/10 backdrop-blur-sm border border-primary/30 rounded-lg p-4 hover:border-primary/50 transition-all duration-300">
                       <div className="text-white font-medium text-sm">
-                        And that's how Siargao Rides was born — a platform dedicated to making vehicle rentals transparent, reliable, and hassle-free for everyone visiting our beautiful island.
+                        And that&apos;s how Siargao Rides was born — a platform dedicated to making vehicle rentals transparent, reliable, and hassle-free for everyone visiting our beautiful island.
                       </div>
                     </div>
                   </div>
@@ -575,7 +557,7 @@ export default function AboutClient() {
               <div>
                 <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2 text-white">Sustainability</h3>
                 <p className="text-white/70 text-sm sm:text-base">
-                  We promote responsible tourism and encourage practices that help preserve Siargao's natural beauty.
+                  We promote responsible tourism and encourage practices that help preserve Siargao&apos;s natural beauty.
                 </p>
               </div>
             </motion.div>

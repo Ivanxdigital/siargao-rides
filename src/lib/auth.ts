@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { User } from './types';
 
 export type AuthUser = {
   id: string;
@@ -69,7 +68,7 @@ export async function signUp({
       },
       error: null,
     };
-  } catch (error) {
+  } catch {
     return { user: null, error: 'An unexpected error occurred during sign up.' };
   }
 }
@@ -117,7 +116,7 @@ export async function signIn({
       },
       error: null,
     };
-  } catch (error) {
+  } catch {
     return { user: null, error: 'An unexpected error occurred during sign in.' };
   }
 }
@@ -129,7 +128,7 @@ export async function signOut(): Promise<{ error: string | null }> {
       return { error: error.message };
     }
     return { error: null };
-  } catch (error) {
+  } catch {
     return { error: 'An unexpected error occurred during sign out.' };
   }
 }
@@ -145,7 +144,7 @@ export async function resetPassword(email: string): Promise<{ error: string | nu
     }
 
     return { error: null };
-  } catch (error) {
+  } catch {
     return { error: 'An unexpected error occurred while requesting password reset.' };
   }
 }
@@ -161,7 +160,7 @@ export async function updatePassword(password: string): Promise<{ error: string 
     }
 
     return { error: null };
-  } catch (error) {
+  } catch {
     return { error: 'An unexpected error occurred while updating password.' };
   }
 }
@@ -198,7 +197,7 @@ export async function updateUserProfile(
       },
       error: null,
     };
-  } catch (error) {
+  } catch {
     return { user: null, error: 'An unexpected error occurred while updating profile.' };
   }
 }
@@ -225,7 +224,7 @@ export async function getCurrentAuthUser(): Promise<AuthUser | null> {
       avatar_url: data.avatar_url,
       role: data.role,
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 } 

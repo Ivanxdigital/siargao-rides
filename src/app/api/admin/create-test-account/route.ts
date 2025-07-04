@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/admin';
-import { v4 as uuidv4 } from 'uuid';
 
 // Generate a random password
 function generateRandomPassword(length = 10) {

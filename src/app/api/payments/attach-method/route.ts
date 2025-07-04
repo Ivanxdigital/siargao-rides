@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
         last_payment_error: paymentIntent.attributes.last_payment_error
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in attach-method API:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

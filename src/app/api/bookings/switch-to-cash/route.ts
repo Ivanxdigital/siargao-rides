@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     
     // Redirect to the booking confirmation page
     return NextResponse.redirect(new URL(`/booking/confirmation/${bookingId}`, request.url));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error switching to cash payment:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },

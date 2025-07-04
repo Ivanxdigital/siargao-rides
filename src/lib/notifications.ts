@@ -6,8 +6,6 @@ import { format, addMinutes } from 'date-fns';
 // Status types for bookings
 type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'rejected' | 'auto-cancelled';
 
-// Payment status types
-type PaymentStatus = 'pending' | 'paid' | 'failed';
 
 /**
  * Send a notification about a new booking

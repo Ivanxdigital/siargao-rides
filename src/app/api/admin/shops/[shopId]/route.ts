@@ -34,12 +34,12 @@ export async function PATCH(
 
     // Remove fields that shouldn't be updated directly
     const {
-      id: _id,
-      owner_id: _owner_id,
-      created_at: _created_at,
-      updated_at: _updated_at,
-      owner: _owner,
-      stats: _stats,
+      id,
+      owner_id,
+      created_at,
+      updated_at,
+      owner,
+      stats,
       ...allowedUpdates
     } = updateData;
 

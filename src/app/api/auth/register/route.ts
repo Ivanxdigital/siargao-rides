@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     
     // Check if user exists in public.users using a raw SQL query (bypassing RLS)
     // Use a direct query if RPC fails
-    let existingUser: any[] = [];
+    let existingUser: unknown[] = [];
     let checkError: PostgrestError | null = null;
     
     try {

@@ -2,13 +2,13 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     // This endpoint should be called by a cron job to process auto-cancellations
     const supabase = createRouteHandlerClient({ cookies });
     
     // Call the database function to process auto-cancellations
-    const { data, error } = await supabase.rpc('process_auto_cancellations');
+    const { error } = await supabase.rpc('process_auto_cancellations');
     
     if (error) {
       console.error('Error processing auto-cancellations:', error);

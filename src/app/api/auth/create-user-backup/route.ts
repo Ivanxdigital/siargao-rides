@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/admin';
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     // Get current authenticated user from the session
     const supabase = createServerComponentClient({ cookies });

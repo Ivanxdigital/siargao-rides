@@ -39,7 +39,7 @@ async function createBucket() {
     }
     
     // Create the bucket
-    const { data, error } = await supabase
+    const { error } = await supabase
       .storage
       .createBucket('user-avatars', {
         public: true,  // Files will be publicly accessible

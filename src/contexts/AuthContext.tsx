@@ -568,17 +568,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error('Signup process incomplete. Please try again.');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
       setIsLoading(false);
 
       // Improve error messaging based on error type/content
-      if (error.message?.includes('500')) {
+      if (error instanceof Error && error.message?.includes('500')) {
         return { error: { message: 'Server error during registration. Please try again later.' } };
       }
 
       return { error: {
-        message: error.message || 'An error occurred during registration. Please try again.'
+        message: error instanceof Error ? error.message : 'An error occurred during registration. Please try again.'
       }};
     }
   };
@@ -626,7 +626,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         router.refresh();
       }, 100);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign-out failed:', error);
       
       // Even if sign-out fails, try to clear local state and redirect

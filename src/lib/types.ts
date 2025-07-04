@@ -204,7 +204,7 @@ export type BikeSpecifications = {
   year?: number
   color?: string
   features?: string[]
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // New VehicleSpecifications type that replaces BikeSpecifications
@@ -221,7 +221,7 @@ export type VehicleSpecifications = {
   passenger_capacity?: number
   // Allow for extensibility
   features?: string[]
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // Vehicle Group types
@@ -288,7 +288,7 @@ export type VanService = {
   price_per_km?: number
   max_passengers: number
   max_luggage: number
-  features?: any
+  features?: string[]
   is_active: boolean
   created_at: string
 }
