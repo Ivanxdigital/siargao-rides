@@ -178,6 +178,77 @@ export default function DashboardPage() {
   // Add ref to prevent concurrent fetches
   const isFetchingRef = useRef(false);
 
+  // BUGFIX: Function to check if shop exists in database when metadata says no shop
+  const checkShopExistenceAndFetch = useCallback(async (supabase: any) => {
+    try {
+      console.log("Checking database for shop existence (metadata fallback)");
+      
+      if (!user?.id) {
+        console.warn("Cannot check shop existence: No user ID");
+        return;
+      }
+
+      // Query database to check if shop actually exists
+      const { data: shopExists, error: shopCheckError } = await supabase
+        .from("rental_shops")
+        .select("id, name")
+        .eq("owner_id", user.id)
+        .eq("is_active", true)
+        .single();
+
+      if (shopCheckError) {
+        if (shopCheckError.code === 'PGRST116') {
+          // No shop found - metadata is correct
+          console.log("Database confirms no shop exists - metadata is accurate");
+          return;
+        } else {
+          console.warn("Error checking shop existence:", shopCheckError);
+          return;
+        }
+      }
+
+      if (shopExists) {
+        console.log("🔧 METADATA SYNC ISSUE DETECTED: Shop exists in database but metadata shows has_shop=false");
+        console.log("Shop found:", shopExists);
+        
+        // Shop exists but metadata is stale - update session metadata
+        try {
+          console.log("Attempting to refresh session metadata...");
+          const { error: metadataUpdateError } = await supabase.auth.updateUser({
+            data: { has_shop: true }
+          });
+
+          if (metadataUpdateError) {
+            console.warn("Failed to update metadata, but continuing with shop data fetch:", metadataUpdateError);
+          } else {
+            console.log("Successfully updated session metadata: has_shop = true");
+          }
+
+          // Refresh session to get updated metadata
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError) {
+            console.warn("Session refresh failed, but continuing:", refreshError);
+          } else {
+            console.log("Session refreshed successfully");
+          }
+
+        } catch (metadataError) {
+          console.warn("Metadata update failed, but shop exists so continuing with data fetch:", metadataError);
+        }
+
+        // Fetch shop data since shop exists
+        console.log("Proceeding to fetch shop data (metadata corrected)");
+        await fetchShopOwnerData(supabase);
+      } else {
+        console.log("Database confirms no shop exists - metadata is accurate");
+      }
+
+    } catch (err) {
+      console.error("Error in checkShopExistenceAndFetch:", err);
+      // Don't throw - let dashboard continue with default state
+    }
+  }, [user?.id]);
+
   // Function to fetch all required dashboard data with improved error handling
   const fetchDashboardData = useCallback(async () => {
     // Prevent concurrent fetches
@@ -211,8 +282,10 @@ export default function DashboardPage() {
           await fetchShopOwnerData(supabase);
         } else if (hasShop === false) {
           console.log("Shop owner doesn't have a shop yet (has_shop = false)");
-          // Don't try to fetch shop data, but don't show an error either
-          // The onboarding component will handle this case
+          console.log("Performing database fallback check to verify shop existence");
+          // BUGFIX: Add database fallback check when metadata indicates no shop
+          // This handles the case where shop exists in DB but session metadata is stale
+          await checkShopExistenceAndFetch(supabase);
         } else {
           console.log("Shop owner has_shop status is undefined, checking if shop exists in database");
           // has_shop is undefined - this might be an old user or metadata is not synced
