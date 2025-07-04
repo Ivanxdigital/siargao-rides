@@ -18,6 +18,7 @@ import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { ReviewDialog } from "@/components/ReviewDialog"
 import { ReviewItem } from "@/components/ReviewItem"
+import { groupVehiclesForDisplay, GroupedVehicle } from "@/lib/utils/vehicleGroupingUtils"
 
 // --- Animation Variants ---
 const pageVariants = {
@@ -128,6 +129,7 @@ export default function ShopPageClient({ initialShop, shopId }: ShopPageClientPr
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null)
   const [shop, setShop] = useState<RentalShop | null>(initialShop)
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [groupedVehicles, setGroupedVehicles] = useState<GroupedVehicle[]>([])
   const [reviews, setReviews] = useState<ReviewWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -141,15 +143,15 @@ export default function ShopPageClient({ initialShop, shopId }: ShopPageClientPr
   // Check if current user is the shop owner
   const isShopOwner = user && shop && user.id === shop.owner_id
 
-  // Group vehicles by type
-  const motorcycles = vehicles.filter(v => v.vehicle_type === 'motorcycle')
-  const cars = vehicles.filter(v => v.vehicle_type === 'car')
-  const tuktuks = vehicles.filter(v => v.vehicle_type === 'tuktuk')
+  // Group vehicles by type using grouped vehicles for more accurate counts
+  const motorcycleGroups = groupedVehicles.filter(g => g.representativeVehicle.vehicle_type === 'motorcycle')
+  const carGroups = groupedVehicles.filter(g => g.representativeVehicle.vehicle_type === 'car')
+  const tuktukGroups = groupedVehicles.filter(g => g.representativeVehicle.vehicle_type === 'tuktuk')
 
   // Check if shop has each type of vehicle
-  const hasMotorcycles = motorcycles.length > 0
-  const hasCars = cars.length > 0
-  const hasTuktuks = tuktuks.length > 0
+  const hasMotorcycles = motorcycleGroups.length > 0
+  const hasCars = carGroups.length > 0
+  const hasTuktuks = tuktukGroups.length > 0
 
   // Add this function to check if user can review
   const checkUserCanReview = async () => {
@@ -270,6 +272,9 @@ export default function ShopPageClient({ initialShop, shopId }: ShopPageClientPr
           }));
 
           setVehicles(formattedVehicles)
+          // Apply grouping logic for display
+          const grouped = groupVehiclesForDisplay(formattedVehicles)
+          setGroupedVehicles(grouped)
         } catch (vehicleError) {
           console.log('Error fetching vehicles, falling back to bikes:', vehicleError);
 
@@ -299,6 +304,9 @@ export default function ShopPageClient({ initialShop, shopId }: ShopPageClientPr
           }));
 
           setVehicles(formattedBikes)
+          // Apply grouping logic for display
+          const grouped = groupVehiclesForDisplay(formattedBikes)
+          setGroupedVehicles(grouped)
         }
 
         // Get reviews for this shop with user details
@@ -804,7 +812,7 @@ export default function ShopPageClient({ initialShop, shopId }: ShopPageClientPr
           <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
         </motion.div>
 
-        {vehicles.length === 0 ? (
+        {groupedVehicles.length === 0 ? (
           <motion.div
             className="text-center py-16 backdrop-blur-md bg-black/20 rounded-xl border border-dashed border-white/10"
             variants={fadeIn}
@@ -828,29 +836,34 @@ export default function ShopPageClient({ initialShop, shopId }: ShopPageClientPr
             viewport={{ once: true }}
             transition={{ delay: 0.5 }}
           >
-            {vehicles
-              .filter(v => selectedVehicleType === 'all' || v.vehicle_type === selectedVehicleType)
-              .map(vehicle => (
+            {groupedVehicles
+              .filter(g => selectedVehicleType === 'all' || g.representativeVehicle.vehicle_type === selectedVehicleType)
+              .map(groupedVehicle => (
                 <motion.div
-                  key={vehicle.id}
+                  key={groupedVehicle.groupKey}
                   variants={itemVariants}
                   whileHover={{ y: -5, transition: { duration: 0.2 } }}
                   className="transform transition-all duration-300"
                 >
                   <VehicleCard
-                    id={vehicle.id}
-                    model={vehicle.name}
-                    vehicleType={vehicle.vehicle_type}
-                    category={vehicle.category}
-                    images={vehicle.images?.map(img => img.image_url) || []}
+                    id={groupedVehicle.representativeVehicle.id}
+                    model={groupedVehicle.representativeVehicle.name}
+                    vehicleType={groupedVehicle.representativeVehicle.vehicle_type}
+                    category={groupedVehicle.representativeVehicle.category}
+                    images={groupedVehicle.representativeVehicle.images?.map(img => img.image_url) || []}
                     prices={{
-                      daily: vehicle.price_per_day,
-                      weekly: vehicle.price_per_week,
-                      monthly: vehicle.price_per_month
+                      daily: groupedVehicle.representativeVehicle.price_per_day,
+                      weekly: groupedVehicle.representativeVehicle.price_per_week,
+                      monthly: groupedVehicle.representativeVehicle.price_per_month
                     }}
-                    specifications={vehicle.specifications}
-                    isAvailable={vehicle.is_available}
+                    specifications={groupedVehicle.representativeVehicle.specifications}
+                    isAvailable={groupedVehicle.availableCount > 0}
                     onBookClick={handleBookClick}
+                    // Group-related props
+                    isGroup={groupedVehicle.isGroup}
+                    groupId={groupedVehicle.groupId}
+                    availableCount={groupedVehicle.availableCount}
+                    totalCount={groupedVehicle.totalCount}
                   />
                 </motion.div>
             ))}
@@ -859,9 +872,10 @@ export default function ShopPageClient({ initialShop, shopId }: ShopPageClientPr
       </div>
 
       {/* Conditionally render the availability section when a vehicle is selected */}
-      {selectedVehicleId && vehicles.length > 0 && (
+      {selectedVehicleId && groupedVehicles.length > 0 && (
         <div className="container mx-auto px-4 pb-12 relative z-10">
-          {vehicles
+          {groupedVehicles
+            .flatMap(g => g.vehicles)
             .filter(v => v.id === selectedVehicleId)
             .map(vehicle => (
               <VehicleAvailabilitySection
