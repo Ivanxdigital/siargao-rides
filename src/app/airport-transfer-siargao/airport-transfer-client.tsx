@@ -33,6 +33,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card } from '@/components/ui/card'
+import { WelcomeTooltip } from '@/components/ui/welcome-tooltip'
 
 // WhatsApp configuration
 const WHATSAPP_NUMBER = '+639993702550'
@@ -115,7 +116,7 @@ export default function VanHireClient() {
     },
     {
       question: "Do you provide child seats?",
-      answer: "Child seats are available upon request. Please let us know when booking if you need one."
+      answer: "Unfortunately, we do not provide child seats. Please bring your own child seat if needed for your transfer."
     },
     {
       question: "What payment methods do you accept?",
@@ -579,13 +580,22 @@ export default function VanHireClient() {
         animate={{ scale: 1 }}
         transition={{ delay: 1, type: "spring" }}
       >
-        <PrimaryButton
-          onClick={handleWhatsAppClick}
-          className="rounded-full w-14 h-14 p-0 shadow-lg"
-          enableGlow={true}
+        <WelcomeTooltip
+          id="whatsapp-booking-tooltip"
+          title="👋 Hey there!"
+          content="Tap here to book your transfer or ask questions via WhatsApp. We're quick to respond!"
+          autoShowDelay={2000}
+          autoHideDuration={6000}
+          icon={<MessageCircle className="w-4 h-4 text-primary" />}
         >
-          <MessageCircle className="w-6 h-6" />
-        </PrimaryButton>
+          <PrimaryButton
+            onClick={handleWhatsAppClick}
+            className="rounded-full w-14 h-14 p-0 shadow-lg"
+            enableGlow={true}
+          >
+            <MessageCircle className="w-6 h-6" />
+          </PrimaryButton>
+        </WelcomeTooltip>
       </motion.div>
 
       {/* Social Proof Notifications */}

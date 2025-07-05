@@ -66,7 +66,7 @@ export function SocialProofNotification({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="fixed bottom-6 left-6 z-40 max-w-sm"
+          className="fixed bottom-6 left-6 z-60 max-w-sm"
           style={{ willChange: 'transform, opacity' }}
         >
           <div className="bg-gray-900/95 backdrop-blur-md border border-white/10 rounded-lg p-4 shadow-xl">
@@ -132,7 +132,7 @@ export function SocialProofContainer({
   onDismiss 
 }: SocialProofContainerProps) {
   return (
-    <div className="fixed inset-0 pointer-events-none z-40">
+    <div className="fixed inset-0 pointer-events-none z-60">
       <AnimatePresence mode="multiple">
         {notifications.map((notification, index) => (
           <motion.div
