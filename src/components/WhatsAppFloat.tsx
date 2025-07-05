@@ -3,24 +3,33 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { MessageCircle } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 interface WhatsAppFloatProps {
   phoneNumber?: string
   message?: string
   className?: string
+  hiddenOnPages?: string[]
 }
 
 export default function WhatsAppFloat({ 
   phoneNumber = "+639993702550",
   message = "Hello! I'm interested in renting a vehicle in Siargao.",
-  className = ""
+  className = "",
+  hiddenOnPages = []
 }: WhatsAppFloatProps) {
   const [showTooltip, setShowTooltip] = useState(false)
+  const pathname = usePathname()
 
   const handleClick = () => {
     const encodedMessage = encodeURIComponent(message)
     const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${encodedMessage}`
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  // Hide component if current pathname is in hiddenOnPages array
+  if (hiddenOnPages.includes(pathname)) {
+    return null
   }
 
   return (

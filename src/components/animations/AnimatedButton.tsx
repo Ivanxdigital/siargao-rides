@@ -99,7 +99,7 @@ export function AnimatedButton({
 
   // Base classes for different variants
   const variantClasses = {
-    primary: 'bg-gradient-to-r from-primary to-primary/80 text-white border border-primary/20 shadow-lg hover:shadow-primary/20',
+    primary: 'bg-gradient-to-r from-primary to-teal-400 text-black border border-primary/20 shadow-lg hover:shadow-primary/30 font-semibold shadow-teal-500/20',
     secondary: 'bg-gradient-to-r from-gray-800 to-gray-700 text-white border border-gray-600 shadow-lg hover:shadow-gray-800/20',
     ghost: 'bg-transparent text-white border border-white/20 hover:bg-white/5',
     outline: 'bg-transparent text-primary border border-primary/40 hover:bg-primary/10'
