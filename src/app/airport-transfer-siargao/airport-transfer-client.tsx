@@ -21,6 +21,8 @@ import { AnimatedCard, StaggeredCards } from '@/components/animations/AnimatedCa
 import { PrimaryButton, SecondaryButton } from '@/components/animations/AnimatedButton'
 import { FloatingElements, ParticleField } from '@/components/animations/FloatingElements'
 import { useReducedMotion } from '@/hooks/useScrollAnimation'
+import { useSocialProofNotifications } from '@/hooks/useSocialProofNotifications'
+import { SocialProofContainer } from '@/components/SocialProofNotification'
 import { 
   heroTitleVariants, 
   heroSubtitleVariants,
@@ -33,7 +35,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card } from '@/components/ui/card'
 
 // WhatsApp configuration
-const WHATSAPP_NUMBER = '+639123456789' // Replace with actual number
+const WHATSAPP_NUMBER = '+639993702550'
 const WHATSAPP_MESSAGE = encodeURIComponent(
   'Hi! I would like to book your private van hire service for airport transfer.\n\n' +
   'Service: Airport Transfer\n' +
@@ -46,6 +48,7 @@ const WHATSAPP_MESSAGE = encodeURIComponent(
 export default function VanHireClient() {
   const [isMobile, setIsMobile] = useState(false)
   const shouldReduceMotion = useReducedMotion()
+  const { notifications, dismissNotification } = useSocialProofNotifications(true)
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -584,6 +587,12 @@ export default function VanHireClient() {
           <MessageCircle className="w-6 h-6" />
         </PrimaryButton>
       </motion.div>
+
+      {/* Social Proof Notifications */}
+      <SocialProofContainer 
+        notifications={notifications} 
+        onDismiss={dismissNotification} 
+      />
     </div>
   )
 }
