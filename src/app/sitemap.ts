@@ -26,6 +26,11 @@ const staticRoutes = [
     changeFrequency: 'daily' as const,
   },
   {
+    path: '/airport-transfer-siargao',
+    priority: 0.9,
+    changeFrequency: 'monthly' as const,
+  },
+  {
     path: '/about',
     priority: 0.7,
     changeFrequency: 'monthly' as const,

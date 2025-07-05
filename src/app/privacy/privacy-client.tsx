@@ -59,7 +59,7 @@ export default function PrivacyClient() {
                 <div className="flex items-center gap-3 mb-6 bg-primary/10 p-4 rounded-lg">
                   <Shield className="text-primary h-8 w-8" />
                   <p className="text-lg m-0">
-                    We respect your privacy. Here's how we handle your information:
+                    We respect your privacy. Here&apos;s how we handle your information:
                   </p>
                 </div>
 
@@ -99,7 +99,7 @@ export default function PrivacyClient() {
                   We only share your information with:
                 </p>
                 <ul>
-                  <li>The rental shop you've booked with</li>
+                  <li>The rental shop you&apos;ve booked with</li>
                   <li>Service providers that help us run this platform (like payment gateways)</li>
                 </ul>
                 <p className="bg-gray-900/50 border-l-4 border-primary/50 pl-4 py-2 italic">
@@ -140,7 +140,7 @@ export default function PrivacyClient() {
 
                 <div className="mt-8 p-4 bg-gray-900/70 rounded-lg border border-gray-700">
                   <p className="text-center m-0">
-                    Thank you for trusting Siargao Rides. We're here to help you explore Siargao, one ride at a time.
+                    Thank you for trusting Siargao Rides. We&apos;re here to help you explore Siargao, one ride at a time.
                   </p>
                 </div>
               </div>

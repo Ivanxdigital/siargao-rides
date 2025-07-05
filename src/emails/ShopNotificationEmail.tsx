@@ -7,7 +7,6 @@ import {
   Section, 
   Text, 
   Heading, 
-  Link, 
   Hr, 
   Button,
   Preview,
@@ -27,7 +26,7 @@ interface ShopNotificationEmailProps {
     payment_method_id?: string;
     deposit_required?: boolean;
     deposit_amount?: number;
-    contact_info?: any;
+    contact_info?: { name?: string; email?: string; phone?: string };
     delivery_address?: string | null;
   };
   user: {

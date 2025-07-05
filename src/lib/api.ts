@@ -1,6 +1,4 @@
 import { supabase } from './supabase'
-import { supabaseUrl } from './supabase'
-import { createClient } from '@supabase/supabase-js'
 import { 
   BikeCategory, 
   Bike, 
@@ -8,14 +6,11 @@ import {
   User, 
   Rental, 
   Review, 
-  Favorite,
   RentalStatus,
   BikeImage,
   VehicleType,
   Vehicle,
-  VehicleCategory,
-  Referral,
-  ReferralStatus
+  Referral
 } from './types'
 import { CreateReferralSchema, UpdateReferralStatusSchema, ReferralIdSchema } from './validation'
 

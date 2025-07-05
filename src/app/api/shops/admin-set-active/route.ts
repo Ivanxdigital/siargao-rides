@@ -51,7 +51,13 @@ export async function POST(request: Request) {
     }
     
     // Also set subscription status appropriately
-    const updateData: any = {
+    const updateData: {
+      is_active: boolean;
+      updated_at: string;
+      subscription_status?: string;
+      subscription_end_date?: string;
+      subscription_start_date?: string;
+    } = {
       is_active: is_active,
       updated_at: new Date().toISOString()
     };

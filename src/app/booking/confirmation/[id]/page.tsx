@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -33,12 +33,10 @@ import {
   Car,
   Truck
 } from "lucide-react";
-import { Vehicle, VehicleType } from "@/lib/types";
 
 export default function BookingConfirmationPage() {
   // Get booking ID from URL using multiple methods
   const params = useParams();
-  const router = useRouter();
 
   // Log what we're getting to debug
   console.log("Full URL:", typeof window !== 'undefined' ? window.location.href : 'Not in browser');
@@ -67,14 +65,13 @@ export default function BookingConfirmationPage() {
   }
 
   const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState<any>(null);
+  const [booking, setBooking] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
-  const [bookingHistory, setBookingHistory] = useState<any[]>([]);
-  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [bookingHistory, setBookingHistory] = useState<unknown[]>([]);
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [existingReview, setExistingReview] = useState<any>(null);
+  const [existingReview, setExistingReview] = useState<unknown>(null);
   const supabase = createClientComponentClient();
 
   // Check if this is a temporary cash payment from URL query parameter
@@ -316,35 +313,7 @@ export default function BookingConfirmationPage() {
     fetchBookingDetails();
   }, [bookingId, supabase]);
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'confirmed':
-        return 'text-green-500 bg-green-500/20';
-      case 'completed':
-        return 'text-blue-500 bg-blue-500/20';
-      case 'pending':
-        return 'text-yellow-500 bg-yellow-500/20';
-      case 'cancelled':
-        return 'text-red-500 bg-red-500/20';
-      default:
-        return 'text-gray-500 bg-gray-500/20';
-    }
-  };
 
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'confirmed':
-        return <CheckCircle className="text-green-500" />;
-      case 'completed':
-        return <Check className="text-blue-500" />;
-      case 'pending':
-        return <Clock className="text-yellow-500" />;
-      case 'cancelled':
-        return <XCircle className="text-red-500" />;
-      default:
-        return <Info className="text-gray-500" />;
-    }
-  };
 
   const getVehicleTypeIcon = (type?: string) => {
     // Return default icon if type is undefined or null
@@ -572,17 +541,6 @@ export default function BookingConfirmationPage() {
   // Add more fallbacks for potentially undefined properties
   const startDate = new Date(booking.start_date);
   const endDate = new Date(booking.end_date);
-  const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  const rentalPrice = (booking.vehicle?.price_per_day || 0) * days;
-  const deliveryFee = booking.deliveryOption?.fee || 0;
-
-  // Get customer info - use user data if available
-  const customerName = booking.user
-    ? `${booking.user.first_name || ''} ${booking.user.last_name || ''}`.trim()
-    : "Guest";
-
-  const customerEmail = booking.user?.email || "N/A";
-  const customerPhone = booking.user?.phone || "N/A";
 
   // Animation variants
   const containerVariants = {

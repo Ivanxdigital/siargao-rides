@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { attachPaymentMethod } from '@/lib/paymongo';
-import { addDays, format, eachDayOfInterval } from 'date-fns';
+import { format, eachDayOfInterval } from 'date-fns';
 
 /**
  * Block dates for a confirmed booking
  */
-async function blockDatesForBooking(supabase: any, rentalId: string) {
+async function blockDatesForBooking(supabase: unknown, rentalId: string) {
   try {
     console.log('Blocking dates for rental:', rentalId);
 
@@ -61,7 +61,7 @@ async function blockDatesForBooking(supabase: any, rentalId: string) {
     }
 
     // Insert the dates into vehicle_blocked_dates
-    const { data: blockedDates, error: blockError } = await supabase
+    const { error: blockError } = await supabase
       .from('vehicle_blocked_dates')
       .insert(newBlockedDates)
       .select();
@@ -93,8 +93,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServerComponentClient({ cookies });
 
     // Get the current authenticated user using the secure method
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    const userId = user?.id;
+    const { error: userError } = await supabase.auth.getUser();
 
     if (userError) {
       console.error('Error getting authenticated user:', userError);
@@ -218,7 +217,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Error in attach-method API:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

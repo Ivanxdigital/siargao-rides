@@ -27,7 +27,7 @@ export const ShopOwnerOnboardingEmail: React.FC<ShopOwnerOnboardingEmailProps> =
               </Heading>
               <Text className="text-gray-700">Hello {user.firstName || 'there'},</Text>
               <Text className="text-gray-700">
-                Thank you for creating your account. You're one step away from listing your vehicles and growing your business.
+                Thank you for creating your account. You&apos;re one step away from listing your vehicles and growing your business.
               </Text>
             </Section>
             
@@ -54,7 +54,7 @@ export const ShopOwnerOnboardingEmail: React.FC<ShopOwnerOnboardingEmailProps> =
               </Button>
               
               <Text className="text-gray-500 mt-4">
-                After verification, you'll be able to add your vehicles and start accepting bookings.
+                After verification, you&apos;ll be able to add your vehicles and start accepting bookings.
               </Text>
             </Section>
             

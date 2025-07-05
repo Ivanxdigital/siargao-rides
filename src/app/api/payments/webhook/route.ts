@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { addDays, format, eachDayOfInterval } from 'date-fns';
+import { format, eachDayOfInterval } from 'date-fns';
 import { verifyWebhookSignature } from '@/lib/paymongo';
 
 // Initialize Supabase client with service role for webhook processing
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Error processing webhook:', error);
     return NextResponse.json(
-      { error: 'Webhook processing failed', details: error.message },
+      { error: 'Webhook processing failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 /**
  * Handle payment.paid event
  */
-async function handlePaymentPaid(event: any) {
+async function handlePaymentPaid(event: unknown) {
   const paymentData = event.attributes.data;
   const paymentIntentId = paymentData.attributes.payment_intent_id;
 
@@ -249,7 +249,7 @@ async function blockDatesForBooking(rentalId: string) {
     }
 
     // Insert the dates into vehicle_blocked_dates
-    const { data: blockedDates, error: blockError } = await supabase
+    const { error: blockError } = await supabase
       .from('vehicle_blocked_dates')
       .insert(newBlockedDates)
       .select();
@@ -279,7 +279,7 @@ async function blockDatesForBooking(rentalId: string) {
 /**
  * Handle payment.failed event
  */
-async function handlePaymentFailed(event: any) {
+async function handlePaymentFailed(event: unknown) {
   const paymentData = event.attributes.data;
   const paymentIntentId = paymentData.attributes.payment_intent_id;
   const errorMessage = paymentData.attributes.last_payment_error?.message || 'Payment failed';

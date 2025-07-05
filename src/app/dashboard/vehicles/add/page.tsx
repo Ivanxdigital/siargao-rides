@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlusCircle, XCircle, ArrowLeft, Info, Package, Users, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -1123,10 +1124,11 @@ export default function AddVehiclePage() {
                     {/* Image Preview */}
                     {image.preview ? (
                       <div className="relative aspect-video w-full overflow-hidden rounded-t-md bg-muted">
-                        <img
+                        <Image
                           src={image.preview}
                           alt={`Vehicle image ${index + 1}`}
-                          className="h-full w-full object-cover transition-all hover:scale-105"
+                          fill
+                          className="object-cover transition-all hover:scale-105"
                         />
                         
                         {/* Primary badge */}

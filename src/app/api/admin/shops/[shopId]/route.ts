@@ -33,15 +33,13 @@ export async function PATCH(
     const updateData = await request.json();
 
     // Remove fields that shouldn't be updated directly
-    const {
-      id,
-      owner_id,
-      created_at,
-      updated_at,
-      owner,
-      stats,
-      ...allowedUpdates
-    } = updateData;
+    const allowedUpdates = { ...updateData };
+    delete allowedUpdates.id;
+    delete allowedUpdates.owner_id;
+    delete allowedUpdates.created_at;
+    delete allowedUpdates.updated_at;
+    delete allowedUpdates.owner;
+    delete allowedUpdates.stats;
 
     // Validate shop exists
     const { data: existingShop, error: fetchError } = await supabaseAdmin

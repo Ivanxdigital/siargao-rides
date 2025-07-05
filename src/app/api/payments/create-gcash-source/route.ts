@@ -82,17 +82,17 @@ export async function POST(request: NextRequest) {
         billingInfo
       );
       console.log('GCash source created:', source.id);
-    } catch (paymongoError: any) {
+    } catch (paymongoError: unknown) {
       console.error('Error creating GCash source:', paymongoError);
       return NextResponse.json(
-        { error: 'Failed to create GCash source', details: paymongoError.message },
+        { error: 'Failed to create GCash source', details: paymongoError instanceof Error ? paymongoError.message : 'Unknown error' },
         { status: 500 }
       );
     }
 
     // Check if the paymongo_sources table exists
     try {
-      const { count, error: tableCheckError } = await supabase
+      const { error: tableCheckError } = await supabase
         .from('paymongo_sources')
         .select('*', { count: 'exact', head: true });
 
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('paymongo_sources table exists or was created');
-    } catch (tableError: any) {
+    } catch (tableError: unknown) {
       console.error('Exception checking paymongo_sources table:', tableError);
       // Continue anyway, we'll try to insert the record
     }
@@ -165,10 +165,10 @@ export async function POST(request: NextRequest) {
           status: source.attributes.status
         }
       });
-    } catch (storeError: any) {
+    } catch (storeError: unknown) {
       console.error('Exception storing source:', storeError);
       return NextResponse.json(
-        { error: 'Failed to store source', details: storeError.message },
+        { error: 'Failed to store source', details: storeError instanceof Error ? storeError.message : 'Unknown error' },
         { status: 500 }
       );
     }
@@ -184,14 +184,14 @@ export async function POST(request: NextRequest) {
         .eq('id', rentalId);
 
       console.log('Rental payment status updated successfully');
-    } catch (updateError: any) {
+    } catch (updateError: unknown) {
       console.error('Error updating rental payment status:', updateError);
       // We don't return an error here since the source was already created and stored
     }
   } catch (error: unknown) {
     console.error('Error in create-gcash-source API:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

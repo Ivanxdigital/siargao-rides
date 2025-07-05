@@ -31,7 +31,7 @@ interface VehicleWithMetadata {
   price_per_week?: number;
   price_per_month?: number;
   is_available: boolean;
-  specifications?: any;
+  specifications?: Record<string, unknown>;
   color?: string;
   year?: number;
   shop_id: string;
@@ -39,7 +39,7 @@ interface VehicleWithMetadata {
   shopLogo?: string;
   shopLocation?: string;
   shopIsShowcase?: boolean;
-  images?: any[];
+  images?: { id: string; url: string; alt?: string }[];
   is_available_for_dates?: boolean;
   // Vehicle group fields
   group_id?: string;
@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Execute the query WITHOUT pagination - we'll paginate after processing
-    const { data: vehicleData, error: vehicleError, count } = await vehicleQuery;
+    const { data: vehicleData, error: vehicleError } = await vehicleQuery;
 
     if (vehicleError) {
       console.error('Error fetching vehicles:', vehicleError);
@@ -277,7 +277,7 @@ export async function GET(request: NextRequest) {
         
         // Process grouped vehicles
         const processedGroups: VehicleWithMetadata[] = [];
-        groupedVehiclesMap.forEach((groupVehicles, groupId) => {
+        groupedVehiclesMap.forEach((groupVehicles) => {
           // Find the primary vehicle or use the first one
           const primaryVehicle = groupVehicles.find(v => v.is_group_primary) || groupVehicles[0];
           const availableInGroup = groupVehicles.filter(v => v.is_available_for_dates).length;
@@ -330,7 +330,7 @@ export async function GET(request: NextRequest) {
     };
 
     if (categoriesResult.data) {
-      categoriesResult.data.forEach((category: any) => {
+      categoriesResult.data.forEach((category: { vehicle_type_id: string; name: string }) => {
         const vehicleType = category.vehicle_type_id === '1' ? 'motorcycle' :
                           category.vehicle_type_id === '2' ? 'car' :
                           category.vehicle_type_id === '3' ? 'tuktuk' :

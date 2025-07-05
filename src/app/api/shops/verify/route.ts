@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     // After shop is verified, update referral if applicable
     if (data && data.referrer_id) {
       // Check if the shop has at least one verified vehicle
-      const { data: vehicles, error: vehicleError } = await supabaseAdmin
+      const { data: vehicles } = await supabaseAdmin
         .from('vehicles')
         .select('id')
         .eq('shop_id', shopId)
@@ -199,7 +199,7 @@ export async function PATCH(request: Request) {
     // After shop is verified, update referral if applicable
     if (data && data.referrer_id) {
       // Check if the shop has at least one verified vehicle
-      const { data: vehicles, error: vehicleError } = await supabaseAdmin
+      const { data: vehicles } = await supabaseAdmin
         .from('vehicles')
         .select('id')
         .eq('shop_id', shopId)

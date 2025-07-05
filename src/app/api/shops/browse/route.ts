@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const filters: BrowseShopsFilters = {
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '12'),
-      sort_by: searchParams.get('sort_by') as any || 'rating_desc',
+      sort_by: (searchParams.get('sort_by') as 'rating_desc' | 'rating_asc' | 'vehicles_desc' | 'price_asc' | 'price_desc' | 'newest') || 'rating_desc',
       location: searchParams.get('location') || undefined,
       vehicle_types: searchParams.getAll('vehicle_types') as VehicleType[] || undefined,
       verified_only: searchParams.get('verified_only') === 'true',
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all unique locations
-    const { data: allShops, error: locationsError } = await supabase
+    const { data: allShops } = await supabase
       .from('rental_shops')
       .select('city, location_area')
       .eq('is_active', true)
@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
       const images: string[] = []
       shopImageData.forEach(vehicle => {
         if (vehicle.vehicle_images && Array.isArray(vehicle.vehicle_images)) {
-          vehicle.vehicle_images.forEach((img: any) => {
+          vehicle.vehicle_images.forEach((img: { image_url?: string }) => {
             if (img.image_url && images.length < 4) {
               images.push(img.image_url)
             }

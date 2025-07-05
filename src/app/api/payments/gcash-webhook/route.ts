@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ success: true });
-    } catch (paymentError: any) {
+    } catch (paymentError: unknown) {
       console.error('Error creating payment from source:', paymentError);
 
       // Update the source status to failed
@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
         .eq('source_id', sourceId);
 
       return NextResponse.json(
-        { error: 'Failed to create payment', details: paymentError.message },
+        { error: 'Failed to create payment', details: paymentError instanceof Error ? paymentError.message : 'Unknown error' },
         { status: 500 }
       );
     }

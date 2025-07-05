@@ -97,7 +97,7 @@ export async function PATCH(request: NextRequest) {
       const uniqueShopIds = [...new Set(vehiclesData.map(v => v.shop_id))];
       for (const shopId of uniqueShopIds) {
         // Get the shop's referrer_id and is_verified status
-        const { data: shop, error: shopError } = await supabase
+        const { data: shop } = await supabase
           .from('rental_shops')
           .select('referrer_id, is_verified')
           .eq('id', shopId)

@@ -9,7 +9,8 @@ import { twilioService, TwilioService } from '@/lib/sms';
 // Initialize Resend with API key
 const resendApiKey = process.env.RESEND_API_KEY;
 const isDevMode = process.env.NODE_ENV === 'development';
-const fallbackEmail = 'support@siargaorides.ph'; // Your custom domain email
+// Fallback email for development/testing purposes
+// const fallbackEmail = 'support@siargaorides.ph';
 
 // Log the presence of the API key (without revealing it)
 console.log('Resend API key status:', resendApiKey ?
@@ -65,7 +66,7 @@ type BookingData = {
   payment_method_id?: string;
   deposit_required?: boolean;
   deposit_amount?: number;
-  contact_info?: any;
+  contact_info?: unknown;
   delivery_address?: string | null;
 };
 

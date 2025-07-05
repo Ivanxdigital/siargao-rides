@@ -171,10 +171,10 @@ export async function POST(request: Request) {
         message: 'Payment settings updated successfully',
         settings: data[0].value
       });
-    } catch (updateError: any) {
+    } catch (updateError: unknown) {
       console.error('Error in update operation:', updateError);
       return NextResponse.json(
-        { error: 'Error updating settings', details: updateError.message || 'Unknown error' },
+        { error: 'Error updating settings', details: updateError instanceof Error ? updateError.message : 'Unknown error' },
         { status: 500 }
       );
     }

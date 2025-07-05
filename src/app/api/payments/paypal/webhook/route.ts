@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleOrderApproved(webhookEvent: any) {
+async function handleOrderApproved(webhookEvent: unknown) {
   try {
     console.log('Processing ORDER.APPROVED webhook');
     const orderId = webhookEvent.resource.id;
@@ -126,7 +126,7 @@ async function handleOrderApproved(webhookEvent: any) {
   }
 }
 
-async function handleOrderCompleted(webhookEvent: any) {
+async function handleOrderCompleted(webhookEvent: unknown) {
   try {
     console.log('Processing ORDER.COMPLETED webhook');
     const orderId = webhookEvent.resource.id;
@@ -182,7 +182,7 @@ async function handleOrderCompleted(webhookEvent: any) {
   }
 }
 
-async function handleCaptureCompleted(webhookEvent: any) {
+async function handleCaptureCompleted(webhookEvent: unknown) {
   try {
     console.log('Processing CAPTURE.COMPLETED webhook');
     const captureId = webhookEvent.resource.id;
@@ -234,7 +234,7 @@ async function handleCaptureCompleted(webhookEvent: any) {
   }
 }
 
-async function handleCaptureFailed(webhookEvent: any) {
+async function handleCaptureFailed(webhookEvent: unknown) {
   try {
     console.log('Processing CAPTURE FAILED webhook');
     const captureId = webhookEvent.resource.id;

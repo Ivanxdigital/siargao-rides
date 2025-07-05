@@ -134,7 +134,7 @@ export default function ContactClient() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
             >
-              Have questions or feedback? We'd love to hear from you.
+              Have questions or feedback? We&apos;d love to hear from you.
             </motion.p>
           </motion.div>
           
@@ -153,7 +153,7 @@ export default function ContactClient() {
                 >
                   <h2 className="text-xl font-semibold mb-4">Thank You!</h2>
                   <p className="text-gray-300 mb-6">
-                    Your message has been sent successfully. We'll get back to you as soon as possible.
+                    Your message has been sent successfully. We&apos;ll get back to you as soon as possible.
                   </p>
                   <Button 
                     onClick={() => setIsSubmitted(false)} 

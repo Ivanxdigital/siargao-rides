@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     // Check if the check_vehicle_availability function exists
     try {
-      const { data: functionExists, error: functionCheckError } = await supabase.rpc(
+      const { error: functionCheckError } = await supabase.rpc(
         'check_vehicle_availability',
         {
           vehicle_id: availableVehicles[0].id,

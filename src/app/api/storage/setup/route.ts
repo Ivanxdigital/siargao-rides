@@ -2,7 +2,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET() {
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
   
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     // Create the bikes bucket if it doesn't exist
     if (!bikesBucket) {
       try {
-        const { data: bucketData, error: createError } = await supabase
+        const { error: createError } = await supabase
           .storage
           .createBucket("bikes", {
             public: true,
@@ -62,10 +62,10 @@ export async function GET(request: Request) {
           { message: "Storage buckets set up successfully", created: ["bikes"] },
           { status: 200 }
         );
-      } catch (createBucketError: any) {
+      } catch (createBucketError: unknown) {
         console.error("Exception creating bikes bucket:", createBucketError);
         return NextResponse.json(
-          { error: "Exception creating bikes bucket", details: createBucketError.message },
+          { error: "Exception creating bikes bucket", details: createBucketError instanceof Error ? createBucketError.message : String(createBucketError) },
           { status: 500 }
         );
       }
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     try {
       // Update the bikes bucket to be public if it exists but isn't public
       if (bikesBucket && !bikesBucket.public) {
-        const { data: updateData, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .storage
           .updateBucket("bikes", {
             public: true
@@ -99,10 +99,10 @@ export async function GET(request: Request) {
         { message: "Storage buckets already set up correctly", bucket: "bikes" },
         { status: 200 }
       );
-    } catch (updateBucketError: any) {
+    } catch (updateBucketError: unknown) {
       console.error("Exception updating bikes bucket:", updateBucketError);
       return NextResponse.json(
-        { error: "Exception updating bikes bucket", details: updateBucketError.message },
+        { error: "Exception updating bikes bucket", details: updateBucketError instanceof Error ? updateBucketError.message : String(updateBucketError) },
         { status: 500 }
       );
     }

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Vehicle, RentalShop, VehicleType, VehicleGroupWithDetails } from "@/lib/types";
+import { Vehicle, RentalShop, VehicleGroupWithDetails } from "@/lib/types";
 import { ArrowLeft, Bike, Car, Truck, Users, Package, CheckCircle, Info, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -213,7 +213,7 @@ export default function BookingPage() {
     };
 
     fetchData();
-  }, [vehicleId, shopId, searchParams]);
+  }, [vehicleId, shopId, searchParams, endDate, startDate]);
 
   // Effect to fetch available vehicles when dates change (for group vehicles)
   useEffect(() => {
