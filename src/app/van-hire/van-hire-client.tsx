@@ -480,10 +480,10 @@ export default function VanHireClient() {
               glowColor="rgba(147, 51, 234, 0.2)"
               className="bg-gradient-to-br from-primary/10 to-purple-900/10 border border-primary/20 rounded-xl p-8 text-center relative"
             >
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white">
+              <Badge className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-white">
                 Most Popular
               </Badge>
-              <h3 className="text-2xl font-bold text-white mb-2">Large Group</h3>
+              <h3 className="text-2xl font-bold text-white mb-2 mt-2">Large Group</h3>
               <p className="text-gray-400 mb-4">Ideal for families & friends</p>
               <div className="text-5xl font-black text-primary mb-4">₱3,500</div>
               <p className="text-gray-300">For 3-8 passengers</p>
