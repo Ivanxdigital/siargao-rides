@@ -213,23 +213,9 @@ export class SemaphoreService {
     startDate: string;
     endDate: string;
     bookingId: string;
-    isVanHire?: boolean;
-    pickupLocation?: string;
-    pickupTime?: string;
   }): string {
     const startDateFormatted = format(new Date(data.startDate), 'MMM dd');
     const endDateFormatted = format(new Date(data.endDate), 'MMM dd');
-    
-    if (data.isVanHire && data.pickupLocation && data.pickupTime) {
-      const pickupTimeFormatted = format(new Date(data.pickupTime), 'h:mm a');
-      return (
-        `New van hire booking!\n` +
-        `Customer: ${data.customerName}\n` +
-        `Pickup: ${data.pickupLocation}\n` +
-        `Time: ${pickupTimeFormatted} on ${startDateFormatted}\n` +
-        `View: ${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/bookings/${data.bookingId}`
-      );
-    }
     
     return (
       `New booking request!\n` +

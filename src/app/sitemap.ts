@@ -21,16 +21,6 @@ const staticRoutes = [
     changeFrequency: 'daily' as const,
   },
   {
-    path: '/van-hire',
-    priority: 0.9,
-    changeFrequency: 'weekly' as const,
-  },
-  {
-    path: '/siargao-private-van-hire',
-    priority: 0.9,
-    changeFrequency: 'weekly' as const,
-  },
-  {
     path: '/browse/shops',
     priority: 0.8,
     changeFrequency: 'daily' as const,
@@ -55,6 +45,11 @@ const staticRoutes = [
     priority: 0.3,
     changeFrequency: 'yearly' as const,
   },
+  {
+    path: '/guides',
+    priority: 0.8,
+    changeFrequency: 'weekly' as const,
+  },
 ]
 
 // Vehicle types for browse pages
@@ -62,6 +57,15 @@ const vehicleTypes = ['motorcycle', 'car', 'tuktuk', 'van']
 
 // Popular locations in Siargao
 const popularLocations = ['General Luna', 'Cloud 9', 'Dapa', 'Santa Monica', 'Pilar']
+
+// Guide pages
+const guidePages = [
+  'how-to-find-motorbike-rental-siargao',
+  'where-to-rent-motorbike-siargao',
+  'popular-vehicles-ride-siargao',
+  'motorbike-rental-prices-siargao',
+  'siargao-transportation-guide'
+]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
@@ -87,6 +91,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
+    }))
+
+    // Generate guide page entries
+    const guideSitemapEntries = guidePages.map((slug) => ({
+      url: `${SITE_URL}/guides/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
     }))
 
     // Fetch verified shops from database
@@ -115,6 +127,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...staticSitemapEntries,
       ...vehicleTypeSitemapEntries,
       ...locationSitemapEntries,
+      ...guideSitemapEntries,
       ...shopSitemapEntries,
     ]
 

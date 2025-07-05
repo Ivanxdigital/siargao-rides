@@ -80,7 +80,7 @@ export function generateBrowseMetadata(
     openGraph: {
       title,
       description,
-      url: 'https://siargaorides.com/browse',
+      url: 'https://siargaorides.ph/browse',
       type: 'website',
       images: [
         {
@@ -97,7 +97,7 @@ export function generateBrowseMetadata(
       images: ['/images/siargao-vehicle-browse-og.jpg'],
     },
     alternates: {
-      canonical: 'https://siargaorides.com/browse',
+      canonical: 'https://siargaorides.ph/browse',
     },
     other: {
       'geo.region': 'PH-AGN',

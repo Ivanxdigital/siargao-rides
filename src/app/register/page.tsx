@@ -1111,7 +1111,7 @@ function RegisterShopPageContent({
       transition={{ duration: 0.6 }}
     >
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden">
+      <section className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden pt-20">
         {/* Background with overlay gradient */}
         <div className="absolute inset-0 z-0 opacity-20">
           <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-900/30"></div>

@@ -87,12 +87,13 @@ export interface ProductSchema {
 }
 
 export function generateLocalBusinessSchema(): LocalBusinessSchema {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://siargaorides.ph'
   return {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: 'Siargao Rides',
     description: 'Premier vehicle rental directory in Siargao Island, Philippines. Rent motorbikes, cars, and scooters from trusted local rental shops with competitive rates and flexible pickup options.',
-    url: 'https://siargaorides.com',
+    url: siteUrl,
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'General Luna',
@@ -181,12 +182,13 @@ export function generateVehicleProductSchema(vehicle: Vehicle, shop: RentalShop)
 }
 
 export function generateRentalShopSchema(shop: RentalShop, averageRating?: number, reviewCount?: number): LocalBusinessSchema {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://siargaorides.ph'
   const schema: LocalBusinessSchema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: shop.name,
     description: `${shop.name} - Vehicle rental shop in Siargao Island offering motorbikes, cars, and scooters for rent. Located in ${shop.city || 'Siargao Island'}.`,
-    url: `https://siargaorides.com/shop/${shop.id}`,
+    url: `${siteUrl}/shop/${shop.id}`,
     address: {
       '@type': 'PostalAddress',
       streetAddress: shop.address || undefined,

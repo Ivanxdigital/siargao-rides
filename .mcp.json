@@ -22,6 +22,11 @@
       "env": {
         "FIRECRAWL_API_KEY": "fc-6df8698b1c3e42ada5f1b0b558f358af"
       }
+    },
+    "browser-tools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@agentdeskai/browser-tools-mcp@latest"]
     }
   }
 }

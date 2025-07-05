@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://siargaorides.com',
+    url: 'https://siargaorides.ph',
     siteName: 'Siargao Rides',
     title: 'Motorbike & Car Rental Siargao | Best Vehicle Rentals in Siargao Island',
     description: 'Rent motorbikes, cars, and scooters in Siargao Island, Philippines. Compare prices from trusted local rental shops with flexible pickup and competitive rates.',
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     site: '@siargaorides',
   },
   alternates: {
-    canonical: 'https://siargaorides.com',
+    canonical: 'https://siargaorides.ph',
   },
   other: {
     'geo.region': 'PH-AGN',

@@ -225,9 +225,9 @@ export default function BrowseShopsPage() {
 
   const faqStructuredData = generateFAQSchema(faqData);
   const breadcrumbStructuredData = generateBreadcrumbSchema([
-    { name: "Home", url: "https://siargaorides.com" },
-    { name: "Browse", url: "https://siargaorides.com/browse" },
-    { name: "Rental Shops", url: "https://siargaorides.com/browse/shops" }
+    { name: "Home", url: "https://siargaorides.ph" },
+    { name: "Browse", url: "https://siargaorides.ph/browse" },
+    { name: "Rental Shops", url: "https://siargaorides.ph/browse/shops" }
   ]);
   
   return (
@@ -268,7 +268,7 @@ export default function BrowseShopsPage() {
     <div className="min-h-screen">
       {/* SEO-Optimized Hero Section */}
       <motion.section
-        className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden"
+        className="relative bg-gradient-to-b from-black to-gray-900 text-white overflow-hidden pt-20"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}

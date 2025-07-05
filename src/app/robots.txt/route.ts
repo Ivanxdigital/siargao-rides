@@ -14,8 +14,6 @@ Allow: /browse
 Allow: /shop/
 Allow: /about
 Allow: /contact
-Allow: /van-hire
-Allow: /siargao-private-van-hire
 Allow: /terms
 Allow: /privacy
 

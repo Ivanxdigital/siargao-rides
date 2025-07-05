@@ -12,7 +12,7 @@ const RESERVED_USERNAMES = [
   'booking', 'payment', 'auth', 'login', 'register', 'signup',
   'siargao', 'rides', 'rental', 'bike', 'motorcycle', 'car',
   'root', 'system', 'test', 'demo', 'example', 'null', 'undefined',
-  'van-hire', 'vanhire', 'hire', 'private'
+  'vanhire', 'hire', 'private'
 ]
 
 export async function GET(request: NextRequest) {

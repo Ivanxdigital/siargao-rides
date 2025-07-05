@@ -101,7 +101,7 @@ export function generateShopsMetadata(
     openGraph: {
       title,
       description,
-      url: 'https://siargaorides.com/browse/shops',
+      url: 'https://siargaorides.ph/browse/shops',
       type: 'website',
       images: [
         {
@@ -118,7 +118,7 @@ export function generateShopsMetadata(
       images: ['/images/siargao-rental-shops-og.jpg'],
     },
     alternates: {
-      canonical: 'https://siargaorides.com/browse/shops',
+      canonical: 'https://siargaorides.ph/browse/shops',
     },
     other: {
       'geo.region': 'PH-AGN',
