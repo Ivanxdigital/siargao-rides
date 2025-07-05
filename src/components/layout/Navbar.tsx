@@ -240,13 +240,13 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-8 items-center">
+          <div className="hidden md:flex gap-6 items-center">
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
             <NavLink href="/browse" isScrolled={scrolled}>Browse Vehicles</NavLink>
             <NavLink href="/browse/shops" isScrolled={scrolled}>Browse Shops</NavLink>
             <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Airport Transfer</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About Us</NavLink>
-            <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink>
+            {/* <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink> */}
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
 
             {isAuthenticated ? (
@@ -447,9 +447,9 @@ const Navbar = () => {
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)} icon={<Info size={16} />}>
                 About Us
               </MobileNavLink>
-              <MobileNavLink href="/register" onClick={() => setIsMenuOpen(false)} icon={<Clipboard size={16} />}>
+              {/* <MobileNavLink href="/register" onClick={() => setIsMenuOpen(false)} icon={<Clipboard size={16} />}>
                 Register Your Shop
-              </MobileNavLink>
+              </MobileNavLink> */}
               <MobileNavLink href="/contact" onClick={() => setIsMenuOpen(false)} icon={<MessageSquare size={16} />}>
                 Contact
               </MobileNavLink>
