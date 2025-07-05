@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  async redirects() {
+    return [
+      {
+        source: '/van-hire',
+        destination: '/airport-transfer-siargao',
+        permanent: true, // 301 redirect for SEO
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {

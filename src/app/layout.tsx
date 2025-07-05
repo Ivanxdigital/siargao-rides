@@ -120,7 +120,7 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
-              <WhatsAppFloat hiddenOnPages={['/van-hire']} />
+              <WhatsAppFloat hiddenOnPages={['/airport-transfer-siargao']} />
             </div>
           </AuthProvider>
         </Providers>

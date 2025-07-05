@@ -244,6 +244,7 @@ const Navbar = () => {
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
             <NavLink href="/browse" isScrolled={scrolled}>Browse Vehicles</NavLink>
             <NavLink href="/browse/shops" isScrolled={scrolled}>Browse Shops</NavLink>
+            <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Airport Transfer</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About Us</NavLink>
             <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
@@ -439,6 +440,9 @@ const Navbar = () => {
               </MobileNavLink>
               <MobileNavLink href="/browse/shops" onClick={() => setIsMenuOpen(false)} icon={<ShoppingBag size={16} />}>
                 Browse Shops
+              </MobileNavLink>
+              <MobileNavLink href="/airport-transfer-siargao" onClick={() => setIsMenuOpen(false)} icon={<Truck size={16} />}>
+                Airport Transfer
               </MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)} icon={<Info size={16} />}>
                 About Us

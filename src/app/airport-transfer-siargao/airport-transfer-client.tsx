@@ -129,7 +129,7 @@ export default function VanHireClient() {
           <div className="relative w-full h-full">
             <Image
               src="/images/hero-bg-1.png"
-              alt="Luxury Van on Siargao Beach"
+              alt="Private van hire service Siargao - Luxury Hyundai Staria for airport transfer from Sayak to General Luna and Cloud 9"
               fill
               className="object-cover opacity-40"
               priority
@@ -171,7 +171,7 @@ export default function VanHireClient() {
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 tracking-tight"
               variants={heroTitleVariants}
             >
-              Your Premium Airport Transfer in Siargao
+              Private Pickup & Drop-Off Airport Transfer in Siargao
             </motion.h1>
 
             {/* Subtitle */}
@@ -179,7 +179,7 @@ export default function VanHireClient() {
               className="text-lg sm:text-xl md:text-2xl text-white/80 mb-8 max-w-2xl mx-auto"
               variants={heroSubtitleVariants}
             >
-              Travel in comfort with our luxury Hyundai Staria van. Professional drivers, fixed rates, and seamless service.
+              Door-to-door luxury van service from Sayak Airport to General Luna, Cloud 9, and all destinations across Siargao Island. Professional drivers, fixed rates, and seamless private pickup service.
             </motion.p>
 
             {/* Primary CTA */}
@@ -300,7 +300,7 @@ export default function VanHireClient() {
             <div className="relative aspect-video rounded-xl overflow-hidden">
               <Image
                 src="/images/hyundai-staria-tropical.png"
-                alt="Luxury Hyundai Staria van in tropical Siargao setting"
+                alt="Private van hire Siargao - Luxury Hyundai Staria for airport transfer service to General Luna, Cloud 9, and Pacifico"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -309,7 +309,7 @@ export default function VanHireClient() {
             <div className="relative aspect-video rounded-xl overflow-hidden">
               <Image
                 src="/images/interio-staria.png"
-                alt="Luxurious Hyundai Staria interior with premium leather seating and tropical beach views"
+                alt="Siargao airport transfer van interior - Premium leather seating in Hyundai Staria for private pickup and drop-off service"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -444,7 +444,7 @@ export default function VanHireClient() {
           <ScrollReveal className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                Simple, Transparent Pricing
+                Transparent Pricing
               </span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-lg">

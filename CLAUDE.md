@@ -1,259 +1,379 @@
-# CLAUDE.md
+# CLAUDE.md – Coding & Onboarding Rules for **Siargao Rides**
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> Claude Code reads this file at the start of every session. **Follow every rule unless the user explicitly overrides it.** These rules exist to keep the codebase clean, safe, and fast to iterate on.
 
-## Development Commands
+---
 
-- `npm run dev` - Start development server (http://localhost:3000)
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint checks
-- `npm run reset-db` - Reset database using scripts/reset-db.js
-- `npm run setup-storage` - Setup Supabase storage buckets
+## 1 · Quick Dev Commands
 
-## Tech Stack & Architecture
+| Script                  | Purpose                                                           |
+| ----------------------- | ----------------------------------------------------------------- |
+| `npm run dev`           | Start dev server – [http://localhost:3000](http://localhost:3000) |
+| `npm run build`         | Build for production                                              |
+| `npm run start`         | Run built app                                                     |
+| `npm run lint`          | ESLint + Type‑check                                               |
+| `npm run test`          | Vitest unit tests                                                 |
+| `npm run reset-db`      | Reset local DB via `scripts/reset-db.js`                          |
+| `npm run setup-storage` | Create Supabase storage buckets                                   |
 
-**Frontend:**
-- Next.js 15+ with App Router
-- React 18+ with TypeScript in strict mode
-- TailwindCSS for styling with dark/minimalist theme
-- shadcn/ui and Radix UI primitives for components
-- Framer Motion for animations
-- React Hook Form + Zod for form validation
+---
 
-**Backend:**
-- Supabase (PostgreSQL, Auth, Storage, RLS)
-- API routes in `src/app/api/`
-- Service layer at `src/lib/service.ts`
-- Direct Supabase calls in `src/lib/api.ts`
+## 2 · Tech Stack at a Glance
 
-**Key Libraries:**
-- `@supabase/supabase-js` and `@supabase/auth-helpers-nextjs`
-- `@tanstack/react-query` for data fetching
-- `date-fns` for date operations (standardized)
-- `resend` for email notifications
-- `react-google-recaptcha-v3` for form protection
+| Layer             | Tooling / Service                       | Must‑Know Constraints                                                                                       |
+| ----------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Framework**     | Next.js 15 (App Router)                 | – **Server Components** by default.<br>– Client Components only when you need state, refs, or browser APIs. |
+| **Language**      | TypeScript (strict)                     | `noImplicitAny` + `strictNullChecks` must pass.                                                             |
+| **Styling**       | Tailwind CSS + dark/minimal theme       | Use utility classes; no inline styles.                                                                      |
+| **UI Primitives** | shadcn/ui + Radix                       | Import from `@/components/ui/*`; never fork core primitives.                                                |
+| **Animation**     | Framer Motion                           | Keep motion props in `motionConfig` objects; don’t animate above‑the‑fold layout.                           |
+| **State/Data**    | React‑Query (`@tanstack/react-query`)   | Wrap queries in the **service layer**; no `.useQuery()` calls in pages.                                     |
+| **Backend**       | Supabase (Postgres, Auth, Storage, RLS) | All queries live in `src/lib/api.ts`; no direct clients in components.                                      |
+| **Validation**    | Zod                                     | Parse **all** external input (forms, URL params, cookies).                                                  |
+| **Testing**       | Vitest + MSW                            | New utils/components need ≥1 test with MSW for network mocks.                                               |
 
-## Code Structure
+---
+
+## 3 · Repository Layout
 
 ```
 src/
-├── app/                    # Next.js App Router pages & API routes
-│   ├── api/               # Backend API endpoints
-│   ├── dashboard/         # Role-based dashboard pages
-│   ├── booking/          # Booking flow pages
-│   └── ...               # Other pages
-├── components/            # Reusable components
-│   ├── ui/               # shadcn/ui components
-│   ├── dashboard/        # Dashboard-specific components
-│   └── ...               # Feature-specific components
-├── lib/                  # Core utilities and services
-│   ├── types.ts          # TypeScript type definitions
-│   ├── service.ts        # Business logic layer
-│   ├── api.ts            # Supabase API calls
-│   └── supabase.ts       # Supabase client setup
-└── contexts/             # React contexts (Auth, etc.)
+├─ app/                # Next.js pages & API routes (App Router)
+│  ├─ api/             # Backend API endpoints
+│  ├─ booking/         # Booking flow pages
+│  ├─ dashboard/       # Role‑based dashboards
+│  └─ …
+├─ components/         # Reusable UI
+│  ├─ ui/              # shadcn/ui primitives
+│  ├─ layout/          # Navbar, Footer, etc.
+│  └─ shop/            # Feature‑specific comps
+├─ lib/                # Core utilities & services
+│  ├─ api.ts           # Supabase queries
+│  ├─ service.ts       # Business logic wrapper
+│  ├─ supabase.ts      # Supabase client
+│  ├─ types.ts         # Shared TS types
+│  └─ …
+├─ contexts/           # React Context providers
+└─ supabase/           # SQL migrations, policies, functions
 ```
 
-## Database Architecture
+### Folder Rules
 
-**Core Tables:**
-- `users` - Authentication and profiles
-- `rental_shops` - Shop information and verification
-- `vehicles` - Vehicle inventory (replaces legacy `bikes`)
-- `rentals` - Booking records
-- `reviews` - User reviews and ratings
-- `referrals` - Referral tracking system
+1. **Pages** go in `src/app/` and must export `generateMetadata` unless SEO is irrelevant.
+2. **Generic components** live in `src/components/ui/`; **feature components** get their own sub‑folder.
+3. **Business logic only** in `src/lib/service.ts` or a new file under `lib/` – never in pages.
+4. Adding a Supabase table → migration SQL + regenerated `database.types.ts`.
+5. Context providers live in `src/contexts/` (one provider per file).
 
-**Key Features:**
-- Row Level Security (RLS) on all tables
-- Multi-role authentication (tourist, shop_owner, admin)
-- Vehicle categories and types
-- Payment integration with PayMongo
-- Subscription system for shop owners
+---
 
-## Development Guidelines
+## 4 · Development Guidelines
 
-**Code Standards:**
-- All code must be TypeScript in strict mode
-- Use functional components with hooks
-- Follow naming: PascalCase for components, camelCase for functions
-- Keep files under 250 LOC
-- Use Zod schemas for all data validation
+### 4.1 TypeScript
 
-**Database Changes:**
-- Generate raw SQL for manual execution in Supabase SQL Editor
-- Update type definitions in `src/lib/types.ts`
-- Never assume database structure - use Supabase MCP to query live data
+* Never use `any`; use proper generics or utility types.
+* No `as unknown as` hacks – fix the types.
+* Export common interfaces from `src/lib/types.ts`.
 
-**UI/UX:**
-- Mobile-first responsive design
-- Dark theme with teal/coral accents
-- Use Lucide React for icons consistently
-- Implement proper accessibility (ARIA, semantic HTML)
+### 4.2 React / Next.js
 
-**Testing & Quality:**
-- Run `npm run lint` before commits
-- Ensure `npm run build` passes
-- Use TypeScript strict mode (no `any` types)
-- Validate all external input with Zod
-- Test payment flows with PayMongo test cards (see `docs/paymongo-test-cards.md`)
-- Use `npm run reset-db` for database reset during development
-- Run `npm run setup-storage` for Supabase storage bucket setup
+* Server Components: **no** state or `useEffect`.
+* Client Components: suffix file name with `-client.tsx`.
+* Wrap async functions in `try/catch` and return typed errors.
 
-## Business Logic
+### 4.3 TailwindCSS
 
-**Core Features:**
-- Vehicle rental marketplace connecting shops and tourists
-- Multi-vehicle support (motorcycles, cars, tuktuks)
-- Booking system with date selection and payments
-- Review and rating system
-- Admin dashboard for user/shop management
-- Referral system for shop acquisition
+* Class order: **layout → spacing → typography → color → state**.
+* Use `@apply` only for complex selectors in `*.module.css`.
 
-**Payment Methods:**
-- Cash payments with deposit system and payout tracking
-- GCash integration via PayMongo e-wallets
-- PayMongo for card payments (cards, bank transfers)
-- PayPal integration for international customers
-- Deposit payment system with separate flows
-- Auto-cancellation for unpaid bookings
+### 4.4 Performance & UX
 
-**Role-Based Access:**
-- Tourists: Browse, book, review
-- Shop Owners: Manage inventory, view bookings
-- Admins: Full system management
+* Use `next/image` for **all** images.
+* Fetch **≤50 rows** per query; paginate otherwise.
+* Provide skeletons for content that loads > 300 ms.
 
-## Important Files
+### 4.5 Error Handling
 
-- `src/lib/types.ts` - All TypeScript definitions
-- `supabase/` - Database migrations and functions
-- `docs/` - Feature implementation guides
-- `.cursor/rules/ai-agent-rules.mdc` - AI coding standards
-- `docs/AI-agent-rules.md` - Additional project guidelines
+| Scenario       | What to Render                                                                  |
+| -------------- | ------------------------------------------------------------------------------- |
+| Network error  | `toast.error("Something went wrong. Please try again.")` and `console.error(e)` |
+| Zod form error | Field‑level messages, no generic alerts                                         |
+| 401 / Unauth   | `redirect('/login')` in server component                                        |
 
-## Security Notes
+### 4.6 Testing & Quality
 
-- All API routes use Supabase RLS for authorization
-- Environment variables managed via `.env` files
-- Never commit secrets or API keys
-- Validate all user input with Zod schemas
-- Use HTTPS and secure headers in production
+* `npm run lint` & `npm run test` must pass pre‑commit.
+* 100% of new public functions need unit tests.
+* Mock Supabase with MSW; never hit prod DB in tests.
 
-## Environment Setup
+---
 
-**Required Environment Variables (.env.local):**
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
-- `SUPABASE_SERVICE_KEY` - Service role key for admin operations
-- `NEXT_PUBLIC_SITE_URL` - Site URL for auth redirects
-- `NEXT_PUBLIC_USE_MOCK_DATA` - Feature flag (true/false)
-- `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` / `RECAPTCHA_SECRET_KEY` - reCAPTCHA keys
-- `RESEND_API_KEY` - Email service API key
-- `PAYMONGO_SECRET_KEY` / `NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY` - Payment keys
-- `NEXT_PUBLIC_PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` - PayPal payment keys
-- `PAYPAL_WEBHOOK_ID` / `PAYPAL_ENVIRONMENT` - PayPal webhook and environment config
-- `SEMAPHORE_API_KEY` - Semaphore SMS API key for Philippine mobile networks
-- `SEMAPHORE_SENDER_NAME` - Optional custom sender name (defaults to "SEMAPHORE")
+## 5 · Database & Schema
 
-**Feature Flags:**
-- Environment-based toggles using `NEXT_PUBLIC_FEATURE_*` pattern
-- Currently includes `NEXT_PUBLIC_FEATURE_ONBOARDING_V2`
+| Table          | Purpose                                | Notes                                         |
+| -------------- | -------------------------------------- | --------------------------------------------- |
+| `users`        | Auth & profiles                        | Multi‑role (`tourist`, `shop_owner`, `admin`) |
+| `rental_shops` | Shop info & verification               | FK → `users(id)`                              |
+| `vehicles`     | Inventory (motorcycles, cars, tuktuks) | Replaces legacy `bikes`                       |
+| `rentals`      | Booking records                        | Status & payment state                        |
+| `reviews`      | Ratings & comments                     | Nullable FK for anonymous reviews             |
+| `referrals`    | Shop acquisition tracking              | Self‑ref user FK                              |
 
-## Database Migration Strategy
+**Schema Change Workflow**
 
-**Schema Changes:**
-- Generate raw SQL for manual execution in Supabase SQL Editor
-- Never use Supabase CLI commands or migration scripts
-- All schema changes stored in `sql/` directory for reference
-- Key migrations include vehicle verification, deposit payouts, pickup times
+1. Write raw SQL migration → commit to `supabase/migrations/yyyymmdd_<slug>.sql`.
+2. Run locally with Supabase CLI or SQL Editor.
+3. Regenerate types: `supabase gen types typescript --linked > src/lib/database.types.ts`.
+4. Update `src/lib/types.ts` and docs if needed.
 
-**Legacy Data Handling:**
-- `bikes` table being phased out in favor of `vehicles` table
-- Maintain backward compatibility during transition
-- Use type-safe migrations with proper foreign key constraints
+---
 
-## Key Configuration
+## 6 · Security & Compliance
 
-**Authentication & Security:**
-- Supabase Auth with `@supabase/auth-helpers-nextjs`
-- Middleware handles auth sessions and JWT cleanup
-- Service role key separated for admin operations
-- reCAPTCHA protection on forms
+* RLS enabled on **all** tables.
+* Validate every user input with Zod.
+* Secrets only in `.env*`; never commit keys.
+* HTTPS enforced in production.
+* Supabase Service Key used **only** in secure server contexts (API routes, edge functions).
 
-**Build Configuration:**
-- TypeScript strict mode with `noImplicitAny: false`
-- ESLint ignores build errors for faster development
-- Vercel cron jobs for auto-cancellation processing
-- Image optimization for Supabase storage domains
+---
 
-**Feature Architecture:**
-- Multi-role system (tourist, shop_owner, admin)
-- Payment integration (PayMongo, GCash, cash deposits)
-- Email notifications via Resend
-- File uploads with browser compression
-- Referral tracking system
+## 7 · Environment Variables (`.env.local`)
 
-## Data Flow Patterns
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_KEY=
+NEXT_PUBLIC_SITE_URL=
+NEXT_PUBLIC_USE_MOCK_DATA=false
 
-**Authentication Flow:**
-- Supabase Auth → middleware → RLS policies
-- Role-based redirects via auth callbacks
-- Session persistence across page reloads
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=
+RECAPTCHA_SECRET_KEY=
+RESEND_API_KEY=
 
-**Booking System:**
-- Date availability checking → price calculation → payment processing
-- Auto-cancellation for unpaid bookings
-- Email notifications at each step
+PAYMONGO_SECRET_KEY=
+NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY=
+NEXT_PUBLIC_PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
+PAYPAL_WEBHOOK_ID=
+PAYPAL_ENVIRONMENT=sandbox
 
-**Shop Management:**
-- Progressive onboarding with verification steps
-- Subscription-based access control
-- Vehicle inventory management with categories
+SEMAPHORE_API_KEY=
+SEMAPHORE_SENDER_NAME="SEMAPHORE"
+```
 
-## AI Development Notes
+Use `NEXT_PUBLIC_FEATURE_*` flags for feature toggles (e.g. `NEXT_PUBLIC_FEATURE_ONBOARDING_V2`).
 
-**MCP Server Usage:**
-- Always use Supabase MCP for database context and queries
-- Use Context7 MCP for up-to-date dependency documentation
-- Never assume database structure - query live data
+---
 
-**Code Standards from .cursor/rules:**
-- Functional, modular design with files <250 LOC
-- TypeScript strict mode, no `any` types
-- Zod validation for all external input
-- Conventional Commits format
-- Jest/Testing-Library tests for all exports
+## 8 · Pull‑Request Checklist
 
-**Project-Specific Requirements:**
-- 🤖 Start responses with emoji to confirm rule compliance
-- Break large tasks into smaller chunks
-- Ask clarification before complex implementations
-- Use date-fns consistently (avoid moment, multiple calendar libraries)
-- Generate raw SQL for schema changes (no CLI commands)
-- Prioritize mobile-first responsive design
-- Focus on clean, readable, well-commented code
-- Use modern JavaScript/TypeScript syntax (async/await, ES6+)
-- Structure code into clear components, hooks, or API helpers
-- Include helpful console.log() statements for debugging during development
+* [ ] `npm run lint` & `npm run test` pass
+* [ ] ESLint shows **no new warnings** in browser console
+* [ ] Unit tests cover new logic (≥90 % lines)
+* [ ] SQL migration + regenerated types (if DB change)
+* [ ] Storybook story added/updated (if UI change)
+* [ ] Docs updated (CLAUDE.md, README, or `/docs/shop-owner-onboarding-flow-complete.md` for onboarding changes)
+* [ ] PR title follows **Conventional Commits** (e.g. `feat(bookings): add recurring rentals`)
 
-## Current Development Priorities
+---
 
-**Active Features:**
-- Van hire service with custom booking flow
-- PayPal payment integration
-- Vehicle verification system
-- Shop onboarding improvements
-- SEO optimization for van hire pages
+## 9 · Common Pitfalls
 
-**Legacy Migration:**
-- Transitioning from `bikes` to `vehicles` table structure
-- Consolidating date libraries to date-fns only
-- Removing redundant notification libraries
+1. Calling Supabase directly from components → always via **service layer**.
+2. Mixing server & client logic in one file.
+3. Over‑fetching data (select only needed columns).
+4. Missing skeleton or error states.
+5. Forgetting dark‑theme contrast ratios → run Lighthouse A11y.
 
-**MCP Context Notes:**
-- Always use the Supabase MCP server to gather context in our Supabase database when needed.
+---
 
-## Web Search & Information Retrieval
+## 10 · AI Prompting Guidelines
 
-- When instructed to search something using the web tool, I would always like relevant and up-to-date information preferably from credible sources. For reference the year is 2025.
+* **Explain first, code second** – 1‑2 sentence rationale above code blocks.
+* Reference exact paths ("In `src/components/VehicleCard.tsx` …").
+* Output **compilable** TypeScript; no pseudo‑code.
+* Use multi‑file diff format for >1 file.
+* Ask clarifying questions before large changes.
+* End messages with `✅ Ready for review`.
+
+---
+
+## 11 · Current Roadmap (Q3 2025)
+
+* Van‑hire feature & custom booking flow
+* PayPal integration & webhook handling
+* Vehicle verification workflow (admin → shop owner)
+* Shop verification workflow completion (shop owner document upload)
+* SEO deep‑dive for van‑hire landing pages
+
+---
+
+### 🏝  Welcome to Siargao Rides — let’s ship clean, accessible code fast!
+
+
+## 12 · Key Documentation References
+
+* **Shop Owner Onboarding System**: See `/docs/shop-owner-onboarding-flow-complete.md` for comprehensive analysis of current implementation, critical gaps, and recommendations.
+
+---
+
+## 13 · MCP Server Usage Guidelines
+
+The project has four MCP servers installed that provide powerful capabilities for development, research, and debugging. Use these tools strategically to enhance development workflow.
+
+### 13.1 Supabase MCP Server
+
+**Purpose**: Direct integration with Supabase cloud platform for database management and project operations.
+
+**When to Use**:
+- Database schema changes and migrations
+- Creating/managing Supabase projects and branches  
+- Executing SQL queries for data analysis
+- Generating TypeScript types after schema changes
+- Managing project settings and configurations
+- Monitoring database performance and advisors
+
+**Key Capabilities**:
+- `list_projects` / `get_project` - Project discovery and details
+- `create_project` / `create_branch` - Development environment setup
+- `apply_migration` / `execute_sql` - Database operations
+- `list_tables` / `generate_typescript_types` - Schema management
+- `get_advisors` - Security and performance recommendations
+
+**Best Practices**:
+- Always use read-only mode by default to prevent accidental changes
+- Validate SQL queries in staging before applying to production
+- Run `get_advisors` after schema changes to catch security issues
+- Use branches for testing major database changes
+- Regenerate TypeScript types after any schema modifications
+
+**Example Usage**:
+```
+Check our Supabase project status and run security advisors
+Create a new development branch for testing rental flow changes
+Generate updated TypeScript types after adding vehicle categories table
+```
+
+### 13.2 Context7 MCP Server
+
+**Purpose**: Fetch up-to-date, version-specific documentation and code examples for any library or framework.
+
+**When to Use**:
+- Need current API documentation for installed packages
+- Looking for implementation examples and best practices
+- Troubleshooting with the latest library documentation
+- Learning new features in framework updates
+- Ensuring code uses non-deprecated APIs
+
+**Key Capabilities**:
+- `resolve-library-id` - Find Context7-compatible library identifiers
+- `get-library-docs` - Fetch documentation with topic filtering and token limits
+
+**Best Practices**:
+- Add "use context7" to prompts when seeking library-specific help
+- Use specific library IDs when known (e.g., `/vercel/next.js`)
+- Filter by topic to focus on relevant documentation sections
+- Adjust token limits based on complexity of your question
+
+**Example Usage**:
+```
+How do I implement middleware for authentication in Next.js 15? use context7
+Show me Supabase RLS policy examples for multi-tenant apps. use context7
+What's the proper way to handle form validation with Zod? use context7
+```
+
+### 13.3 Firecrawl MCP Server  
+
+**Purpose**: Advanced web scraping, crawling, and content extraction for research and competitive analysis.
+
+**When to Use**:
+- Researching competitor rental pricing and features
+- Analyzing tourism websites for market insights
+- Extracting structured data from travel platforms
+- Gathering content for SEO research
+- Monitoring industry trends and news
+
+**Key Capabilities**:
+- `firecrawl_scrape` - Single page content extraction
+- `firecrawl_search` - Web search with content extraction
+- `firecrawl_crawl` - Multi-page website crawling
+- `firecrawl_extract` - Structured data extraction with AI
+- `firecrawl_deep_research` - Comprehensive research on topics
+
+**Best Practices**:
+- Use batch operations for multiple URLs to respect rate limits
+- Leverage `onlyMainContent` to avoid navigation and footer noise  
+- Set appropriate `maxUrls` and `timeLimit` for deep research
+- Use structured extraction with schemas for consistent data
+- Cache results locally to avoid repeated API calls
+
+**Example Usage**:
+```
+Research competitor motorcycle rental pricing in Siargao
+Extract vehicle inventory data from competing rental websites  
+Find tourism trend articles about Siargao island travel
+Analyze competitor booking flow UX patterns
+```
+
+### 13.4 Browser Tools MCP Server
+
+**Purpose**: Monitor and interact with browser for debugging, performance optimization, and accessibility auditing.
+
+**When to Use**:
+- Frontend debugging and error diagnosis
+- Performance optimization and Core Web Vitals analysis
+- Accessibility compliance testing (WCAG)
+- SEO auditing and meta tag analysis
+- Network request monitoring and API debugging
+- User experience testing and screenshot capture
+
+**Key Capabilities**:
+- `getConsoleLogs` / `getConsoleErrors` - Debug JavaScript issues
+- `getNetworkLogs` / `getNetworkErrors` - Monitor API calls
+- `takeScreenshot` - Visual testing and documentation
+- `runAccessibilityAudit` - WCAG compliance checking
+- `runPerformanceAudit` - Lighthouse performance analysis
+- `runSEOAudit` - Search engine optimization analysis
+- `runNextJSAudit` - Framework-specific best practices
+- `runAuditMode` - Comprehensive audit suite
+
+**Prerequisites**:
+- Install BrowserTools Chrome extension
+- Run `npx @agentdeskai/browser-tools-server@latest` in terminal
+- Configure MCP server in IDE
+- Open Chrome DevTools to BrowserTools panel
+
+**Best Practices**:
+- Use audit modes for comprehensive analysis
+- Run accessibility audits before production deployment
+- Monitor network logs during booking flow testing
+- Capture screenshots for visual regression testing
+- Use debugger mode for systematic issue diagnosis
+
+**Example Usage**:
+```
+Run accessibility audit on the vehicle booking page
+Check Core Web Vitals performance on the homepage  
+Debug network errors during payment processing
+Audit SEO compliance for rental shop listing pages
+Take screenshots of mobile booking flow
+```
+
+### 13.5 Integration with Siargao Rides Development
+
+**Project-Specific Use Cases**:
+
+1. **Database Development**: Use Supabase MCP for schema migrations, RLS policy testing, and generating types after adding vehicle categories or rental features.
+
+2. **Framework Implementation**: Use Context7 when implementing Next.js 15 features, PayPal integration, or Supabase authentication patterns.
+
+3. **Market Research**: Use Firecrawl to analyze competitor rental platforms, pricing strategies, and feature offerings in the tourism industry.
+
+4. **Quality Assurance**: Use Browser Tools to ensure accessibility compliance, optimal performance, and proper SEO for van-hire landing pages.
+
+**Workflow Integration**:
+- Include MCP server checks in pull request workflows
+- Use audit tools before production deployments  
+- Leverage research tools for feature planning
+- Integrate documentation lookup into code review process
