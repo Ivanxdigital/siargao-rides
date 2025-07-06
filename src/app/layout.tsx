@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 const inter = Inter({ subsets: ["latin"], display: 'swap' });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://siargaorides.ph'),
   title: "Motorbike & Car Rental Siargao | Best Vehicle Rentals in Siargao Island",
   description: "Rent motorbikes, cars, and scooters in Siargao Island, Philippines. Compare prices from trusted local rental shops. Book online with flexible pickup and competitive rates.",
   applicationName: "Siargao Rides",
