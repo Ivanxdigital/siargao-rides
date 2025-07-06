@@ -1,10 +1,10 @@
-# CLAUDE.md – Coding & Onboarding Rules for **Siargao Rides**
+# CLAUDE.md – Coding & Onboarding Rules for **Siargao Rides**
 
 > Claude Code reads this file at the start of every session. **Follow every rule unless the user explicitly overrides it.** These rules exist to keep the codebase clean, safe, and fast to iterate on.
 
 ---
 
-## 1 · Quick Dev Commands
+## 1 · Quick Dev Commands
 
 | Script                  | Purpose                                                           |
 | ----------------------- | ----------------------------------------------------------------- |
@@ -18,15 +18,15 @@
 
 ---
 
-## 2 · Tech Stack at a Glance
+## 2 · Tech Stack at a Glance
 
 | Layer             | Tooling / Service                       | Must‑Know Constraints                                                                                       |
 | ----------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Framework**     | Next.js 15 (App Router)                 | – **Server Components** by default.<br>– Client Components only when you need state, refs, or browser APIs. |
+| **Framework**     | Next.js 15 (App Router)                 | – **Server Components** by default.<br>– Client Components only when you need state, refs, or browser APIs. |
 | **Language**      | TypeScript (strict)                     | `noImplicitAny` + `strictNullChecks` must pass.                                                             |
-| **Styling**       | Tailwind CSS + dark/minimal theme       | Use utility classes; no inline styles.                                                                      |
+| **Styling**       | Tailwind CSS + dark/minimal theme       | Use utility classes; no inline styles.                                                                      |
 | **UI Primitives** | shadcn/ui + Radix                       | Import from `@/components/ui/*`; never fork core primitives.                                                |
-| **Animation**     | Framer Motion                           | Keep motion props in `motionConfig` objects; don’t animate above‑the‑fold layout.                           |
+| **Animation**     | Framer Motion                           | Keep motion props in `motionConfig` objects; don't animate above‑the‑fold layout.                           |
 | **State/Data**    | React‑Query (`@tanstack/react-query`)   | Wrap queries in the **service layer**; no `.useQuery()` calls in pages.                                     |
 | **Backend**       | Supabase (Postgres, Auth, Storage, RLS) | All queries live in `src/lib/api.ts`; no direct clients in components.                                      |
 | **Validation**    | Zod                                     | Parse **all** external input (forms, URL params, cookies).                                                  |
@@ -34,11 +34,11 @@
 
 ---
 
-## 3 · Repository Layout
+## 3 · Repository Layout
 
 ```
 src/
-├─ app/                # Next.js pages & API routes (App Router)
+├─ app/                # Next.js pages & API routes (App Router)
 │  ├─ api/             # Backend API endpoints
 │  ├─ booking/         # Booking flow pages
 │  ├─ dashboard/       # Role‑based dashboards
@@ -67,40 +67,40 @@ src/
 
 ---
 
-## 4 · Development Guidelines
+## 4 · Development Guidelines
 
-### 4.1 TypeScript
+### 4.1 TypeScript
 
-* Never use `any`; use proper generics or utility types.
+* Never use `any`; use proper generics or utility types.
 * No `as unknown as` hacks – fix the types.
 * Export common interfaces from `src/lib/types.ts`.
 
-### 4.2 React / Next.js
+### 4.2 React / Next.js
 
 * Server Components: **no** state or `useEffect`.
 * Client Components: suffix file name with `-client.tsx`.
 * Wrap async functions in `try/catch` and return typed errors.
 
-### 4.3 TailwindCSS
+### 4.3 TailwindCSS
 
 * Class order: **layout → spacing → typography → color → state**.
 * Use `@apply` only for complex selectors in `*.module.css`.
 
-### 4.4 Performance & UX
+### 4.4 Performance & UX
 
 * Use `next/image` for **all** images.
-* Fetch **≤50 rows** per query; paginate otherwise.
-* Provide skeletons for content that loads > 300 ms.
+* Fetch **≤50 rows** per query; paginate otherwise.
+* Provide skeletons for content that loads > 300 ms.
 
-### 4.5 Error Handling
+### 4.5 Error Handling
 
 | Scenario       | What to Render                                                                  |
 | -------------- | ------------------------------------------------------------------------------- |
 | Network error  | `toast.error("Something went wrong. Please try again.")` and `console.error(e)` |
 | Zod form error | Field‑level messages, no generic alerts                                         |
-| 401 / Unauth   | `redirect('/login')` in server component                                        |
+| 401 / Unauth   | `redirect('/login')` in server component                                        |
 
-### 4.6 Testing & Quality
+### 4.6 Testing & Quality
 
 * `npm run lint` & `npm run test` must pass pre‑commit.
 * 100% of new public functions need unit tests.
@@ -108,7 +108,7 @@ src/
 
 ---
 
-## 5 · Database & Schema
+## 5 · Database & Schema
 
 | Table          | Purpose                                | Notes                                         |
 | -------------- | -------------------------------------- | --------------------------------------------- |
@@ -122,23 +122,23 @@ src/
 **Schema Change Workflow**
 
 1. Write raw SQL migration → commit to `supabase/migrations/yyyymmdd_<slug>.sql`.
-2. Run locally with Supabase CLI or SQL Editor.
+2. Run locally with Supabase CLI or SQL Editor.
 3. Regenerate types: `supabase gen types typescript --linked > src/lib/database.types.ts`.
 4. Update `src/lib/types.ts` and docs if needed.
 
 ---
 
-## 6 · Security & Compliance
+## 6 · Security & Compliance
 
 * RLS enabled on **all** tables.
 * Validate every user input with Zod.
 * Secrets only in `.env*`; never commit keys.
 * HTTPS enforced in production.
-* Supabase Service Key used **only** in secure server contexts (API routes, edge functions).
+* Supabase Service Key used **only** in secure server contexts (API routes, edge functions).
 
 ---
 
-## 7 · Environment Variables (`.env.local`)
+## 7 · Environment Variables (`.env.local`)
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
@@ -166,40 +166,40 @@ Use `NEXT_PUBLIC_FEATURE_*` flags for feature toggles (e.g. `NEXT_PUBLIC_FEATURE
 
 ---
 
-## 8 · Pull‑Request Checklist
+## 8 · Pull‑Request Checklist
 
-* [ ] `npm run lint` & `npm run test` pass
+* [ ] `npm run lint` & `npm run test` pass
 * [ ] ESLint shows **no new warnings** in browser console
-* [ ] Unit tests cover new logic (≥90 % lines)
+* [ ] Unit tests cover new logic (≥90 % lines)
 * [ ] SQL migration + regenerated types (if DB change)
 * [ ] Storybook story added/updated (if UI change)
 * [ ] Docs updated (CLAUDE.md, README, or `/docs/shop-owner-onboarding-flow-complete.md` for onboarding changes)
-* [ ] PR title follows **Conventional Commits** (e.g. `feat(bookings): add recurring rentals`)
+* [ ] PR title follows **Conventional Commits** (e.g. `feat(bookings): add recurring rentals`)
 
 ---
 
-## 9 · Common Pitfalls
+## 9 · Common Pitfalls
 
 1. Calling Supabase directly from components → always via **service layer**.
 2. Mixing server & client logic in one file.
 3. Over‑fetching data (select only needed columns).
 4. Missing skeleton or error states.
-5. Forgetting dark‑theme contrast ratios → run Lighthouse A11y.
+5. Forgetting dark‑theme contrast ratios → run Lighthouse A11y.
 
 ---
 
-## 10 · AI Prompting Guidelines
+## 10 · AI Prompting Guidelines
 
 * **Explain first, code second** – 1‑2 sentence rationale above code blocks.
 * Reference exact paths ("In `src/components/VehicleCard.tsx` …").
 * Output **compilable** TypeScript; no pseudo‑code.
 * Use multi‑file diff format for >1 file.
 * Ask clarifying questions before large changes.
-* End messages with `✅ Ready for review`.
+* End messages with `✅ Ready for review`.
 
 ---
 
-## 11 · Current Roadmap (Q3 2025)
+## 11 · Current Roadmap (Q3 2025)
 
 * Van‑hire feature & custom booking flow
 * PayPal integration & webhook handling
@@ -209,7 +209,7 @@ Use `NEXT_PUBLIC_FEATURE_*` flags for feature toggles (e.g. `NEXT_PUBLIC_FEATURE
 
 ---
 
-### 🏝  Welcome to Siargao Rides — let’s ship clean, accessible code fast!
+### 🏝  Welcome to Siargao Rides — let's ship clean, accessible code fast!
 
 
 ## 12 · Key Documentation References
@@ -220,7 +220,7 @@ Use `NEXT_PUBLIC_FEATURE_*` flags for feature toggles (e.g. `NEXT_PUBLIC_FEATURE
 
 ## 13 · MCP Server Usage Guidelines
 
-The project has four MCP servers installed that provide powerful capabilities for development, research, and debugging. Use these tools strategically to enhance development workflow.
+The project has four MCP servers installed that provide powerful capabilities for development, research, and debugging. **Use these tools strategically** to enhance development workflow while avoiding unnecessary API costs.
 
 ### 13.1 Supabase MCP Server
 
@@ -377,3 +377,33 @@ Take screenshots of mobile booking flow
 - Use audit tools before production deployments  
 - Leverage research tools for feature planning
 - Integrate documentation lookup into code review process
+
+### 13.6 Cost Management and Efficiency
+
+**CRITICAL: When NOT to Use MCP Servers**
+
+❌ **Don't use MCP servers for**:
+- Basic coding questions you can answer directly
+- Simple explanations or tutorials
+- Well-known patterns and implementations
+- General programming concepts
+- Tasks that don't require external data
+
+✅ **Use MCP servers when**:
+- You need current/specific documentation
+- Researching competitors or market data
+- Debugging complex frontend issues
+- Making database schema changes
+- Ensuring compliance or performance standards
+
+**Token Management**:
+- Context7: Use focused topics and appropriate token limits
+- Firecrawl: Cache results, use batch operations efficiently
+- Browser Tools: Run audits selectively, not on every change
+- Supabase: Group related operations together
+
+**Rate Limiting Awareness**:
+- All MCP servers have rate limits and costs
+- Batch operations when possible
+- Cache results locally when appropriate
+- Don't repeat identical queries within the same session

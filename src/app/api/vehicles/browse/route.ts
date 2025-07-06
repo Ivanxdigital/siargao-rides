@@ -64,7 +64,8 @@ interface BrowseResponse {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerComponentClient({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createServerComponentClient({ cookies: () => cookieStore });
     const url = new URL(request.url);
     
     // Parse query parameters
