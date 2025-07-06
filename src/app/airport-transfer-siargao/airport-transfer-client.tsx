@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { 
   Car, 
@@ -106,7 +107,19 @@ export default function VanHireClient() {
     {
       icon: <Car className="w-6 h-6" />,
       title: "Surf Rack & Storage",
-      description: "Secure surf board rack and ample luggage space for all your gear"
+      description: (
+        <>
+          Secure surf board rack and ample luggage space for all your gear. Perfect for surfers heading to{' '}
+          <Link href="/browse?location=Cloud+9" className="text-primary hover:text-primary/80 underline">
+            Cloud 9
+          </Link>
+          {' '}or those planning to rent{' '}
+          <Link href="/browse?type=motorcycle" className="text-primary hover:text-primary/80 underline">
+            motorcycles
+          </Link>
+          {' '}for island exploration.
+        </>
+      )
     }
   ]
 
@@ -133,7 +146,23 @@ export default function VanHireClient() {
     },
     {
       question: "What areas do you service?",
-      answer: "We provide transfers between Sayak Airport and all major destinations in Siargao including General Luna, Cloud 9, Pacifico, Santa Monica, and more."
+      answer: (
+        <>
+          We provide transfers between Sayak Airport and all major destinations in Siargao including{' '}
+          <Link href="/browse?location=General+Luna" className="text-primary hover:text-primary/80 underline">
+            General Luna
+          </Link>
+          ,{' '}
+          <Link href="/browse?location=Cloud+9" className="text-primary hover:text-primary/80 underline">
+            Cloud 9
+          </Link>
+          ,{' '}
+          <Link href="/browse?location=Pacifico" className="text-primary hover:text-primary/80 underline">
+            Pacifico
+          </Link>
+          , Santa Monica, and more.
+        </>
+      )
     },
     {
       question: "Can I cancel or modify my pre-booking?",
@@ -180,51 +209,33 @@ export default function VanHireClient() {
             initial="hidden"
             animate="visible"
           >
-            {/* Badge */}
+            {/* Status Indicator */}
             <motion.div 
-              className="mb-6"
+              className="mb-8 md:mb-12"
               variants={staggerItemVariants}
             >
-              <Badge variant="brand" className="inline-flex items-center gap-2 text-sm px-4 py-2">
-                <Calendar className="w-4 h-4" />
-                Pre-Booking Available - Service Starts August 2025
-              </Badge>
-            </motion.div>
-
-            {/* Timeline Element */}
-            <motion.div 
-              className="mb-8"
-              variants={staggerItemVariants}
-            >
-              <div className="flex items-center justify-center max-w-md mx-auto">
-                <div className="flex items-center gap-2 text-sm text-white/60">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                    <span className="text-white font-medium">Pre-Booking Phase</span>
-                  </div>
-                  <div className="flex-1 h-px bg-gradient-to-r from-primary to-white/20 mx-4"></div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-white/20 rounded-full"></div>
-                    <span>Launch August 2025</span>
-                  </div>
-                </div>
+              <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-2 text-sm">
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                <span className="text-white font-medium">Pre-Booking Phase</span>
+                <span className="text-white/40">•</span>
+                <span className="text-white/80">Launching Aug 2025</span>
               </div>
             </motion.div>
 
             {/* Title */}
             <motion.h1 
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 tracking-tight"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 md:mb-8 tracking-tight"
               variants={heroTitleVariants}
             >
-              Private Pickup & Drop-Off Airport Transfer in Siargao
+              Private Airport Transfer Siargao
             </motion.h1>
 
             {/* Subtitle */}
             <motion.p 
-              className="text-lg sm:text-xl md:text-2xl text-white/80 mb-8 max-w-2xl mx-auto"
+              className="text-lg sm:text-xl md:text-2xl text-white/80 mb-8 md:mb-12 max-w-xl mx-auto"
               variants={heroSubtitleVariants}
             >
-              Secure your spot for our luxury van service launching August 2025. Pre-book now for guaranteed availability, locked-in rates, and priority service from Sayak Airport to all Siargao destinations.
+              Pre-book now for August 2025 launch. Guaranteed availability, locked rates.
             </motion.p>
 
             {/* Primary CTA */}
@@ -250,10 +261,10 @@ export default function VanHireClient() {
               </div>
             </motion.div>
 
-            {/* Secondary Action */}
+            {/* Secondary Action - Hidden on mobile */}
             <motion.div 
               variants={fadeInUpVariants}
-              className="text-center mb-4 sm:mb-0"
+              className="text-center mb-4 sm:mb-0 hidden md:block"
             >
               <SecondaryButton
                 onClick={() => {
@@ -384,17 +395,17 @@ export default function VanHireClient() {
                 {
                   step: "1",
                   title: "WhatsApp Us",
-                  description: "Send us your flight details and pickup requirements"
+                  description: "Send us your travel dates (Aug 2025+) and requirements"
                 },
                 {
                   step: "2",
                   title: "Get Confirmation",
-                  description: "Receive booking confirmation and driver information"
+                  description: "Secure your early-bird spot with guaranteed pricing"
                 },
                 {
                   step: "3",
-                  title: "Meet at Arrivals",
-                  description: "Your driver will be waiting with a name sign"
+                  title: "Service Launch",
+                  description: "Meet your driver at arrivals when service begins"
                 }
               ].map((item) => (
                 <div key={item.step} className="text-center">
@@ -445,12 +456,12 @@ export default function VanHireClient() {
                 <h3 className="text-xl font-semibold text-white mb-4">Private Van Benefits</h3>
                 <ul className="space-y-3">
                   {[
+                    "Guaranteed availability at launch",
+                    "Locked-in current pricing",
                     "No waiting for other passengers",
                     "Direct to your destination",
-                    "Flexible pickup times",
                     "Privacy and comfort",
-                    "Fixed transparent pricing",
-                    "Personalized service"
+                    "Priority early access"
                   ].map((benefit) => (
                     <li key={benefit} className="flex items-start gap-2 text-gray-300">
                       <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
@@ -479,6 +490,16 @@ export default function VanHireClient() {
                 </ul>
               </Card>
             </div>
+            
+            <ScrollReveal className="text-center mt-12 max-w-2xl mx-auto">
+              <p className="text-gray-400 text-sm">
+                After settling in at your destination, explore the island with our{' '}
+                <Link href="/browse" className="text-primary hover:text-primary/80 underline">
+                  motorcycle and car rentals
+                </Link>
+                {' '}for complete freedom to discover Siargao's hidden gems.
+              </p>
+            </ScrollReveal>
           </ScrollReveal>
         </div>
       </section>

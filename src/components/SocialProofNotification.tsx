@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Users, Clock } from 'lucide-react'
+import { X, Users, Clock, TrendingUp, MapPin, Calendar } from 'lucide-react'
 import { SocialProofData } from '@/data/socialProofData'
 import { useReducedMotion } from '@/hooks/useScrollAnimation'
 import { quickSpring } from '@/lib/animations'
@@ -17,14 +17,29 @@ export function SocialProofNotification({
 }: SocialProofNotificationProps) {
   const shouldReduceMotion = useReducedMotion()
 
-  const getServiceText = (service: string) => {
+  const getServiceText = (service: string, type: string) => {
+    if (type !== 'booking') return ''
+    
     switch (service) {
       case 'airport-transfer':
-        return 'booked airport transfer to'
+        return 'pre-booked airport transfer to'
       case 'van-hire':
-        return 'booked van hire to'
+        return 'pre-booked van hire to'
       default:
-        return 'booked transfer to'
+        return 'pre-booked transfer to'
+    }
+  }
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'activity':
+        return <Calendar className="w-5 h-5 text-primary" />
+      case 'demand':
+        return <MapPin className="w-5 h-5 text-primary" />
+      case 'trend':
+        return <TrendingUp className="w-5 h-5 text-primary" />
+      default:
+        return <Users className="w-5 h-5 text-primary" />
     }
   }
 
@@ -73,7 +88,7 @@ export function SocialProofNotification({
             <div className="flex items-start gap-3">
               {/* Avatar/Icon */}
               <div className="flex-shrink-0 w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                <Users className="w-5 h-5 text-primary" />
+                {getIcon(notification.type)}
               </div>
 
               {/* Content */}
@@ -81,16 +96,24 @@ export function SocialProofNotification({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <p className="text-sm text-white leading-relaxed">
-                      <span className="font-semibold text-primary">
-                        {notification.name}
-                      </span>
-                      {' '}
-                      <span className="text-white/80">
-                        {getServiceText(notification.service)} {notification.destination}
-                      </span>
-                      <span className="text-white/60">
-                        {getGroupText(notification.groupSize)}
-                      </span>
+                      {notification.type === 'booking' ? (
+                        <>
+                          <span className="font-semibold text-primary">
+                            {notification.name}
+                          </span>
+                          {' '}
+                          <span className="text-white/80">
+                            {getServiceText(notification.service, notification.type)} {notification.destination}
+                          </span>
+                          <span className="text-white/60">
+                            {getGroupText(notification.groupSize || 0)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-white/90">
+                          {notification.message}
+                        </span>
+                      )}
                     </p>
                     
                     <div className="flex items-center gap-1 mt-1">
