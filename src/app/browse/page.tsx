@@ -173,6 +173,7 @@ export default function BrowsePage() {
   // Debounce filter changes (excluding pagination)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
+      console.log('[Browse] Filters changed, resetting to page 1');
       setDebouncedFilters({
         ...currentFiltersWithoutPage,
         page: 1, // Reset to page 1 when filters change
@@ -185,10 +186,11 @@ export default function BrowsePage() {
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [currentFiltersWithoutPage, pageSize, currentPage])
+  }, [currentFiltersWithoutPage, pageSize])
 
   // Handle pagination changes immediately (no debounce)
   useEffect(() => {
+    console.log('[Browse] Page changed to:', currentPage);
     setDebouncedFilters(currentFilters)
   }, [currentPage])
 
