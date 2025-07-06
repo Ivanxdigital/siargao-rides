@@ -219,8 +219,8 @@ const Navbar = () => {
             : "top-0 py-5 bg-transparent"
         } ${isMenuOpen ? 'bg-black/90 backdrop-blur-md border-b border-white/10' : ''}`}
       >
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          {/* Logo */}
+        <div className="container mx-auto px-4 lg:px-6 xl:px-8 flex items-center relative">
+          {/* Logo - Left */}
           <Link href="/" className="relative group flex items-center">
             <motion.div
               className="relative h-8 md:h-9 w-auto flex items-center mt-0.5 md:mt-0"
@@ -239,8 +239,8 @@ const Navbar = () => {
             </motion.div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-6 items-center">
+          {/* Desktop Navigation - Center */}
+          <div className="hidden xl:flex gap-8 items-center absolute left-1/2 transform -translate-x-1/2 max-w-4xl">
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
             <NavLink href="/browse" isScrolled={scrolled}>Browse Vehicles</NavLink>
             <NavLink href="/browse/shops" isScrolled={scrolled}>Browse Shops</NavLink>
@@ -248,7 +248,30 @@ const Navbar = () => {
             <NavLink href="/about" isScrolled={scrolled}>About Us</NavLink>
             {/* <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink> */}
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
+          </div>
 
+          {/* Desktop Navigation - Compact for Large screens */}
+          <div className="hidden lg:flex xl:hidden gap-6 items-center absolute left-1/2 transform -translate-x-1/2 max-w-3xl">
+            <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
+            <NavLink href="/browse" isScrolled={scrolled}>Vehicles</NavLink>
+            <NavLink href="/browse/shops" isScrolled={scrolled}>Shops</NavLink>
+            <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Transfer</NavLink>
+            <NavLink href="/about" isScrolled={scrolled}>About</NavLink>
+            <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
+          </div>
+
+          {/* Desktop Navigation - Simplified for Medium screens */}
+          <div className="hidden md:flex lg:hidden gap-4 items-center absolute left-1/2 transform -translate-x-1/2 max-w-2xl">
+            <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
+            <NavLink href="/browse" isScrolled={scrolled}>Vehicles</NavLink>
+            <NavLink href="/browse/shops" isScrolled={scrolled}>Shops</NavLink>
+            <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Transfer</NavLink>
+            <NavLink href="/about" isScrolled={scrolled}>About</NavLink>
+            <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
+          </div>
+
+          {/* Authentication - Right */}
+          <div className="hidden md:flex items-center ml-auto">
             {isAuthenticated ? (
               <div className="relative">
                 <button
@@ -389,7 +412,7 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <motion.button
-            className="md:hidden text-white p-2 rounded-full hover:bg-white/10 transition-all duration-300 z-[1000] relative"
+            className="md:hidden text-white p-2 rounded-full hover:bg-white/10 transition-all duration-300 z-[1000] relative ml-auto"
             onClick={toggleMenu}
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             whileTap={{ scale: 0.9 }}
@@ -549,8 +572,8 @@ const Navbar = () => {
 // NavLink component for desktop
 const NavLink = ({ href, children, isScrolled }: { href: string, children: React.ReactNode, isScrolled: boolean }) => {
   return (
-    <Link href={href} className="relative group py-2">
-      <span className="text-white font-medium transition-all duration-300 group-hover:text-primary">
+    <Link href={href} className="relative group py-2 px-1">
+      <span className="text-white font-medium transition-all duration-300 group-hover:text-primary text-sm lg:text-base whitespace-nowrap">
         {children}
       </span>
       <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-primary rounded-full group-hover:w-full group-hover:left-0 transition-all duration-300 opacity-0 group-hover:opacity-100 shadow-glow" />
