@@ -80,7 +80,12 @@ export async function getShopById(id: string): Promise<RentalShop | null> {
     .single()
 
   if (error) {
-    console.error(`Error fetching shop with id ${id}:`, error)
+    console.error(`Error fetching shop with id ${id}:`, {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    })
     return null
   }
 
@@ -191,7 +196,14 @@ export async function getVehicles(filters?: {
     let query = supabase.from('vehicles').select(`
       *,
       vehicle_images(*),
-      vehicle_types(*)
+      vehicle_types(*),
+      rental_shops!inner(
+        id,
+        name,
+        is_verified,
+        is_active,
+        status
+      )
     `)
 
     // Apply filters if provided
@@ -234,12 +246,14 @@ export async function getVehicles(filters?: {
       query = query.eq('transmission', filters.transmission)
     }
     
-    // By default, only show verified vehicles to the public
+    // By default, only show verified vehicles from verified shops to the public
     // Unless specifically requested to include unverified ones
     if (filters?.includeUnverified !== true) {
       query = query
         .eq('is_verified', true)
         .eq('verification_status', 'approved')
+        .eq('rental_shops.is_verified', true)
+        .eq('rental_shops.is_active', true)
     }
 
     const { data, error } = await query.order('price_per_day')

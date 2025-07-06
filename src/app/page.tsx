@@ -9,6 +9,7 @@ import RentalShopCard from "@/components/RentalShopCard"
 import VehicleCard from "@/components/VehicleCard"
 import * as service from "@/lib/service"
 import { RentalShop, Vehicle, VehicleType, VehicleCategory } from "@/lib/types"
+import { groupVehiclesForDisplay } from "@/lib/utils/vehicleGroupingUtils"
 import { ArrowRight, MapPin } from "lucide-react"
 import FAQSection from '@/components/FAQSection'
 import { Badge } from "@/components/ui/badge"
@@ -59,6 +60,11 @@ interface VehicleCardData {
     logo?: string
     location?: string
   }
+  // Group-related props
+  isGroup?: boolean
+  groupId?: string
+  availableCount?: number
+  totalCount?: number
 }
 
 export default function Home() {
@@ -259,7 +265,7 @@ export default function Home() {
         ? await Promise.all(
             filteredVehicles.map(async (vehicle) => {
               const shop = await service.getShopById(vehicle.shop_id);
-              if (!shop) return null;
+              if (!shop || !shop.is_verified || !shop.is_active) return null;
               
               const shopAddress = shop.address?.toLowerCase() || "";
               const shopCity = shop.city?.toLowerCase() || "";
@@ -273,42 +279,72 @@ export default function Home() {
           )
         : filteredVehicles.map(vehicle => ({ vehicle, shop: null }));
 
-      // Filter out nulls and transform data for VehicleCard component
-      const vehicleResults = (await Promise.all(
+      // Filter out nulls and attach shop data to vehicles
+      const vehiclesWithShops = (await Promise.all(
         locationFilteredVehicles
           .filter((item): item is { vehicle: Vehicle; shop: RentalShop | null } => item !== null)
           .map(async ({ vehicle, shop }) => {
             // If shop is null (in case we didn't filter by location), fetch it
             const vehicleShop = shop || await service.getShopById(vehicle.shop_id);
-            if (!vehicleShop || !vehicleShop.is_verified) return null;
+            if (!vehicleShop || !vehicleShop.is_verified || !vehicleShop.is_active) return null;
 
-            // Get vehicle images
-            const imageUrls = vehicle.images 
-              ? vehicle.images.map(img => img.image_url)
-              : [];
-
-            return {
-              id: vehicle.id,
-              model: vehicle.name,
-              vehicleType: vehicle.vehicle_type,
-              category: vehicle.category,
-              images: imageUrls,
-              prices: {
-                daily: vehicle.price_per_day,
-                weekly: vehicle.price_per_week,
-                monthly: vehicle.price_per_month
-              },
-              isAvailable: vehicle.is_available,
-              specifications: vehicle.specifications || {},
-              shop: vehicleShop ? {
-                id: vehicleShop.id,
-                name: vehicleShop.name,
-                logo: vehicleShop.logo_url,
-                location: `${vehicleShop.city}${vehicleShop.address ? ', ' + vehicleShop.address : ''}`
-              } : undefined
-            } as VehicleCardData;
+            return { vehicle, shop: vehicleShop };
           })
-      )).filter((result): result is VehicleCardData => result !== null);
+      )).filter((result): result is { vehicle: Vehicle; shop: RentalShop } => result !== null);
+
+      // Extract just the vehicles for grouping
+      const vehiclesForGrouping = vehiclesWithShops.map(item => item.vehicle);
+
+      // Apply vehicle grouping logic
+      const groupedVehicles = groupVehiclesForDisplay(vehiclesForGrouping);
+
+      console.log(`Grouped ${vehiclesForGrouping.length} vehicles into ${groupedVehicles.length} groups/individual vehicles`);
+
+      // Transform grouped vehicles into VehicleCardData
+      const vehicleResults: VehicleCardData[] = await Promise.all(
+        groupedVehicles.map(async (groupedVehicle) => {
+          // Find the shop for the representative vehicle
+          const vehicleWithShop = vehiclesWithShops.find(
+            item => item.vehicle.id === groupedVehicle.representativeVehicle.id
+          );
+          
+          if (!vehicleWithShop) return null;
+
+          const { vehicle: representativeVehicle, shop } = vehicleWithShop;
+
+          // Get vehicle images
+          const imageUrls = representativeVehicle.images 
+            ? representativeVehicle.images.map(img => img.image_url)
+            : [];
+
+          return {
+            // Always use the representative vehicle ID for booking URLs
+            id: representativeVehicle.id,
+            model: representativeVehicle.name,
+            vehicleType: representativeVehicle.vehicle_type,
+            category: representativeVehicle.category,
+            images: imageUrls,
+            prices: {
+              daily: groupedVehicle.priceRange.min,
+              weekly: representativeVehicle.price_per_week,
+              monthly: representativeVehicle.price_per_month
+            },
+            isAvailable: groupedVehicle.availableCount > 0,
+            specifications: representativeVehicle.specifications || {},
+            shop: {
+              id: shop.id,
+              name: shop.name,
+              logo: shop.logo_url,
+              location: `${shop.city}${shop.address ? ', ' + shop.address : ''}`
+            },
+            // Group-related props
+            isGroup: groupedVehicle.isGroup,
+            groupId: groupedVehicle.groupId,
+            availableCount: groupedVehicle.availableCount,
+            totalCount: groupedVehicle.totalCount
+          } as VehicleCardData;
+        })
+      ).then(results => results.filter((result): result is VehicleCardData => result !== null));
 
       console.log(`Final search results: ${vehicleResults.length} vehicles`);
       
@@ -728,6 +764,10 @@ export default function Home() {
                               isAvailable={vehicle.isAvailable}
                               specifications={vehicle.specifications}
                               shop={vehicle.shop}
+                              isGroup={vehicle.isGroup}
+                              groupId={vehicle.groupId}
+                              availableCount={vehicle.availableCount}
+                              totalCount={vehicle.totalCount}
                               onBookClick={(id) => {
                                 window.location.href = `/booking/${id}`;
                               }}
