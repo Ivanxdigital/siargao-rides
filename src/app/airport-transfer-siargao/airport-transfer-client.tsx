@@ -14,7 +14,8 @@ import {
   Check,
   ChevronDown,
   Shield,
-  Zap
+  Zap,
+  Calendar
 } from 'lucide-react'
 import { ScrollReveal } from '@/components/animations/ScrollReveal'
 import { AnimatedCard, StaggeredCards } from '@/components/animations/AnimatedCard'
@@ -38,12 +39,14 @@ import { WelcomeTooltip } from '@/components/ui/welcome-tooltip'
 // WhatsApp configuration
 const WHATSAPP_NUMBER = '+639993702550'
 const WHATSAPP_MESSAGE = encodeURIComponent(
-  'Hi! I would like to book your private van hire service for airport transfer.\n\n' +
-  'Service: Airport Transfer\n' +
+  'Hi! I would like to pre-book your private van hire service for airport transfer (August 2025 onwards).\n\n' +
+  'Service: Airport Transfer Pre-Booking\n' +
   'Number of passengers: \n' +
-  'Pickup date: \n' +
+  'Travel date (from August 2025): \n' +
   'Pickup time: \n' +
-  'Flight number: '
+  'Flight number: \n' +
+  'Pickup location: \n' +
+  'Drop-off destination: '
 )
 
 export default function VanHireClient() {
@@ -65,6 +68,16 @@ export default function VanHireClient() {
   }
 
   const features = [
+    {
+      icon: <Calendar className="w-6 h-6" />,
+      title: "Guaranteed Availability",
+      description: "Pre-book now to secure your spot for August 2025 launch - no waiting lists"
+    },
+    {
+      icon: <Shield className="w-6 h-6" />,
+      title: "Locked-in Rates",
+      description: "Pre-booking customers get current pricing locked in, protected from future increases"
+    },
     {
       icon: <Users className="w-6 h-6" />,
       title: "Comfortable Leather Seating",
@@ -99,28 +112,36 @@ export default function VanHireClient() {
 
   const faqs = [
     {
-      question: "How do I book the van hire service?",
-      answer: "Simply click the WhatsApp button to send us a message with your flight details, pickup date/time, and number of passengers. We'll confirm your booking within minutes."
+      question: "Why is the service only available from August 2025?",
+      answer: "We're launching our premium van service in August 2025 to ensure we can provide the highest quality experience. Pre-booking now allows us to plan our fleet and guarantee availability for early customers."
+    },
+    {
+      question: "What are the benefits of pre-booking now?",
+      answer: "Pre-booking customers get guaranteed availability, locked-in current pricing (protected from future increases), priority booking status, and first access to our premium service when it launches."
+    },
+    {
+      question: "When will I pay for my pre-booked transfer?",
+      answer: "Payment is only required closer to your travel date in 2025. Pre-booking secures your spot with no upfront payment required - we'll contact you for payment details when your travel date approaches."
+    },
+    {
+      question: "How do I pre-book the van hire service?",
+      answer: "Simply click the WhatsApp button to send us a message with your travel dates (from August 2025 onwards), pickup details, and number of passengers. We'll confirm your pre-booking within minutes."
     },
     {
       question: "What happens if my flight is delayed?",
-      answer: "No worries! We monitor flight arrivals and adjust pickup times accordingly. Just make sure to provide your flight number when booking."
+      answer: "No worries! We monitor flight arrivals and adjust pickup times accordingly. Just make sure to provide your flight number when pre-booking."
     },
     {
       question: "What areas do you service?",
       answer: "We provide transfers between Sayak Airport and all major destinations in Siargao including General Luna, Cloud 9, Pacifico, Santa Monica, and more."
     },
     {
-      question: "Can I cancel or modify my booking?",
-      answer: "Yes, you can modify or cancel your booking up to 24 hours before your scheduled pickup time without any charges."
+      question: "Can I cancel or modify my pre-booking?",
+      answer: "Yes, you can modify or cancel your pre-booking anytime before payment is required. Since there's no upfront payment, you have maximum flexibility to adjust your plans."
     },
     {
       question: "Do you provide child seats?",
       answer: "Unfortunately, we do not provide child seats. Please bring your own child seat if needed for your transfer."
-    },
-    {
-      question: "What payment methods do you accept?",
-      answer: "We accept cash payment to the driver, GCash, and bank transfers. Payment details will be provided upon booking confirmation."
     }
   ]
 
@@ -165,9 +186,29 @@ export default function VanHireClient() {
               variants={staggerItemVariants}
             >
               <Badge variant="brand" className="inline-flex items-center gap-2 text-sm px-4 py-2">
-                <Shield className="w-4 h-4" />
-                Official Airport Transfer Service
+                <Calendar className="w-4 h-4" />
+                Pre-Booking Available - Service Starts August 2025
               </Badge>
+            </motion.div>
+
+            {/* Timeline Element */}
+            <motion.div 
+              className="mb-8"
+              variants={staggerItemVariants}
+            >
+              <div className="flex items-center justify-center max-w-md mx-auto">
+                <div className="flex items-center gap-2 text-sm text-white/60">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-primary rounded-full"></div>
+                    <span className="text-white font-medium">Pre-Booking Phase</span>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-primary to-white/20 mx-4"></div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-white/20 rounded-full"></div>
+                    <span>Launch August 2025</span>
+                  </div>
+                </div>
+              </div>
             </motion.div>
 
             {/* Title */}
@@ -183,7 +224,7 @@ export default function VanHireClient() {
               className="text-lg sm:text-xl md:text-2xl text-white/80 mb-8 max-w-2xl mx-auto"
               variants={heroSubtitleVariants}
             >
-              Door-to-door luxury van service from Sayak Airport to General Luna, Cloud 9, and all destinations across Siargao Island. Professional drivers, fixed rates, and seamless private pickup service.
+              Secure your spot for our luxury van service launching August 2025. Pre-book now for guaranteed availability, locked-in rates, and priority service from Sayak Airport to all Siargao destinations.
             </motion.p>
 
             {/* Primary CTA */}
@@ -198,7 +239,7 @@ export default function VanHireClient() {
                 enableMagnetic={!isMobile}
               >
                 <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
-                Book via WhatsApp
+                Pre-Book via WhatsApp
               </PrimaryButton>
               
               {/* Compact Pricing Display */}
@@ -248,11 +289,11 @@ export default function VanHireClient() {
           <ScrollReveal className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                Why Choose Our Service?
+                Why Pre-Book Now?
               </span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-              Experience the difference with our premium airport transfer service
+              Secure your spot early and enjoy exclusive pre-booking benefits
             </p>
           </ScrollReveal>
 
@@ -381,7 +422,7 @@ export default function VanHireClient() {
               enableMagnetic={!isMobile}
             >
               <MessageCircle className="w-5 h-5" />
-              Book Your Transfer Now
+              Pre-Book Your Transfer Now
             </PrimaryButton>
           </motion.div>
         </div>
@@ -542,11 +583,11 @@ export default function VanHireClient() {
           <ScrollReveal className="text-center max-w-2xl mx-auto">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                Ready to Book?
+                Ready to Pre-Book?
               </span>
             </h2>
             <p className="text-gray-400 text-lg mb-8">
-              Contact us now to secure your comfortable airport transfer
+              Pre-book now to secure your spot for our August 2025 launch
             </p>
 
             <PrimaryButton
@@ -556,7 +597,7 @@ export default function VanHireClient() {
               enableMagnetic={!isMobile}
             >
               <MessageCircle className="w-5 h-5" />
-              Book via WhatsApp
+              Pre-Book via WhatsApp
             </PrimaryButton>
 
             <div className="flex items-center justify-center gap-8 text-gray-400">
@@ -583,7 +624,7 @@ export default function VanHireClient() {
         <WelcomeTooltip
           id="whatsapp-booking-tooltip"
           title="👋 Hey there!"
-          content="Tap here to book your transfer or ask questions via WhatsApp. We're quick to respond!"
+          content="Tap here to pre-book your transfer or ask questions via WhatsApp. We're quick to respond!"
           autoShowDelay={2000}
           autoHideDuration={6000}
           icon={<MessageCircle className="w-4 h-4 text-primary" />}

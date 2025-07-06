@@ -3,12 +3,12 @@ import AirportTransferClient from './airport-transfer-client'
 import { generateLocalBusinessSchema, generateJSONLD } from '@/lib/structured-data'
 
 export const metadata: Metadata = {
-  title: 'Private Van Hire Siargao - Airport Transfer | Sayak to General Luna, Cloud 9',
-  description: 'Private pickup and drop-off airport transfer service in Siargao. Door-to-door luxury van service from Sayak Airport to General Luna, Cloud 9, Pacifico & Santa Monica. Fixed rates: ₱2,500 for 2 PAX, ₱3,500 for 3-8 PAX. Professional drivers, 24/7 availability.',
-  keywords: 'private van hire siargao, airport transfer siargao, private pick up and drop off siargao, sayak airport transfer, general luna airport transfer, cloud 9 airport transfer, pacifico airport transfer, santa monica airport transfer, siargao airport shuttle, door to door airport service siargao, luxury airport transfer siargao, private airport pickup siargao, siargao van service booking, airport transport siargao philippines, siargao travel transfer service, hyundai staria siargao, siargao airport taxi, burgos airport transfer, dapa airport transfer',
+  title: 'Pre-Book Private Van Hire Siargao - Airport Transfer | Starting August 2025',
+  description: 'Pre-book your private airport transfer in Siargao starting August 2025. Luxury van service from Sayak Airport to General Luna, Cloud 9, Pacifico & Santa Monica. Guaranteed availability, locked-in rates: ₱2,500 for 2 PAX, ₱3,500 for 3-8 PAX. Secure your spot now.',
+  keywords: 'pre-book airport transfer siargao, private van hire siargao 2025, airport transfer siargao august 2025, private pick up and drop off siargao, sayak airport transfer, general luna airport transfer, cloud 9 airport transfer, pacifico airport transfer, santa monica airport transfer, siargao airport shuttle, door to door airport service siargao, luxury airport transfer siargao, private airport pickup siargao, siargao van service pre-booking, airport transport siargao philippines, siargao travel transfer service, hyundai staria siargao, siargao airport taxi, burgos airport transfer, dapa airport transfer',
   openGraph: {
-    title: 'Private Van Hire Siargao - Airport Transfer | Sayak to General Luna, Cloud 9',
-    description: 'Private pickup and drop-off airport transfer service in Siargao. Door-to-door luxury van service from Sayak Airport to popular destinations across the island.',
+    title: 'Pre-Book Private Van Hire Siargao - Airport Transfer | Starting August 2025',
+    description: 'Pre-book your private airport transfer in Siargao starting August 2025. Secure your spot for luxury van service from Sayak Airport to all destinations.',
     images: [
       {
         url: '/images/hero-bg-1.png',
