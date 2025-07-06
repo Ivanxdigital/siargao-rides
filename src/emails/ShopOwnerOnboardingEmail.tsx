@@ -33,16 +33,18 @@ export const ShopOwnerOnboardingEmail: React.FC<ShopOwnerOnboardingEmailProps> =
             
             <Section className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4">
               <Heading className="text-lg font-bold text-blue-800 my-0">
-                Complete Your Shop Registration
+                Start Your 2-Minute Quick Setup
               </Heading>
               <Text className="text-gray-700">
-                To start listing your vehicles, you need to complete your shop registration. This includes:
+                Get started immediately with our streamlined onboarding. Just provide:
               </Text>
               <ul className="list-disc pl-5 text-gray-700">
-                <li>Shop information (name, address, etc.)</li>
-                <li>ID verification</li>
-                <li>Contact details</li>
+                <li>Shop name and phone number (30 seconds)</li>
+                <li>Location area and quick description (90 seconds)</li>
               </ul>
+              <Text className="text-gray-700 font-semibold">
+                That&apos;s it! You can start listing vehicles right away.
+              </Text>
             </Section>
             
             <Section className="text-center mt-8">
@@ -50,24 +52,28 @@ export const ShopOwnerOnboardingEmail: React.FC<ShopOwnerOnboardingEmailProps> =
                 className="bg-blue-600 text-white py-3 px-6 rounded text-sm font-bold no-underline"
                 href="https://siargaorides.com/dashboard"
               >
-                Complete Registration
+                Start Your 2-Minute Setup
               </Button>
               
               <Text className="text-gray-500 mt-4">
-                After verification, you&apos;ll be able to add your vehicles and start accepting bookings.
+                You can add vehicles and start accepting bookings immediately after setup.
               </Text>
             </Section>
             
             <Hr className="my-6 border-gray-300" />
             
             <Section>
-              <Heading className="text-lg font-semibold text-black">Why Complete Your Registration?</Heading>
+              <Heading className="text-lg font-semibold text-black">What You Get Immediately</Heading>
               <ul className="list-disc pl-5 text-gray-700">
-                <li>List multiple vehicles to reach more tourists</li>
-                <li>Manage your bookings through our easy dashboard</li>
-                <li>Receive secure payments</li>
+                <li>Start listing vehicles right away (no waiting for verification)</li>
+                <li>Manage bookings through our intuitive dashboard</li>
+                <li>Receive secure payments from tourists</li>
                 <li>Get exposure to travelers visiting Siargao</li>
               </ul>
+              
+              <Text className="text-gray-700 mt-4 font-medium">
+                🎯 <strong>Optional:</strong> Complete verification later for verified badges and 60% more bookings
+              </Text>
             </Section>
             
             <Section className="text-center mt-8">
