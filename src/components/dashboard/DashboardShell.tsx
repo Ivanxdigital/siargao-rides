@@ -29,10 +29,10 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children }) => {
       current: pathname === "/dashboard/shop",
     },
     {
-      name: "My Bikes",
-      href: "/dashboard/bikes",
+      name: "My Vehicles",
+      href: "/dashboard/vehicles",
       icon: Bike,
-      current: pathname === "/dashboard/bikes" || pathname?.startsWith("/dashboard/bikes/"),
+      current: pathname === "/dashboard/vehicles" || pathname?.startsWith("/dashboard/vehicles/"),
     },
     {
       name: "Bookings",
