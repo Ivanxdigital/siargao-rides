@@ -342,7 +342,7 @@ export default function VanHireClient() {
               <Badge className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-white">
                 Available Now
               </Badge>
-              <div className="text-center mt-2">
+              <div className="text-center mt-8">
                 <h3 className="text-2xl font-bold text-white mb-2">Regular Van Service</h3>
                 <p className="text-gray-400 mb-6">Book for immediate pickup</p>
                 
@@ -395,7 +395,7 @@ export default function VanHireClient() {
               <Badge className="absolute -top-5 left-1/2 -translate-x-1/2 bg-purple-600 text-white">
                 August 2025
               </Badge>
-              <div className="text-center mt-2">
+              <div className="text-center mt-8">
                 <h3 className="text-2xl font-bold text-white mb-2">Premium Hyundai Staria</h3>
                 <p className="text-gray-400 mb-6">Pre-book luxury service</p>
                 
