@@ -11,7 +11,7 @@ interface AnimatedButtonProps {
   onClick?: () => void
   disabled?: boolean
   variant?: 'primary' | 'secondary' | 'ghost' | 'outline'
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   href?: string
   enableMagnetic?: boolean
   enableRipple?: boolean
@@ -106,9 +106,17 @@ export function AnimatedButton({
   }
 
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base'
+    sm: 'px-3 py-2 text-sm min-h-[36px]',
+    md: 'px-4 py-2.5 text-sm min-h-[40px]',
+    lg: 'px-6 py-3 text-base min-h-[44px]',
+    xl: 'px-8 py-4 text-lg min-h-[52px]'
+  }
+
+  const gapClasses = {
+    sm: 'gap-1.5',
+    md: 'gap-2',
+    lg: 'gap-2.5',
+    xl: 'gap-3'
   }
 
   const baseClasses = `
@@ -156,7 +164,7 @@ export function AnimatedButton({
       )}
 
       {/* Button content */}
-      <span className="relative z-10 flex items-center justify-center gap-2">
+      <span className={`relative z-10 flex items-center justify-center ${gapClasses[size]}`}>
         {children}
       </span>
     </>

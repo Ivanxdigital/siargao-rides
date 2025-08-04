@@ -253,11 +253,11 @@ export default function VanHireClient() {
               <div className="flex flex-col items-center justify-center gap-4 mb-4">
                 <PrimaryButton
                   onClick={handleWhatsAppClick}
-                  size="lg"
-                  className="flex items-center justify-center gap-2 min-h-[48px] px-6 sm:px-8 text-base sm:text-lg font-semibold w-full sm:w-auto min-w-[280px]"
+                  size="xl"
+                  className="w-full sm:w-auto min-w-[280px] font-semibold"
                   enableMagnetic={!isMobile}
                 >
-                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <MessageCircle className="w-6 h-6" />
                   Book Transfer Now
                 </PrimaryButton>
               </div>
@@ -367,11 +367,11 @@ export default function VanHireClient() {
 
               <PrimaryButton
                 onClick={handleWhatsAppClick}
-                size="lg"
-                className="px-8 py-4 text-lg"
+                size="xl"
+                className=""
                 enableMagnetic={!isMobile}
               >
-                <MessageCircle className="w-5 h-5 mr-2" />
+                <MessageCircle className="w-6 h-6" />
                 Book Your Transfer Now
               </PrimaryButton>
             </AnimatedCard>
@@ -551,11 +551,11 @@ export default function VanHireClient() {
           >
             <PrimaryButton
               onClick={handleWhatsAppClick}
-              size="lg"
-              className="flex items-center justify-center gap-2 px-8 py-4 text-lg mx-auto"
+              size="xl"
+              className="mx-auto"
               enableMagnetic={!isMobile}
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-6 h-6" />
               Book Your Transfer Now
             </PrimaryButton>
             
@@ -773,11 +773,11 @@ export default function VanHireClient() {
             <div className="mb-8">
               <PrimaryButton
                 onClick={handleWhatsAppClick}
-                size="lg"
-                className="flex items-center gap-2 justify-center px-8 py-4 text-lg mx-auto"
+                size="xl"
+                className="mx-auto"
                 enableMagnetic={!isMobile}
               >
-                <MessageCircle className="w-5 h-5" />
+                <MessageCircle className="w-6 h-6" />
                 Book Your Transfer Now
               </PrimaryButton>
               
@@ -817,10 +817,11 @@ export default function VanHireClient() {
         >
           <PrimaryButton
             onClick={handleWhatsAppClick}
+            size="lg"
             className="rounded-full w-14 h-14 p-0 shadow-lg"
             enableGlow={true}
           >
-            <MessageCircle className="w-6 h-6" />
+            <MessageCircle className="w-7 h-7" />
           </PrimaryButton>
         </WelcomeTooltip>
       </motion.div>
