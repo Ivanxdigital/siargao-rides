@@ -2,6 +2,9 @@
 
 import { Database } from './database.types';
 
+// Re-export surf school types
+export * from './types/surf-school';
+
 // Re-export database types for convenience
 export type Tables = Database['public']['Tables'];
 

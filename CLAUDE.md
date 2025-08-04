@@ -12,7 +12,7 @@
 | `npm run build`         | Build for production                                              |
 | `npm run start`         | Run built app                                                     |
 | `npm run lint`          | ESLint + Type‑check                                               |
-| `npm run test`          | Vitest unit tests                                                 |
+| `npm run test`          | Vitest unit tests (not yet implemented)                          |
 | `npm run reset-db`      | Reset local DB via `scripts/reset-db.js`                          |
 | `npm run setup-storage` | Create Supabase storage buckets                                   |
 
@@ -30,7 +30,7 @@
 | **State/Data**    | React‑Query (`@tanstack/react-query`)   | Wrap queries in the **service layer**; no `.useQuery()` calls in pages.                                     |
 | **Backend**       | Supabase (Postgres, Auth, Storage, RLS) | All queries live in `src/lib/api.ts`; no direct clients in components.                                      |
 | **Validation**    | Zod                                     | Parse **all** external input (forms, URL params, cookies).                                                  |
-| **Testing**       | Vitest + MSW                            | New utils/components need ≥1 test with MSW for network mocks.                                               |
+| **Testing**       | Vitest + MSW (planned)                  | New utils/components need ≥1 test with MSW for network mocks (test setup not yet implemented).            |
 
 ---
 
@@ -102,22 +102,26 @@ src/
 
 ### 4.6 Testing & Quality
 
-* `npm run lint` & `npm run test` must pass pre‑commit.
-* 100% of new public functions need unit tests.
-* Mock Supabase with MSW; never hit prod DB in tests.
+* `npm run lint` must pass pre‑commit (test setup not yet implemented).
+* Plan to add unit tests for new public functions.
+* Mock Supabase with MSW when test setup is complete; never hit prod DB in tests.
 
 ---
 
 ## 5 · Database & Schema
 
-| Table          | Purpose                                | Notes                                         |
-| -------------- | -------------------------------------- | --------------------------------------------- |
-| `users`        | Auth & profiles                        | Multi‑role (`tourist`, `shop_owner`, `admin`) |
-| `rental_shops` | Shop info & verification               | FK → `users(id)`                              |
-| `vehicles`     | Inventory (motorcycles, cars, tuktuks) | Replaces legacy `bikes`                       |
-| `rentals`      | Booking records                        | Status & payment state                        |
-| `reviews`      | Ratings & comments                     | Nullable FK for anonymous reviews             |
-| `referrals`    | Shop acquisition tracking              | Self‑ref user FK                              |
+| Table              | Purpose                                | Notes                                         |
+| ------------------ | -------------------------------------- | --------------------------------------------- |
+| `users`            | Auth & profiles                        | Multi‑role (`tourist`, `shop_owner`, `admin`) |
+| `rental_shops`     | Shop info & verification               | FK → `users(id)`                              |
+| `vehicles`         | Inventory (motorcycles, cars, tuktuks) | Replaces legacy `bikes` table                 |
+| `vehicle_types`    | Vehicle type definitions               | Referenced by `vehicles.vehicle_type_id`      |
+| `vehicle_images`   | Vehicle photos                         | FK → `vehicles(id)`                           |
+| `bikes`            | Legacy motorcycle inventory            | Being migrated to `vehicles`                  |
+| `bike_images`      | Legacy bike photos                     | FK → `bikes(id)`, migrating to `vehicle_images` |
+| `rentals`          | Booking records                        | Status & payment state                        |
+| `reviews`          | Ratings & comments                     | Nullable FK for anonymous reviews             |
+| `referrals`        | Shop acquisition tracking              | Self‑ref user FK                              |
 
 **Schema Change Workflow**
 
@@ -168,11 +172,11 @@ Use `NEXT_PUBLIC_FEATURE_*` flags for feature toggles (e.g. `NEXT_PUBLIC_FEATURE
 
 ## 8 · Pull‑Request Checklist
 
-* [ ] `npm run lint` & `npm run test` pass
+* [ ] `npm run lint` passes (test setup not yet implemented)
 * [ ] ESLint shows **no new warnings** in browser console
-* [ ] Unit tests cover new logic (≥90 % lines)
+* [ ] Unit tests cover new logic (≥90 % lines) - when test setup is complete
 * [ ] SQL migration + regenerated types (if DB change)
-* [ ] Storybook story added/updated (if UI change)
+* [ ] Storybook story added/updated (if UI change) - when Storybook is set up
 * [ ] Docs updated (CLAUDE.md, README, or `/docs/shop-owner-onboarding-flow-complete.md` for onboarding changes)
 * [ ] PR title follows **Conventional Commits** (e.g. `feat(bookings): add recurring rentals`)
 
@@ -201,11 +205,13 @@ Use `NEXT_PUBLIC_FEATURE_*` flags for feature toggles (e.g. `NEXT_PUBLIC_FEATURE
 
 ## 11 · Current Roadmap (Q3 2025)
 
+* **Surf School Directory**: Complete implementation of surf school listings and management system  
 * Van‑hire feature & custom booking flow
 * PayPal integration & webhook handling
 * Vehicle verification workflow (admin → shop owner)
 * Shop verification workflow completion (shop owner document upload)
 * SEO deep‑dive for van‑hire landing pages
+* Test suite implementation with Vitest + MSW
 
 ---
 

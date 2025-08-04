@@ -74,6 +74,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
       // Add Supabase storage domain if available
       ...(process.env.NEXT_PUBLIC_SUPABASE_URL ? [{
         protocol: 'https' as const,

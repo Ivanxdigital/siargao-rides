@@ -14,13 +14,11 @@ import {
   MessageCircle,
   Check,
   ChevronDown,
-  Shield,
-  Zap,
-  Calendar
+  Shield
 } from 'lucide-react'
 import { ScrollReveal } from '@/components/animations/ScrollReveal'
 import { AnimatedCard, StaggeredCards } from '@/components/animations/AnimatedCard'
-import { PrimaryButton, SecondaryButton } from '@/components/animations/AnimatedButton'
+import { PrimaryButton } from '@/components/animations/AnimatedButton'
 import { FloatingElements, ParticleField } from '@/components/animations/FloatingElements'
 import { useReducedMotion } from '@/hooks/useScrollAnimation'
 import { useSocialProofNotifications } from '@/hooks/useSocialProofNotifications'
@@ -32,7 +30,6 @@ import {
   staggerItemVariants,
   fadeInUpVariants
 } from '@/lib/animations'
-import { Badge } from '@/components/ui/badge'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card } from '@/components/ui/card'
 import { WelcomeTooltip } from '@/components/ui/welcome-tooltip'
@@ -40,10 +37,9 @@ import { WelcomeTooltip } from '@/components/ui/welcome-tooltip'
 // WhatsApp configuration
 const WHATSAPP_NUMBER = '+639993702550'
 
-// Immediate booking message template
-const WHATSAPP_MESSAGE_IMMEDIATE = encodeURIComponent(
+// Van hire booking message template
+const WHATSAPP_MESSAGE = encodeURIComponent(
   'Hi! I would like to book your private van hire service for airport transfer.\n\n' +
-  'Service: Immediate Van Hire Booking\n' +
   'Number of passengers: \n' +
   'Travel date: \n' +
   'Pickup time: \n' +
@@ -51,19 +47,6 @@ const WHATSAPP_MESSAGE_IMMEDIATE = encodeURIComponent(
   'Pickup location: Sayak Airport\n' +
   'Drop-off destination: \n\n' +
   'Pricing: ₱2,000 (2 pax) | ₱2,500 (3-10 pax)'
-)
-
-// Premium pre-booking message template
-const WHATSAPP_MESSAGE_PREMIUM = encodeURIComponent(
-  'Hi! I would like to pre-book your premium Hyundai Staria van service for airport transfer (August 2025 onwards).\n\n' +
-  'Service: Premium Hyundai Staria Pre-Booking\n' +
-  'Number of passengers: \n' +
-  'Travel date (from August 2025): \n' +
-  'Pickup time: \n' +
-  'Flight number: \n' +
-  'Pickup location: Sayak Airport\n' +
-  'Drop-off destination: \n\n' +
-  'Pricing: ₱2,500 (2 pax) | ₱3,500 (3-8 pax)'
 )
 
 export default function VanHireClient() {
@@ -80,46 +63,40 @@ export default function VanHireClient() {
     return () => window.removeEventListener('resize', checkIfMobile)
   }, [])
 
-  const handleWhatsAppClick = (serviceType: 'immediate' | 'premium' = 'immediate') => {
-    const message = serviceType === 'immediate' ? WHATSAPP_MESSAGE_IMMEDIATE : WHATSAPP_MESSAGE_PREMIUM
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank')
+  const handleWhatsAppClick = () => {
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`, '_blank')
   }
 
   const features = [
     {
-      icon: <Calendar className="w-6 h-6" />,
-      title: "Guaranteed Availability",
-      description: "Pre-book now to secure your spot for August 2025 launch - no waiting lists"
+      icon: <Clock className="w-6 h-6" />,
+      title: "Same Day Booking",
+      description: "Book today for immediate pickup - no advance planning required"
     },
     {
       icon: <Shield className="w-6 h-6" />,
-      title: "Locked-in Rates",
-      description: "Pre-booking customers get current pricing locked in, protected from future increases"
+      title: "Fixed Transparent Pricing",
+      description: "No surge pricing or hidden fees - know exactly what you&apos;ll pay upfront"
     },
     {
       icon: <Users className="w-6 h-6" />,
-      title: "Comfortable Leather Seating",
-      description: "Premium soft leather seats with spacious interior for ultimate comfort"
-    },
-    {
-      icon: <Zap className="w-6 h-6" />,
-      title: "USB Type-C Charging",
-      description: "Stay powered up with convenient USB Type-C ports throughout the van"
+      title: "Comfortable Seating",
+      description: "Spacious interior accommodating up to 10 passengers with room for luggage"
     },
     {
       icon: <Droplets className="w-6 h-6" />,
       title: "Complimentary Water",
-      description: "Free bottled water provided for all passengers on pickup"
+      description: "Free bottled water provided for all passengers during your transfer"
     },
     {
       icon: <UserCheck className="w-6 h-6" />,
       title: "Professional Local Driver",
-      description: "Experienced drivers who know Siargao's roads and best routes"
+      description: "Experienced drivers who know Siargao&apos;s roads and optimal routes"
     },
     {
       icon: <MapPin className="w-6 h-6" />,
       title: "Name Sign Greeting",
-      description: "Easy airport pickup with personalized name sign at arrivals"
+      description: "Easy airport pickup with personalized name sign at arrivals gate"
     },
     {
       icon: <Car className="w-6 h-6" />,
@@ -137,32 +114,33 @@ export default function VanHireClient() {
           {' '}for island exploration.
         </>
       )
+    },
+    {
+      icon: <Shield className="w-6 h-6" />,
+      title: "Flight Tracking",
+      description: "We monitor your flight status and adjust pickup times for delays automatically"
     }
   ]
 
   const faqs = [
     {
       question: "Can I book airport transfer for today or tomorrow?",
-      answer: "Yes! Our regular van hire service is available for immediate booking. Contact us via WhatsApp and we can arrange pickup for today or tomorrow with our professional drivers at ₱2,000 (2 pax) or ₱2,500 (3-10 pax)."
-    },
-    {
-      question: "What's the difference between regular service and premium pre-booking?",
-      answer: "Our regular service uses well-maintained vans with professional drivers, available for immediate booking. The premium service features luxury Hyundai Staria with leather seating and premium amenities, available for pre-booking from August 2025."
+      answer: "Yes! Our van hire service is available for immediate booking. Contact us via WhatsApp and we can arrange pickup for today or tomorrow with our professional drivers at ₱2,000 (2 pax) or ₱2,500 (3-10 pax)."
     },
     {
       question: "How do I book the van hire service?",
-      answer: "For immediate booking: Click 'Book Now' and message us via WhatsApp with your travel details. For premium pre-booking: Click 'Pre-Book Premium' to secure your spot for August 2025. We respond within minutes to confirm your booking."
+      answer: "Simply click 'Book Transfer Now' and message us via WhatsApp with your travel details including number of passengers, flight information, and destination. We respond within minutes to confirm your booking."
     },
     {
-      question: "What are the current pricing rates?",
-      answer: "Regular service (available now): ₱2,000 for 2 passengers, ₱2,500 for 3-10 passengers. Premium Hyundai Staria (August 2025): ₱2,500 for 2 passengers, ₱3,500 for 3-8 passengers. All prices include professional driver and door-to-door service."
+      question: "What are your pricing rates?",
+      answer: "₱2,000 for 2 passengers, ₱2,500 for 3-10 passengers. All prices include professional driver, door-to-door service, complimentary water, and flight tracking. No hidden fees or surge pricing."
     },
     {
       question: "What happens if my flight is delayed?",
-      answer: "No worries! We monitor flight arrivals and adjust pickup times accordingly. Just provide your flight number when booking and we'll track your flight status automatically for both regular and premium services."
+      answer: "No worries! We monitor flight arrivals and adjust pickup times accordingly. Just provide your flight number when booking and we'll track your flight status automatically."
     },
     {
-      question: "What areas do you service?",
+      question: "What areas in Siargao do you service?",
       answer: (
         <>
           We provide transfers between Sayak Airport and all major destinations in Siargao including{' '}
@@ -183,19 +161,23 @@ export default function VanHireClient() {
     },
     {
       question: "What's included with the service?",
-      answer: "Both services include: professional local driver, complimentary bottled water, door-to-door pickup and drop-off, flight tracking, and luggage assistance. Premium service additionally includes luxury leather seating, USB-C charging ports, and surf rack storage."
+      answer: "Our service includes: professional local driver, complimentary bottled water, door-to-door pickup and drop-off, flight tracking, luggage assistance, and surf rack storage for your boards."
+    },
+    {
+      question: "How many passengers can you accommodate?",
+      answer: "Our vans can comfortably seat up to 10 passengers with their luggage. We have space for surf boards, diving gear, and other travel equipment you might have."
     },
     {
       question: "Do you provide child seats?",
-      answer: "Unfortunately, we do not provide child seats for safety and hygiene reasons. Please bring your own child seat if needed for your transfer. Our drivers can help you install it properly."
+      answer: "We don't provide child seats for safety and hygiene reasons. Please bring your own child seat if needed - our drivers can help you install it properly."
     },
     {
       question: "Can I cancel or modify my booking?",
-      answer: "Yes! For regular bookings, you can cancel up to 2 hours before pickup. For premium pre-bookings, you can modify or cancel anytime before payment is required since no upfront payment is needed."
+      answer: "Yes! You can cancel up to 2 hours before pickup for a full refund. For modifications, just message us on WhatsApp and we'll update your booking details."
     },
     {
-      question: "Why should I pre-book the premium service?",
-      answer: "Pre-booking the premium Hyundai Staria guarantees availability when the service launches in August 2025, locks in current pricing (protected from future increases), and gives you priority access to our luxury fleet."
+      question: "Why choose private van over shared shuttle?",
+      answer: "Private van means no waiting for other passengers, direct route to your destination, departure on your schedule, and privacy for your group. Plus you get dedicated surf rack space and personal attention from your driver."
     }
   ]
 
@@ -243,7 +225,7 @@ export default function VanHireClient() {
                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                 <span className="text-white font-medium">Available Now</span>
                 <span className="text-white/40">•</span>
-                <span className="text-white/80">Same/Next Day Booking</span>
+                <span className="text-white/80">Book Today, Travel Today</span>
               </div>
             </motion.div>
 
@@ -260,7 +242,7 @@ export default function VanHireClient() {
               className="text-lg sm:text-xl md:text-2xl text-white/80 mb-8 md:mb-12 max-w-2xl mx-auto"
               variants={heroSubtitleVariants}
             >
-              Book now for immediate pickup or pre-book our premium service launching August 2025. Professional drivers, door-to-door service.
+              Reliable private van service with professional drivers and door-to-door service. Book today for immediate pickup.
             </motion.p>
 
             {/* Primary CTA */}
@@ -268,9 +250,9 @@ export default function VanHireClient() {
               variants={fadeInUpVariants}
               className="mb-6 sm:mb-8"
             >
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+              <div className="flex flex-col items-center justify-center gap-4 mb-4">
                 <PrimaryButton
-                  onClick={() => handleWhatsAppClick('immediate')}
+                  onClick={handleWhatsAppClick}
                   size="lg"
                   className="flex items-center justify-center gap-2 min-h-[48px] px-6 sm:px-8 text-base sm:text-lg font-semibold w-full sm:w-auto min-w-[280px]"
                   enableMagnetic={!isMobile}
@@ -278,24 +260,21 @@ export default function VanHireClient() {
                   <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                   Book Transfer Now
                 </PrimaryButton>
-                
-                <SecondaryButton
-                  onClick={() => {
-                    document.getElementById('service-comparison')?.scrollIntoView({ behavior: 'smooth' })
-                  }}
-                  size="lg"
-                  className="text-white/80 border-white/30 hover:border-white/50 hover:text-white transition-colors min-h-[48px] px-6 sm:px-8 text-base sm:text-lg w-full sm:w-auto min-w-[280px]"
-                  enableMagnetic={!isMobile}
-                >
-                  View All Options
-                </SecondaryButton>
               </div>
               
-              {/* Compact Pricing Display */}
-              <div className="text-center text-white/80 text-sm sm:text-base">
-                <span className="font-medium">From ₱2,000</span>
-                <span className="text-white/40 mx-2">•</span>
-                <span>Same day booking available</span>
+              {/* Pricing Display */}
+              <div className="text-center text-white/80 text-sm sm:text-base space-y-1">
+                <div>
+                  <span className="font-medium text-lg">₱2,000</span>
+                  <span className="text-white/60 mx-2">for 2 passengers</span>
+                </div>
+                <div>
+                  <span className="font-medium text-lg">₱2,500</span>
+                  <span className="text-white/60 mx-2">for 3-10 passengers</span>
+                </div>
+                <div className="text-white/60 text-sm mt-2">
+                  Same day booking available • Professional drivers • Door-to-door service
+                </div>
               </div>
             </motion.div>
 
@@ -312,8 +291,8 @@ export default function VanHireClient() {
         </div>
       </section>
 
-      {/* Service Comparison Section */}
-      <section id="service-comparison" className="py-20 bg-gradient-to-b from-black to-gray-900 relative overflow-hidden">
+      {/* Value Proposition Section */}
+      <section className="py-20 bg-gradient-to-b from-black to-gray-900 relative overflow-hidden">
         {!shouldReduceMotion && (
           <ParticleField density={5} className="absolute inset-0 opacity-20" />
         )}
@@ -322,119 +301,79 @@ export default function VanHireClient() {
           <ScrollReveal className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                Two Service Options Available
+                Reliable Private Van Service
               </span>
             </h2>
             <p className="text-gray-400 max-w-3xl mx-auto text-lg">
-              Choose immediate pickup with our regular service or secure your spot for our premium Hyundai Staria launching August 2025
+              Professional drivers, immediate availability, and transparent pricing for your airport transfer needs
             </p>
           </ScrollReveal>
 
-          <ScrollReveal className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Immediate Service Card */}
+          <ScrollReveal className="max-w-4xl mx-auto">
             <AnimatedCard
               enableMagnetic={!isMobile}
               enableTilt={!isMobile}
               enableGlow={true}
               glowColor="rgba(45, 212, 191, 0.2)"
-              className="bg-gradient-to-br from-primary/10 to-green-900/10 border border-primary/20 rounded-xl p-8 relative"
+              className="bg-gradient-to-br from-primary/10 to-green-900/10 border border-primary/20 rounded-xl p-8 md:p-12 text-center"
             >
-              <Badge className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-white">
+              <div className="inline-flex items-center gap-2 bg-primary/20 rounded-full px-4 py-2 text-sm font-medium text-primary mb-6">
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                 Available Now
-              </Badge>
-              <div className="text-center mt-8">
-                <h3 className="text-2xl font-bold text-white mb-2">Regular Van Service</h3>
-                <p className="text-gray-400 mb-6">Book for immediate pickup</p>
-                
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">2 Passengers</span>
-                    <span className="text-2xl font-bold text-primary">₱2,000</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">3-10 Passengers</span>
-                    <span className="text-2xl font-bold text-primary">₱2,500</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3 mb-8 text-left">
-                  {[
-                    "Professional local driver",
-                    "Free bottled water",
-                    "Door-to-door service",
-                    "Same/next day booking",
-                    "Well-maintained vehicles",
-                    "Flight tracking included"
-                  ].map((feature) => (
-                    <div key={feature} className="flex items-center gap-2 text-gray-300">
-                      <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <PrimaryButton
-                  onClick={() => handleWhatsAppClick('immediate')}
-                  className="w-full"
-                  enableMagnetic={!isMobile}
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Book Now
-                </PrimaryButton>
               </div>
-            </AnimatedCard>
-
-            {/* Premium Service Card */}
-            <AnimatedCard
-              enableMagnetic={!isMobile}
-              enableTilt={!isMobile}
-              enableGlow={true}
-              glowColor="rgba(147, 51, 234, 0.2)"
-              className="bg-gradient-to-br from-purple-900/10 to-gray-900/50 border border-purple-500/20 rounded-xl p-8 relative"
-            >
-              <Badge className="absolute -top-5 left-1/2 -translate-x-1/2 bg-purple-600 text-white">
-                August 2025
-              </Badge>
-              <div className="text-center mt-8">
-                <h3 className="text-2xl font-bold text-white mb-2">Premium Hyundai Staria</h3>
-                <p className="text-gray-400 mb-6">Pre-book luxury service</p>
-                
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">2 Passengers</span>
-                    <span className="text-2xl font-bold text-purple-400">₱2,500</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">3-8 Passengers</span>
-                    <span className="text-2xl font-bold text-purple-400">₱3,500</span>
-                  </div>
+              
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">Private Van Transfer</h3>
+              <p className="text-gray-400 mb-8 text-lg">Skip the shared vans and crowded shuttles. Travel directly to your destination in comfort.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="text-center">
+                  <div className="text-4xl font-black text-primary mb-2">₱2,000</div>
+                  <p className="text-gray-300 text-lg">For 2 passengers</p>
+                  <p className="text-gray-500 text-sm">Direct to destination</p>
                 </div>
-
-                <div className="space-y-3 mb-8 text-left">
-                  {[
-                    "Luxury leather seating",
-                    "USB Type-C charging ports",
-                    "Surf rack & storage",
-                    "Premium comfort features",
-                    "Guaranteed availability",
-                    "Locked-in pricing"
-                  ].map((feature) => (
-                    <div key={feature} className="flex items-center gap-2 text-gray-300">
-                      <Check className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
+                <div className="text-center">
+                  <div className="text-4xl font-black text-primary mb-2">₱2,500</div>
+                  <p className="text-gray-300 text-lg">For 3-10 passengers</p>
+                  <p className="text-gray-500 text-sm">Group-friendly pricing</p>
                 </div>
-
-                <SecondaryButton
-                  onClick={() => handleWhatsAppClick('premium')}
-                  className="w-full border-purple-500/40 text-purple-300 hover:border-purple-400 hover:text-purple-200"
-                  enableMagnetic={!isMobile}
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Pre-Book Now
-                </SecondaryButton>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="flex items-center gap-3 text-gray-300">
+                  <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                  <span>Professional driver</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-300">
+                  <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                  <span>Free bottled water</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-300">
+                  <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                  <span>Door-to-door service</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-300">
+                  <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                  <span>Same day booking</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-300">
+                  <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                  <span>Flight tracking</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-300">
+                  <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                  <span>Surf rack included</span>
+                </div>
+              </div>
+
+              <PrimaryButton
+                onClick={handleWhatsAppClick}
+                size="lg"
+                className="px-8 py-4 text-lg"
+                enableMagnetic={!isMobile}
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Book Your Transfer Now
+              </PrimaryButton>
             </AnimatedCard>
           </ScrollReveal>
         </div>
@@ -488,39 +427,62 @@ export default function VanHireClient() {
         </div>
       </section>
 
-      {/* Vehicle Showcase */}
+      {/* Service Highlights */}
       <section className="py-20 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
         <div className="container mx-auto px-4">
           <ScrollReveal className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                Luxury Hyundai Staria
+                Comfort & Reliability
               </span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-              Comfortably seats up to 8 passengers with premium amenities
+              Well-maintained vans that comfortably seat up to 10 passengers with space for all your luggage
             </p>
           </ScrollReveal>
 
-          <ScrollReveal className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            <div className="relative aspect-video rounded-xl overflow-hidden">
-              <Image
-                src="/images/hyundai-staria-tropical.png"
-                alt="Private van hire Siargao - Luxury Hyundai Staria for airport transfer service to General Luna, Cloud 9, and Pacifico"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            </div>
-            <div className="relative aspect-video rounded-xl overflow-hidden">
-              <Image
-                src="/images/interio-staria.png"
-                alt="Siargao airport transfer van interior - Premium leather seating in Hyundai Staria for private pickup and drop-off service"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            </div>
+          <ScrollReveal className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <AnimatedCard
+              enableMagnetic={!isMobile}
+              enableTilt={!isMobile}
+              enableGlow={true}
+              glowColor="rgba(45, 212, 191, 0.1)"
+              className="bg-gray-900/50 border border-white/10 rounded-xl p-6 text-center"
+            >
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Spacious Interior</h3>
+              <p className="text-gray-400">Comfortable seating for up to 10 passengers with ample legroom and luggage space</p>
+            </AnimatedCard>
+            
+            <AnimatedCard
+              enableMagnetic={!isMobile}
+              enableTilt={!isMobile}
+              enableGlow={true}
+              glowColor="rgba(45, 212, 191, 0.1)"
+              className="bg-gray-900/50 border border-white/10 rounded-xl p-6 text-center"
+            >
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Safety First</h3>
+              <p className="text-gray-400">Well-maintained vehicles with experienced local drivers who prioritize your safety</p>
+            </AnimatedCard>
+            
+            <AnimatedCard
+              enableMagnetic={!isMobile}
+              enableTilt={!isMobile}
+              enableGlow={true}
+              glowColor="rgba(45, 212, 191, 0.1)"
+              className="bg-gray-900/50 border border-white/10 rounded-xl p-6 text-center"
+            >
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Always On Time</h3>
+              <p className="text-gray-400">We track your flight status and adjust pickup times to ensure you&apos;re never left waiting</p>
+            </AnimatedCard>
           </ScrollReveal>
         </div>
       </section>
@@ -587,27 +549,19 @@ export default function VanHireClient() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <PrimaryButton
-                onClick={() => handleWhatsAppClick('immediate')}
-                size="lg"
-                className="flex items-center gap-2"
-                enableMagnetic={!isMobile}
-              >
-                <MessageCircle className="w-5 h-5" />
-                Book Transfer Now
-              </PrimaryButton>
-              
-              <SecondaryButton
-                onClick={() => handleWhatsAppClick('premium')}
-                size="lg"
-                className="flex items-center gap-2 border-purple-500/40 text-purple-300 hover:border-purple-400 hover:text-purple-200"
-                enableMagnetic={!isMobile}
-              >
-                <Calendar className="w-5 h-5" />
-                Pre-Book Premium
-              </SecondaryButton>
-            </div>
+            <PrimaryButton
+              onClick={handleWhatsAppClick}
+              size="lg"
+              className="flex items-center justify-center gap-2 px-8 py-4 text-lg mx-auto"
+              enableMagnetic={!isMobile}
+            >
+              <MessageCircle className="w-5 h-5" />
+              Book Your Transfer Now
+            </PrimaryButton>
+            
+            <p className="text-gray-400 text-sm mt-4 max-w-md mx-auto">
+              Quick response guaranteed - we&apos;ll confirm your booking within minutes
+            </p>
           </motion.div>
         </div>
       </section>
@@ -677,106 +631,86 @@ export default function VanHireClient() {
         </div>
       </section>
 
-      {/* Value Proposition Section */}
+      {/* Pricing & Value Section */}
       <section className="py-20 bg-gradient-to-b from-black to-gray-900 relative overflow-hidden">
         <div className="container mx-auto px-4">
           <ScrollReveal className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                Best Value on the Island
+                Transparent Pricing, No Surprises
               </span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-              Competitive pricing with no hidden fees. Choose what works for you.
+              Fixed rates with no hidden fees, surge pricing, or booking charges
             </p>
           </ScrollReveal>
 
-          <ScrollReveal className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Immediate Pricing */}
-            <AnimatedCard
-              enableMagnetic={!isMobile}
-              enableTilt={!isMobile}
-              enableGlow={true}
-              glowColor="rgba(45, 212, 191, 0.2)"
-              className="bg-gradient-to-br from-primary/10 to-green-900/10 border border-primary/20 rounded-xl p-6 text-center"
-            >
-              <div className="inline-flex items-center gap-2 bg-primary/20 rounded-full px-3 py-1 text-xs font-medium text-primary mb-4">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                Available Now
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Regular Service</h3>
-              <div className="space-y-2 mb-6">
-                <div className="text-3xl font-black text-primary">₱2,000</div>
-                <p className="text-sm text-gray-400">2 passengers</p>
-                <div className="text-3xl font-black text-primary">₱2,500</div>
-                <p className="text-sm text-gray-400">3-10 passengers</p>
-              </div>
-              <div className="space-y-2 text-sm text-gray-400">
-                <p>✓ Same/next day booking</p>
-                <p>✓ Professional driver</p>
-                <p>✓ Free water included</p>
-              </div>
-            </AnimatedCard>
+          <ScrollReveal className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+              <AnimatedCard
+                enableMagnetic={!isMobile}
+                enableTilt={!isMobile}
+                enableGlow={true}
+                glowColor="rgba(45, 212, 191, 0.2)"
+                className="bg-gradient-to-br from-primary/10 to-green-900/10 border border-primary/20 rounded-xl p-8 text-center"
+              >
+                <div className="text-5xl font-black text-primary mb-4">₱2,000</div>
+                <h3 className="text-xl font-bold text-white mb-2">For 2 Passengers</h3>
+                <p className="text-gray-400 mb-6">Perfect for couples or solo travelers with a companion</p>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <p>✓ Direct to destination</p>
+                  <p>✓ Professional driver</p>
+                  <p>✓ Complimentary water</p>
+                  <p>✓ Flight tracking</p>
+                </div>
+              </AnimatedCard>
 
-            {/* Premium Pricing */}
-            <AnimatedCard
-              enableMagnetic={!isMobile}
-              enableTilt={!isMobile}
-              enableGlow={true}
-              glowColor="rgba(147, 51, 234, 0.2)"
-              className="bg-gradient-to-br from-purple-900/10 to-gray-900/50 border border-purple-500/20 rounded-xl p-6 text-center"
-            >
-              <div className="inline-flex items-center gap-2 bg-purple-600/20 rounded-full px-3 py-1 text-xs font-medium text-purple-400 mb-4">
-                <Calendar className="w-3 h-3" />
-                August 2025
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Premium Staria</h3>
-              <div className="space-y-2 mb-6">
-                <div className="text-3xl font-black text-purple-400">₱2,500</div>
-                <p className="text-sm text-gray-400">2 passengers</p>
-                <div className="text-3xl font-black text-purple-400">₱3,500</div>
-                <p className="text-sm text-gray-400">3-8 passengers</p>
-              </div>
-              <div className="space-y-2 text-sm text-gray-400">
-                <p>✓ Luxury leather seating</p>
-                <p>✓ USB-C charging ports</p>
-                <p>✓ Guaranteed availability</p>
-              </div>
-            </AnimatedCard>
+              <AnimatedCard
+                enableMagnetic={!isMobile}
+                enableTilt={!isMobile}
+                enableGlow={true}
+                glowColor="rgba(45, 212, 191, 0.2)"
+                className="bg-gradient-to-br from-primary/10 to-green-900/10 border border-primary/20 rounded-xl p-8 text-center"
+              >
+                <div className="text-5xl font-black text-primary mb-4">₱2,500</div>
+                <h3 className="text-xl font-bold text-white mb-2">For 3-10 Passengers</h3>
+                <p className="text-gray-400 mb-6">Great value for groups, families, or surf crews</p>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <p>✓ Group-friendly pricing</p>
+                  <p>✓ Ample luggage space</p>
+                  <p>✓ Surf rack included</p>
+                  <p>✓ Same great service</p>
+                </div>
+              </AnimatedCard>
+            </div>
 
-            {/* Comparison */}
             <AnimatedCard
               enableMagnetic={!isMobile}
               enableTilt={!isMobile}
               enableGlow={true}
               glowColor="rgba(255, 255, 255, 0.1)"
-              className="bg-gradient-to-br from-gray-900 to-gray-800 border border-white/10 rounded-xl p-6 text-center"
+              className="bg-gradient-to-br from-gray-900 to-gray-800 border border-white/10 rounded-xl p-8 text-center"
             >
-              <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-3 py-1 text-xs font-medium text-white/60 mb-4">
-                <Shield className="w-3 h-3" />
-                Money-Back Guarantee
+              <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 text-sm font-medium text-white/60 mb-6">
+                <Shield className="w-4 h-4" />
+                What&apos;s Always Included
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Why Choose Us?</h3>
-              <div className="space-y-3 text-sm text-gray-300">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm text-gray-300">
+                <div className="flex flex-col items-center gap-2">
+                  <Check className="w-6 h-6 text-primary" />
                   <span>No hidden fees</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>Flight tracking included</span>
+                <div className="flex flex-col items-center gap-2">
+                  <Check className="w-6 h-6 text-primary" />
+                  <span>Flight tracking</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>24/7 customer support</span>
+                <div className="flex flex-col items-center gap-2">
+                  <Check className="w-6 h-6 text-primary" />
+                  <span>24/7 support</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>Local driver expertise</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>Flexible cancellation</span>
+                <div className="flex flex-col items-center gap-2">
+                  <Check className="w-6 h-6 text-primary" />
+                  <span>Local expertise</span>
                 </div>
               </div>
             </AnimatedCard>
@@ -784,8 +718,8 @@ export default function VanHireClient() {
 
           <ScrollReveal className="text-center mt-12">
             <p className="text-gray-400 text-sm max-w-3xl mx-auto">
-              All prices include pickup from Sayak Airport, professional driver, and door-to-door service to any destination in Siargao. 
-              Additional charges may apply for destinations beyond standard service areas.
+              All prices include pickup from Sayak Airport, professional driver, and door-to-door service to destinations across Siargao. 
+              Additional charges may apply for destinations beyond our standard service areas.
             </p>
           </ScrollReveal>
         </div>
@@ -833,29 +767,23 @@ export default function VanHireClient() {
               </span>
             </h2>
             <p className="text-gray-400 text-lg mb-8">
-              Book now for immediate pickup or pre-book our premium service launching August 2025
+              Ready to skip the hassle of shared shuttles? Book your private van transfer now.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto mb-8">
+            <div className="mb-8">
               <PrimaryButton
-                onClick={() => handleWhatsAppClick('immediate')}
+                onClick={handleWhatsAppClick}
                 size="lg"
-                className="flex items-center gap-2 justify-center"
+                className="flex items-center gap-2 justify-center px-8 py-4 text-lg mx-auto"
                 enableMagnetic={!isMobile}
               >
-                <MessageCircle className="w-4 h-4" />
-                Book Now
+                <MessageCircle className="w-5 h-5" />
+                Book Your Transfer Now
               </PrimaryButton>
               
-              <SecondaryButton
-                onClick={() => handleWhatsAppClick('premium')}
-                size="lg"
-                className="flex items-center gap-2 justify-center border-purple-500/40 text-purple-300 hover:border-purple-400 hover:text-purple-200"
-                enableMagnetic={!isMobile}
-              >
-                <Calendar className="w-4 h-4" />
-                Pre-Book Premium
-              </SecondaryButton>
+              <p className="text-gray-500 text-sm mt-4">
+                Quick response time • Same day booking available • No advance payment required
+              </p>
             </div>
 
             <div className="flex items-center justify-center gap-8 text-gray-400">
@@ -888,7 +816,7 @@ export default function VanHireClient() {
           icon={<MessageCircle className="w-4 h-4 text-primary" />}
         >
           <PrimaryButton
-            onClick={() => handleWhatsAppClick('immediate')}
+            onClick={handleWhatsAppClick}
             className="rounded-full w-14 h-14 p-0 shadow-lg"
             enableGlow={true}
           >

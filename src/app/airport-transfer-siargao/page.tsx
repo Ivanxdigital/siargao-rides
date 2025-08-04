@@ -3,18 +3,18 @@ import AirportTransferClient from './airport-transfer-client'
 import { generateLocalBusinessSchema, generateJSONLD } from '@/lib/structured-data'
 
 export const metadata: Metadata = {
-  title: 'Private Airport Transfer Siargao | Book Now or Pre-Book Premium Service',
-  description: 'Private airport transfer in Siargao from ₱2,000. Book now for immediate pickup or pre-book luxury Hyundai Staria for August 2025. Professional drivers, door-to-door service from Sayak Airport to General Luna, Cloud 9, Pacifico & Santa Monica.',
-  keywords: 'private van hire siargao, airport transfer siargao, private van rental siargao, siargao airport pickup, private airport transfer siargao, sayak airport transfer, general luna airport transfer, cloud 9 airport transfer, pacifico airport transfer, santa monica airport transfer, siargao airport shuttle, door to door airport service siargao, luxury airport transfer siargao, private airport pickup siargao, siargao van service, airport transport siargao philippines, siargao travel transfer service, hyundai staria siargao, siargao airport taxi, burgos airport transfer, dapa airport transfer, van hire siargao today, immediate airport transfer siargao',
+  title: 'Private Airport Transfer Siargao | Same Day Booking ₱2,000 | Professional Drivers',
+  description: 'Private airport transfer in Siargao from ₱2,000. Same day booking available with professional drivers and door-to-door service from Sayak Airport to General Luna, Cloud 9, Pacifico & Santa Monica. No shared shuttles, no waiting.',
+  keywords: 'private van hire siargao, airport transfer siargao, private van rental siargao, siargao airport pickup, private airport transfer siargao, sayak airport transfer, general luna airport transfer, cloud 9 airport transfer, pacifico airport transfer, santa monica airport transfer, siargao airport shuttle, door to door airport service siargao, private airport pickup siargao, siargao van service, airport transport siargao philippines, siargao travel transfer service, siargao airport taxi, burgos airport transfer, dapa airport transfer, van hire siargao today, immediate airport transfer siargao, same day booking siargao',
   openGraph: {
-    title: 'Private Airport Transfer Siargao | Book Now or Pre-Book Premium Service',
-    description: 'Private airport transfer in Siargao from ₱2,000. Book now for immediate pickup or pre-book luxury Hyundai Staria for August 2025. Professional drivers, door-to-door service.',
+    title: 'Private Airport Transfer Siargao | Same Day Booking Available',
+    description: 'Private airport transfer in Siargao from ₱2,000. Same day booking with professional drivers and door-to-door service. Skip the shared shuttles.',
     images: [
       {
         url: '/images/hero-bg-1.png',
         width: 1200,
         height: 630,
-        alt: 'Private van hire service in Siargao Island - Immediate booking available with professional drivers',
+        alt: 'Private van hire service in Siargao Island - Same day booking available with professional drivers',
       },
     ],
   },
@@ -26,7 +26,7 @@ export default function VanHirePage() {
     ...generateLocalBusinessSchema(),
     '@type': ['LocalBusiness', 'TaxiService'],
     name: 'Siargao Rides - Private Van Hire',
-    description: 'Immediate private van hire and premium airport transfer service in Siargao Island. Book now or pre-book luxury Hyundai Staria van',
+    description: 'Private van hire and airport transfer service in Siargao Island. Same day booking available with professional drivers',
     priceRange: '₱₱',
     areaServed: [
       {
@@ -96,8 +96,8 @@ export default function VanHirePage() {
       itemListElement: [
         {
           '@type': 'Offer',
-          name: 'Immediate Private Van Hire (2 Passengers)',
-          description: 'Book now - Door-to-door private pickup and drop-off from Sayak Airport with professional driver',
+          name: 'Private Van Hire (2 Passengers)',
+          description: 'Door-to-door private pickup and drop-off from Sayak Airport with professional driver and complimentary water',
           price: '2000',
           priceCurrency: 'PHP',
           availability: 'https://schema.org/InStock',
@@ -108,8 +108,8 @@ export default function VanHirePage() {
         },
         {
           '@type': 'Offer',
-          name: 'Immediate Private Van Hire (3-10 Passengers)',
-          description: 'Book now - Private van service for groups with professional driver and free water',
+          name: 'Private Van Hire (3-10 Passengers)',
+          description: 'Private van service for groups with professional driver, free water, surf rack, and flight tracking',
           price: '2500',
           priceCurrency: 'PHP',
           availability: 'https://schema.org/InStock',
@@ -117,31 +117,6 @@ export default function VanHirePage() {
             '@type': 'QuantitativeValue',
             minValue: 3,
             maxValue: 10,
-          },
-        },
-        {
-          '@type': 'Offer',
-          name: 'Premium Hyundai Staria Pre-Booking (2 Passengers)',
-          description: 'Pre-book luxury Hyundai Staria for August 2025 with premium amenities',
-          price: '2500',
-          priceCurrency: 'PHP',
-          availability: 'https://schema.org/PreOrder',
-          eligibleQuantity: {
-            '@type': 'QuantitativeValue',
-            maxValue: 2,
-          },
-        },
-        {
-          '@type': 'Offer',
-          name: 'Premium Hyundai Staria Pre-Booking (3-8 Passengers)',
-          description: 'Pre-book luxury Hyundai Staria for August 2025 with leather seating and premium features',
-          price: '3500',
-          priceCurrency: 'PHP',
-          availability: 'https://schema.org/PreOrder',
-          eligibleQuantity: {
-            '@type': 'QuantitativeValue',
-            minValue: 3,
-            maxValue: 8,
           },
         },
       ],
@@ -158,7 +133,7 @@ export default function VanHirePage() {
         name: 'How much is airport transfer in Siargao?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Our immediate private van hire service costs ₱2,000 for 2 passengers and ₱2,500 for 3-10 passengers. We also offer premium Hyundai Staria pre-booking for August 2025 at ₱2,500 for 2 passengers and ₱3,500 for 3-8 passengers.',
+          text: 'Our private van hire service costs ₱2,000 for 2 passengers and ₱2,500 for 3-10 passengers. All prices include professional driver, door-to-door service, complimentary water, and flight tracking.',
         },
       },
       {
@@ -166,7 +141,7 @@ export default function VanHirePage() {
         name: 'Can I book airport transfer for today or tomorrow?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes! Our regular van hire service is available for immediate booking. Contact us via WhatsApp and we can arrange pickup for today or tomorrow with professional drivers.',
+          text: 'Yes! Our van hire service is available for same day booking. Contact us via WhatsApp and we can arrange pickup for today or tomorrow with professional drivers.',
         },
       },
       {
@@ -191,6 +166,14 @@ export default function VanHirePage() {
         acceptedAnswer: {
           '@type': 'Answer',
           text: 'We monitor flight arrivals and adjust pickup times accordingly. Just provide your flight number when booking and we will track your flight status automatically.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Why choose private van over shared shuttle?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Private van means no waiting for other passengers, direct route to your destination, departure on your schedule, and privacy for your group. Plus dedicated surf rack space and personal attention from your driver.',
         },
       },
     ],
