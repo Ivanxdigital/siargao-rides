@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import VehicleCard from "@/components/VehicleCard"
-import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon, XCircle, Star, Shield, Clock, Users } from "lucide-react"
+import { Sliders, ChevronDown, ChevronUp, MapPin, Calendar, Filter, Bike as BikeIcon, Car as CarIcon, Truck as TruckIcon, XCircle, Shield, Clock, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
@@ -120,6 +120,7 @@ export default function BrowsePage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedLocation, setSelectedLocation] = useState<string>("")
   const [onlyShowAvailable, setOnlyShowAvailable] = useState<boolean>(false)
+  const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false)
   const [engineSizeRange, setEngineSizeRange] = useState<[number, number]>([0, 1000])
   const [sortBy, setSortBy] = useState<string>("price_asc")
   const [minSeats, setMinSeats] = useState<number>(0)
@@ -152,6 +153,7 @@ export default function BrowsePage() {
     start_date: startDateObj ? startDateObj.toISOString().split('T')[0] : undefined,
     end_date: endDateObj ? endDateObj.toISOString().split('T')[0] : undefined,
     only_available: onlyShowAvailable || undefined,
+    verified_only: verifiedOnly || undefined,
     min_seats: minSeats > 0 ? minSeats : undefined,
     transmission: transmission !== 'any' ? transmission : undefined,
     engine_size_min: engineSizeRange[0] > 0 ? engineSizeRange[0] : undefined,
@@ -159,7 +161,7 @@ export default function BrowsePage() {
     sort_by: sortBy
   }), [
     priceRange, selectedVehicleType, selectedCategories, 
-    selectedLocation, startDateObj, endDateObj, onlyShowAvailable, minSeats, 
+    selectedLocation, startDateObj, endDateObj, onlyShowAvailable, verifiedOnly, minSeats, 
     transmission, engineSizeRange, sortBy
   ])
 
@@ -289,6 +291,7 @@ export default function BrowsePage() {
     setSelectedCategories([]);
     setSelectedLocation("");
     setOnlyShowAvailable(false);
+    setVerifiedOnly(false);
     setSortBy("price_asc");
     setMinSeats(0);
     setTransmission("any");
@@ -344,7 +347,7 @@ export default function BrowsePage() {
 
   const hasActiveFilters = selectedCategories.length > 0 || 
     priceRange[0] > 100 || priceRange[1] < 2000 || 
-    selectedLocation || onlyShowAvailable || 
+    selectedLocation || onlyShowAvailable || verifiedOnly || 
     selectedVehicleType !== 'all' || 
     startDateObj || endDateObj;
 
@@ -417,7 +420,7 @@ export default function BrowsePage() {
     
     if (selectedVehicleType !== 'all') {
       const vehicleTypeName = selectedVehicleType === 'motorcycle' ? 'motorbike and scooter' : selectedVehicleType
-      description = `Find the perfect ${vehicleTypeName} rental in Siargao Island. ${pagination?.total || 'Multiple'} ${vehicleTypeName}s available from verified local shops.`
+      description = `Find the perfect ${vehicleTypeName} rental in Siargao Island. ${pagination?.total || 'Multiple'} ${vehicleTypeName}s available from local shops (verified and unverified).`
     }
     
     if (selectedLocation) {
@@ -500,7 +503,7 @@ export default function BrowsePage() {
                 ? 'Rent cars and vehicles for comfortable exploration of Siargao Island. Perfect for families and groups with competitive daily rates.'
                 : selectedVehicleType === 'tuktuk'
                 ? 'Experience authentic Filipino transportation with tuktuk rentals in Siargao Island. Ideal for local trips and cultural exploration.'
-                : 'Compare motorbikes, cars, and scooters from verified rental shops across Siargao Island. Book online with flexible pickup and competitive rates.'
+                : 'Compare motorbikes, cars, and scooters from local rental shops across Siargao Island. Verified and unverified listings are clearly labeled.'
               }
             </motion.p>
           </motion.div>
@@ -520,8 +523,8 @@ export default function BrowsePage() {
             >
               <Shield className="text-green-400 h-6 w-6 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-sm">Verified Shops Only</h3>
-                <p className="text-gray-400 text-xs">All rental shops are verified and trusted</p>
+                <h3 className="font-semibold text-sm">Verified + Unverified</h3>
+                <p className="text-gray-400 text-xs">Unverified shops show a clear badge</p>
               </div>
             </motion.div>
             
@@ -675,6 +678,23 @@ export default function BrowsePage() {
                       {dateRangeSelected ? "Available for selected dates" : "Available only"}
                     </span>
                   </label>
+                </div>
+
+                {/* Trust Filter */}
+                <div className="mb-8">
+                  <h3 className="text-sm font-semibold mb-4 text-white/90">Trust</h3>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={verifiedOnly}
+                      onChange={() => setVerifiedOnly(!verifiedOnly)}
+                      className="w-4 h-4 rounded border-border/50 text-primary focus:ring-primary/20 bg-card/50"
+                    />
+                    <span className="text-sm text-white/80">Verified only</span>
+                  </label>
+                  <p className="text-xs text-white/50 mt-2">
+                    Unverified listings are shown by default with a badge.
+                  </p>
                 </div>
 
                 {/* Category Filter */}
@@ -873,8 +893,8 @@ export default function BrowsePage() {
                           {dateRangeSelected
                             ? `Found ${vehicles.filter(v => v.is_available_for_dates).length} vehicles available for selected dates`
                             : startDateObj
-                              ? "Now select the end date (day you'll return the vehicle)"
-                              : "Select the start date (day you'll pick up the vehicle)"}
+                              ? "Now select the end date (day you&apos;ll return the vehicle)"
+                              : "Select the start date (day you&apos;ll pick up the vehicle)"}
                         </p>
 
                         {(startDateObj || endDateObj) && (
@@ -901,6 +921,29 @@ export default function BrowsePage() {
                             : "Only show available vehicles"}
                         </label>
                       </div>
+                    </div>
+
+                    {/* Trust Filter (Mobile) */}
+                    <div className="mb-6">
+                      <h3 className="text-md font-bold mb-3 flex items-center">
+                        <Shield size={16} className="mr-1.5 text-primary/70" />
+                        Trust
+                      </h3>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="mobile-verified-only"
+                          checked={verifiedOnly}
+                          onChange={() => setVerifiedOnly(!verifiedOnly)}
+                          className="rounded border-gray-700 text-primary focus:ring-primary bg-gray-900/50"
+                        />
+                        <label htmlFor="mobile-verified-only" className="text-sm text-gray-300">
+                          Verified only
+                        </label>
+                      </div>
+                      <p className="text-xs text-white/60 mt-1.5">
+                        Unverified listings are shown by default with a badge.
+                      </p>
                     </div>
 
                     {/* Rest of mobile filters... */}
@@ -986,7 +1029,8 @@ export default function BrowsePage() {
                             id: vehicle.shopId,
                             name: vehicle.shopName,
                             logo: vehicle.shopLogo,
-                            location: vehicle.shopLocation
+                            location: vehicle.shopLocation,
+                            isVerified: vehicle.shopIsVerified
                           }}
                           availabilityInfo={dateRangeSelected ? {
                             isAvailableForDates: vehicle.is_available_for_dates || false,

@@ -14,6 +14,7 @@ interface BrowseFilters {
   start_date?: string;
   end_date?: string;
   only_available?: boolean;
+  verified_only?: boolean;
   min_seats?: number;
   transmission?: string;
   engine_size_min?: number;
@@ -39,6 +40,8 @@ interface VehicleWithMetadata {
   shopLogo?: string;
   shopLocation?: string;
   shopIsShowcase?: boolean;
+  shopIsVerified?: boolean;
+  shopStatus?: 'pending_verification' | 'active' | 'rejected';
   images?: { id: string; url: string; alt?: string }[];
   is_available_for_dates?: boolean;
   // Vehicle group fields
@@ -80,6 +83,7 @@ export async function GET(request: NextRequest) {
       start_date: url.searchParams.get('start_date') || undefined,
       end_date: url.searchParams.get('end_date') || undefined,
       only_available: url.searchParams.get('only_available') === 'true',
+      verified_only: url.searchParams.get('verified_only') === 'true',
       min_seats: url.searchParams.get('min_seats') ? parseInt(url.searchParams.get('min_seats')!) : undefined,
       transmission: url.searchParams.get('transmission') || undefined,
       engine_size_min: url.searchParams.get('engine_size_min') ? parseInt(url.searchParams.get('engine_size_min')!) : undefined,
@@ -101,7 +105,7 @@ export async function GET(request: NextRequest) {
         *,
         vehicle_images(*),
         vehicle_types(id, name),
-        rental_shops!inner(id, name, logo_url, location_area, is_active, is_showcase),
+        rental_shops!inner(id, name, logo_url, location_area, is_active, is_showcase, is_verified, status),
         group_id,
         group_index,
         individual_identifier,
@@ -112,8 +116,17 @@ export async function GET(request: NextRequest) {
     vehicleQuery = vehicleQuery.eq('is_available', true);
     // SUBSCRIPTION SYSTEM DISABLED: All shops are now permanently active
     vehicleQuery = vehicleQuery.eq('rental_shops.is_active', true);
-    vehicleQuery = vehicleQuery.eq('is_verified', true);
-    vehicleQuery = vehicleQuery.eq('verification_status', 'approved');
+    vehicleQuery = vehicleQuery.neq('rental_shops.status', 'rejected');
+    vehicleQuery = vehicleQuery.neq('verification_status', 'rejected');
+
+    // Public browse defaults to including unverified listings (with badges).
+    // "Verified only" is an explicit opt-in filter.
+    if (filters.verified_only) {
+      vehicleQuery = vehicleQuery
+        .eq('is_verified', true)
+        .eq('verification_status', 'approved')
+        .eq('rental_shops.is_verified', true);
+    }
 
     // Apply price filters
     if (filters.price_min !== undefined) {
@@ -200,6 +213,8 @@ export async function GET(request: NextRequest) {
         shopLogo: vehicle.rental_shops?.logo_url,
         shopLocation: vehicle.rental_shops?.location_area,
         shopIsShowcase: vehicle.rental_shops?.is_showcase || false,
+        shopIsVerified: vehicle.rental_shops?.is_verified ?? false,
+        shopStatus: vehicle.rental_shops?.status || 'pending_verification',
         vehicle_type: (vehicle.vehicle_types?.name as VehicleType) || vehicle.vehicle_type || 'motorcycle',
         images: vehicle.vehicle_images || [],
         is_available_for_dates: true, // Will be updated if date filtering is applied
@@ -319,6 +334,8 @@ export async function GET(request: NextRequest) {
       supabase
         .from('rental_shops')
         .select('location_area')
+        .eq('is_active', true)
+        .neq('status', 'rejected')
         .order('location_area')
     ]);
 

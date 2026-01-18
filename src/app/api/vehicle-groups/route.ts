@@ -102,6 +102,27 @@ export async function POST(request: NextRequest) {
 
     const { group_id, vehicle_ids } = result[0];
 
+    // Ensure documents + verification status are persisted for grouped vehicles.
+    // The RPC may not write these fields depending on the deployed DB function version.
+    const groupDocuments = groupData.base_vehicle_data?.documents || [];
+    const hasRegistration =
+      Array.isArray(groupDocuments) &&
+      groupDocuments.some((doc: any) => doc.type === 'registration');
+    const verificationStatus = hasRegistration ? 'pending' : 'documents_needed';
+
+    const { error: verificationUpdateError } = await supabase
+      .from('vehicles')
+      .update({
+        documents: groupDocuments,
+        is_verified: false,
+        verification_status: verificationStatus
+      })
+      .in('id', vehicle_ids);
+
+    if (verificationUpdateError) {
+      console.error('Error updating grouped vehicles verification fields:', verificationUpdateError);
+    }
+
     // Handle images if provided
     if (groupData.base_vehicle_data.images && groupData.base_vehicle_data.images.length > 0) {
       // Create image records for all vehicles
@@ -137,7 +158,8 @@ export async function POST(request: NextRequest) {
       success: true,
       group_id,
       vehicle_ids,
-      group: groupDetails
+      group: groupDetails,
+      verification_status: verificationStatus
     });
   } catch (error) {
     console.error('Error in POST /api/vehicle-groups:', error);

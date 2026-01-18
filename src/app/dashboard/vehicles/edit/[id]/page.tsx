@@ -397,20 +397,6 @@ export default function EditVehiclePage() {
         throw new Error("Category is required");
       }
 
-      // Validate vehicle-specific fields
-      if (vehicleTypeId === 1) { // Motorcycle
-        if (!engineSize) {
-          throw new Error("Engine size is required for motorcycles");
-        }
-      } else if (vehicleTypeId === 2) { // Car
-        if (!seats) {
-          throw new Error("Number of seats is required for cars");
-        }
-        if (!transmission) {
-          throw new Error("Transmission type is required for cars");
-        }
-      }
-
       // Upload new images to Supabase Storage if any
       const supabase = createClientComponentClient();
       const updatedImages: VehicleImage[] = [];
@@ -533,7 +519,7 @@ export default function EditVehiclePage() {
         return (
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="engineSize">
-              Engine Size (cc) *
+              Engine Size (cc)
             </label>
             <input
               id="engineSize"
@@ -541,7 +527,6 @@ export default function EditVehiclePage() {
               className="w-full px-3 py-2 border border-border rounded-md bg-background"
               value={engineSize}
               onChange={(e) => setEngineSize(e.target.value)}
-              required
             />
           </div>
         );
@@ -550,7 +535,7 @@ export default function EditVehiclePage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="seats">
-                Number of Seats *
+                Number of Seats
               </label>
               <input
                 id="seats"
@@ -559,19 +544,17 @@ export default function EditVehiclePage() {
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
                 value={seats}
                 onChange={(e) => setSeats(e.target.value)}
-                required
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="transmission">
-                Transmission *
+                Transmission
               </label>
               <select
                 id="transmission"
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
                 value={transmission}
                 onChange={(e) => setTransmission(e.target.value)}
-                required
               >
                 <option value="automatic">Automatic</option>
                 <option value="manual">Manual</option>

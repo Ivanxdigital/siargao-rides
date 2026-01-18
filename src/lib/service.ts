@@ -118,6 +118,7 @@ export async function getVehicles(filters?: {
   is_available?: boolean;
   seats?: number;
   transmission?: string;
+  verified_only?: boolean;
   includeUnverified?: boolean;
 }): Promise<Vehicle[]> {
   if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {

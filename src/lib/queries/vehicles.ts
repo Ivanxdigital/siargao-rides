@@ -8,8 +8,10 @@ export interface VehicleWithMetadata extends Vehicle {
   shopLocation?: string;
   shopId: string;
   shopIsShowcase?: boolean;
+  shopIsVerified?: boolean;
+  shopStatus?: 'pending_verification' | 'active' | 'rejected';
   is_available_for_dates?: boolean;
-  images?: any[];
+  images?: unknown[];
   vehicle_type: VehicleType;
 }
 
@@ -30,6 +32,7 @@ export interface BrowseFilters {
   start_date?: string;
   end_date?: string;
   only_available?: boolean;
+  verified_only?: boolean;
   min_seats?: number;
   transmission?: string;
   engine_size_min?: number;
@@ -104,7 +107,7 @@ export async function fetchVehicles(): Promise<FetchVehiclesResult> {
     .select('*');
 
   if (categoryData) {
-    categoryData.forEach((category: any) => {
+    categoryData.forEach((category: { vehicle_type_id: string; name: string }) => {
       const vehicleType = category.vehicle_type_id === '1' ? 'motorcycle' :
                         category.vehicle_type_id === '2' ? 'car' :
                         category.vehicle_type_id === '3' ? 'tuktuk' : null;

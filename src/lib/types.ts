@@ -89,6 +89,8 @@ export type RentalShop = {
   banner_position_x?: number
   banner_position_y?: number
   is_verified: boolean
+  is_active?: boolean
+  status?: 'pending_verification' | 'active' | 'rejected'
   location_area?: string
   offers_delivery?: boolean
   delivery_fee?: number
@@ -161,6 +163,10 @@ export type Vehicle = {
   price_per_week?: number
   price_per_month?: number
   is_available: boolean
+  // Trust/verification
+  is_verified?: boolean
+  verification_status?: string
+  verification_notes?: string
   specifications?: VehicleSpecifications
   // Additional fields
   color?: string

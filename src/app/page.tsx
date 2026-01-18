@@ -5,7 +5,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import SearchBar, { SearchParams } from "@/components/SearchBar"
-import RentalShopCard from "@/components/RentalShopCard"
 import VehicleCard from "@/components/VehicleCard"
 import * as service from "@/lib/service"
 import { RentalShop, Vehicle, VehicleType, VehicleCategory } from "@/lib/types"
@@ -14,6 +13,7 @@ import { ArrowRight, MapPin } from "lucide-react"
 import FAQSection from '@/components/FAQSection'
 import { Badge } from "@/components/ui/badge"
 import { generateLocalBusinessSchema, generateJSONLD } from "@/lib/structured-data"
+import { ShopTrustBadge } from "@/components/shop/ShopTrustBadge"
 
 // Import new animation components
 import { ScrollReveal } from '@/components/animations/ScrollReveal'
@@ -38,6 +38,7 @@ interface ShopCardData {
   startingPrice: number
   rating: number
   reviewCount: number
+  isVerified: boolean
 }
 
 // Transformed vehicle data for the VehicleCard
@@ -59,6 +60,7 @@ interface VehicleCardData {
     name: string
     logo?: string
     location?: string
+    isVerified?: boolean
   }
   // Group-related props
   isGroup?: boolean
@@ -107,18 +109,19 @@ export default function Home() {
         setError(null)
 
         // Fetch shops and vehicles
-        const shopsData = await service.getVerifiedShops()
+        const shopsData = await service.getShops()
 
-        // Only fetch verified vehicles for public display
-        // The API now defaults to only returning verified vehicles
-        const vehiclesData = await service.getVehicles()
+        // Public display includes verified + unverified listings (with badges)
+        const vehiclesData = await service.getVehicles({ is_available: true })
 
         setVehicles(vehiclesData)
 
         // Transform shop data for the card component
         const shopCardData = await Promise.all(
-          shopsData.map(async (shop) => {
-            // Get vehicles for this shop - only verified vehicles will be included
+          shopsData
+            .filter((shop) => (shop.is_active ?? true) && shop.status !== 'rejected')
+            .map(async (shop) => {
+            // Get vehicles for this shop
             const shopVehicles = vehiclesData.filter(vehicle => vehicle.shop_id === shop.id)
 
             // Calculate starting price (lowest price per day)
@@ -139,18 +142,21 @@ export default function Home() {
             return {
               id: shop.id,
               name: shop.name,
+              username: shop.username,
               // Use vehicle images if available, or use shop logo/placeholder
               images: vehicleImages.length > 0
                 ? vehicleImages.slice(0, 3)
                 : [shop.logo_url || 'https://placehold.co/600x400/1e3b8a/white?text=Shop+Image'],
               startingPrice,
               rating: averageRating || 4.5, // Default rating if no reviews
-              reviewCount: reviewCount || 0
+              reviewCount: reviewCount || 0,
+              isVerified: shop.is_verified
             }
           })
         )
 
-        setShops(shopCardData)
+        // Prefer showing verified shops first on the homepage
+        setShops(shopCardData.sort((a, b) => Number(b.isVerified) - Number(a.isVerified)))
       } catch (error: any) {
         console.error("Error fetching data:", {
           name: error?.name || 'Unknown Error',
@@ -265,7 +271,7 @@ export default function Home() {
         ? await Promise.all(
             filteredVehicles.map(async (vehicle) => {
               const shop = await service.getShopById(vehicle.shop_id);
-              if (!shop || !shop.is_verified || !shop.is_active) return null;
+              if (!shop || (shop.is_active ?? true) === false || shop.status === 'rejected') return null;
               
               const shopAddress = shop.address?.toLowerCase() || "";
               const shopCity = shop.city?.toLowerCase() || "";
@@ -286,7 +292,7 @@ export default function Home() {
           .map(async ({ vehicle, shop }) => {
             // If shop is null (in case we didn't filter by location), fetch it
             const vehicleShop = shop || await service.getShopById(vehicle.shop_id);
-            if (!vehicleShop || !vehicleShop.is_verified || !vehicleShop.is_active) return null;
+            if (!vehicleShop || (vehicleShop.is_active ?? true) === false || vehicleShop.status === 'rejected') return null;
 
             return { vehicle, shop: vehicleShop };
           })
@@ -335,7 +341,8 @@ export default function Home() {
               id: shop.id,
               name: shop.name,
               logo: shop.logo_url,
-              location: `${shop.city}${shop.address ? ', ' + shop.address : ''}`
+              location: `${shop.city}${shop.address ? ', ' + shop.address : ''}`,
+              isVerified: shop.is_verified
             },
             // Group-related props
             isGroup: groupedVehicle.isGroup,
@@ -857,6 +864,11 @@ export default function Home() {
                               <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 text-white font-medium shadow-lg text-sm">
                                 From ₱{shop.startingPrice}/day
                               </div>
+
+                              {/* Trust badge */}
+                              <div className="absolute top-3 left-3">
+                                <ShopTrustBadge isVerified={shop.isVerified} />
+                              </div>
                             </div>
 
                             {/* Content Area */}
@@ -1000,7 +1012,7 @@ export default function Home() {
                 </motion.div>
                 <h3 className="text-lg font-medium mb-2 text-center">Local Siargao Knowledge</h3>
                 <p className="text-gray-400 text-sm text-center leading-relaxed">
-                  Partner with verified local rental shops who know Siargao's roads, conditions, and best spots to explore.
+                  Partner with local rental shops across Siargao. Verified and unverified listings are clearly labeled.
                 </p>
               </AnimatedCard>
 

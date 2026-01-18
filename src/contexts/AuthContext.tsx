@@ -35,7 +35,7 @@ interface AuthContextType {
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
   resendVerificationEmail: (email: string) => Promise<VerificationResult>;
   isAdmin: boolean;
-  signInWithGoogle: () => Promise<{ error: any }>;
+  signInWithGoogle: (intent?: 'tourist' | 'shop_owner') => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -55,6 +55,8 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+const AUTH_INTENT_STORAGE_KEY = 'sr_auth_intent';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -142,16 +144,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
               user.app_metadata.provider === 'google' &&
               (!user.user_metadata?.role || user.user_metadata.role === '')
             ) {
-              console.log("New Google user detected, setting up profile with 'tourist' role");
+              const pendingIntent =
+                typeof window !== 'undefined'
+                  ? (localStorage.getItem(AUTH_INTENT_STORAGE_KEY) as 'tourist' | 'shop_owner' | null)
+                  : null;
+              const desiredRole: 'tourist' | 'shop_owner' = pendingIntent === 'shop_owner' ? 'shop_owner' : 'tourist';
+
+              console.log("New Google user detected, setting up profile with role:", desiredRole);
               setIsSettingUp(true);
 
               try {
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem(AUTH_INTENT_STORAGE_KEY);
+                }
+
                 // First, update user metadata with tourist role and name info
                 const { error: updateError } = await supabase.auth.updateUser({
                   data: {
-                    role: 'tourist',
+                    role: desiredRole,
+                    intent: desiredRole,
                     first_name: user.user_metadata.full_name?.split(' ')[0] || '',
                     last_name: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
+                    ...(desiredRole === 'shop_owner' ? { has_shop: false } : {}),
                   }
                 });
 
@@ -167,7 +181,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   email: user.email,
                   firstName: user.user_metadata.full_name?.split(' ')[0] || '',
                   lastName: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
-                  role: 'tourist',
+                  role: desiredRole,
                 });
 
                 const response = await fetch(apiUrl, {
@@ -180,7 +194,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     email: user.email,
                     firstName: user.user_metadata.full_name?.split(' ')[0] || '',
                     lastName: user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '',
-                    role: 'tourist',
+                    role: desiredRole,
                   }),
                 });
 
@@ -213,7 +227,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   setUser(newSession.user);
                 }
 
-                // Now redirect to dashboard
+                // Redirect to dashboard for onboarding/setup
                 router.push("/dashboard");
               } catch (err) {
                 console.error("Error setting up Google user profile:", err);
@@ -687,10 +701,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (intent?: 'tourist' | 'shop_owner') => {
     setIsLoading(true);
     try {
       console.log("Initiating Google sign-in");
+
+      if (typeof window !== 'undefined' && intent) {
+        localStorage.setItem(AUTH_INTENT_STORAGE_KEY, intent);
+      }
+
+      const resolvedIntent =
+        intent ||
+        (typeof window !== 'undefined'
+          ? (localStorage.getItem(AUTH_INTENT_STORAGE_KEY) as 'tourist' | 'shop_owner' | null) || undefined
+          : undefined) ||
+        'tourist';
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -699,7 +724,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             access_type: 'offline',
             prompt: 'consent',
           },
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/auth/callback?intent=${encodeURIComponent(resolvedIntent)}&next=${encodeURIComponent('/dashboard')}`,
         }
       });
 

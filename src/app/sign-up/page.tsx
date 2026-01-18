@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Bike, Store } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/trackEvent";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -32,11 +33,20 @@ export default function SignUpPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  // Preserve intent from dedicated business entry points
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const intentParam = params.get("intent");
+    if (intentParam === "shop_owner") setUserIntent("shop_owner");
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
     setApiError("");
     setIsLoading(true);
+    trackEvent("auth_started", { method: "email", intent: userIntent });
 
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -95,9 +105,10 @@ export default function SignUpPage() {
     setFormError("");
     setApiError("");
     setGoogleLoading(true);
+    trackEvent("auth_started", { method: "google", intent: userIntent });
 
     try {
-      const { error } = await signInWithGoogle();
+      const { error } = await signInWithGoogle(userIntent);
 
       if (error) {
         setApiError(error.message || "Failed to sign up with Google");

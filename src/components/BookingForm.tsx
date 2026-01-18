@@ -13,6 +13,7 @@ import { Info, AlertCircle, Clock, Phone } from "lucide-react";
 import { addDays, subDays, format, isWithinInterval } from "date-fns";
 import { TermsAndConditions } from "./TermsAndConditions";
 import { toast } from "react-hot-toast";
+import { trackEvent } from "@/lib/trackEvent";
 
 interface BookingFormProps {
   vehicle: Vehicle;
@@ -25,6 +26,7 @@ interface BookingFormProps {
   onEndDateChange: (date: Date | null) => void;
   onDeliveryFeeChange: (fee: number) => void;
   selectedVehicleId?: string | null; // For group vehicle selection
+  requiresUnverifiedDisclaimer?: boolean;
 }
 
 interface DateRange {
@@ -42,7 +44,8 @@ export default function BookingForm({
   onStartDateChange,
   onEndDateChange,
   onDeliveryFeeChange,
-  selectedVehicleId = null
+  selectedVehicleId = null,
+  requiresUnverifiedDisclaimer = false
 }: BookingFormProps) {
   // State for form fields
   const [deliveryOption, setDeliveryOption] = useState<string | null>(null);
@@ -53,6 +56,7 @@ export default function BookingForm({
   const [loading, setLoading] = useState(false);
   const [deliveryOptions, setDeliveryOptions] = useState<any[]>([]);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [acknowledgeUnverified, setAcknowledgeUnverified] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [systemSettings, setSystemSettings] = useState<any>({
     enable_temporary_cash_payment: false,
@@ -96,6 +100,15 @@ export default function BookingForm({
 
     fetchSystemSettings();
   }, []);
+
+  useEffect(() => {
+    if (requiresUnverifiedDisclaimer) {
+      trackEvent("booking_unverified_disclaimer_shown", {
+        vehicleId: vehicle?.id,
+        shopId: shop?.id,
+      });
+    }
+  }, [requiresUnverifiedDisclaimer, shop?.id, vehicle?.id]);
 
   // Check availability for pre-filled dates when component mounts
   useEffect(() => {
@@ -237,6 +250,18 @@ export default function BookingForm({
     if (!agreeToTerms) {
       setFormError("You must agree to the terms and conditions to proceed.");
       return;
+    }
+
+    if (requiresUnverifiedDisclaimer && !acknowledgeUnverified) {
+      setFormError("Please confirm you understand this listing is unverified to proceed.");
+      return;
+    }
+
+    if (requiresUnverifiedDisclaimer) {
+      trackEvent("booking_unverified_disclaimer_accepted", {
+        vehicleId: vehicle?.id,
+        shopId: shop?.id,
+      });
     }
 
     // If the user is not authenticated, prompt them to sign in
@@ -921,6 +946,31 @@ export default function BookingForm({
       )}
 
       {/* Terms and conditions */}
+      {requiresUnverifiedDisclaimer && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mt-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-yellow-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-medium text-yellow-200">Unverified listing</h3>
+              <p className="text-sm text-white/70 mt-1">
+                This shop or vehicle hasn&apos;t been verified by Siargao Rides yet. You can still book, but Siargao Rides does not take accountability for disputes.
+              </p>
+              <label className="flex items-start gap-2 cursor-pointer mt-3">
+                <input
+                  type="checkbox"
+                  checked={acknowledgeUnverified}
+                  onChange={(e) => setAcknowledgeUnverified(e.target.checked)}
+                  className="mt-1"
+                />
+                <span className="text-sm text-white/70">
+                  I understand and want to continue.
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="pt-4">
         <label className="flex items-start gap-2 cursor-pointer">
           <input

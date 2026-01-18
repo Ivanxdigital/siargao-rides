@@ -187,6 +187,7 @@ export async function getVehicles(filters?: {
   seats?: number;
   transmission?: string;
   includeUnverified?: boolean;
+  verified_only?: boolean;
 }): Promise<Vehicle[]> {
   try {
     if (!supabase) {
@@ -205,6 +206,13 @@ export async function getVehicles(filters?: {
         status
       )
     `)
+
+    // Public safety defaults:
+    // - Only show vehicles from active (non-rejected) shops
+    // - Never show rejected vehicles
+    query = query.eq('rental_shops.is_active', true)
+    query = query.neq('rental_shops.status', 'rejected')
+    query = query.neq('verification_status', 'rejected')
 
     // Apply filters if provided
     if (filters?.shop_id) {
@@ -246,14 +254,11 @@ export async function getVehicles(filters?: {
       query = query.eq('transmission', filters.transmission)
     }
     
-    // By default, only show verified vehicles from verified shops to the public
-    // Unless specifically requested to include unverified ones
-    if (filters?.includeUnverified !== true) {
-      query = query
-        .eq('is_verified', true)
-        .eq('verification_status', 'approved')
-        .eq('rental_shops.is_verified', true)
-        .eq('rental_shops.is_active', true)
+    // Public browse/search defaults to including unverified listings (with badges).
+    // Enable verified-only via filters.
+    const verifiedOnly = filters?.verified_only === true || filters?.includeUnverified === false;
+    if (verifiedOnly) {
+      query = query.eq('is_verified', true).eq('verification_status', 'approved').eq('rental_shops.is_verified', true);
     }
 
     const { data, error } = await query.order('price_per_day')

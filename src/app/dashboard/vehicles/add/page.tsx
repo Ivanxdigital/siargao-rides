@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SmartTooltip, TooltipPresets } from "@/components/ui/smart-tooltip";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import imageCompression from 'browser-image-compression';
+import { trackEvent } from "@/lib/trackEvent";
 import {
   Select,
   SelectContent,
@@ -68,6 +69,9 @@ const vehicleTypes: VehicleTypeOption[] = [
 export default function AddVehiclePage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const [isOnboarding, setIsOnboarding] = useState(false);
+
+  const [quickAddMode, setQuickAddMode] = useState(true);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -125,6 +129,12 @@ export default function AddVehiclePage() {
       router.push("/dashboard");
     }
   }, [user, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setIsOnboarding(params.get("onboarding") === "1");
+  }, []);
   
   // Fetch vehicle type UUID when vehicleTypeId changes
   useEffect(() => {
@@ -173,9 +183,16 @@ export default function AddVehiclePage() {
           return;
         }
         
-        setCategories(data || []);
-        // Reset category selection when vehicle type changes
-        setCategory("");
+        const nextCategories = data || [];
+        setCategories(nextCategories);
+
+        // If there is only one valid category for this type, preselect it to reduce friction.
+        // Otherwise reset (shop owner can pick).
+        if (nextCategories.length === 1) {
+          setCategory(nextCategories[0].id);
+        } else {
+          setCategory("");
+        }
       } catch (err) {
         console.error("Error in fetchCategories:", err);
       }
@@ -334,34 +351,39 @@ export default function AddVehiclePage() {
 
   // Add document handlers
   const handleDocumentChange = (id: string, file: File | null) => {
-    if (file) {
-      // Check if file type is allowed
-      const allowedTypes = ['.pdf', '.jpg', '.jpeg', '.png'];
-      const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
-      
-      if (!allowedTypes.includes(fileExt)) {
-        setError(`File type not allowed. Please upload PDF, JPG, or PNG files only.`);
-        return;
-      }
-      
-      // Check file size (5MB limit)
-      const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSizeInBytes) {
-        setError(`File size too large. Please upload files smaller than 5MB. Current file size: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
-        return;
-      }
-      
-      setDocuments(
-        documents.map((doc) =>
-          doc.id === id
-            ? { ...doc, file, name: file.name }
-            : doc
-        )
+    if (!file) {
+      setDocuments((prev) =>
+        prev.map((doc) => (doc.id === id ? { ...doc, file: null, name: "" } : doc))
       );
-      
-      // Clear any previous errors when a valid file is selected
-      if (error) setError("");
+      return;
     }
+
+    // Check if file type is allowed
+    const allowedTypes = ['.pdf', '.jpg', '.jpeg', '.png'];
+    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+    
+    if (!allowedTypes.includes(fileExt)) {
+      setError(`File type not allowed. Please upload PDF, JPG, or PNG files only.`);
+      return;
+    }
+    
+    // Check file size (5MB limit)
+    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSizeInBytes) {
+      setError(`File size too large. Please upload files smaller than 5MB. Current file size: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
+      return;
+    }
+    
+    setDocuments(
+      documents.map((doc) =>
+        doc.id === id
+          ? { ...doc, file, name: file.name }
+          : doc
+      )
+    );
+    
+    // Clear any previous errors when a valid file is selected
+    if (error) setError("");
   };
 
   const handleAddOtherDocument = () => {
@@ -373,10 +395,9 @@ export default function AddVehiclePage() {
   };
 
   const handleRemoveDocument = (id: string) => {
-    // Only allow removing 'other' type documents
-    if (documents.find(doc => doc.type === 'other')?.type === 'other') {
-      setDocuments(documents.filter((doc) => doc.id !== id));
-    }
+    const target = documents.find((doc) => doc.id === id);
+    if (!target || target.type !== 'other') return;
+    setDocuments(documents.filter((doc) => doc.id !== id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -394,9 +415,6 @@ export default function AddVehiclePage() {
       }
       if (!price || parseInt(price) <= 0) {
         throw new Error("Price is required and must be greater than 0");
-      }
-      if (!images[0].file) {
-        throw new Error("At least one image is required");
       }
       if (!category) {
         throw new Error("Category is required");
@@ -416,25 +434,6 @@ export default function AddVehiclePage() {
         }
       }
 
-      // Check for documents (registration required, insurance optional)
-      const registrationDoc = documents.find(doc => doc.type === 'registration');
-      const insuranceDoc = documents.find(doc => doc.type === 'insurance');
-      const hasRequiredDocs = registrationDoc?.file; // Only registration is required
-
-      // Validate vehicle-specific fields
-      if (vehicleTypeId === 1) { // Motorcycle
-        if (!engineSize) {
-          throw new Error("Engine size is required for motorcycles");
-        }
-      } else if (vehicleTypeId === 2) { // Car
-        if (!seats) {
-          throw new Error("Number of seats is required for cars");
-        }
-        if (!transmission) {
-          throw new Error("Transmission type is required for cars");
-        }
-      }
-
       // Upload images to Supabase Storage
       const supabase = createClientComponentClient();
       const uploadedImages: VehicleImage[] = [];
@@ -443,8 +442,8 @@ export default function AddVehiclePage() {
       setImages(images.map(img => ({ ...img, isUploading: !!img.file, isCompressing: false })));
 
       // Try uploading each image
-      let uploadErrorOccurred = false;
-      let uploadErrorMessage = "";
+      const selectedImageCount = images.filter((img) => !!img.file).length;
+      let imageUploadErrorMessage = "";
 
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
@@ -459,8 +458,7 @@ export default function AddVehiclePage() {
           // Check final file size before upload
           if (img.file.size > 5 * 1024 * 1024) { // 5MB safety check
             console.error(`File still too large after compression: ${(img.file.size / 1024 / 1024).toFixed(2)}MB`);
-            uploadErrorOccurred = true;
-            uploadErrorMessage = `Image ${i + 1} is still too large (${(img.file.size / 1024 / 1024).toFixed(2)}MB). Please try a different image.`;
+            imageUploadErrorMessage = `Image ${i + 1} is still too large (${(img.file.size / 1024 / 1024).toFixed(2)}MB). Please try a different image.`;
             continue;
           }
 
@@ -474,8 +472,7 @@ export default function AddVehiclePage() {
 
           if (uploadError) {
             console.error("Error uploading image:", uploadError);
-            uploadErrorOccurred = true;
-            uploadErrorMessage = `Upload failed: ${uploadError.message}`;
+            imageUploadErrorMessage = `Upload failed: ${uploadError.message}`;
             // Continue with other images instead of throwing immediately
             continue;
           }
@@ -492,21 +489,21 @@ export default function AddVehiclePage() {
           });
         } catch (uploadErr: any) {
           console.error("Exception during image upload:", uploadErr);
-          uploadErrorOccurred = true;
-          uploadErrorMessage = uploadErr.message || "Unknown upload error";
+          imageUploadErrorMessage = uploadErr.message || "Unknown upload error";
           // Continue with other images
         }
       }
 
-      // If we couldn't upload any images but were required to, show error
-      if (uploadedImages.length === 0 && uploadErrorOccurred) {
-        throw new Error(`Failed to upload images: ${uploadErrorMessage}`);
+      if (selectedImageCount > 0 && uploadedImages.length === 0) {
+        throw new Error(`Failed to upload images: ${imageUploadErrorMessage || "Unknown upload error"}`);
       }
 
       // Upload documents to Supabase Storage
       setDocuments(documents.map(doc => ({ ...doc, isUploading: !!doc.file })));
       
       const uploadedDocuments: UploadedDocument[] = [];
+      const selectedDocCount = documents.filter((doc) => !!doc.file).length;
+      let documentUploadErrorMessage = "";
       for (const doc of documents) {
         if (!doc.file) continue;
         
@@ -529,8 +526,7 @@ export default function AddVehiclePage() {
 
           if (uploadError) {
             console.error("Error uploading document:", uploadError);
-            uploadErrorOccurred = true;
-            uploadErrorMessage = `Error uploading ${doc.file.name}: ${uploadError.message}`;
+            documentUploadErrorMessage = `Error uploading ${doc.file.name}: ${uploadError.message}`;
             continue;
           }
 
@@ -549,14 +545,13 @@ export default function AddVehiclePage() {
           console.log(`Successfully uploaded document: ${doc.file.name}`);
         } catch (uploadErr: any) {
           console.error("Exception during document upload:", uploadErr);
-          uploadErrorOccurred = true;
-          uploadErrorMessage = `Error uploading ${doc.file.name}: ${uploadErr.message || "Unknown upload error"}`;
+          documentUploadErrorMessage = `Error uploading ${doc.file.name}: ${uploadErr.message || "Unknown upload error"}`;
         }
       }
       
-      // Require at least registration document (insurance is optional)
-      if (!uploadedDocuments.some(doc => doc.type === 'registration')) {
-        throw new Error(`Failed to upload required registration document: ${uploadErrorMessage}`);
+      // Documents are optional for publishing; only required for verification.
+      if (selectedDocCount > 0 && uploadedDocuments.length === 0) {
+        throw new Error(`Failed to upload documents: ${documentUploadErrorMessage || "Unknown upload error"}`);
       }
 
       // Prepare vehicle data with documents
@@ -573,9 +568,7 @@ export default function AddVehiclePage() {
         year: specifications.year ? parseInt(specifications.year) : null,
         features: specifications.features ? specifications.features.split(',').map(f => f.trim()).filter(f => f) : [],
         images: uploadedImages,
-        documents: uploadedDocuments,
-        is_verified: false,
-        verification_status: 'pending'
+        documents: uploadedDocuments
       };
 
       // Add vehicle-type specific data
@@ -648,8 +641,10 @@ export default function AddVehiclePage() {
         }
       }
 
-      // Redirect back to vehicles management page
-      router.push("/dashboard/vehicles");
+      trackEvent("vehicle_published", { onboarding: isOnboarding });
+
+      // Redirect back to vehicles management page (or onboarding success)
+      router.push(isOnboarding ? "/dashboard/onboarding/success?step=vehicle" : "/dashboard/vehicles");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add vehicle");
       setImages(images.map(img => ({ ...img, isUploading: false, isCompressing: false })));
@@ -666,7 +661,7 @@ export default function AddVehiclePage() {
         return (
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="engineSize">
-              Engine Size (cc) *
+              Engine Size (cc)
             </label>
             <input
               id="engineSize"
@@ -674,7 +669,6 @@ export default function AddVehiclePage() {
               className="w-full px-3 py-2 border border-border rounded-md bg-background"
               value={engineSize}
               onChange={(e) => setEngineSize(e.target.value)}
-              required
             />
           </div>
         );
@@ -683,7 +677,7 @@ export default function AddVehiclePage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="seats">
-                Number of Seats *
+                Number of Seats
               </label>
               <input
                 id="seats"
@@ -692,19 +686,17 @@ export default function AddVehiclePage() {
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
                 value={seats}
                 onChange={(e) => setSeats(e.target.value)}
-                required
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="transmission">
-                Transmission *
+                Transmission
               </label>
               <select
                 id="transmission"
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
                 value={transmission}
                 onChange={(e) => setTransmission(e.target.value)}
-                required
               >
                 <option value="automatic">Automatic</option>
                 <option value="manual">Manual</option>
@@ -740,20 +732,39 @@ export default function AddVehiclePage() {
         </div>
       )}
 
-      {/* Verification Notice */}
+      {/* Publish notice */}
       <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-4 py-3 rounded-md mb-6 flex items-start gap-3">
         <Info size={20} className="shrink-0 mt-0.5" />
         <div>
-          <h3 className="font-medium mb-1">Verification Required</h3>
+          <h3 className="font-medium mb-1">Publish instantly (Unverified)</h3>
           <p className="text-sm">
-            Your vehicle will require verification before it appears in public listings. 
-            Please upload clear images of your vehicle registration and insurance documents.
-            An admin will review your submission and approve it shortly.
+            You can list vehicles immediately. Add photos and registration documents any time to request a Verified badge and improve trust.
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Quick add toggle */}
+        <div className="bg-card rounded-lg border border-border p-6">
+          <div className="flex items-start gap-3">
+            <input
+              id="quickAddMode"
+              type="checkbox"
+              className="mt-1 h-4 w-4"
+              checked={quickAddMode}
+              onChange={(e) => setQuickAddMode(e.target.checked)}
+            />
+            <div className="flex-1">
+              <label htmlFor="quickAddMode" className="font-medium cursor-pointer">
+                Quick add mode (recommended)
+              </label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Only show the minimum fields needed to publish. You can add photos, documents, and specs later.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Vehicle Type Selection */}
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Vehicle Type</h2>
@@ -915,13 +926,19 @@ export default function AddVehiclePage() {
               >
                 Description
               </label>
-              <textarea
-                id="description"
-                rows={3}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
+              {!quickAddMode ? (
+                <textarea
+                  id="description"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Skip for now — you can add a description later.
+                </p>
+              )}
             </div>
 
             <div>
@@ -948,7 +965,7 @@ export default function AddVehiclePage() {
             </div>
             
             {/* Vehicle-specific fields */}
-            {renderVehicleSpecificFields()}
+            {!quickAddMode && renderVehicleSpecificFields()}
           </div>
         </div>
 
@@ -984,6 +1001,7 @@ export default function AddVehiclePage() {
               <p className="text-xs text-muted-foreground mt-1">Required. This is the base rate for daily rentals.</p>
             </div>
 
+            {!quickAddMode && (
             <div>
               <label
                 className="block text-sm font-medium mb-1"
@@ -1011,7 +1029,9 @@ export default function AddVehiclePage() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">Optional. Special rate for weekly rentals (typically 7 days for the price of 6).</p>
             </div>
+            )}
 
+            {!quickAddMode && (
             <div>
               <label
                 className="block text-sm font-medium mb-1"
@@ -1039,10 +1059,12 @@ export default function AddVehiclePage() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">Optional. Special rate for monthly rentals (typically 30 days for a discounted price).</p>
             </div>
+            )}
           </div>
         </div>
 
         {/* Specifications */}
+        {!quickAddMode && (
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Specifications</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1101,14 +1123,16 @@ export default function AddVehiclePage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Images */}
+        {!quickAddMode && (
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Images</h2>
           <div className="space-y-5">
             <div className="bg-background/50 border border-border rounded-md p-4">
               <div className="text-sm text-muted-foreground mb-3">
-                <p>Upload clear, high-quality images of your vehicle. All images are automatically compressed to ensure fast loading and reliable uploads. The first image will be set as the primary image shown to potential renters.</p>
+                <p>Optional (recommended). Upload clear, high-quality images of your vehicle. All images are automatically compressed. The first image will be set as the primary image shown to potential renters.</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1238,21 +1262,22 @@ export default function AddVehiclePage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Documents */}
+        {!quickAddMode && (
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-4">Vehicle Documents</h2>
           <div className="space-y-5">
             <div className="bg-background/50 border border-border rounded-md p-4">
               <div className="text-sm text-muted-foreground mb-4">
-                <p>Please upload the following required documents for vehicle verification. 
-                All vehicles require proper documentation before they can be listed publicly.</p>
+                <p>Optional for listing. Upload documents to request verification and earn a Verified badge.</p>
               </div>
               
               <div className="space-y-6">
                 {/* Registration Document */}
                 <div>
-                  <h3 className="text-sm font-medium mb-2">Vehicle Registration <span className="text-destructive">*</span></h3>
+                  <h3 className="text-sm font-medium mb-2">Vehicle Registration <span className="text-muted-foreground">(Recommended for verification)</span></h3>
                   
                   <div className="bg-muted/30 border border-border rounded-lg p-4">
                     <div className="flex items-center gap-3">
@@ -1474,12 +1499,13 @@ export default function AddVehiclePage() {
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
-                  <p>Vehicle registration is <strong>required for verification</strong>. Insurance documents are optional but recommended. Upload registration now to get verified faster, or add it later to get your verified badge!</p>
+                  <p>Vehicle registration is required for verification. Upload it now to get verified faster, or add it later when you're ready.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        )}
 
         {/* Availability */}
         <div className="bg-card rounded-lg border border-border p-6">

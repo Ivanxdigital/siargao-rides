@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
       .from('rental_shops')
       .select('city, location_area')
       .eq('is_active', true)
-      .eq('is_verified', true)
+      .neq('status', 'rejected')
 
     const locations = new Set<string>()
     if (allShops) {

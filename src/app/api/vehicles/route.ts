@@ -23,6 +23,13 @@ interface CreateVehicleRequest {
   price_per_week?: number;
   price_per_month?: number;
   specifications?: VehicleSpecifications;
+  is_available?: boolean;
+  color?: string;
+  year?: number;
+  features?: string[];
+  engine_size?: string | number | null;
+  seats?: number | null;
+  transmission?: string | null;
   documents?: VehicleDocument[];
   images?: Array<{ image_url: string; is_primary: boolean }>;
   // Grouping fields
@@ -87,7 +94,7 @@ export async function POST(request: NextRequest) {
     const vehicleData: CreateVehicleRequest = await request.json();
     
     // Validate vehicle data
-    if (!vehicleData.name || !vehicleData.vehicle_type_id || !vehicleData.price_per_day) {
+    if (!vehicleData.name || !vehicleData.vehicle_type_id || !vehicleData.category_id || !vehicleData.price_per_day) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -110,7 +117,7 @@ export async function POST(request: NextRequest) {
           p_shop_id: shopData.id,
           p_name: vehicleData.name,
           p_vehicle_type_id: vehicleData.vehicle_type_id,
-          p_category_id: vehicleData.category_id || null,
+          p_category_id: vehicleData.category_id,
           p_quantity: vehicleData.quantity,
           p_vehicle_data: {
             description: vehicleData.description || '',
@@ -133,6 +140,27 @@ export async function POST(request: NextRequest) {
       }
       
       const { group_id, vehicle_ids } = result[0];
+
+      // Ensure documents + verification status are persisted for grouped vehicles.
+      // The RPC may not write these fields depending on the deployed DB function version.
+      const groupDocuments = vehicleData.documents || [];
+      const hasGroupRegistration =
+        Array.isArray(groupDocuments) &&
+        groupDocuments.some((doc: VehicleDocument) => doc.type === 'registration');
+      const groupVerificationStatus = hasGroupRegistration ? 'pending' : 'documents_needed';
+
+      const { error: groupUpdateError } = await supabase
+        .from('vehicles')
+        .update({
+          documents: groupDocuments,
+          is_verified: false,
+          verification_status: groupVerificationStatus
+        })
+        .in('id', vehicle_ids);
+
+      if (groupUpdateError) {
+        console.error('Error updating grouped vehicles verification fields:', groupUpdateError);
+      }
       
       // Handle images for all vehicles if provided
       if (vehicleData.images && vehicleData.images.length > 0) {
@@ -158,7 +186,8 @@ export async function POST(request: NextRequest) {
         message: `Successfully created ${vehicleData.quantity} vehicles as a group`,
         group_id,
         vehicle_ids,
-        is_group: true
+        is_group: true,
+        verification_status: groupVerificationStatus
       });
     }
     
@@ -207,7 +236,7 @@ export async function POST(request: NextRequest) {
     const vehicleToInsert: {
       name: string;
       description: string;
-      vehicle_type_id: number;
+      vehicle_type_id: string;
       category_id: string;
       price_per_day: number;
       price_per_week: number | null;
@@ -232,30 +261,40 @@ export async function POST(request: NextRequest) {
       is_available: vehicleData.is_available ?? true,
       color: vehicleData.color || null,
       year: vehicleData.year || null,
-      specifications: {
-        features: vehicleData.features || []
-      },
+      specifications: (() => {
+        const incomingSpecs =
+          vehicleData.specifications && typeof vehicleData.specifications === 'object'
+            ? vehicleData.specifications
+            : {};
+
+        const incomingFeatures = Array.isArray(vehicleData.features)
+          ? vehicleData.features
+          : Array.isArray((incomingSpecs as any).features)
+            ? (incomingSpecs as any).features
+            : [];
+
+        const specs: VehicleSpecifications = {
+          ...(incomingSpecs as VehicleSpecifications),
+          features: incomingFeatures
+        };
+
+        if (vehicleData.engine_size !== undefined && vehicleData.engine_size !== null && `${vehicleData.engine_size}`.trim() !== '') {
+          (specs as any).engine_size = vehicleData.engine_size;
+        }
+        if (vehicleData.seats !== undefined && vehicleData.seats !== null) {
+          (specs as any).seats = vehicleData.seats;
+        }
+        if (vehicleData.transmission !== undefined && vehicleData.transmission !== null && `${vehicleData.transmission}`.trim() !== '') {
+          (specs as any).transmission = vehicleData.transmission;
+        }
+
+        return specs;
+      })(),
       // Add document data and set verification status based on documents
       documents: documents,
       is_verified: false,
       verification_status: hasRequiredDocs ? 'pending' : 'documents_needed'
     };
-    
-    // Add vehicle-specific data
-    if (vehicleData.vehicle_type_id === 1) { // Motorcycle
-      vehicleToInsert.specifications = {
-        ...vehicleToInsert.specifications,
-        engine_size: vehicleData.engine_size || null
-      };
-    } else if (vehicleData.vehicle_type_id === 2) { // Car
-      vehicleToInsert.specifications = {
-        ...vehicleToInsert.specifications,
-        seats: vehicleData.seats || null,
-        transmission: vehicleData.transmission || 'automatic'
-      };
-    } else if (vehicleData.vehicle_type_id === 3) { // Tuktuk
-      // No specific fields for tuktuks yet
-    }
     
     // Insert vehicle
     const { data: vehicle, error: insertError } = await supabase
@@ -294,10 +333,13 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Vehicle added successfully and awaiting verification',
+      message:
+        vehicle.verification_status === 'pending'
+          ? 'Vehicle added successfully and awaiting verification'
+          : 'Vehicle added successfully (Unverified)',
       vehicle,
       is_verified: false,
-      verification_status: 'pending'
+      verification_status: vehicle.verification_status
     });
     
   } catch (error) {

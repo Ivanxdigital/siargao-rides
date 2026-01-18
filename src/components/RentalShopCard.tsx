@@ -7,6 +7,7 @@ import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
 import { motion } from "framer-motion"
 import { VehicleType } from "@/lib/types"
+import { ShopTrustBadge } from "@/components/shop/ShopTrustBadge"
 
 interface RentalShopCardProps {
   id: string
@@ -20,6 +21,7 @@ interface RentalShopCardProps {
   totalBikes?: number
   location?: string
   vehicleTypes?: VehicleType[]
+  isVerified?: boolean
   onClick?: () => void
 }
 
@@ -35,6 +37,7 @@ const RentalShopCard = ({
   totalBikes,
   location,
   vehicleTypes = ['motorcycle'],
+  isVerified,
   onClick
 }: RentalShopCardProps) => {
   const fallbackImage = "https://placehold.co/600x400/1e3b8a/white?text=Shop+Image"
@@ -59,6 +62,13 @@ const RentalShopCard = ({
           className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
+
+        {/* Trust badge */}
+        {typeof isVerified === "boolean" && (
+          <div className="absolute top-4 left-4">
+            <ShopTrustBadge isVerified={isVerified} />
+          </div>
+        )}
         
         {/* Minimal rating overlay */}
         {rating !== undefined && (

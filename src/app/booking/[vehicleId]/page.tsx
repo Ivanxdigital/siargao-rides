@@ -30,6 +30,12 @@ export default function BookingPage() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const requiresUnverifiedDisclaimer =
+    !!shop &&
+    !!vehicle &&
+    (shop.is_verified !== true ||
+      vehicle.is_verified !== true ||
+      (vehicle.verification_status ? vehicle.verification_status !== "approved" : false));
 
   // Helper function to fetch available vehicles for specific dates
   const fetchAvailableVehiclesForDates = async (groupId: string, start: Date, end: Date) => {
@@ -447,6 +453,7 @@ export default function BookingPage() {
                 onEndDateChange={setEndDate}
                 onDeliveryFeeChange={setDeliveryFee}
                 selectedVehicleId={selectedVehicleId}
+                requiresUnverifiedDisclaimer={requiresUnverifiedDisclaimer}
               />
             </div>
           </div>

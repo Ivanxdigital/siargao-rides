@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { SIARGAO_LOCATIONS } from "@/lib/constants";
+import { trackEvent } from "@/lib/trackEvent";
 import {
   ChevronRight,
   ChevronLeft,
@@ -45,9 +47,17 @@ interface QuickStartOnboardingProps {
 
 export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
+  const hasRedirectedRef = useRef(false);
+
+  const redirectToSuccess = () => {
+    if (hasRedirectedRef.current) return;
+    hasRedirectedRef.current = true;
+    router.push("/dashboard/onboarding/success?step=shop");
+  };
 
   // Step 1 form
   const step1Form = useForm<Step1Data>({
@@ -132,6 +142,8 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
         
         throw new Error(errorData.error || 'Failed to create shop');
       }
+
+      trackEvent("shop_published", { onboarding: "quick_start_v2" });
 
       // Update user's has_shop status
       const { error: updateError } = await supabase.auth.updateUser({
@@ -226,6 +238,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
             if (onComplete) {
               onComplete();
             }
+            redirectToSuccess();
           } else {
             console.warn("Shop verification failed, analyzing error...", {
               error: verifyError,
@@ -256,6 +269,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
                   if (onComplete) {
                     onComplete();
                   }
+                  redirectToSuccess();
                 } else {
                   console.error("Shop verification failed after retry:", retryError);
                   // For persistent failures, proceed anyway - dashboard has its own retry logic
@@ -263,6 +277,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
                   if (onComplete) {
                     onComplete();
                   }
+                  redirectToSuccess();
                 }
               }, 3000); // Longer delay for timing issues
             } else {
@@ -283,6 +298,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
                 if (onComplete) {
                   onComplete();
                 }
+                redirectToSuccess();
               }, 1000);
             }
           }
@@ -292,6 +308,7 @@ export function QuickStartOnboarding({ onComplete }: QuickStartOnboardingProps) 
           if (onComplete) {
             onComplete();
           }
+          redirectToSuccess();
         }
       };
 

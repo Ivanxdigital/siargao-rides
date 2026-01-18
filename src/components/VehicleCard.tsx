@@ -12,6 +12,7 @@ import { VehicleDetailsDisplay } from "./VehicleDetailsDisplay"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { VehicleAvailabilityCalendar } from "./VehicleAvailabilityCalendar"
 import { format, parseISO } from "date-fns"
+import { ShopTrustBadge } from "@/components/shop/ShopTrustBadge"
 
 interface VehicleCardProps {
   id: string
@@ -35,6 +36,7 @@ interface VehicleCardProps {
     username?: string
     logo?: string
     location?: string
+    isVerified?: boolean
   }
   availabilityInfo?: {
     isAvailableForDates: boolean
@@ -278,7 +280,14 @@ const VehicleCard = ({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{shop.name}</p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                      {shop.name}
+                    </p>
+                    {typeof shop.isVerified === "boolean" && (
+                      <ShopTrustBadge isVerified={shop.isVerified} showText={false} />
+                    )}
+                  </div>
                   {shop.location && (
                     <p className="text-xs text-muted-foreground truncate">{shop.location}</p>
                   )}

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar, ShoppingBag, Info, Truck } from "lucide-react"
+import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar, ShoppingBag, Info, Truck, Store } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
@@ -244,6 +244,7 @@ const Navbar = () => {
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
             <NavLink href="/browse" isScrolled={scrolled}>Browse Vehicles</NavLink>
             <NavLink href="/browse/shops" isScrolled={scrolled}>Browse Shops</NavLink>
+            <NavLink href="/list-your-vehicles" isScrolled={scrolled}>List Your Vehicles</NavLink>
             <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Airport Transfer</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About Us</NavLink>
             {/* <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink> */}
@@ -255,6 +256,7 @@ const Navbar = () => {
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
             <NavLink href="/browse" isScrolled={scrolled}>Vehicles</NavLink>
             <NavLink href="/browse/shops" isScrolled={scrolled}>Shops</NavLink>
+            <NavLink href="/list-your-vehicles" isScrolled={scrolled}>List</NavLink>
             <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Transfer</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
@@ -265,6 +267,7 @@ const Navbar = () => {
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
             <NavLink href="/browse" isScrolled={scrolled}>Vehicles</NavLink>
             <NavLink href="/browse/shops" isScrolled={scrolled}>Shops</NavLink>
+            <NavLink href="/list-your-vehicles" isScrolled={scrolled}>List</NavLink>
             <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Transfer</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
@@ -463,6 +466,9 @@ const Navbar = () => {
               </MobileNavLink>
               <MobileNavLink href="/browse/shops" onClick={() => setIsMenuOpen(false)} icon={<ShoppingBag size={16} />}>
                 Browse Shops
+              </MobileNavLink>
+              <MobileNavLink href="/list-your-vehicles" onClick={() => setIsMenuOpen(false)} icon={<Store size={16} />}>
+                List Your Vehicles
               </MobileNavLink>
               <MobileNavLink href="/airport-transfer-siargao" onClick={() => setIsMenuOpen(false)} icon={<Truck size={16} />}>
                 Airport Transfer

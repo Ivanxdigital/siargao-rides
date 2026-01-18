@@ -734,19 +734,13 @@ export default function VehicleVerificationPage() {
                               <div className="mb-4">
                                 <h4 className="text-sm font-medium mb-2">Primary Image</h4>
                                 <div className="relative h-48 w-full md:w-2/3 lg:w-1/2 rounded-lg overflow-hidden border border-border">
-                                  {vehicle.vehicle_images.find(img => img.is_primary)?.image_url ? (
-                                    <Image
-                                      src={vehicle.vehicle_images.find(img => img.is_primary)?.image_url || vehicle.vehicle_images[0].image_url}
-                                      alt={vehicle.name}
-                                      fill
-                                      className="object-cover"
-                                      unoptimized
-                                    />
-                                  ) : (
-                                    <div className="h-full w-full flex items-center justify-center bg-muted">
-                                      <p className="text-muted-foreground">No image available</p>
-                                    </div>
-                                  )}
+                                  <Image
+                                    src={vehicle.vehicle_images.find(img => img.is_primary)?.image_url || vehicle.vehicle_images[0]?.image_url || '/placeholder.jpg'}
+                                    alt={vehicle.name}
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                  />
                                 </div>
                               </div>
                             )}

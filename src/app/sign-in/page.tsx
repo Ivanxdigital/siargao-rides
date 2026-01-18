@@ -9,6 +9,7 @@ import { ArrowRight, Clock, Mail } from "lucide-react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/trackEvent";
 
 // Rate limit tracking with progressive penalties
 const RATE_LIMIT_KEY = "siargao_auth_rate_limit";
@@ -48,10 +49,17 @@ export default function SignInPage() {
   const [cooldownTimer, setCooldownTimer] = useState(0);
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>(getDefaultRateLimitState());
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [intentParam, setIntentParam] = useState<string | null>(null);
   const { signIn, signInWithGoogle, isAuthenticated, isLoading: authLoading } = useAuth();
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSubmittingRef = useRef(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setIntentParam(params.get("intent"));
+  }, []);
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {
@@ -394,7 +402,8 @@ export default function SignInPage() {
       setGoogleLoading(true);
       setError(null);
 
-      const { error } = await signInWithGoogle();
+      trackEvent("auth_started", { method: "google", intent: intentParam === "shop_owner" ? "shop_owner" : "tourist" });
+      const { error } = await signInWithGoogle(intentParam === 'shop_owner' ? 'shop_owner' : undefined);
 
       if (error) {
         console.error("Google sign-in error:", error);

@@ -202,7 +202,7 @@ export default function BrowseShopsPage() {
   const faqData = [
     {
       question: "Which rental shops in Siargao are most trusted?",
-      answer: "All rental shops on Siargao Rides are verified and trusted. Look for shops with high ratings, verified badges, and positive customer reviews. We only list licensed operators with proven track records."
+      answer: "Siargao Rides lists both verified and unverified rental shops. Verified shops have a clear badge. You can also enable the “Verified only” filter to see only shops verified by Siargao Rides."
     },
     {
       question: "Do rental shops in Siargao offer vehicle delivery?",
@@ -316,7 +316,7 @@ export default function BrowseShopsPage() {
               transition={{ duration: 0.4, delay: 0.6 }}
             >
               Discover {pagination?.total || shops.length} trusted motorbike rental companies, car hire shops, and vehicle rental businesses in Siargao. 
-              Compare verified operators with excellent ratings, competitive prices, and reliable service.
+              Compare verified and unverified operators — all listings are clearly labeled.
             </motion.p>
             
             {/* Key Stats */}
@@ -328,7 +328,7 @@ export default function BrowseShopsPage() {
             >
               <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
                 <Shield className="h-4 w-4 text-green-400" />
-                <span>100% Verified Shops</span>
+                <span>Verified badges</span>
               </div>
               <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
                 <Star className="h-4 w-4 text-yellow-400" />
@@ -356,8 +356,8 @@ export default function BrowseShopsPage() {
             >
               <Shield className="text-green-400 h-6 w-6 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-sm">Verified Companies</h3>
-                <p className="text-gray-400 text-xs">Licensed & insured rental shops only</p>
+                <h3 className="font-semibold text-sm">Clear Trust Badges</h3>
+                <p className="text-gray-400 text-xs">Verified and unverified listings are labeled</p>
               </div>
             </motion.div>
             
@@ -838,6 +838,7 @@ export default function BrowseShopsPage() {
                           reviewCount={shop.review_count || 0}
                           location={shop.location_area || shop.city || 'Siargao'}
                           vehicleTypes={shop.vehicle_types || []}
+                          isVerified={shop.is_verified}
                           onClick={() => router.push(shop.username ? `/shop/${shop.username}` : `/shop/${shop.id}`)}
                         />
                       </motion.div>

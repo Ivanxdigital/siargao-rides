@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { ReviewDialog } from "@/components/ReviewDialog"
 import { ReviewItem } from "@/components/ReviewItem"
 import { groupVehiclesForDisplay, GroupedVehicle } from "@/lib/utils/vehicleGroupingUtils"
+import { ShopTrustBadge } from "@/components/shop/ShopTrustBadge"
 
 // --- Animation Variants ---
 const pageVariants = {
@@ -105,6 +106,7 @@ interface RentalShop {
   banner_position_x?: number;
   banner_position_y?: number;
   is_verified: boolean;
+  status?: 'pending_verification' | 'active' | 'rejected';
   owner_id: string;
   location_area: string | null;
   offers_delivery: boolean;
@@ -509,16 +511,8 @@ export default function ShopPageClient({ initialShop, shopId }: ShopPageClientPr
                 <span className="font-semibold text-white">{averageRating.toFixed(1)}</span>
                 <span className="text-sm text-white/70 ml-1">({reviews.length})</span>
               </div>
-              
-              {shop.is_verified && (
-                <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 px-3 py-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1.5">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                  </svg>
-                  Verified
-                </Badge>
-              )}
+
+              <ShopTrustBadge isVerified={shop.is_verified} size="md" />
               
               {shop.is_showcase && (
                 <Badge variant="outline" className="bg-purple-500/15 text-purple-300 border-purple-500/30 px-3 py-1.5">
