@@ -31,83 +31,158 @@ export default function HomePage() {
             sizes="100vw"
             className="object-cover opacity-35"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/25" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/45 to-black" />
         </div>
 
         <div className="relative container mx-auto px-4 py-24 sm:py-28 lg:py-32">
-          <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 text-sm text-white/80 backdrop-blur-sm">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Private-only • Premium service • WhatsApp-first
-            </div>
-
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Private Van Hire & Private Tours in Siargao
-            </h1>
-
-            <p className="mt-5 text-base text-white/75 sm:text-lg">
-              Airport pickup/drop-off, all-day private van hire, and curated private tours — built for groups, couples, and
-              travelers who want convenience, comfort, and privacy.
-            </p>
-
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-black/35 p-5 backdrop-blur-sm">
-                <div className="flex items-center gap-2 text-white">
-                  <Plane className="h-5 w-5 text-primary" />
-                  <span className="font-semibold">Airport ↔ General Luna</span>
+          <div className="mx-auto max-w-6xl">
+            <div className="grid gap-10 lg:grid-cols-12 lg:items-start lg:gap-x-12 lg:gap-y-6">
+              <div className="lg:col-span-7">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 text-sm text-white/80 backdrop-blur-sm">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Private-only • Premium service • WhatsApp-first
                 </div>
-                <div className="mt-2 text-3xl font-black text-primary">₱3,000</div>
-                <div className="mt-1 text-sm text-white/70">One-way • Private • Other routes: quote via WhatsApp</div>
-              </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/35 p-5 backdrop-blur-sm">
-                <div className="flex items-center gap-2 text-white">
-                  <Car className="h-5 w-5 text-primary" />
-                  <span className="font-semibold">All-day private van hire</span>
+                <h1 className="mt-6 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
+                  Private Van Hire & Private Tours in Siargao
+                </h1>
+
+                <p className="mt-5 text-base text-white/75 sm:text-lg">
+                  Airport pickup/drop-off, all-day private van hire, and curated private tours — built for groups, couples,
+                  and travelers who want convenience, comfort, and privacy.
+                </p>
+
+                <div className="mt-8 hidden lg:block">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-black transition-colors hover:bg-primary/90"
+                    >
+                      <MessageCircle className="mr-2 h-5 w-5" />
+                      WhatsApp for a Quote
+                    </a>
+                    <div className="flex flex-wrap gap-3">
+                      <Link
+                        href="/airport-transfer-siargao"
+                        className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
+                      >
+                        Airport Transfer
+                      </Link>
+                      <Link
+                        href="/private-van-hire-siargao"
+                        className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
+                      >
+                        Private Van Hire
+                      </Link>
+                      <Link
+                        href="/tours-siargao"
+                        className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
+                      >
+                        Private Tours
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 flex flex-wrap gap-6 text-sm text-white/70">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Private-only (no joiners)
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" />
+                      Fast WhatsApp replies
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      Groups & couples
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-2 text-3xl font-black text-primary">₱8,000</div>
-                <div className="mt-1 text-sm text-white/70">Ideal for land tours • Custom itinerary • Private only</div>
               </div>
-            </div>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-black transition-colors hover:bg-primary/90"
-              >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                WhatsApp for a Quote
-              </a>
-              <div className="flex gap-3">
-                <Link
-                  href="/airport-transfer-siargao"
-                  className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
-                >
-                  Airport Transfer
-                </Link>
-                <Link
-                  href="/tours-siargao"
-                  className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
-                >
-                  Private Tours
-                </Link>
-              </div>
-            </div>
+              <div className="lg:col-span-5">
+                <div className="rounded-2xl border border-white/10 bg-black/35 p-6 backdrop-blur-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-sm font-semibold text-white">Quick prices</div>
+                    <div className="text-xs text-white/60">Private-only • WhatsApp-first</div>
+                  </div>
 
-            <div className="mt-10 flex flex-wrap gap-6 text-sm text-white/70">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                Private-only (no joiners)
+                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="rounded-xl border border-white/10 bg-black/35 p-5">
+                      <div className="flex items-center gap-2 text-white">
+                        <Plane className="h-5 w-5 text-primary" />
+                        <span className="font-semibold">Airport ↔ General Luna</span>
+                      </div>
+                      <div className="mt-2 text-3xl font-black text-primary">₱3,000</div>
+                      <div className="mt-1 text-sm text-white/70">One-way • Private • Other routes: quote via WhatsApp</div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-black/35 p-5">
+                      <div className="flex items-center gap-2 text-white">
+                        <Car className="h-5 w-5 text-primary" />
+                        <span className="font-semibold">All-day private van hire</span>
+                      </div>
+                      <div className="mt-2 text-3xl font-black text-primary">₱8,000</div>
+                      <div className="mt-1 text-sm text-white/70">Ideal for land tours • Custom itinerary • Private only</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 text-xs text-white/55">
+                    Tours and other routes are quoted via WhatsApp (private-only).
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
-                Fast WhatsApp replies
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                Groups & couples
+
+              <div className="lg:col-span-7 lg:hidden">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-black transition-colors hover:bg-primary/90"
+                  >
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    WhatsApp for a Quote
+                  </a>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href="/airport-transfer-siargao"
+                      className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
+                    >
+                      Airport Transfer
+                    </Link>
+                    <Link
+                      href="/private-van-hire-siargao"
+                      className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
+                    >
+                      Private Van Hire
+                    </Link>
+                    <Link
+                      href="/tours-siargao"
+                      className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
+                    >
+                      Private Tours
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex flex-wrap gap-6 text-sm text-white/70">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" />
+                    Private-only (no joiners)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    Fast WhatsApp replies
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    Groups & couples
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -8,6 +8,7 @@ Pivot the main site experience from a vehicle rental marketplace to a **premium,
 
 ## What changed
 - Replaced the homepage with a service-led landing page optimized for WhatsApp conversion (fixed prices surfaced, private-only positioning).
+- Improved the desktop hero layout to feel more balanced and premium (two-column layout with a dedicated “Quick prices” panel; removed excess vertical gap by keeping primary CTA + trust chips within the left column on desktop).
 - Updated global SEO metadata (site title/description/keywords) to match the new offering.
 - Updated navigation + footer to prioritize Airport Transfer, Private Van Hire, and Private Tours; added a prominent WhatsApp CTA.
 - Aligned service pages to current pricing:
@@ -41,4 +42,3 @@ Pivot the main site experience from a vehicle rental marketplace to a **premium,
 - Add event tracking for WhatsApp clicks (e.g., `whatsapp_cta_click` with page + placement).
 - Decide whether to keep legacy marketplace indexed (recommend deploying legacy on a subdomain with `noindex`).
 - Revisit tour pricing once partner rate card is confirmed (keep quote-based until then).
-
