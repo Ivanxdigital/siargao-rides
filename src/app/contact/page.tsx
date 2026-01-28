@@ -3,21 +3,21 @@ import ContactClient from "./contact-client"
 
 // Export metadata for the Contact page
 export const metadata: Metadata = {
-  title: "Contact Siargao Rides - Get Help with Vehicle Rentals",
-  description: "Contact Siargao Rides for support with vehicle rentals in Siargao Island, Philippines. Get help with bookings, shop inquiries, and customer service. Located in General Luna, Siargao.",
+  title: "Contact Siargao Rides | Private Van Hire & Private Tours | WhatsApp Booking",
+  description: "Contact Siargao Rides for private van hire and private tours in Siargao. WhatsApp-first booking for fast quotes and confirmations.",
   keywords: [
     "contact Siargao Rides",
-    "vehicle rental support",
-    "Siargao customer service", 
-    "motorbike rental help",
+    "private van hire Siargao",
+    "private tours Siargao",
+    "airport transfer Siargao",
     "General Luna contact",
-    "Siargao booking support",
-    "rental assistance Philippines",
-    "travel help Siargao"
+    "WhatsApp booking Siargao",
+    "Siargao transport service",
+    "Siargao tour booking"
   ],
   openGraph: {
-    title: "Contact Siargao Rides - Get Help with Vehicle Rentals",
-    description: "Contact Siargao Rides for support with vehicle rentals in Siargao Island, Philippines.",
+    title: "Contact Siargao Rides | WhatsApp Booking",
+    description: "WhatsApp-first booking for private van hire and private tours in Siargao.",
     type: "website",
     images: [
       {
@@ -30,8 +30,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Contact Siargao Rides - Get Help with Vehicle Rentals",
-    description: "Contact Siargao Rides for support with vehicle rentals in Siargao Island, Philippines.",
+    title: "Contact Siargao Rides | WhatsApp Booking",
+    description: "WhatsApp-first booking for private van hire and private tours in Siargao.",
     images: ["/images/siargao-rides-og-image.jpg"],
   },
   alternates: {

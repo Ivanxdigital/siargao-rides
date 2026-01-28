@@ -5,7 +5,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { 
-  Car, 
   Users, 
   Droplets, 
   UserCheck, 
@@ -33,21 +32,19 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card } from '@/components/ui/card'
 import { WelcomeTooltip } from '@/components/ui/welcome-tooltip'
+import { buildWhatsAppUrl, DEFAULT_WHATSAPP_NUMBER } from '@/lib/whatsapp'
 
-// WhatsApp configuration
-const WHATSAPP_NUMBER = '+639993702550'
-
-// Van hire booking message template
-const WHATSAPP_MESSAGE = encodeURIComponent(
-  'Hi! I would like to book your private van hire service for airport transfer.\n\n' +
-  'Number of passengers: \n' +
-  'Travel date: \n' +
-  'Pickup time: \n' +
-  'Flight number: \n' +
-  'Pickup location: Sayak Airport\n' +
-  'Drop-off destination: \n\n' +
-  'Pricing: ₱2,000 (2 pax) | ₱2,500 (3-10 pax)'
-)
+const WHATSAPP_MESSAGE =
+  "Hi Siargao Rides! I'd like to book a private airport transfer.\n\n" +
+  "Route: Sayak Airport ↔ General Luna (₱3,000 one-way)\n" +
+  "Date: \n" +
+  "Time: \n" +
+  "Passengers: \n" +
+  "Luggage / surfboards: \n" +
+  "Flight number (if applicable): \n" +
+  "Pickup location (exact): \n" +
+  "Drop-off location (exact): \n\n" +
+  "Notes: "
 
 export default function VanHireClient() {
   const [isMobile, setIsMobile] = useState(false)
@@ -64,7 +61,11 @@ export default function VanHireClient() {
   }, [])
 
   const handleWhatsAppClick = () => {
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`, '_blank')
+    const whatsappUrl = buildWhatsAppUrl({
+      phoneNumber: DEFAULT_WHATSAPP_NUMBER,
+      message: WHATSAPP_MESSAGE,
+    })
+    window.open(whatsappUrl, '_blank')
   }
 
   const features = [
@@ -76,7 +77,7 @@ export default function VanHireClient() {
     {
       icon: <Shield className="w-6 h-6" />,
       title: "Fixed Transparent Pricing",
-      description: "No surge pricing or hidden fees - know exactly what you&apos;ll pay upfront"
+      description: "₱3,000 one-way for Sayak Airport ↔ General Luna. Other routes available via quote."
     },
     {
       icon: <Users className="w-6 h-6" />,
@@ -99,23 +100,6 @@ export default function VanHireClient() {
       description: "Easy airport pickup with personalized name sign at arrivals gate"
     },
     {
-      icon: <Car className="w-6 h-6" />,
-      title: "Surf Rack & Storage",
-      description: (
-        <>
-          Secure surf board rack and ample luggage space for all your gear. Perfect for surfers heading to{' '}
-          <Link href="/browse?location=Cloud+9" className="text-primary hover:text-primary/80 underline">
-            Cloud 9
-          </Link>
-          {' '}or those planning to rent{' '}
-          <Link href="/browse?type=motorcycle" className="text-primary hover:text-primary/80 underline">
-            motorcycles
-          </Link>
-          {' '}for island exploration.
-        </>
-      )
-    },
-    {
       icon: <Shield className="w-6 h-6" />,
       title: "Flight Tracking",
       description: "We monitor your flight status and adjust pickup times for delays automatically"
@@ -125,15 +109,15 @@ export default function VanHireClient() {
   const faqs = [
     {
       question: "Can I book airport transfer for today or tomorrow?",
-      answer: "Yes! Our van hire service is available for immediate booking. Contact us via WhatsApp and we can arrange pickup for today or tomorrow with our professional drivers at ₱2,000 (2 pax) or ₱2,500 (3-10 pax)."
+      answer: "Yes. Message us on WhatsApp with your date/time and flight details and we’ll confirm availability for a private pickup."
     },
     {
       question: "How do I book the van hire service?",
-      answer: "Simply click 'Book Transfer Now' and message us via WhatsApp with your travel details including number of passengers, flight information, and destination. We respond within minutes to confirm your booking."
+      answer: "Click 'Book Transfer Now' to WhatsApp us your travel details (flight number, time, passengers, destination). We’ll reply to confirm and coordinate the pickup."
     },
     {
       question: "What are your pricing rates?",
-      answer: "₱2,000 for 2 passengers, ₱2,500 for 3-10 passengers. All prices include professional driver, door-to-door service, complimentary water, and flight tracking. No hidden fees or surge pricing."
+      answer: "₱3,000 one-way for Sayak Airport ↔ General Luna. For all other destinations in Siargao, message us for a custom quote."
     },
     {
       question: "What happens if my flight is delayed?",
@@ -141,23 +125,7 @@ export default function VanHireClient() {
     },
     {
       question: "What areas in Siargao do you service?",
-      answer: (
-        <>
-          We provide transfers between Sayak Airport and all major destinations in Siargao including{' '}
-          <Link href="/browse?location=General+Luna" className="text-primary hover:text-primary/80 underline">
-            General Luna
-          </Link>
-          ,{' '}
-          <Link href="/browse?location=Cloud+9" className="text-primary hover:text-primary/80 underline">
-            Cloud 9
-          </Link>
-          ,{' '}
-          <Link href="/browse?location=Pacifico" className="text-primary hover:text-primary/80 underline">
-            Pacifico
-          </Link>
-          , Santa Monica, Burgos, Dapa, and other destinations across the island.
-        </>
-      )
+      answer: "We offer private transfers between Sayak Airport and destinations across Siargao (General Luna, Cloud 9, Pacifico, Santa Monica, Burgos, Dapa, and more). Airport ↔ General Luna is fixed price; other routes are quoted via WhatsApp."
     },
     {
       question: "What's included with the service?",
@@ -173,7 +141,7 @@ export default function VanHireClient() {
     },
     {
       question: "Can I cancel or modify my booking?",
-      answer: "Yes! You can cancel up to 2 hours before pickup for a full refund. For modifications, just message us on WhatsApp and we'll update your booking details."
+      answer: "For changes, message us on WhatsApp as soon as possible. If no reservation fee is collected, we require reconfirmation a few hours before pickup; no reconfirmation means the booking is automatically cancelled."
     },
     {
       question: "Why choose private van over shared shuttle?",
@@ -265,12 +233,11 @@ export default function VanHireClient() {
               {/* Pricing Display */}
               <div className="text-center text-white/80 text-sm sm:text-base space-y-1">
                 <div>
-                  <span className="font-medium text-lg">₱2,000</span>
-                  <span className="text-white/60 mx-2">for 2 passengers</span>
+                  <span className="font-medium text-lg">₱3,000</span>
+                  <span className="text-white/60 mx-2">one-way Airport ↔ General Luna</span>
                 </div>
                 <div>
-                  <span className="font-medium text-lg">₱2,500</span>
-                  <span className="text-white/60 mx-2">for 3-10 passengers</span>
+                  <span className="text-white/60">Other destinations: custom quote via WhatsApp</span>
                 </div>
                 <div className="text-white/60 text-sm mt-2">
                   Same day booking available • Professional drivers • Door-to-door service
@@ -327,14 +294,14 @@ export default function VanHireClient() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div className="text-center">
-                  <div className="text-4xl font-black text-primary mb-2">₱2,000</div>
-                  <p className="text-gray-300 text-lg">For 2 passengers</p>
-                  <p className="text-gray-500 text-sm">Direct to destination</p>
+                  <div className="text-4xl font-black text-primary mb-2">₱3,000</div>
+                  <p className="text-gray-300 text-lg">Airport ↔ General Luna</p>
+                  <p className="text-gray-500 text-sm">Fixed one-way pricing</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl font-black text-primary mb-2">₱2,500</div>
-                  <p className="text-gray-300 text-lg">For 3-10 passengers</p>
-                  <p className="text-gray-500 text-sm">Group-friendly pricing</p>
+                  <div className="text-4xl font-black text-primary mb-2">Custom Quote</div>
+                  <p className="text-gray-300 text-lg">Other destinations</p>
+                  <p className="text-gray-500 text-sm">Message us on WhatsApp</p>
                 </div>
               </div>
 
@@ -620,11 +587,11 @@ export default function VanHireClient() {
             
             <ScrollReveal className="text-center mt-12 max-w-2xl mx-auto">
               <p className="text-gray-400 text-sm">
-                After settling in at your destination, explore the island with our{' '}
-                <Link href="/browse" className="text-primary hover:text-primary/80 underline">
-                  motorcycle and car rentals
+                Want a curated private experience after your transfer? Explore our{' '}
+                <Link href="/tours-siargao" className="text-primary hover:text-primary/80 underline">
+                  private tours
                 </Link>
-                {' '}for complete freedom to discover Siargao&apos;s hidden gems.
+                {' '}and we&apos;ll coordinate everything for your group via WhatsApp.
               </p>
             </ScrollReveal>
           </ScrollReveal>
@@ -654,9 +621,9 @@ export default function VanHireClient() {
                 glowColor="rgba(45, 212, 191, 0.2)"
                 className="bg-gradient-to-br from-primary/10 to-green-900/10 border border-primary/20 rounded-xl p-8 text-center"
               >
-                <div className="text-5xl font-black text-primary mb-4">₱2,000</div>
-                <h3 className="text-xl font-bold text-white mb-2">For 2 Passengers</h3>
-                <p className="text-gray-400 mb-6">Perfect for couples or solo travelers with a companion</p>
+                <div className="text-5xl font-black text-primary mb-4">₱3,000</div>
+                <h3 className="text-xl font-bold text-white mb-2">Airport ↔ General Luna</h3>
+                <p className="text-gray-400 mb-6">Fixed one-way pricing for the most common route</p>
                 <div className="space-y-2 text-sm text-gray-300">
                   <p>✓ Direct to destination</p>
                   <p>✓ Professional driver</p>
@@ -672,14 +639,14 @@ export default function VanHireClient() {
                 glowColor="rgba(45, 212, 191, 0.2)"
                 className="bg-gradient-to-br from-primary/10 to-green-900/10 border border-primary/20 rounded-xl p-8 text-center"
               >
-                <div className="text-5xl font-black text-primary mb-4">₱2,500</div>
-                <h3 className="text-xl font-bold text-white mb-2">For 3-10 Passengers</h3>
-                <p className="text-gray-400 mb-6">Great value for groups, families, or surf crews</p>
+                <div className="text-5xl font-black text-primary mb-4">Custom</div>
+                <h3 className="text-xl font-bold text-white mb-2">Other destinations</h3>
+                <p className="text-gray-400 mb-6">Cloud 9, Pacifico, Santa Monica, Burgos, Dapa, and more</p>
                 <div className="space-y-2 text-sm text-gray-300">
-                  <p>✓ Group-friendly pricing</p>
-                  <p>✓ Ample luggage space</p>
-                  <p>✓ Surf rack included</p>
-                  <p>✓ Same great service</p>
+                  <p>✓ Quote via WhatsApp</p>
+                  <p>✓ Door-to-door pickup</p>
+                  <p>✓ Private-only service</p>
+                  <p>✓ Same great experience</p>
                 </div>
               </AnimatedCard>
             </div>

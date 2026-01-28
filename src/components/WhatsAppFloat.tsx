@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { MessageCircle } from "lucide-react"
 import { usePathname } from "next/navigation"
+import { buildWhatsAppUrl, DEFAULT_LEAD_MESSAGE, DEFAULT_WHATSAPP_NUMBER } from "@/lib/whatsapp"
 
 interface WhatsAppFloatProps {
   phoneNumber?: string
@@ -13,8 +14,8 @@ interface WhatsAppFloatProps {
 }
 
 export default function WhatsAppFloat({ 
-  phoneNumber = "+639993702550",
-  message = "Hello! I'm interested in renting a vehicle in Siargao.",
+  phoneNumber = DEFAULT_WHATSAPP_NUMBER,
+  message = DEFAULT_LEAD_MESSAGE,
   className = "",
   hiddenOnPages = []
 }: WhatsAppFloatProps) {
@@ -22,8 +23,7 @@ export default function WhatsAppFloat({
   const pathname = usePathname()
 
   const handleClick = () => {
-    const encodedMessage = encodeURIComponent(message)
-    const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${encodedMessage}`
+    const whatsappUrl = buildWhatsAppUrl({ phoneNumber, message })
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
   }
 

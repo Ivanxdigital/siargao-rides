@@ -1,8 +1,13 @@
 import Link from "next/link"
 import { Instagram, Facebook, MessageCircle } from "lucide-react"
+import { buildWhatsAppUrl, DEFAULT_WHATSAPP_NUMBER } from "@/lib/whatsapp"
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
+  const whatsappUrl = buildWhatsAppUrl({
+    phoneNumber: DEFAULT_WHATSAPP_NUMBER,
+    message: "Hi Siargao Rides! I'd like to inquire about private van hire or private tours.",
+  })
 
   return (
     <footer className="bg-background border-t border-border py-8 mt-auto">
@@ -12,7 +17,7 @@ const Footer = () => {
           <div className="flex flex-col">
             <h3 className="text-xl font-bold text-primary mb-4">Siargao Rides</h3>
             <p className="text-muted-foreground mb-4">
-              Find and book motorcycles, cars, and tuktuks from local rental shops in Siargao Island.
+              Premium private van hire and private tours in Siargao. Fast quotes and bookings via WhatsApp.
             </p>
           </div>
 
@@ -20,6 +25,15 @@ const Footer = () => {
           <div className="flex flex-col">
             <h4 className="font-semibold text-foreground mb-4">Links</h4>
             <div className="flex flex-col gap-2">
+              <Link href="/airport-transfer-siargao" className="text-muted-foreground hover:text-primary transition-colors">
+                Airport Transfer
+              </Link>
+              <Link href="/private-van-hire-siargao" className="text-muted-foreground hover:text-primary transition-colors">
+                Private Van Hire
+              </Link>
+              <Link href="/tours-siargao" className="text-muted-foreground hover:text-primary transition-colors">
+                Private Tours
+              </Link>
               <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
                 About Us
               </Link>
@@ -58,7 +72,7 @@ const Footer = () => {
                 <Facebook size={24} />
               </a>
               <a
-                href="https://wa.me/1234567890"
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"

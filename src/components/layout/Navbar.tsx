@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar, ShoppingBag, Info, Truck, Store } from "lucide-react"
+import { Menu, X, LogOut, User, ChevronDown, Settings, ShieldCheck, Home, Search, Clipboard, MessageSquare, ArrowRight, Calendar, ShoppingBag, Info, Truck, Store, Car, Compass, MessageCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "react-hot-toast"
+import { buildWhatsAppUrl, DEFAULT_WHATSAPP_NUMBER } from "@/lib/whatsapp"
 
 const styles = {
   shadowGlow: `
@@ -40,6 +41,17 @@ const Navbar = () => {
   const { user, isAuthenticated, signOut, isAdmin } = useAuth()
   const scrollPosition = useRef(0)
   const [shopData, setShopData] = useState<{ id: string; name: string } | null>(null)
+  const whatsappUrl = buildWhatsAppUrl({
+    phoneNumber: DEFAULT_WHATSAPP_NUMBER,
+    message:
+      "Hi Siargao Rides! I'd like a quote for a private service.\n\n" +
+      "Service (Airport Transfer / All-day Private Van / Private Tour): \n" +
+      "Date: \n" +
+      "Time: \n" +
+      "Pickup location: \n" +
+      "Destination: \n" +
+      "Passengers: \n",
+  })
 
   // Fetch shop data if user is a shop owner
   useEffect(() => {
@@ -242,10 +254,9 @@ const Navbar = () => {
           {/* Desktop Navigation - Center */}
           <div className="hidden xl:flex gap-8 items-center absolute left-1/2 transform -translate-x-1/2 max-w-4xl">
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
-            <NavLink href="/browse" isScrolled={scrolled}>Browse Vehicles</NavLink>
-            <NavLink href="/browse/shops" isScrolled={scrolled}>Browse Shops</NavLink>
-            <NavLink href="/list-your-vehicles" isScrolled={scrolled}>List Your Vehicles</NavLink>
             <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Airport Transfer</NavLink>
+            <NavLink href="/private-van-hire-siargao" isScrolled={scrolled}>Private Van Hire</NavLink>
+            <NavLink href="/tours-siargao" isScrolled={scrolled}>Private Tours</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About Us</NavLink>
             {/* <NavLink href="/register" isScrolled={scrolled}>Register Your Shop</NavLink> */}
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
@@ -254,10 +265,9 @@ const Navbar = () => {
           {/* Desktop Navigation - Compact for Large screens */}
           <div className="hidden lg:flex xl:hidden gap-6 items-center absolute left-1/2 transform -translate-x-1/2 max-w-3xl">
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
-            <NavLink href="/browse" isScrolled={scrolled}>Vehicles</NavLink>
-            <NavLink href="/browse/shops" isScrolled={scrolled}>Shops</NavLink>
-            <NavLink href="/list-your-vehicles" isScrolled={scrolled}>List</NavLink>
             <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Transfer</NavLink>
+            <NavLink href="/private-van-hire-siargao" isScrolled={scrolled}>Van Hire</NavLink>
+            <NavLink href="/tours-siargao" isScrolled={scrolled}>Tours</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
           </div>
@@ -265,16 +275,24 @@ const Navbar = () => {
           {/* Desktop Navigation - Simplified for Medium screens */}
           <div className="hidden md:flex lg:hidden gap-4 items-center absolute left-1/2 transform -translate-x-1/2 max-w-2xl">
             <NavLink href="/" isScrolled={scrolled}>Home</NavLink>
-            <NavLink href="/browse" isScrolled={scrolled}>Vehicles</NavLink>
-            <NavLink href="/browse/shops" isScrolled={scrolled}>Shops</NavLink>
-            <NavLink href="/list-your-vehicles" isScrolled={scrolled}>List</NavLink>
             <NavLink href="/airport-transfer-siargao" isScrolled={scrolled}>Transfer</NavLink>
+            <NavLink href="/private-van-hire-siargao" isScrolled={scrolled}>Van Hire</NavLink>
+            <NavLink href="/tours-siargao" isScrolled={scrolled}>Tours</NavLink>
             <NavLink href="/about" isScrolled={scrolled}>About</NavLink>
             <NavLink href="/contact" isScrolled={scrolled}>Contact</NavLink>
           </div>
 
           {/* Authentication - Right */}
           <div className="hidden md:flex items-center ml-auto">
+            <div className="mr-3">
+              <Button asChild className="bg-primary text-black hover:bg-primary/90 shadow-glow">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="Message us on WhatsApp">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  WhatsApp
+                </a>
+              </Button>
+            </div>
+
             {isAuthenticated ? (
               <div className="relative">
                 <button
@@ -401,16 +419,7 @@ const Navbar = () => {
                   </motion.div>
                 )}
               </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Button asChild variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10 hover:text-white">
-                  <Link href="/sign-in">Sign In</Link>
-                </Button>
-                <Button asChild size="sm" className="bg-primary hover:bg-primary/80">
-                  <Link href="/sign-up">Sign Up</Link>
-                </Button>
-              </div>
-            )}
+            ) : null}
           </div>
 
           {/* Mobile Menu Button */}
@@ -457,21 +466,27 @@ const Navbar = () => {
               </div>
             )}
 
+            <div className="mb-4">
+              <Button asChild className="w-full bg-primary text-black hover:bg-primary/90 shadow-glow py-6">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="Message us on WhatsApp">
+                  <MessageCircle className="h-5 w-5 mr-2" />
+                  WhatsApp for a Quote
+                </a>
+              </Button>
+            </div>
+
             <div className="space-y-3 mb-6 mt-2">
               <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)} icon={<Home size={16} />}>
                 Home
               </MobileNavLink>
-              <MobileNavLink href="/browse" onClick={() => setIsMenuOpen(false)} icon={<Search size={16} />}>
-                Browse Vehicles
-              </MobileNavLink>
-              <MobileNavLink href="/browse/shops" onClick={() => setIsMenuOpen(false)} icon={<ShoppingBag size={16} />}>
-                Browse Shops
-              </MobileNavLink>
-              <MobileNavLink href="/list-your-vehicles" onClick={() => setIsMenuOpen(false)} icon={<Store size={16} />}>
-                List Your Vehicles
-              </MobileNavLink>
               <MobileNavLink href="/airport-transfer-siargao" onClick={() => setIsMenuOpen(false)} icon={<Truck size={16} />}>
                 Airport Transfer
+              </MobileNavLink>
+              <MobileNavLink href="/private-van-hire-siargao" onClick={() => setIsMenuOpen(false)} icon={<Car size={16} />}>
+                Private Van Hire
+              </MobileNavLink>
+              <MobileNavLink href="/tours-siargao" onClick={() => setIsMenuOpen(false)} icon={<Compass size={16} />}>
+                Private Tours
               </MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)} icon={<Info size={16} />}>
                 About Us

@@ -3,12 +3,12 @@ import PrivateVanHireClient from './private-van-hire-client'
 import { generateLocalBusinessSchema, generateJSONLD } from '@/lib/structured-data'
 
 export const metadata: Metadata = {
-  title: 'Private Van Hire Siargao | General Luna Airport Transfer ₱2,500 | Custom Routes Available',
-  description: 'Private van hire in Siargao. Fixed price ₱2,500 for General Luna ↔ Airport transfers (up to 10 passengers). Custom quotes for Cloud 9, Pacifico, Dapa & other routes. Professional drivers, door-to-door service.',
-  keywords: 'private van hire siargao, siargao van rental, general luna airport transfer, siargao group transport, van hire siargao philippines, cloud 9 transfer siargao, pacifico van hire, dapa transport siargao, siargao island van service, group transportation siargao, private transport siargao, siargao van booking',
+  title: 'All-Day Private Van Hire Siargao | Land Tour ₱8,000 | WhatsApp Booking',
+  description: 'All-day private van hire in Siargao for land tours and flexible itineraries. ₱8,000 all day (temporary rate). Private-only service with professional drivers. Message us on WhatsApp to confirm availability or request a custom quote.',
+  keywords: 'private van hire siargao, all day van hire siargao, siargao land tour private, private transport siargao, siargao private driver, van rental with driver siargao, siargao group transport, siargao tour van hire, general luna private van, siargao itinerary transport',
   openGraph: {
-    title: 'Private Van Hire Siargao | ₱2,500 General Luna ↔ Airport | Custom Routes',
-    description: 'Book private van hire in Siargao. Fixed ₱2,500 for General Luna-Airport transfers. Custom quotes for other routes. Up to 10 passengers, professional drivers.',
+    title: 'All-Day Private Van Hire Siargao | ₱8,000 All Day | Private Land Tours',
+    description: 'Book all-day private van hire in Siargao for land tours and custom itineraries. ₱8,000 all day (temporary rate). Message us on WhatsApp.',
     images: [
       {
         url: '/images/hero-bg-1.png',
@@ -96,9 +96,9 @@ export default function PrivateVanHirePage() {
       itemListElement: [
         {
           '@type': 'Offer',
-          name: 'General Luna to Airport Transfer',
-          description: 'Fixed price private van transfer from General Luna to Siargao Airport, accommodating up to 10 passengers with luggage',
-          price: '2500',
+          name: 'All-Day Private Van Hire (Land Tour)',
+          description: 'All-day private van hire for land tours and flexible itineraries in Siargao with professional driver',
+          price: '8000',
           priceCurrency: 'PHP',
           availability: 'https://schema.org/InStock',
           eligibleQuantity: {
@@ -108,20 +108,8 @@ export default function PrivateVanHirePage() {
         },
         {
           '@type': 'Offer',
-          name: 'Airport to General Luna Transfer',
-          description: 'Fixed price private van transfer from Siargao Airport to General Luna, door-to-door service with professional driver',
-          price: '2500',
-          priceCurrency: 'PHP',
-          availability: 'https://schema.org/InStock',
-          eligibleQuantity: {
-            '@type': 'QuantitativeValue',
-            maxValue: 10,
-          },
-        },
-        {
-          '@type': 'Offer',
-          name: 'Custom Route Van Hire',
-          description: 'Private van hire for custom routes including Cloud 9, Pacifico, Dapa and other Siargao destinations',
+          name: 'Custom Itinerary / Multi-stop Hire',
+          description: 'Private van hire for custom itineraries, multi-stop routes, and special requests via WhatsApp quote',
           priceCurrency: 'PHP',
           availability: 'https://schema.org/InStock',
           eligibleQuantity: {
@@ -143,31 +131,31 @@ export default function PrivateVanHirePage() {
         name: 'How much does private van hire cost in Siargao?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Our fixed price for General Luna ↔ Airport transfers is ₱2,500 one-way for up to 10 passengers. Other routes require custom quotes based on distance and destination.',
+          text: 'Our temporary fixed price for all-day private van hire (land tour) is ₱8,000. For custom itineraries or special routes, message us on WhatsApp for a quote.',
         },
       },
       {
         '@type': 'Question',
-        name: 'How many people can fit in the private van?',
+        name: 'How do I book all-day private van hire?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Our vans can accommodate 8-10 passengers depending on the amount of luggage. We prioritize comfort and safety for all passengers.',
+          text: 'Booking is WhatsApp-first. Message us your date, pickup location, itinerary, and number of guests and we will confirm availability and coordinate the driver.',
         },
       },
       {
         '@type': 'Question',
-        name: 'Do you provide transfers to Cloud 9 and other Siargao destinations?',
+        name: 'Is this a private service?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes! We provide custom quote transfers to Cloud 9, Pacifico, Dapa, and all other Siargao destinations. Contact us via WhatsApp for personalized pricing.',
+          text: 'Yes. We only offer private van hire for your group or couple. No shared rides.',
         },
       },
       {
         '@type': 'Question',
-        name: 'How do I book private van hire in Siargao?',
+        name: 'What is your reconfirmation policy?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'For General Luna-Airport transfers, click our WhatsApp booking button for instant ₱2,500 fixed price booking. For other routes, contact us for a custom quote.',
+          text: 'If no reservation fee is collected, we require reconfirmation a few hours before pickup. If you do not reconfirm, we automatically cancel the booking.',
         },
       },
       {
@@ -175,7 +163,7 @@ export default function PrivateVanHirePage() {
         name: 'What is included in the private van hire service?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'All bookings include professional local driver, door-to-door pickup and drop-off, luggage assistance, air-conditioned van, and free waiting time up to 30 minutes.',
+          text: 'All-day hire includes a professional driver, air-conditioned van, and door-to-door pickup for your itinerary. Inclusions can vary by route and requests; confirm details via WhatsApp.',
         },
       },
     ],
