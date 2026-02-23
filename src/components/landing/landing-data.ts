@@ -70,18 +70,18 @@ export const trustStripItems: IconTextItem[] = [
   { icon: Clock3, label: "No Waiting for Others" },
   { icon: Plane, label: "Flight Delay Monitoring" },
   { icon: Calendar, label: "Free Rescheduling" },
-  { icon: Users, label: "Families and Groups Welcome" },
+  { icon: Users, label: "Ideal for Families and Groups" },
 ];
 
 export const serviceCards: ServiceItem[] = [
   {
     icon: Route,
-    title: "Airport Transfer",
+    title: "Private Airport Transfer",
     description:
-      "Direct one-way private transfer between Siargao Airport (IAO) and your accommodation in General Luna or nearby areas.",
+      "Easy private transfer between Sayak Airport (IAO) and your accommodation in General Luna or nearby areas.",
     bullets: [
-      "Private point-to-point ride with no shared stops",
-      "Plenty of room for luggage and surfboards",
+      "Private point-to-point service with no shared van stops",
+      "Roomy van for luggage, surfboards, and groups",
     ],
     price: "PHP 3,500",
     suffix: "/ one way",
@@ -89,12 +89,12 @@ export const serviceCards: ServiceItem[] = [
   },
   {
     icon: MapPinned,
-    title: "Private Day Hire",
+    title: "8-Hour Private Day Hire",
     description:
-      "Your private van and professional local driver for 8 hours. Ideal for land tours, group travel, and custom island itineraries.",
+      "A dedicated van and local driver for 8 hours. Great for day trips, custom routes, and relaxed island plans.",
     bullets: [
-      "Includes experienced local driver and fuel",
-      "Build your own route based on your schedule",
+      "Includes experienced local driver and fuel for standard routes",
+      "Flexible itinerary for your ideal Siargao land tour",
     ],
     price: "PHP 8,000",
     suffix: "/ 8 hours",
@@ -105,63 +105,73 @@ export const serviceCards: ServiceItem[] = [
 export const whyItems: WhyItem[] = [
   {
     icon: Armchair,
-    title: "Comfortable private experience",
+    title: "Comfort-first from pickup to drop-off",
     description:
-      "Travel only with your group and enjoy spacious seating without the rush of shared vans.",
+      "Travel with only your group and enjoy spacious seating without the rush and uncertainty of shared transfers.",
   },
   {
     icon: House,
-    title: "Direct to your accommodation",
+    title: "Door-to-door around the island",
     description:
-      "No multiple drop-offs. We take you straight to your villa, resort, or homestay.",
+      "No unnecessary stops. We bring you straight to your resort, villa, or homestay.",
   },
   {
     icon: Radar,
-    title: "Flight monitoring included",
+    title: "Professional, reliable, and easy to book",
     description:
-      "We track your arrival so pickups stay coordinated even when flights are delayed.",
+      "From airport pickups to full-day tours, we focus on punctual, reliable, and friendly private van service.",
   },
 ];
 
 export const steps: StepItem[] = [
   {
     number: "1",
-    title: "Send your trip details",
+    title: "Tell us your plan",
     description:
-      "Share your date, time, route, and group size through WhatsApp.",
+      "Message your date, pickup point, destination, and group size on WhatsApp.",
   },
   {
     number: "2",
-    title: "Get a clear quote fast",
+    title: "Get your quote fast",
     description:
-      "We confirm pricing quickly so you can finalize transport without guesswork.",
+      "Receive transparent pricing for airport transfer or 8-hour private day hire.",
   },
   {
     number: "3",
-    title: "Meet your private driver",
+    title: "Ride stress-free",
     description:
-      "Your van arrives on schedule so your transfer or day tour starts smoothly.",
+      "Your driver arrives on schedule so your airport transfer or land tour starts smoothly.",
   },
 ];
 
 export const pricingItems: PricingItem[] = [
   {
-    title: "Airport Transfer",
+    title: "Private Airport Transfer",
     price: "From PHP 3,500",
-    description: "One-way private transfer between IAO and General Luna.",
+    description: "One-way private van transfer between IAO and General Luna.",
   },
   {
-    title: "Private Day Hire",
+    title: "8-Hour Private Day Hire",
     price: "From PHP 8,000",
-    description: "8-hour private van service with driver and fuel.",
+    description: "8-hour private van hire in Siargao with driver and fuel.",
   },
 ];
 
 export const faqItems: FaqItem[] = [
   {
+    question: "Can you do airport pickup and airport drop-off?",
+    answer:
+      "Yes. We handle both arrival and departure transfers between IAO Airport and your accommodation.",
+  },
+  {
     question: "Do you handle delayed flights?",
     answer:
       "Yes. Share your flight details when booking and we adjust pickup timing if your arrival changes.",
+  },
+  {
+    question: "Can we book a private day hire for a land tour?",
+    answer:
+      "Absolutely. Our 8-hour private day hire is built for Siargao land tours and flexible group itineraries.",
   },
   {
     question: "Can you drop us at any accommodation in Siargao?",
@@ -181,8 +191,8 @@ export const faqItems: FaqItem[] = [
 ];
 
 export const quoteServiceOptions = [
-  "Airport Transfer (One Way)",
-  "Private Day Hire (8 Hours)",
+  "Private Airport Transfer (One Way)",
+  "8-Hour Private Day Hire",
 ] as const;
 
 export const quotePassengerOptions = [
@@ -193,7 +203,7 @@ export const quotePassengerOptions = [
 ] as const;
 
 const defaultInquiryMessage =
-  "Hi Siargao Rides, I'd like a quote for a private van service in Siargao.";
+  "Hi Siargao Rides, I'd like a quote for a private van hire in Siargao.";
 
 export function buildWhatsappHref(message: string): string {
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;

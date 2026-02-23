@@ -25,10 +25,58 @@ import { Reveal } from "@/components/landing/reveal";
 const containerClass = "mx-auto max-w-6xl px-6";
 
 export function LandingPage() {
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: "Siargao Rides",
+    url: siteUrl || undefined,
+    image: siteUrl ? `${siteUrl}/logo-brand.png` : undefined,
+    areaServed: "Siargao Island, Philippines",
+    telephone: "+63 999 370 2550",
+    sameAs: [defaultWhatsappHref],
+    description:
+      "Private van hire in Siargao for airport transfers and all-day land tours with professional local drivers.",
+    makesOffer: [
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "Private Van Airport Transfer Siargao",
+          description:
+            "Private van airport transfer between Siargao Airport (IAO) and accommodations around Siargao.",
+        },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "All Day Van Hire in Siargao",
+          description:
+            "8-hour private van hire in Siargao for land tours and custom island routes.",
+        },
+      },
+    ],
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+
   return (
     <>
       <div className="bg-slate-900 px-4 py-2.5 text-center text-xs font-medium tracking-wide text-white">
-        Private Siargao Airport Transfers and Full-Day Van Hire.
+        Private van rides in Siargao for airport trips and full-day island plans.
         <a
           href="#pricing"
           className="ml-1 underline underline-offset-2 opacity-80 transition-opacity hover:opacity-100"
@@ -100,17 +148,20 @@ export function LandingPage() {
 
             <Reveal delay={0.1}>
               <h1 className="mx-auto mb-6 max-w-4xl text-4xl leading-[1.1] font-semibold tracking-tighter text-slate-900 md:text-6xl lg:text-7xl">
-                Premium Private Vans in Siargao.
+                Ride Siargao Your Way.
                 <br />
-                <span className="text-slate-400">Airport and Day Hire Service.</span>
+                <span className="text-slate-400">
+                  Private Airport Transfers and Day Tours.
+                </span>
               </h1>
             </Reveal>
 
             <Reveal delay={0.2}>
               <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-slate-500 md:text-lg">
-                Skip shared van delays. Book direct private airport transfers
-                and high-value 8-hour van hire for land tours, group travel, and
-                custom itineraries around Siargao.
+                If you are searching for reliable van hire in Siargao, you are
+                in the right place. We provide private airport transfers and
+                8-hour day hire for land tours, family outings, and custom
+                island itineraries.
               </p>
             </Reveal>
 
@@ -143,14 +194,14 @@ export function LandingPage() {
             <Reveal delay={0.4} className="mx-auto mt-20 max-w-5xl">
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200/50 bg-slate-100 shadow-2xl shadow-slate-200/50 md:aspect-[21/9] md:rounded-[2rem]">
                 <Image
-                  src="https://images.unsplash.com/photo-1596422846543-75c6fc197f07?q=80&w=2400&auto=format&fit=crop"
-                  alt="Tropical road in Siargao"
+                  src="/daku-island.webp"
+                  alt="Daku Island in Siargao"
                   fill
                   priority
-                  className="object-cover opacity-90"
+                  className="object-cover opacity-95"
                   sizes="(max-width: 768px) 100vw, 1200px"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/25 to-transparent" />
                 <div className="absolute bottom-6 left-6 flex gap-3 md:bottom-10 md:left-10">
                   <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs font-medium text-slate-900 shadow-sm backdrop-blur-sm">
                     <ShieldCheck className="h-4 w-4" />
@@ -178,15 +229,28 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section className="bg-white py-14">
+          <div className={`${containerClass} text-center`}>
+            <h2 className="mx-auto mb-4 max-w-3xl text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+              Comfortable private transport for travelers who value smooth
+              timing, clear communication, and professional service.
+            </h2>
+            <p className="mx-auto max-w-4xl text-base leading-relaxed text-slate-500">
+              From airport arrival to all-day exploring, we help you move around
+              Siargao with less hassle and more confidence in your schedule.
+            </p>
+          </div>
+        </section>
+
         <section id="services" className="bg-slate-50 py-24">
           <div className={containerClass}>
             <Reveal className="mb-16 text-center">
               <h2 className="mb-4 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
-                Core Services
+                Choose Your Service
               </h2>
               <p className="mx-auto max-w-xl text-base text-slate-500">
-                Built to convert quickly from visitor to confirmed inquiry for
-                your two highest-value services.
+                Two clear options: direct airport transfer or 8-hour private day
+                hire for land tours and custom routes.
               </p>
             </Reveal>
 
@@ -301,12 +365,12 @@ export function LandingPage() {
           <div className={`${containerClass} grid items-center gap-16 lg:grid-cols-2`}>
             <Reveal>
               <h2 className="mb-6 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
-                Why travelers choose private van transfers.
+                Why travelers book with us.
               </h2>
               <p className="mb-10 text-base leading-relaxed text-slate-500">
-                After a long flight, visitors want direct transport. For day
-                tours, groups need flexibility. This page is engineered to move
-                both audiences to WhatsApp fast.
+                Most guests tell us the same thing: they want transport that
+                feels easy from the first message. We keep booking simple,
+                communication clear, and rides on time.
               </p>
 
               <div className="space-y-8">
@@ -388,11 +452,11 @@ export function LandingPage() {
             <div className="grid gap-16 lg:grid-cols-12">
               <Reveal className="lg:col-span-5">
                 <h2 className="mb-6 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
-                  Transparent Rates.
+                  Clear, Transparent Rates.
                 </h2>
                 <p className="mb-10 text-base text-slate-500">
-                  Premium private service without hidden fees. Prices are per
-                  vehicle, not per passenger.
+                  Premium private service with clear pricing. Rates are per
+                  vehicle, not per person.
                 </p>
 
                 <div className="mb-10 space-y-6">
@@ -456,11 +520,11 @@ export function LandingPage() {
 
           <Reveal className="relative z-10 mx-auto max-w-2xl">
             <h2 className="mb-6 text-3xl font-semibold tracking-tighter text-white md:text-5xl">
-              Start your Siargao trip the moment you land.
+              Ready for a smoother ride in Siargao?
             </h2>
             <p className="mx-auto mb-10 max-w-xl text-base text-slate-400">
-              Get a private quote quickly, confirm by WhatsApp, and secure your
-              airport transfer or 8-hour day hire with confidence.
+              Send your route and date on WhatsApp and we will reply with a
+              clear quote for airport transfer or private day hire.
             </p>
             <Button
               asChild
@@ -490,7 +554,7 @@ export function LandingPage() {
               />
             </a>
             <span className="text-xs text-slate-400">
-              Premium private van service in Siargao Island
+              Private van hire in Siargao for airport transfers and land tours.
             </span>
           </div>
 
@@ -506,6 +570,19 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(localBusinessSchema),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
     </>
   );
 }

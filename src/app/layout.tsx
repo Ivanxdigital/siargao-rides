@@ -13,14 +13,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Siargao Rides | Private Van Transfers and Day Hire",
+  title: "Siargao Private Van Hire | Airport Transfers and Day Tours",
   description:
-    "Private airport transfers and 8-hour day hire vans in Siargao. Fast WhatsApp booking, transparent rates, and premium local drivers.",
+    "Comfortable private van hire in Siargao for airport pickups and 8-hour day tours. Friendly local drivers, clear rates, and fast WhatsApp booking.",
+  keywords: [
+    "van hire in Siargao",
+    "private van transfer Siargao",
+    "private van airport transfer Siargao",
+    "all day van hire in Siargao",
+    "land tour in Siargao",
+  ],
   openGraph: {
-    title: "Siargao Rides | Private Van Transfers and Day Hire",
+    title: "Siargao Private Van Hire | Airport Transfers and Day Tours",
     description:
-      "Book private airport transfers and full-day van hire around Siargao with quick WhatsApp support.",
+      "Book a private van in Siargao for airport transfers and custom day tours. Professional service with quick WhatsApp booking.",
     type: "website",
+  },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
