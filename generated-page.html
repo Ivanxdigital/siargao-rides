@@ -1,0 +1,488 @@
+<html lang="en" class="scroll-smooth"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siargao Rides | Premium Private Van Transfers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-up {
+            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+        
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased selection:bg-slate-200 selection:text-slate-900">
+
+    <!-- WhatsApp Prefill Variable (simulated via standard href for prototype) -->
+    <!-- Link: https://wa.me/639000000000?text=Hi%20Siargao%20Rides,%20I%E2%80%99d%20like%20a%20quote%20for%20a%20private%20van%20transfer%20in%20Siargao.%0A%0APickup:%0ADestination:%0ADate:%0ATime:%0APassengers:%0ALuggage:%0ANotes: -->
+
+    <!-- Announcement Bar -->
+    <div class="bg-slate-900 text-white text-xs font-medium text-center py-2.5 px-4 tracking-wide">
+        Private Siargao Airport Transfers &amp; Full-Day Van Hire. <a href="#pricing" class="underline underline-offset-2 opacity-80 hover:opacity-100 transition-opacity">View Rates</a>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="#" class="text-lg font-semibold tracking-tighter text-slate-900 uppercase">
+                SIARGAORIDES
+            </a>
+            
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-500">
+                <a href="#services" class="hover:text-slate-900 transition-colors">Services</a>
+                <a href="#how-it-works" class="hover:text-slate-900 transition-colors">How it Works</a>
+                <a href="#pricing" class="hover:text-slate-900 transition-colors">Pricing</a>
+                <a href="#faq" class="hover:text-slate-900 transition-colors">FAQ</a>
+            </div>
+
+            <a href="https://wa.me/639000000000?text=Hi%20Siargao%20Rides,%20I%E2%80%99d%20like%20a%20quote..." target="_blank" class="hidden md:flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-5 py-2.5 rounded-full transition-all active:scale-95 shadow-sm shadow-emerald-600/20">
+                <iconify-icon icon="solar:phone-calling-linear" stroke-width="1.5" class="text-lg"></iconify-icon>
+                Book via WhatsApp
+            </a>
+        </div>
+    </nav>
+
+    <!-- Mobile Sticky CTA -->
+    <div class="md:hidden fixed bottom-6 left-6 right-6 z-50 animate-fade-up delay-300">
+        <a href="https://wa.me/639000000000?text=Hi%20Siargao%20Rides,%20I%E2%80%99d%20like%20a%20quote..." target="_blank" class="flex items-center justify-center gap-2 bg-emerald-600 text-white text-sm font-medium py-4 rounded-full shadow-xl shadow-emerald-600/20 active:scale-95 transition-transform">
+            <iconify-icon icon="solar:phone-calling-linear" stroke-width="1.5" class="text-lg"></iconify-icon>
+            Get Quote on WhatsApp
+        </a>
+    </div>
+
+    <!-- Hero Section -->
+    <header class="relative pt-20 pb-24 md:pt-32 md:pb-32 overflow-hidden bg-white">
+        <div class="max-w-6xl mx-auto px-6 relative z-10 text-center">
+            
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-xs font-medium text-slate-600 mb-8 animate-fade-up">
+                <span class="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                Professional Local Drivers
+            </div>
+
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tighter text-slate-900 mb-6 max-w-4xl mx-auto leading-[1.1] animate-fade-up delay-100">
+                Arrive in Siargao.<br>
+                <span class="text-slate-400">Stress-Free &amp; Private.</span>
+            </h1>
+            
+            <p class="text-base md:text-lg text-slate-500 mb-10 max-w-2xl mx-auto font-normal animate-fade-up delay-200 leading-relaxed">
+                Skip the lines and shared van waits. Premium private airport transfers and full-day van hires tailored to your schedule.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up delay-300">
+                <a href="https://wa.me/639000000000?text=Hi%20Siargao%20Rides,%20I%E2%80%99d%20like%20a%20quote..." target="_blank" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-8 py-4 rounded-full transition-all active:scale-95 shadow-lg shadow-slate-900/10">
+                    <iconify-icon icon="solar:chat-round-line-linear" stroke-width="1.5" class="text-lg"></iconify-icon>
+                    Message on WhatsApp
+                </a>
+                <a href="#quote-form" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 text-sm font-medium px-8 py-4 rounded-full transition-all active:scale-95">
+                    Request a Quote
+                </a>
+            </div>
+
+            <!-- Hero Image / Visual Area -->
+            <div class="mt-20 relative max-w-5xl mx-auto animate-fade-up delay-400">
+                <div class="aspect-[4/3] md:aspect-[21/9] bg-slate-100 rounded-2xl md:rounded-[2rem] overflow-hidden relative border border-slate-200/50 shadow-2xl shadow-slate-200/50">
+                    <!-- Placeholder for high quality image/video -->
+                    <img src="https://images.unsplash.com/photo-1596422846543-75c6fc197f07?q=80&amp;w=2936&amp;auto=format&amp;fit=crop" alt="Tropical road in Siargao" class="w-full h-full object-cover opacity-90">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
+                    
+                    <div class="absolute bottom-6 left-6 md:bottom-10 md:left-10 flex gap-3">
+                        <div class="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-xs font-medium text-slate-900 shadow-sm flex items-center gap-2">
+                            <iconify-icon icon="solar:shield-check-linear" stroke-width="1.5"></iconify-icon> Private Rides Only
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Trust Strip -->
+    <section class="border-y border-slate-100 bg-white py-10">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 text-sm text-slate-500 font-medium text-center">
+            <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:clock-circle-linear" class="text-lg text-slate-400" stroke-width="1.5"></iconify-icon>
+                No Waiting for Others
+            </div>
+            <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:plane-linear" class="text-lg text-slate-400" stroke-width="1.5"></iconify-icon>
+                Flight Delay Monitoring
+            </div>
+            <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:calendar-linear" class="text-lg text-slate-400" stroke-width="1.5"></iconify-icon>
+                Free Rescheduling
+            </div>
+            <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:users-group-rounded-linear" class="text-lg text-slate-400" stroke-width="1.5"></iconify-icon>
+                Families &amp; Groups Welcome
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-24 bg-slate-50">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-16 animate-fade-up">
+                <h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 mb-4">Core Services</h2>
+                <p class="text-base text-slate-500 max-w-xl mx-auto">Choose the transport that fits your itinerary. Always private, always comfortable.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                <!-- Card 1 -->
+                <div class="bg-white rounded-3xl p-8 md:p-10 border border-slate-100 shadow-sm hover:shadow-md transition-shadow animate-fade-up delay-100 flex flex-col h-full">
+                    <div class="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 mb-6">
+                        <iconify-icon icon="solar:routing-2-linear" class="text-2xl" stroke-width="1.5"></iconify-icon>
+                    </div>
+                    <h3 class="text-2xl font-semibold tracking-tight text-slate-900 mb-2">Airport Transfer</h3>
+                    <p class="text-sm text-slate-500 mb-6 leading-relaxed flex-grow">
+                        Direct, one-way transfer from Sayak Airport (IAO) to your accommodation in General Luna or surrounding areas. Driver meets you at arrivals.
+                    </p>
+                    
+                    <ul class="space-y-3 mb-8 text-sm text-slate-600 font-medium">
+                        <li class="flex items-start gap-3">
+                            <iconify-icon icon="solar:check-circle-linear" class="text-emerald-500 text-lg mt-0.5" stroke-width="1.5"></iconify-icon>
+                            Direct point-to-point ride
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <iconify-icon icon="solar:check-circle-linear" class="text-emerald-500 text-lg mt-0.5" stroke-width="1.5"></iconify-icon>
+                            Spacious van for luggage &amp; surfboards
+                        </li>
+                    </ul>
+
+                    <div class="pt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
+                        <div>
+                            <span class="text-xs text-slate-400 block mb-0.5">Starting at</span>
+                            <span class="text-lg font-semibold text-slate-900">₱3,500</span> <span class="text-xs text-slate-500 font-normal">/ one way</span>
+                        </div>
+                        <a href="#quote-form" class="text-sm font-medium text-slate-900 hover:text-emerald-600 transition-colors flex items-center gap-1">
+                            Book Now <iconify-icon icon="solar:arrow-right-linear" stroke-width="1.5"></iconify-icon>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-slate-900 rounded-3xl p-8 md:p-10 border border-slate-800 shadow-xl shadow-slate-900/5 animate-fade-up delay-200 flex flex-col h-full">
+                    <div class="h-12 w-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-white mb-6">
+                        <iconify-icon icon="solar:map-point-linear" class="text-2xl" stroke-width="1.5"></iconify-icon>
+                    </div>
+                    <h3 class="text-2xl font-semibold tracking-tight text-white mb-2">Full-Day Van Hire</h3>
+                    <p class="text-sm text-slate-400 mb-6 leading-relaxed flex-grow">
+                        Your private vehicle and driver for 8 hours. Perfect for island tours, exploring secret spots, or seamless transport for large groups.
+                    </p>
+                    
+                    <ul class="space-y-3 mb-8 text-sm text-slate-300 font-medium">
+                        <li class="flex items-start gap-3">
+                            <iconify-icon icon="solar:check-circle-linear" class="text-emerald-400 text-lg mt-0.5" stroke-width="1.5"></iconify-icon>
+                            Includes professional driver &amp; fuel
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <iconify-icon icon="solar:check-circle-linear" class="text-emerald-400 text-lg mt-0.5" stroke-width="1.5"></iconify-icon>
+                            Create your own itinerary
+                        </li>
+                    </ul>
+
+                    <div class="pt-6 border-t border-slate-800 flex items-center justify-between mt-auto">
+                        <div>
+                            <span class="text-xs text-slate-500 block mb-0.5">Starting at</span>
+                            <span class="text-lg font-semibold text-white">₱8,000</span> <span class="text-xs text-slate-400 font-normal">/ 8 hours</span>
+                        </div>
+                        <a href="#quote-form" class="text-sm font-medium text-white hover:text-emerald-400 transition-colors flex items-center gap-1">
+                            Book Now <iconify-icon icon="solar:arrow-right-linear" stroke-width="1.5"></iconify-icon>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Us -->
+    <section class="py-24 bg-white">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="animate-fade-up">
+                    <h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 mb-6">Why travelers choose private transfers.</h2>
+                    <p class="text-base text-slate-500 mb-10 leading-relaxed">
+                        After a long flight, the last thing you want is to wait for a shared van to fill up. We provide a seamless transition from the airport to your vacation.
+                    </p>
+
+                    <div class="space-y-8">
+                        <div class="flex gap-4">
+                            <div class="mt-1 bg-slate-50 h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-slate-700">
+                                <iconify-icon icon="solar:armchair-linear" class="text-xl" stroke-width="1.5"></iconify-icon>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-semibold text-slate-900 mb-1">Comfortable Private Experience</h4>
+                                <p class="text-sm text-slate-500">Just you and your group. Plenty of space for luggage and surfboards without the squeeze.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="mt-1 bg-slate-50 h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-slate-700">
+                                <iconify-icon icon="solar:smart-home-angle-linear" class="text-xl" stroke-width="1.5"></iconify-icon>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-semibold text-slate-900 mb-1">Direct to Accommodation</h4>
+                                <p class="text-sm text-slate-500">No multiple stops to drop off other passengers. We take you straight to your villa or resort.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="mt-1 bg-slate-50 h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-slate-700">
+                                <iconify-icon icon="solar:radar-linear" class="text-xl" stroke-width="1.5"></iconify-icon>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-semibold text-slate-900 mb-1">Flight Monitoring</h4>
+                                <p class="text-sm text-slate-500">We track your flight status. If you're delayed, your driver will adjust and still be there waiting.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative animate-fade-up delay-200">
+                    <div class="aspect-square bg-slate-100 rounded-3xl overflow-hidden relative">
+                         <img src="https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/917d6f93-fb36-439a-8c48-884b67b35381_1600w.jpg" alt="Siargao Palms" class="w-full h-full object-cover">
+                    </div>
+                    <!-- Decorative element -->
+                    <div class="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl border border-slate-100 hidden md:block">
+                        <div class="text-sm font-semibold text-slate-900 mb-1">Fast Responses</div>
+                        <div class="flex items-center gap-2 text-xs text-slate-500">
+                            <span class="flex h-2 w-2 rounded-full bg-emerald-500 relative">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            </span>
+                            Typically replies in minutes
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="py-24 bg-slate-900 text-white">
+        <div class="max-w-6xl mx-auto px-6 text-center">
+            <h2 class="text-3xl md:text-4xl font-semibold tracking-tight mb-16 animate-fade-up">Book in 3 simple steps</h2>
+            
+            <div class="grid md:grid-cols-3 gap-12 relative">
+                <!-- Connecting Line (Desktop) -->
+                <div class="hidden md:block absolute top-6 left-[20%] right-[20%] h-px bg-slate-800"></div>
+
+                <div class="relative z-10 animate-fade-up delay-100">
+                    <div class="h-12 w-12 rounded-full bg-slate-800 border-4 border-slate-900 text-emerald-400 font-semibold text-sm flex items-center justify-center mx-auto mb-6">1</div>
+                    <h4 class="text-lg font-semibold mb-2">Send Details</h4>
+                    <p class="text-sm text-slate-400 leading-relaxed px-4">Message us on WhatsApp with your flight details, date, and passenger count.</p>
+                </div>
+                
+                <div class="relative z-10 animate-fade-up delay-200">
+                    <div class="h-12 w-12 rounded-full bg-slate-800 border-4 border-slate-900 text-emerald-400 font-semibold text-sm flex items-center justify-center mx-auto mb-6">2</div>
+                    <h4 class="text-lg font-semibold mb-2">Get Confirmed</h4>
+                    <p class="text-sm text-slate-400 leading-relaxed px-4">Receive a fast, transparent quote. Accept and your booking is secured instantly.</p>
+                </div>
+
+                <div class="relative z-10 animate-fade-up delay-300">
+                    <div class="h-12 w-12 rounded-full bg-emerald-600 border-4 border-slate-900 text-white font-semibold text-sm flex items-center justify-center mx-auto mb-6">3</div>
+                    <h4 class="text-lg font-semibold mb-2">Meet Driver</h4>
+                    <p class="text-sm text-slate-400 leading-relaxed px-4">Look for your name on a sign at arrivals. Step into your private van and relax.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing & Quick Quote Form -->
+    <section id="pricing" class="py-24 bg-slate-50">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="grid lg:grid-cols-12 gap-16">
+                
+                <!-- Pricing Info -->
+                <div class="lg:col-span-5 animate-fade-up">
+                    <h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 mb-6">Transparent Rates.</h2>
+                    <p class="text-base text-slate-500 mb-10">Premium service without hidden fees. Rates are per vehicle, not per person.</p>
+                    
+                    <div class="space-y-6 mb-10">
+                        <div class="pb-6 border-b border-slate-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-base font-semibold text-slate-900">Airport Transfer</h4>
+                                <span class="text-base font-semibold text-slate-900">From ₱3,500</span>
+                            </div>
+                            <p class="text-sm text-slate-500">One-way from IAO to General Luna.</p>
+                        </div>
+                        
+                        <div class="pb-6 border-b border-slate-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-base font-semibold text-slate-900">Full-Day Hire</h4>
+                                <span class="text-base font-semibold text-slate-900">From ₱8,000</span>
+                            </div>
+                            <p class="text-sm text-slate-500">8 hours. Includes driver and fuel.</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        * Prices are starting estimates. Final quotes may vary slightly based on specific drop-off locations, extreme delays, or custom requests. Submit a quote request for exact pricing.
+                    </p>
+                </div>
+
+                <!-- Form UI -->
+                <div class="lg:col-span-7" id="quote-form">
+                    <div class="bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 animate-fade-up delay-200">
+                        <div class="mb-8 text-center">
+                            <h3 class="text-2xl font-semibold tracking-tight text-slate-900 mb-2">Quick WhatsApp Quote</h3>
+                            <p class="text-sm text-slate-500">Fill details to auto-generate a WhatsApp message.</p>
+                        </div>
+
+                        <form class="space-y-5" onsubmit="event.preventDefault();">
+                            <div class="grid grid-cols-2 gap-5">
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Service Type</label>
+                                    <select class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors text-sm text-slate-900 appearance-none">
+                                        <option>Airport Transfer (One Way)</option>
+                                        <option>Full-Day Van Hire (8 Hours)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-span-2 sm:col-span-1">
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Date</label>
+                                    <input type="date" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors text-sm text-slate-900">
+                                </div>
+                                
+                                <div class="col-span-2 sm:col-span-1">
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Time / Flight Arrival</label>
+                                    <input type="time" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors text-sm text-slate-900">
+                                </div>
+
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Pickup &amp; Destination</label>
+                                    <input type="text" placeholder="e.g. IAO Airport to Nay Palad" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors text-sm text-slate-900 placeholder:text-slate-400">
+                                </div>
+
+                                <div class="col-span-2 sm:col-span-1">
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Passengers</label>
+                                    <select class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors text-sm text-slate-900 appearance-none">
+                                        <option>1-2 People</option>
+                                        <option>3-4 People</option>
+                                        <option>5-8 People</option>
+                                        <option>9+ People</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-span-2 sm:col-span-1">
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Name</label>
+                                    <input type="text" placeholder="Your Name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors text-sm text-slate-900 placeholder:text-slate-400">
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="window.open('https://wa.me/639000000000?text=Hi%20Siargao%20Rides,%20I%E2%80%99d%20like%20a%20quote...')" class="w-full mt-6 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-medium px-8 py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-emerald-600/20">
+                                <iconify-icon icon="solar:plain-2-linear" stroke-width="1.5" class="text-xl"></iconify-icon>
+                                Send Request via WhatsApp
+                            </button>
+                            <p class="text-center text-xs text-slate-400 mt-4 flex items-center justify-center gap-1">
+                                <iconify-icon icon="solar:lock-keyhole-linear"></iconify-icon> No payment required to get a quote.
+                            </p>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-24 bg-white border-y border-slate-100">
+        <div class="max-w-3xl mx-auto px-6">
+            <h2 class="text-3xl font-semibold tracking-tight text-slate-900 mb-12 text-center animate-fade-up">Frequently Asked Questions</h2>
+            
+            <div class="space-y-8 animate-fade-up delay-100">
+                
+                <div>
+                    <h4 class="text-base font-semibold text-slate-900 mb-2">Do you track flight delays?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">Yes. We ask for your flight number upon booking. Our drivers monitor arrivals, so if your flight is delayed, we adjust our pickup time at no extra charge.</p>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <div>
+                    <h4 class="text-base font-semibold text-slate-900 mb-2">Can you drop us off at any accommodation?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">Absolutely. We provide door-to-door service to resorts, villas, and homestays in General Luna, Cloud 9, Pacifico, and other areas (rates may vary for remote locations).</p>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <div>
+                    <h4 class="text-base font-semibold text-slate-900 mb-2">Is fuel included in the full-day hire?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">Yes, our full-day private van hire includes the vehicle, a professional local driver, and fuel for standard island routes.</p>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <div>
+                    <h4 class="text-base font-semibold text-slate-900 mb-2">How do we pay?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">Payment details are discussed and finalized via WhatsApp during the booking process. We accept cash on arrival or local bank transfers (GCash/Maya).</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-24 bg-slate-900 text-center px-6 relative overflow-hidden">
+        <!-- Abstract background elements -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+        
+        <div class="max-w-2xl mx-auto relative z-10 animate-fade-up">
+            <h2 class="text-3xl md:text-5xl font-semibold tracking-tighter text-white mb-6">Start your vacation the moment you land.</h2>
+            <p class="text-base text-slate-400 mb-10 max-w-xl mx-auto">
+                Secure your private ride today. Fast replies, clear pricing, and a premium experience guaranteed.
+            </p>
+            <a href="https://wa.me/639000000000?text=Hi%20Siargao%20Rides,%20I%E2%80%99d%20like%20a%20quote..." target="_blank" class="inline-flex items-center justify-center gap-2 bg-white text-slate-900 hover:bg-slate-50 text-base font-medium px-8 py-4 rounded-full transition-all active:scale-95 shadow-lg">
+                <iconify-icon icon="solar:phone-calling-linear" stroke-width="1.5" class="text-xl"></iconify-icon>
+                Message on WhatsApp
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white py-12 border-t border-slate-100 pb-28 md:pb-12">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex flex-col items-center md:items-start gap-2">
+                <span class="text-lg font-semibold tracking-tighter text-slate-900 uppercase">SIARGAORIDES</span>
+                <span class="text-xs text-slate-400">Premium Private Van Hire in Siargao Island</span>
+            </div>
+            
+            <div class="flex items-center gap-6 text-sm font-medium text-slate-500">
+                <a href="https://wa.me/639000000000" class="hover:text-slate-900 transition-colors flex items-center gap-1">
+                    WhatsApp Support
+                </a>
+            </div>
+        </div>
+    </footer>
+
+
+</body></html>
