@@ -396,8 +396,8 @@ export function LandingPage() {
             <Reveal delay={0.2} className="relative">
               <div className="relative aspect-square overflow-hidden rounded-3xl bg-slate-100">
                 <Image
-                  src="https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/917d6f93-fb36-439a-8c48-884b67b35381_1600w.jpg"
-                  alt="Palm trees in Siargao"
+                  src="/happy-passengers.jpg"
+                  alt="Happy passengers in a private van in Siargao"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 600px"
