@@ -19,6 +19,7 @@ import {
   trustStripItems,
   whyItems,
 } from "@/components/landing/landing-data";
+import { MobileNav } from "@/components/landing/mobile-nav";
 import { QuoteForm } from "@/components/landing/quote-form";
 import { Reveal } from "@/components/landing/reveal";
 
@@ -110,15 +111,19 @@ export function LandingPage() {
             ))}
           </div>
 
-          <Button
-            asChild
-            className="hidden rounded-full bg-emerald-600 px-5 py-2.5 text-sm text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 md:inline-flex"
-          >
-            <a href={defaultWhatsappHref} target="_blank" rel="noopener noreferrer">
-              <PhoneCall className="h-4 w-4" />
-              Book via WhatsApp
-            </a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              asChild
+              className="hidden rounded-full bg-emerald-600 px-5 py-2.5 text-sm text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 md:inline-flex"
+            >
+              <a href={defaultWhatsappHref} target="_blank" rel="noopener noreferrer">
+                <PhoneCall className="h-4 w-4" />
+                Book via WhatsApp
+              </a>
+            </Button>
+
+            <MobileNav links={navigationLinks} whatsappHref={defaultWhatsappHref} />
+          </div>
         </div>
       </nav>
 
