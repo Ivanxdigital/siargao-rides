@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import FlipTextReveal from "@/components/ui/next-reveal";
 import { Separator } from "@/components/ui/separator";
 import {
   defaultWhatsappHref,
@@ -23,6 +24,7 @@ import { MobileWhatsAppCta } from "@/components/navigation/mobile-whatsapp-cta";
 import { SiteNavbar } from "@/components/navigation/site-navbar";
 import { QuoteForm } from "@/components/landing/quote-form";
 import { Reveal } from "@/components/landing/reveal";
+import { FaqAccordion } from "@/components/landing/faq-accordion";
 
 const containerClass = "mx-auto max-w-6xl px-6";
 
@@ -124,15 +126,18 @@ export function LandingPage() {
               </div>
             </Reveal>
 
-            <Reveal delay={0.1}>
-              <h1 className="mx-auto mb-6 max-w-4xl text-4xl leading-[1.1] font-semibold tracking-tighter text-slate-900 md:text-6xl lg:text-7xl">
-                Ride Siargao Your Way.
-                <br />
-                <span className="text-slate-400">
-                  Private Airport Transfers and Day Tours.
-                </span>
-              </h1>
-            </Reveal>
+            <h1 className="mx-auto mb-6 max-w-4xl text-4xl leading-[1.1] font-semibold tracking-tighter text-slate-900 md:text-6xl lg:text-7xl">
+              <span className="block">
+                <FlipTextReveal
+                  mode="inline"
+                  word="Ride Siargao Your Way."
+                  className="inline-block max-w-full"
+                />
+              </span>
+              <span className="text-slate-400">
+                Private Airport Transfers and Day Tours.
+              </span>
+            </h1>
 
             <Reveal delay={0.2}>
               <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-slate-500 md:text-lg">
@@ -511,18 +516,8 @@ export function LandingPage() {
               </h2>
             </Reveal>
 
-            <Reveal delay={0.1} className="space-y-8">
-              {faqItems.map((item, index) => (
-                <div key={item.question}>
-                  <h3 className="mb-2 text-base font-semibold text-slate-900">
-                    {item.question}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate-500">{item.answer}</p>
-                  {index < faqItems.length - 1 ? (
-                    <Separator className="mt-8 bg-slate-100" />
-                  ) : null}
-                </div>
-              ))}
+            <Reveal delay={0.1}>
+              <FaqAccordion items={faqItems} />
             </Reveal>
           </div>
         </section>
