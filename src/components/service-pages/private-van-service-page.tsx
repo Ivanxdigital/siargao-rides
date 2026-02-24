@@ -74,8 +74,8 @@ const comparisonRows: ComparisonRow[] = [
   },
   {
     label: "Waiting time",
-    privateVan: "Pre-coordinated schedule before pickup",
-    alternatives: "Subject to queueing and on-demand delays",
+    privateVan: "No waiting for other passengers. Once you land and board, we go straight to your accommodation.",
+    alternatives: "Shared vans usually wait for more passengers to arrive before departure.",
   },
   {
     label: "Luggage and surf gear",
