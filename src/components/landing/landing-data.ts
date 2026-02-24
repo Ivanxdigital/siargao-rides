@@ -84,7 +84,7 @@ export const serviceCards: ServiceItem[] = [
       "Includes experienced local driver and fuel for standard routes",
       "Flexible itinerary for your ideal Siargao land tour",
     ],
-    price: "PHP 8,000",
+    price: "PHP 6,500",
     suffix: "/ 8 hours",
     featured: true,
   },
@@ -140,7 +140,7 @@ export const pricingItems: PricingItem[] = [
   },
   {
     title: "8-Hour Private Day Hire",
-    price: "From PHP 8,000",
+    price: "From PHP 6,500",
     description: "8-hour private van hire in Siargao with driver and fuel.",
   },
 ];

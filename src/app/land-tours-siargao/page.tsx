@@ -48,8 +48,8 @@ export default function LandToursPage() {
       ]}
       serviceName="Land Tours Siargao by Private Van"
       serviceDescription="Private 8-hour van hire in Siargao for land tours, day trips, and custom multi-stop island routes with local driver support."
-      startingPrice="From PHP 8,000 / 8 hours"
-      startingPriceValue={8000}
+      startingPrice="From PHP 6,500 / 8 hours"
+      startingPriceValue={6500}
       included={[
         "Private van and local driver for 8 hours",
         "Flexible pickup and multi-stop day routing",
