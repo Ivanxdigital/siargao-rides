@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,14 +13,13 @@ import { Separator } from "@/components/ui/separator";
 import {
   defaultWhatsappHref,
   faqItems,
-  navigationLinks,
   pricingItems,
   serviceCards,
   steps,
   trustStripItems,
   whyItems,
 } from "@/components/landing/landing-data";
-import { MobileNav } from "@/components/landing/mobile-nav";
+import { SiteNavbar } from "@/components/navigation/site-navbar";
 import { QuoteForm } from "@/components/landing/quote-form";
 import { Reveal } from "@/components/landing/reveal";
 
@@ -27,6 +27,24 @@ const containerClass = "mx-auto max-w-6xl px-6";
 
 export function LandingPage() {
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+  const intentPages = [
+    {
+      href: "/private-van-hire-siargao",
+      title: "Private Van Hire in Siargao",
+      description: "Dedicated page for premium door-to-door private van service.",
+    },
+    {
+      href: "/airport-transfer-siargao",
+      title: "Private Airport Transfer in Siargao",
+      description:
+        "Direct IAO pickup and drop-off with flight delay coordination details.",
+    },
+    {
+      href: "/land-tours-siargao",
+      title: "Land Tours in Siargao",
+      description: "8-hour private day hire with route flexibility and planning guidance.",
+    },
+  ];
 
   const localBusinessSchema = {
     "@context": "https://schema.org",
@@ -86,46 +104,7 @@ export function LandingPage() {
         </a>
       </div>
 
-      <nav className="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur-md">
-        <div className={`${containerClass} flex h-16 items-center justify-between`}>
-          <a href="#" aria-label="Siargao Rides home">
-            <Image
-              src="/logo-brand.png"
-              alt="Siargao Rides"
-              width={4139}
-              height={1138}
-              priority
-              className="h-auto w-[146px] sm:w-[164px] md:w-[142px] lg:w-[154px]"
-            />
-          </a>
-
-          <div className="hidden items-center gap-8 text-sm font-medium text-slate-500 md:flex">
-            {navigationLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="transition-colors hover:text-slate-900"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              asChild
-              className="hidden rounded-full bg-emerald-600 px-5 py-2.5 text-sm text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 md:inline-flex"
-            >
-              <a href={defaultWhatsappHref} target="_blank" rel="noopener noreferrer">
-                <PhoneCall className="h-4 w-4" />
-                Book via WhatsApp
-              </a>
-            </Button>
-
-            <MobileNav links={navigationLinks} whatsappHref={defaultWhatsappHref} />
-          </div>
-        </div>
-      </nav>
+      <SiteNavbar whatsappHref={defaultWhatsappHref} />
 
       <div className="fixed right-6 bottom-6 left-6 z-50 md:hidden">
         <Reveal delay={0.3}>
@@ -366,6 +345,40 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section className="bg-white py-20">
+          <div className={containerClass}>
+            <Reveal className="mb-10 text-center">
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+                Explore Service Details
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-500 md:text-base">
+                Read dedicated pages for private van hire, airport transfer, and land
+                tours in Siargao.
+              </p>
+            </Reveal>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {intentPages.map((page, index) => (
+                <Reveal key={page.href} delay={0.1 + index * 0.1}>
+                  <Link
+                    href={page.href}
+                    className="group block rounded-3xl border border-slate-100 bg-slate-50 p-6 transition-shadow hover:shadow-md"
+                  >
+                    <h3 className="text-base font-semibold text-slate-900">{page.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                      {page.description}
+                    </p>
+                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-slate-900">
+                      View page
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="bg-white py-24">
           <div className={`${containerClass} grid items-center gap-16 lg:grid-cols-2`}>
             <Reveal>
@@ -549,7 +562,7 @@ export function LandingPage() {
           className={`${containerClass} flex flex-col items-center justify-between gap-6 md:flex-row`}
         >
           <div className="flex flex-col items-center gap-2 md:items-start">
-            <a href="#" aria-label="Siargao Rides home">
+            <Link href="/" aria-label="Siargao Rides home">
               <Image
                 src="/logo-brand.png"
                 alt="Siargao Rides"
@@ -557,7 +570,7 @@ export function LandingPage() {
                 height={1138}
                 className="h-auto w-[172px] sm:w-[186px] md:w-[150px] lg:w-[164px]"
               />
-            </a>
+            </Link>
             <span className="text-xs text-slate-400">
               Private van hire in Siargao for airport transfers and land tours.
             </span>

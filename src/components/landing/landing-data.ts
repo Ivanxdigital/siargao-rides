@@ -11,11 +11,6 @@ import {
   Plane,
 } from "lucide-react";
 
-type LinkItem = {
-  href: string;
-  label: string;
-};
-
 type IconTextItem = {
   icon: LucideIcon;
   label: string;
@@ -58,13 +53,6 @@ const configuredWhatsappNumber =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "639993702550";
 
 export const whatsappNumber = configuredWhatsappNumber.replace(/\D/g, "");
-
-export const navigationLinks: LinkItem[] = [
-  { href: "#services", label: "Services" },
-  { href: "#how-it-works", label: "How it Works" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
-];
 
 export const trustStripItems: IconTextItem[] = [
   { icon: Clock3, label: "No Waiting for Others" },

@@ -1,0 +1,49 @@
+# Devlog
+
+## 2026-02-23
+- Added implementation roadmap document: `docs/seo-ai-search-implementation-plan.md`.
+- Implemented technical SEO foundation:
+  - Added `src/lib/seo.ts` for site URL normalization and absolute URL generation.
+  - Added `src/app/robots.ts` and `src/app/sitemap.ts`.
+  - Updated global metadata in `src/app/layout.tsx` with `metadataBase`, richer Open Graph, and Twitter metadata.
+  - Added homepage canonical in `src/app/page.tsx`.
+- Implemented intent-page architecture:
+  - Added reusable template `src/components/service-pages/service-page-template.tsx`.
+  - Added dedicated pages:
+    - `src/app/private-van-hire-siargao/page.tsx`
+    - `src/app/airport-transfer-siargao/page.tsx`
+    - `src/app/land-tours-siargao/page.tsx`
+  - Added service, FAQ, and breadcrumb schema utilities in `src/lib/schema.ts`.
+- Improved internal linking from homepage:
+  - Added "Explore Service Details" section linking to new intent pages.
+  - Updated logo home links from `#` to `/` in `src/components/landing/landing-page.tsx`.
+- Completed validation pass:
+  - Fixed Next.js lint rule violations for internal home links by switching to `<Link />`.
+  - Confirmed `npm run lint` passes.
+  - Confirmed `npm run build` passes with new routes:
+    `/airport-transfer-siargao`, `/land-tours-siargao`, `/private-van-hire-siargao`, `/robots.txt`, `/sitemap.xml`.
+- Refactored to a universal navbar used by homepage and dedicated service pages:
+  - Added `src/components/navigation/site-navbar.tsx` with:
+    - shared desktop nav links
+    - shared mobile menu overlay
+    - active-page styling
+    - consistent WhatsApp CTA
+  - Added `src/components/navigation/nav-links.ts` for shared, server-safe nav link config.
+  - Replaced duplicated nav implementations in:
+    - `src/components/landing/landing-page.tsx`
+    - `src/components/service-pages/service-page-template.tsx`
+  - Removed obsolete `src/components/landing/mobile-nav.tsx`.
+  - Removed obsolete `navigationLinks` export from `src/components/landing/landing-data.ts`.
+- Fixed and validated universal nav integration:
+  - Resolved server/client boundary issue by moving nav link constants out of client component.
+  - Confirmed `npm run lint` and `npm run build` both pass after refactor.
+- Fixed navbar active-state behavior for hash links:
+  - Updated `src/components/navigation/site-navbar.tsx` to track `window.location.hash` and include hash-aware matching in `linkIsActive`.
+  - `Rates` (`/#pricing`) and `FAQ` (`/#faq`) now correctly highlight on desktop/mobile when those sections are active on the homepage.
+  - Preserved `Home` active state only for `/` when no section hash is present.
+  - Confirmed `npm run lint` and `npm run build` pass after fix.
+- Fixed `Home` active-state edge case:
+  - Added explicit home-click hash clearing in `src/components/navigation/site-navbar.tsx`.
+  - Clicking `Home` on the homepage now removes `#pricing`/`#faq`, scrolls to top, and correctly highlights `Home`.
+  - Applied the fix for both desktop and mobile nav link handlers.
+  - Confirmed `npm run lint` and `npm run build` pass after fix.
