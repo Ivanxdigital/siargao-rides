@@ -1,5 +1,19 @@
 # Devlog
 
+## 2026-02-24
+- Added dedicated airport transfer layout refactor log:
+  - `docs/devlog-2026-02-24-airport-transfer-layout-refactor.md`
+- Refactored `/airport-transfer-siargao` to use a dedicated, mobile-first page component:
+  - Added `src/components/service-pages/airport-transfer-service-page.tsx`.
+  - Updated `src/app/airport-transfer-siargao/page.tsx` to render the new component.
+- Implemented airport-specific UX structure:
+  - split hero with quote-oriented side panel
+  - arrival-first transfer timeline section
+  - route-and-typical-travel-time section
+  - reordered content hierarchy for conversion and scanning
+- Preserved structured data coverage (Service, FAQ, Breadcrumb) within the dedicated page component.
+- Confirmed validation passes: `npm run lint` and `npm run build`.
+
 ## 2026-02-23
 - Added implementation roadmap document: `docs/seo-ai-search-implementation-plan.md`.
 - Implemented technical SEO foundation:
