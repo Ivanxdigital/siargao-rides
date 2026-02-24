@@ -1,6 +1,19 @@
 # Devlog
 
 ## 2026-02-24
+- Added dedicated private van hire layout refactor log:
+  - `docs/devlog-2026-02-24-private-van-layout-refactor.md`
+- Refactored `/private-van-hire-siargao` to use a dedicated, mobile-first page component:
+  - Added `src/components/service-pages/private-van-service-page.tsx`.
+  - Updated `src/app/private-van-hire-siargao/page.tsx` to render the new component.
+- Implemented private-van-specific UX structure:
+  - split hero and pricing summary card
+  - mobile anchor strip for key sections
+  - comparison-first decision section
+  - capacity planning and use-case content blocks
+  - subtle staggered reveal animations and premium hover transitions
+- Preserved structured data coverage (Service, FAQ, Breadcrumb) within the dedicated page component.
+- Confirmed validation passes: `npm run lint` and `npm run build`.
 - Added dedicated airport transfer layout refactor log:
   - `docs/devlog-2026-02-24-airport-transfer-layout-refactor.md`
 - Refactored `/airport-transfer-siargao` to use a dedicated, mobile-first page component:

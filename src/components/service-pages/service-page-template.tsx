@@ -238,7 +238,7 @@ export function ServicePageTemplate(props: ServicePageTemplateProps) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="group rounded-2xl border border-slate-100 bg-white p-5 transition-shadow hover:shadow-md"
+                  className="group block rounded-2xl border border-slate-100 bg-white p-5 transition-shadow hover:shadow-md"
                 >
                   <h3 className="text-base font-semibold text-slate-900">{link.title}</h3>
                   <p className="mt-2 text-sm text-slate-500">{link.description}</p>
