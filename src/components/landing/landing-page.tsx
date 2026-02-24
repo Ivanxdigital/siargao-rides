@@ -19,6 +19,7 @@ import {
   trustStripItems,
   whyItems,
 } from "@/components/landing/landing-data";
+import { MobileWhatsAppCta } from "@/components/navigation/mobile-whatsapp-cta";
 import { SiteNavbar } from "@/components/navigation/site-navbar";
 import { QuoteForm } from "@/components/landing/quote-form";
 import { Reveal } from "@/components/landing/reveal";
@@ -106,19 +107,12 @@ export function LandingPage() {
 
       <SiteNavbar whatsappHref={defaultWhatsappHref} />
 
-      <div className="fixed right-6 bottom-6 left-6 z-50 md:hidden">
-        <Reveal delay={0.3}>
-          <a
-            href={defaultWhatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 rounded-full bg-emerald-600 py-4 text-sm font-medium text-white shadow-xl shadow-emerald-600/20 transition-transform active:scale-95"
-          >
-            <PhoneCall className="h-4 w-4" />
-            Get Quote on WhatsApp
-          </a>
-        </Reveal>
-      </div>
+      <MobileWhatsAppCta
+        href={defaultWhatsappHref}
+        label="Get Quote on WhatsApp"
+        icon={<PhoneCall className="h-4 w-4" />}
+        className="fixed right-6 bottom-6 left-6 z-50 md:hidden"
+      />
 
       <main>
         <header className="relative overflow-hidden bg-white pt-20 pb-24 md:pt-32 md:pb-32">

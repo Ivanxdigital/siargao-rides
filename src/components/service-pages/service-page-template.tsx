@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { buildWhatsappHref } from "@/components/landing/landing-data";
+import { MobileWhatsAppCta } from "@/components/navigation/mobile-whatsapp-cta";
 import { siteNavLinks } from "@/components/navigation/nav-links";
 import { SiteNavbar } from "@/components/navigation/site-navbar";
 import { Button } from "@/components/ui/button";
@@ -79,17 +80,12 @@ export function ServicePageTemplate(props: ServicePageTemplateProps) {
 
       <SiteNavbar whatsappHref={whatsappHref} />
 
-      <div className="fixed right-5 bottom-5 left-5 z-50 lg:hidden">
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 rounded-full bg-emerald-600 py-4 text-sm font-medium text-white shadow-xl shadow-emerald-600/20 transition-transform active:scale-95"
-        >
-          <MessageCircle className="h-4 w-4" />
-          Get Quote on WhatsApp
-        </a>
-      </div>
+      <MobileWhatsAppCta
+        href={whatsappHref}
+        label="Get Quote on WhatsApp"
+        icon={<MessageCircle className="h-4 w-4" />}
+        className="fixed right-5 bottom-5 left-5 z-50 lg:hidden"
+      />
 
       <main>
         <header className="bg-white pt-16 pb-14 sm:pt-20 sm:pb-20">
