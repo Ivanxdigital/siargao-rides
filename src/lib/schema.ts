@@ -19,6 +19,16 @@ type ServiceSchemaInput = {
   priceCurrency?: string;
 };
 
+type BlogPostingSchemaInput = {
+  headline: string;
+  description: string;
+  path: string;
+  imagePath: string;
+  datePublished: string;
+  dateModified: string;
+  authorName: string;
+};
+
 export function buildLocalBusinessSchema() {
   return {
     "@context": "https://schema.org",
@@ -85,5 +95,30 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[]) {
       name: item.name,
       item: absoluteUrl(item.path),
     })),
+  };
+}
+
+export function buildBlogPostingSchema(input: BlogPostingSchemaInput) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: input.headline,
+    description: input.description,
+    image: absoluteUrl(input.imagePath),
+    datePublished: input.datePublished,
+    dateModified: input.dateModified,
+    mainEntityOfPage: absoluteUrl(input.path),
+    author: {
+      "@type": "Person",
+      name: input.authorName,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Siargao Rides",
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/logo-brand.png"),
+      },
+    },
   };
 }

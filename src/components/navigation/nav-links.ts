@@ -5,6 +5,7 @@ export type SiteNavLink = {
 
 export const siteNavLinks: SiteNavLink[] = [
   { href: "/", label: "Home" },
+  { href: "/blog", label: "Blog" },
   { href: "/private-van-hire-siargao", label: "Private Van Hire" },
   { href: "/airport-transfer-siargao", label: "Airport Transfer" },
   { href: "/land-tours-siargao", label: "Land Tours" },
