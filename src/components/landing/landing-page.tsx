@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
+  Clock3,
   MessageCircle,
   PhoneCall,
   ShieldCheck,
@@ -25,6 +26,8 @@ import { SiteNavbar } from "@/components/navigation/site-navbar";
 import { QuoteForm } from "@/components/landing/quote-form";
 import { Reveal } from "@/components/landing/reveal";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
+import { TestimonialsSection } from "@/components/landing/testimonials";
+import { formatBlogDate, getBlogPostPath, getLatestBlogPosts } from "@/lib/blog";
 
 const containerClass = "mx-auto max-w-6xl px-6";
 
@@ -48,6 +51,7 @@ export function LandingPage() {
       description: "8-hour private day hire with route flexibility and planning guidance.",
     },
   ];
+  const latestBlogPosts = getLatestBlogPosts(3);
 
   const localBusinessSchema = {
     "@context": "https://schema.org",
@@ -141,10 +145,11 @@ export function LandingPage() {
 
             <Reveal delay={0.2}>
               <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-slate-500 md:text-lg">
-                If you are searching for reliable van hire in Siargao, you are
-                in the right place. We provide private airport transfers and
-                8-hour day hire for land tours, family outings, and custom
-                island itineraries.
+                Booking a van from a stranger on an island you have never
+                visited takes trust. We get that. Siargao Rides is a local
+                private van service that shows up on time, charges what we
+                quote, and replies on WhatsApp within minutes — so you can stop
+                guessing and start planning.
               </p>
             </Reveal>
 
@@ -198,7 +203,7 @@ export function LandingPage() {
 
         <section className="border-y border-slate-100 bg-white py-10">
           <div
-            className={`${containerClass} flex flex-col items-center justify-center gap-8 text-center text-sm font-medium text-slate-500 md:flex-row md:gap-16`}
+            className={`${containerClass} flex flex-wrap flex-col items-center justify-center gap-8 text-center text-sm font-medium text-slate-500 md:flex-row md:gap-10`}
           >
             {trustStripItems.map((item) => {
               const Icon = item.icon;
@@ -215,12 +220,16 @@ export function LandingPage() {
         <section className="bg-white py-14">
           <div className={`${containerClass} text-center`}>
             <h2 className="mx-auto mb-4 max-w-3xl text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
-              Comfortable private transport for travelers who value smooth
-              timing, clear communication, and professional service.
+              Siargao is beautiful. Getting around it shouldn&apos;t be
+              stressful.
             </h2>
             <p className="mx-auto max-w-4xl text-base leading-relaxed text-slate-500">
-              From airport arrival to all-day exploring, we help you move around
-              Siargao with less hassle and more confidence in your schedule.
+              Most first-time visitors worry about the same things: finding a
+              van that actually shows up, paying a fair price, and not getting
+              stranded if a flight is late. Siargao Rides was built to remove
+              those worries — private vehicles only, transparent pricing quoted
+              before you commit, and a driver who monitors your flight so you
+              don&apos;t have to.
             </p>
           </div>
         </section>
@@ -378,6 +387,62 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section className="bg-slate-50 py-20">
+          <div className={containerClass}>
+            <Reveal className="mb-10 text-center">
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+                Siargao Guides and Top Tips
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-500 md:text-base">
+                Helpful local guides on getting around Siargao, where to eat, and how to
+                plan smoother island days.
+              </p>
+            </Reveal>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {latestBlogPosts.map((post, index) => (
+                <Reveal key={post.slug} delay={0.1 + index * 0.1}>
+                  <Link
+                    href={getBlogPostPath(post.slug)}
+                    className="group block rounded-3xl border border-slate-100 bg-white p-6 transition-shadow hover:shadow-md"
+                  >
+                    <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                      {post.category}
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
+                      {post.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                      {post.excerpt}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500 sm:text-sm">
+                      <span>{formatBlogDate(post.publishedAt)}</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock3 className="h-4 w-4" />
+                        {post.readingTimeMinutes} min read
+                      </span>
+                    </div>
+                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-slate-900">
+                      Read guide
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+
+            <Reveal delay={0.15} className="mt-8 text-center">
+              <Button
+                asChild
+                variant="outline"
+                className="h-12 rounded-full border-slate-200 bg-white px-7 text-sm text-slate-900 hover:bg-slate-100"
+              >
+                <Link href="/blog">View all guides</Link>
+              </Button>
+            </Reveal>
+          </div>
+        </section>
+
         <section className="bg-white py-24">
           <div className={`${containerClass} grid items-center gap-16 lg:grid-cols-2`}>
             <Reveal>
@@ -432,6 +497,8 @@ export function LandingPage() {
             </Reveal>
           </div>
         </section>
+
+        <TestimonialsSection />
 
         <section id="how-it-works" className="bg-slate-900 py-24 text-white">
           <div className={`${containerClass} text-center`}>

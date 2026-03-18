@@ -1,12 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Armchair,
+  BadgeCheck,
   Calendar,
   Clock3,
   House,
   MapPinned,
   Radar,
   Route,
+  Star,
   Users,
   Plane,
 } from "lucide-react";
@@ -55,10 +57,12 @@ const configuredWhatsappNumber =
 export const whatsappNumber = configuredWhatsappNumber.replace(/\D/g, "");
 
 export const trustStripItems: IconTextItem[] = [
+  { icon: Star, label: "5-Star Rated Service" },
   { icon: Clock3, label: "No Waiting for Others" },
   { icon: Plane, label: "Flight Delay Monitoring" },
   { icon: Calendar, label: "Free Rescheduling" },
-  { icon: Users, label: "Ideal for Families and Groups" },
+  { icon: BadgeCheck, label: "Licensed Local Drivers" },
+  { icon: Users, label: "Families and Groups Welcome" },
 ];
 
 export const serviceCards: ServiceItem[] = [
@@ -175,6 +179,31 @@ export const faqItems: FaqItem[] = [
     question: "How do we pay?",
     answer:
       "Payment is finalized in WhatsApp during confirmation. We typically support cash, GCash, and local bank transfer options.",
+  },
+  {
+    question: "How do I know the van will actually show up?",
+    answer:
+      "We confirm every booking over WhatsApp before your trip date and send a reminder the evening before. Our drivers are local professionals who depend on repeat bookings and word-of-mouth — showing up reliably is how this business works. If something genuinely beyond our control happens, we will contact you immediately and help arrange an alternative.",
+  },
+  {
+    question: "Is PHP 3,500 for an airport transfer a fair price?",
+    answer:
+      "Shared vans on Siargao typically cost PHP 200–350 per person but stop at multiple hotels, can be delayed, and leave on their own schedule rather than yours. At PHP 3,500 per vehicle, a group of three or four passengers pays a similar amount per head — with a private, direct ride that departs exactly when you are ready. For solo travelers, the premium is the guarantee of a private, on-time vehicle that waits for delayed flights.",
+  },
+  {
+    question: "Can I cancel or change the booking?",
+    answer:
+      "Yes. Rescheduling is free — just message us on WhatsApp with your new date and we will update the booking. For cancellations, please let us know as early as possible. We do not charge a cancellation fee for reasonable notice. Final terms are confirmed in your WhatsApp booking message.",
+  },
+  {
+    question: "Do I need to pay anything upfront?",
+    answer:
+      "No upfront payment is required to get a quote. Payment is arranged over WhatsApp when you confirm the booking. We accept cash on the day, GCash, and local bank transfer. We do not charge your card online.",
+  },
+  {
+    question: "What vehicle do you use?",
+    answer:
+      "We use a modern, air-conditioned van with ample space for passenger luggage, backpacks, and surfboards. It comfortably fits up to 8 passengers and is cleaned before each trip.",
   },
 ];
 
